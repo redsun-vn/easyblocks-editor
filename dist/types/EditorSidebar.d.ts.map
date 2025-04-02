@@ -1,0 +1,1 @@
+{"version":3,"file":"EditorSidebar.d.ts","sourceRoot":"","sources":["../../src/EditorSidebar.tsx"],"names":[],"mappings":"AAGA,OAAO,KAAK,MAAM,OAAO,CAAC;AAM1B,OAAO,EAAE,IAAI,EAAE,MAAM,QAAQ,CAAC;AAE9B,KAAK,kBAAkB,GAAG;IACxB,aAAa,EAAE,KAAK,CAAC,MAAM,CAAC,CAAC;IAC7B,IAAI,EAAE,IAAI,CAAC;CACZ,CAAC;AAaF,eAAO,MAAM,aAAa,EAAE,KAAK,CAAC,EAAE,CAAC,kBAAkB,CAsCtD,CAAC"}

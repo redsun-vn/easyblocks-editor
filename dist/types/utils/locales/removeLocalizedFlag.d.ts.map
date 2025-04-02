@@ -1,0 +1,1 @@
+{"version":3,"file":"removeLocalizedFlag.d.ts","sourceRoot":"","sources":["../../../../src/utils/locales/removeLocalizedFlag.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,oBAAoB,EAAE,MAAM,4BAA4B,CAAC;AAClE,OAAO,EAAE,sBAAsB,EAAE,MAAM,uCAAuC,CAAC;AAG/E,wBAAgB,mBAAmB,CACjC,MAAM,EAAE,oBAAoB,EAC5B,OAAO,EAAE,sBAAsB,wBAYhC"}

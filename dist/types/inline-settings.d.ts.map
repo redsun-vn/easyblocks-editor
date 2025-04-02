@@ -1,0 +1,1 @@
+{"version":3,"file":"inline-settings.d.ts","sourceRoot":"","sources":["../../src/inline-settings.tsx"],"names":[],"mappings":"AAAA,OAAO,EAAE,aAAa,EAAE,MAAM,uCAAuC,CAAC;AACtE,OAAO,KAAqB,MAAM,OAAO,CAAC;AAO1C,UAAU,mBAAmB;IAC3B,MAAM,EAAE,aAAa,EAAE,CAAC;CACzB;AAED,wBAAgB,cAAc,CAAC,EAAE,MAAM,EAAE,EAAE,mBAAmB,4BAkB7D"}

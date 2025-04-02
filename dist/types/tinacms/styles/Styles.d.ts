@@ -1,0 +1,3 @@
+export declare const GlobalStyles: import("react").NamedExoticComponent<import("styled-components").ExecutionProps & object>;
+export declare const StyleReset: import("styled-components/dist/types").IStyledComponentBase<"web", import("styled-components").FastOmit<import("react").DetailedHTMLProps<import("react").HTMLAttributes<HTMLDivElement>, HTMLDivElement>, never>> & string;
+//# sourceMappingURL=Styles.d.ts.map
