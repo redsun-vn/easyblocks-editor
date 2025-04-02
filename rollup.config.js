@@ -46,6 +46,7 @@ const baseConfig = {
     /lodash/,
     /react-dom/,
     /@easyblocks\/core/,
+    /@redsun-vn\/easyblocks-design-system/,
   ],
 };
 
