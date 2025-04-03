@@ -47,6 +47,7 @@ const baseConfig = {
     /react-dom/,
     /@easyblocks\/core/,
     /@redsun-vn\/easyblocks-design-system/,
+    /@redsun-vn\/easyblocks-core/,
   ],
 };
 
@@ -59,6 +60,7 @@ const configEs = {
     format: "es",
     dir: "./dist/es",
     banner: `"use client";`,
+    sourcemap: true,
   },
   plugins: [
     ...getPlugins("es"),
@@ -78,6 +80,7 @@ const configCjs = {
     dir: "./dist/cjs",
     banner: `"use client";`,
     entryFileNames: "[name].cjs",
+    sourcemap: true,
   },
   plugins: [
     ...getPlugins("cjs"),
