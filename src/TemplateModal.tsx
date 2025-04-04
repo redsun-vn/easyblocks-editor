@@ -12,7 +12,7 @@ import {
   useToaster,
 } from "@redsun-vn/easyblocks-design-system";
 import { useEditorContext } from "./EditorContext";
-import { Backend } from "@redsun-vn/easyblocks-core";
+import { Backend, Template } from "@redsun-vn/easyblocks-core";
 
 type TemplateModalProps = {
   action: OpenTemplateModalAction;
@@ -36,12 +36,20 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
     } else {
       return {
         label: "",
+        group: "",
+        thumbnail: "",
+        thumbnailLabel: "",
         entry: props.action.config,
       };
     }
   });
 
-  const label = template.label ?? "";
+  const {
+    label = "",
+    group = "",
+    thumbnail = "",
+    thumbnailLabel = "",
+  } = template as Template;
   const open = props.action !== undefined;
   const canSend = label.trim() !== "";
   const ctaLabel = "Save";
@@ -80,6 +88,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
             backend.templates
               .create({
                 label,
+                group,
+                thumbnail,
+                thumbnailLabel,
                 entry: createAction.config,
                 width: createAction.width,
                 widthAuto: createAction.widthAuto,
@@ -99,7 +110,10 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
             backend.templates
               .update({
                 label,
-                id: template.id!,
+                group,
+                thumbnail,
+                thumbnailLabel,
+                id: (template as Template).id!,
               })
               .then(() => {
                 editorContext.syncTemplates();
@@ -125,15 +139,60 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
             marginTop: "8px",
           }}
         >
-          <FormElement name={"label"} label={"Template name"}>
+          <FormElement name="label" label="Name">
             <Input
-              placeholder={"My template name"}
+              placeholder="My template name"
               required={true}
               value={label}
               onChange={(e) => {
                 setTemplate({
                   ...template,
                   label: e.target.value,
+                });
+              }}
+              withBorder={true}
+              autoFocus
+            />
+          </FormElement>
+
+          <FormElement name="group" label="Group">
+            <Input
+              placeholder="My template group"
+              value={group}
+              onChange={(e) => {
+                setTemplate({
+                  ...template,
+                  group: e.target.value,
+                });
+              }}
+              withBorder={true}
+              autoFocus
+            />
+          </FormElement>
+
+          <FormElement name="thumbnail" label="Thumbnail url">
+            <Input
+              placeholder="My template thumbnail url"
+              value={thumbnail}
+              onChange={(e) => {
+                setTemplate({
+                  ...template,
+                  thumbnail: e.target.value,
+                });
+              }}
+              withBorder={true}
+              autoFocus
+            />
+          </FormElement>
+
+          <FormElement name="thumbnailLabel" label="Thumbnail label">
+            <Input
+              placeholder="My template thumbnail label"
+              value={thumbnailLabel}
+              onChange={(e) => {
+                setTemplate({
+                  ...template,
+                  thumbnailLabel: e.target.value,
                 });
               }}
               withBorder={true}
@@ -158,7 +217,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                     setLoadingDelete(true);
 
                     backend.templates
-                      .delete({ id: template.id! })
+                      .delete({ id: (template as Template).id! })
                       .then(() => {
                         editorContext.syncTemplates();
                         toaster.success("Template deleted");

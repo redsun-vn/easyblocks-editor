@@ -3117,11 +3117,19 @@ const TemplateModal = props => {
     } else {
       return {
         label: "",
+        group: "",
+        thumbnail: "",
+        thumbnailLabel: "",
         entry: props.action.config
       };
     }
   });
-  const label = template.label ?? "";
+  const {
+    label = "",
+    group = "",
+    thumbnail = "",
+    thumbnailLabel = ""
+  } = template;
   const open = props.action !== undefined;
   const canSend = label.trim() !== "";
   const ctaLabel = "Save";
@@ -3150,6 +3158,9 @@ const TemplateModal = props => {
         const createAction = props.action;
         backend.templates.create({
           label,
+          group,
+          thumbnail,
+          thumbnailLabel,
           entry: createAction.config,
           width: createAction.width,
           widthAuto: createAction.widthAuto
@@ -3165,6 +3176,9 @@ const TemplateModal = props => {
       } else {
         backend.templates.update({
           label,
+          group,
+          thumbnail,
+          thumbnailLabel,
           id: template.id
         }).then(() => {
           editorContext.syncTemplates();
@@ -3186,7 +3200,7 @@ const TemplateModal = props => {
     }
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
     name: "label",
-    label: "Template name"
+    label: "Name"
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
     placeholder: "My template name",
     required: true,
@@ -3195,6 +3209,48 @@ const TemplateModal = props => {
       setTemplate({
         ...template,
         label: e.target.value
+      });
+    },
+    withBorder: true,
+    autoFocus: true
+  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
+    name: "group",
+    label: "Group"
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    placeholder: "My template group",
+    value: group,
+    onChange: e => {
+      setTemplate({
+        ...template,
+        group: e.target.value
+      });
+    },
+    withBorder: true,
+    autoFocus: true
+  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
+    name: "thumbnail",
+    label: "Thumbnail url"
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    placeholder: "My template thumbnail url",
+    value: thumbnail,
+    onChange: e => {
+      setTemplate({
+        ...template,
+        thumbnail: e.target.value
+      });
+    },
+    withBorder: true,
+    autoFocus: true
+  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
+    name: "thumbnailLabel",
+    label: "Thumbnail label"
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    placeholder: "My template thumbnail label",
+    value: thumbnailLabel,
+    onChange: e => {
+      setTemplate({
+        ...template,
+        thumbnailLabel: e.target.value
       });
     },
     withBorder: true,
