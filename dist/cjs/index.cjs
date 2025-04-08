@@ -3967,24 +3967,16 @@ function calculateAddButtonsProperties(direction, targetElementRect, viewport, c
       left: afterButtonLeftOffset + halfButtonSize
     }, viewport);
     if (containerElementRect) {
-      const isBeforeButtonWithinContainer = isButtonWithinContainer({
-        top: buttonsTopOffset + halfButtonSize,
-        left: beforeButtonLeftOffset + halfButtonSize
-      }, containerElementRect);
-      const isAfterButtonWithinContainer = isButtonWithinContainer({
-        top: buttonsTopOffset + halfButtonSize,
-        left: afterButtonLeftOffset + halfButtonSize
-      }, containerElementRect);
       return {
         before: {
           top: buttonsTopOffset,
           left: beforeButtonLeftOffset,
-          display: isBeforeButtonWithinViewport && isBeforeButtonWithinContainer ? "block" : "none"
+          display: isBeforeButtonWithinViewport ? "block" : "none"
         },
         after: {
           top: buttonsTopOffset,
           left: afterButtonLeftOffset,
-          display: isAfterButtonWithinViewport && isAfterButtonWithinContainer ? "block" : "none"
+          display: isAfterButtonWithinViewport ? "block" : "none"
         }
       };
     } else {
@@ -4005,9 +3997,6 @@ function calculateAddButtonsProperties(direction, targetElementRect, viewport, c
 }
 function isButtonWithinViewport(target, viewport) {
   return target.top >= 0 && target.top <= viewport.height && target.left >= 0 && target.left <= viewport.width;
-}
-function isButtonWithinContainer(target, container) {
-  return target.top >= container.top && target.top <= container.bottom && target.left >= container.left && target.left <= container.right;
 }
 
 function SelectionFrame(_ref) {

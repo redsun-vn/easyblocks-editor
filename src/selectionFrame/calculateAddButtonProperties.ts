@@ -102,38 +102,16 @@ function calculateAddButtonsProperties(
     );
 
     if (containerElementRect) {
-      const isBeforeButtonWithinContainer = isButtonWithinContainer(
-        {
-          top: buttonsTopOffset + halfButtonSize,
-          left: beforeButtonLeftOffset + halfButtonSize,
-        },
-        containerElementRect
-      );
-
-      const isAfterButtonWithinContainer = isButtonWithinContainer(
-        {
-          top: buttonsTopOffset + halfButtonSize,
-          left: afterButtonLeftOffset + halfButtonSize,
-        },
-        containerElementRect
-      );
-
       return {
         before: {
           top: buttonsTopOffset,
           left: beforeButtonLeftOffset,
-          display:
-            isBeforeButtonWithinViewport && isBeforeButtonWithinContainer
-              ? "block"
-              : "none",
+          display: isBeforeButtonWithinViewport ? "block" : "none",
         },
         after: {
           top: buttonsTopOffset,
           left: afterButtonLeftOffset,
-          display:
-            isAfterButtonWithinViewport && isAfterButtonWithinContainer
-              ? "block"
-              : "none",
+          display: isAfterButtonWithinViewport ? "block" : "none",
         },
       };
     } else {
