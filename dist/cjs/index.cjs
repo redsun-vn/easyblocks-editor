@@ -383,6 +383,30 @@ function internalBuildTinaFields(path, editorContext, fieldsFilter) {
   return [...nonAnalyticsFields, ...analyticsFields];
 }
 
+async function copyToClipboard(textToCopy) {
+  // Navigator clipboard api needs a secure context (https)
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(textToCopy);
+  } else {
+    // Use the 'out of viewport hidden text area' trick
+    const textArea = document.createElement("textarea");
+    textArea.value = textToCopy;
+
+    // Move textarea out of the viewport so it's not visible
+    textArea.style.position = "absolute";
+    textArea.style.left = "-999999px";
+    document.body.prepend(textArea);
+    textArea.select();
+    try {
+      document.execCommand("copy");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      textArea.remove();
+    }
+  }
+}
+
 const IdWrapper = styled__default["default"].div.withConfig({
   displayName: "SidebarFooter__IdWrapper",
   componentId: "sc-17xf0ak-0"
@@ -424,7 +448,7 @@ function SidebarFooter(props) {
     }
   }, /*#__PURE__*/React__namespace.createElement("div", null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonPrimary, {
     onClick: () => {
-      navigator.clipboard.writeText(JSON.stringify(value)).then(() => {
+      copyToClipboard(JSON.stringify(value)).then(() => {
         console.log("copied!", value);
       }, () => {
         alert("Copy error");

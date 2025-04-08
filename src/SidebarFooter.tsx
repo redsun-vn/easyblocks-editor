@@ -14,6 +14,7 @@ import * as React from "react";
 import styled from "styled-components";
 import { useEditorContext } from "./EditorContext";
 import { pathToCompiledPath } from "./pathToCompiledPath";
+import { copyToClipboard } from "./utils/copyToClipboard";
 
 const IdWrapper = styled.div`
   display: block;
@@ -81,7 +82,7 @@ export function SidebarFooter(props: { paths: string[] }) {
             <div>
               <ButtonPrimary
                 onClick={() => {
-                  navigator.clipboard.writeText(JSON.stringify(value)).then(
+                  copyToClipboard(JSON.stringify(value)).then(
                     () => {
                       console.log("copied!", value);
                     },
