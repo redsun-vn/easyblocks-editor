@@ -21,7 +21,10 @@ type EditorTokenTypeDefinition = Omit<TokenTypeDefinition, "widgets"> & {
 export type EditorContextType = Omit<BaseEditorContextType, "types"> & {
     backend: Backend;
     templates?: Template[];
-    syncTemplates: () => void;
+    syncTemplates: (props: {
+        mode?: "create" | "edit" | "delete";
+        template?: Template;
+    }) => void;
     focussedField: Array<string>;
     setFocussedField: (field: Array<string> | string) => void;
     form: Form<any, InternalAnyField>;

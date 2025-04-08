@@ -1,3 +1,4 @@
+import { dotNotationGet, uniqueId, useForceRerender } from "@/utils";
 import {
   CompilationCache,
   CompilationMetadata,
@@ -11,6 +12,7 @@ import {
   NonEmptyRenderableContent,
   Template,
   TokenTypeWidgetComponentProps,
+  UserDefinedTemplate,
   WidgetComponentProps,
   buildEntry,
   compileInternal,
@@ -35,7 +37,6 @@ import {
   traverseComponents,
 } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors, Fonts, useToaster } from "@redsun-vn/easyblocks-design-system";
-import { dotNotationGet, uniqueId, useForceRerender } from "@/utils";
 import throttle from "lodash.throttle";
 import React, {
   ComponentType,
@@ -45,18 +46,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-
-declare global {
-  interface Window {
-    editorWindowAPI?: {
-      editorContext?: EditorContextType;
-      meta?: CompilationMetadata;
-      compiled?: NonEmptyRenderableContent;
-      externalData?: ExternalData;
-      onUpdate?: () => void;
-    };
-  }
-}
 import Modal from "react-modal";
 import styled from "styled-components";
 import { ConfigAfterAutoContext } from "./ConfigAfterAutoContext";
@@ -68,6 +57,7 @@ import { EditorSidebar } from "./EditorSidebar";
 import { EditorTopBar, TOP_BAR_HEIGHT } from "./EditorTopBar";
 import { ModalPicker } from "./ModalPicker";
 import { TemplateModal } from "./TemplateModal";
+import { TemplatePicker } from "./TemplatePicker";
 import {
   duplicateItems,
   logItems,
@@ -92,8 +82,18 @@ import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShort
 import { useEditorHistory } from "./useEditorHistory";
 import { checkLocalesCorrectness } from "./utils/locales/checkLocalesCorrectness";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
-import { ZodNullDef } from "zod";
-import { TemplatePicker } from "./TemplatePicker";
+
+declare global {
+  interface Window {
+    editorWindowAPI?: {
+      editorContext?: EditorContextType;
+      meta?: CompilationMetadata;
+      compiled?: NonEmptyRenderableContent;
+      externalData?: ExternalData;
+      onUpdate?: () => void;
+    };
+  }
+}
 
 const ContentContainer = styled.div`
   position: relative;
@@ -781,12 +781,89 @@ const EditorContent = ({
 
   const [isAdminMode, setAdminMode] = useState(false);
 
-  const syncTemplates = () => {
-    getTemplates(editorContext, (props.config.templates as any) ?? []).then(
-      (newTemplates) => {
-        setTemplates(newTemplates);
+  const syncTemplates = ({
+    mode,
+    template,
+  }: { mode?: "create" | "edit" | "delete"; template?: Template } = {}) => {
+    let templateDefined;
+    if (template) {
+      templateDefined = {
+        ...(template as UserDefinedTemplate),
+        isUserDefined: true,
+      };
+    }
+
+    switch (mode) {
+      case "create": {
+        if (templateDefined) {
+          setTemplates((prev) => {
+            if (!prev) {
+              return [templateDefined];
+            }
+
+            return [...prev, templateDefined];
+          });
+        }
+        break;
       }
-    );
+
+      case "edit": {
+        if (templateDefined) {
+          setTemplates((prev) => {
+            if (!prev) {
+              return [templateDefined];
+            }
+
+            const templateIndex = prev.findIndex(
+              (t) => t.id === templateDefined.id
+            );
+
+            if (templateIndex === -1) {
+              return prev;
+            }
+
+            const newTemplates = [...prev];
+            newTemplates[templateIndex] = templateDefined;
+
+            return newTemplates;
+          });
+        }
+        break;
+      }
+
+      case "delete": {
+        if (templateDefined) {
+          setTemplates((prev) => {
+            if (!prev) {
+              return [];
+            }
+
+            const templateIndex = prev.findIndex(
+              (t) => t.id === templateDefined.id
+            );
+
+            if (templateIndex === -1) {
+              return prev;
+            }
+
+            const newTemplates = [...prev];
+            newTemplates.splice(templateIndex, 1);
+
+            return newTemplates;
+          });
+        }
+        break;
+      }
+
+      default: {
+        getTemplates(editorContext, (props.config.templates as any) ?? []).then(
+          (newTemplates) => {
+            setTemplates(newTemplates);
+          }
+        );
+        break;
+      }
+    }
   };
 
   useEffect(() => {

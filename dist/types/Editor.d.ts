@@ -1,5 +1,8 @@
 import { CompilationMetadata, Config, Document, ExternalData, FetchOutputResources, InlineTypeWidgetComponentProps, NonEmptyRenderableContent, TokenTypeWidgetComponentProps, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
 import React, { ComponentType } from "react";
+import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
+import { EditorContextType } from "./EditorContext";
+import { TemplatePicker } from "./TemplatePicker";
 declare global {
     interface Window {
         editorWindowAPI?: {
@@ -11,9 +14,6 @@ declare global {
         };
     }
 }
-import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
-import { EditorContextType } from "./EditorContext";
-import { TemplatePicker } from "./TemplatePicker";
 type EditorProps = {
     config: Config;
     locale?: string;

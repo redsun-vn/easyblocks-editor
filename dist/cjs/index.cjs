@@ -3164,8 +3164,14 @@ const TemplateModal = props => {
           entry: createAction.config,
           width: createAction.width,
           widthAuto: createAction.widthAuto
-        }).then(() => {
-          editorContext.syncTemplates();
+        }).then(newTemplate => {
+          editorContext.syncTemplates({
+            mode: "create",
+            template: {
+              id: newTemplate.id,
+              ...template
+            }
+          });
           toaster.success("Template created!");
           props.onClose();
         }).catch(() => {
@@ -3181,7 +3187,10 @@ const TemplateModal = props => {
           thumbnailLabel,
           id: template.id
         }).then(() => {
-          editorContext.syncTemplates();
+          editorContext.syncTemplates({
+            mode: "edit",
+            template: template
+          });
           toaster.success("Template updated!");
           props.onClose();
         }).catch(() => {
@@ -3269,7 +3278,10 @@ const TemplateModal = props => {
       backend.templates.delete({
         id: template.id
       }).then(() => {
-        editorContext.syncTemplates();
+        editorContext.syncTemplates({
+          mode: "delete",
+          template: template
+        });
         toaster.success("Template deleted");
         props.onClose();
       }).catch(() => {
@@ -5497,10 +5509,75 @@ const EditorContent = _ref => {
     }
   };
   const [isAdminMode, setAdminMode] = React.useState(false);
-  const syncTemplates = () => {
-    getTemplates(editorContext, props.config.templates ?? []).then(newTemplates => {
-      setTemplates(newTemplates);
-    });
+  const syncTemplates = function () {
+    let {
+      mode,
+      template
+    } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    let templateDefined;
+    if (template) {
+      templateDefined = {
+        ...template,
+        isUserDefined: true
+      };
+    }
+    switch (mode) {
+      case "create":
+        {
+          if (templateDefined) {
+            setTemplates(prev => {
+              if (!prev) {
+                return [templateDefined];
+              }
+              return [...prev, templateDefined];
+            });
+          }
+          break;
+        }
+      case "edit":
+        {
+          if (templateDefined) {
+            setTemplates(prev => {
+              if (!prev) {
+                return [templateDefined];
+              }
+              const templateIndex = prev.findIndex(t => t.id === templateDefined.id);
+              if (templateIndex === -1) {
+                return prev;
+              }
+              const newTemplates = [...prev];
+              newTemplates[templateIndex] = templateDefined;
+              return newTemplates;
+            });
+          }
+          break;
+        }
+      case "delete":
+        {
+          if (templateDefined) {
+            setTemplates(prev => {
+              if (!prev) {
+                return [];
+              }
+              const templateIndex = prev.findIndex(t => t.id === templateDefined.id);
+              if (templateIndex === -1) {
+                return prev;
+              }
+              const newTemplates = [...prev];
+              newTemplates.splice(templateIndex, 1);
+              return newTemplates;
+            });
+          }
+          break;
+        }
+      default:
+        {
+          getTemplates(editorContext, props.config.templates ?? []).then(newTemplates => {
+            setTemplates(newTemplates);
+          });
+          break;
+        }
+    }
   };
   React.useEffect(() => {
     syncTemplates();

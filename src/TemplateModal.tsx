@@ -95,8 +95,14 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                 width: createAction.width,
                 widthAuto: createAction.widthAuto,
               })
-              .then(() => {
-                editorContext.syncTemplates();
+              .then((newTemplate) => {
+                editorContext.syncTemplates({
+                  mode: "create",
+                  template: {
+                    id: newTemplate.id,
+                    ...template,
+                  },
+                });
                 toaster.success("Template created!");
                 props.onClose();
               })
@@ -116,7 +122,10 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                 id: (template as Template).id!,
               })
               .then(() => {
-                editorContext.syncTemplates();
+                editorContext.syncTemplates({
+                  mode: "edit",
+                  template: template as Template,
+                });
                 toaster.success("Template updated!");
                 props.onClose();
               })
@@ -219,7 +228,10 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                     backend.templates
                       .delete({ id: (template as Template).id! })
                       .then(() => {
-                        editorContext.syncTemplates();
+                        editorContext.syncTemplates({
+                          mode: "delete",
+                          template: template as Template,
+                        });
                         toaster.success("Template deleted");
                         props.onClose();
                       })
