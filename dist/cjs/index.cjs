@@ -3928,24 +3928,16 @@ function calculateAddButtonsProperties(direction, targetElementRect, viewport, c
       left: buttonsLeftOffset + halfButtonSize
     }, viewport);
     if (containerElementRect) {
-      const isBeforeButtonWithinContainer = isButtonWithinContainer({
-        top: beforeButtonTopOffset + halfButtonSize,
-        left: buttonsLeftOffset + halfButtonSize
-      }, containerElementRect);
-      const isAfterButtonWithinContainer = isButtonWithinContainer({
-        top: afterButtonTopOffset + halfButtonSize,
-        left: buttonsLeftOffset + halfButtonSize
-      }, containerElementRect);
       return {
         before: {
           top: beforeButtonTopOffset,
           left: buttonsLeftOffset,
-          display: isBeforeButtonWithinViewport && isBeforeButtonWithinContainer ? "block" : "none"
+          display: isBeforeButtonWithinViewport ? "block" : "none"
         },
         after: {
           top: afterButtonTopOffset,
           left: buttonsLeftOffset,
-          display: isAfterButtonWithinViewport && isAfterButtonWithinContainer ? "block" : "none"
+          display: isAfterButtonWithinViewport ? "block" : "none"
         }
       };
     } else {
