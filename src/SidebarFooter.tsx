@@ -8,6 +8,7 @@ import {
   ButtonSecondary,
   Colors,
   Fonts,
+  useToaster,
 } from "@redsun-vn/easyblocks-design-system";
 import { dotNotationGet } from "@/utils";
 import * as React from "react";
@@ -25,6 +26,7 @@ const IdWrapper = styled.div`
 
 export function SidebarFooter(props: { paths: string[] }) {
   const editorContext = useEditorContext();
+  const toaster = useToaster();
   const { form, isAdminMode } = editorContext;
 
   if (props.paths.length === 0) {
@@ -81,15 +83,13 @@ export function SidebarFooter(props: { paths: string[] }) {
           <div style={{ paddingTop: 16 }}>
             <div>
               <ButtonPrimary
-                onClick={() => {
-                  copyToClipboard(JSON.stringify(value)).then(
-                    () => {
-                      console.log("copied!", value);
-                    },
-                    () => {
-                      alert("Copy error");
-                    }
-                  );
+                onClick={async () => {
+                  try {
+                    await copyToClipboard(JSON.stringify(value));
+                    toaster.success("Copied!");
+                  } catch (error) {
+                    alert("Copy error");
+                  }
                 }}
               >
                 Copy entry

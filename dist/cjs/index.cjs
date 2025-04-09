@@ -413,6 +413,7 @@ const IdWrapper = styled__default["default"].div.withConfig({
 })(["display:block;padding:16px;", " color:", ";"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black40);
 function SidebarFooter(props) {
   const editorContext = useEditorContext();
+  const toaster = easyblocksDesignSystem.useToaster();
   const {
     form,
     isAdminMode
@@ -447,12 +448,13 @@ function SidebarFooter(props) {
       paddingTop: 16
     }
   }, /*#__PURE__*/React__namespace.createElement("div", null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonPrimary, {
-    onClick: () => {
-      copyToClipboard(JSON.stringify(value)).then(() => {
-        console.log("copied!", value);
-      }, () => {
+    onClick: async () => {
+      try {
+        await copyToClipboard(JSON.stringify(value));
+        toaster.success("Copied!");
+      } catch (error) {
         alert("Copy error");
-      });
+      }
     }
   }, "Copy entry")), value._master && /*#__PURE__*/React__namespace.createElement("div", {
     style: {
