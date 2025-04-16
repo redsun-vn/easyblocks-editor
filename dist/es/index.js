@@ -4632,7 +4632,7 @@ function removeLocalizedFlag(config, context) {
       value,
       schemaProp
     } = _ref;
-    if (schemaProp.type === "text" && value.id.startsWith("local.") || schemaProp.type === "component-collection-localised") {
+    if (schemaProp.type === "text" && value?.id.startsWith("local.") || schemaProp.type === "component-collection-localised") {
       delete value.__localized;
     }
     return value;
