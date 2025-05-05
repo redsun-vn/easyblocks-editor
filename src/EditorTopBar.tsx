@@ -1,6 +1,7 @@
 import { Devices, Locale } from "@redsun-vn/easyblocks-core";
 import {
   ButtonGhost,
+  ButtonPrimary,
   Colors,
   Fonts,
   Icons,
@@ -168,6 +169,11 @@ export const EditorTopBar: React.FC<{
             alignItems: "center",
           }}
         >
+          <ButtonPrimary component="label" className="cursor-pointer">
+            <a href={window.location.origin} target="_blank">
+              Preview
+            </a>
+          </ButtonPrimary>
           <Typography
             variant={"body"}
             component="label"

@@ -2809,7 +2809,13 @@ const EditorTopBar = _ref => {
       gap: "6px",
       alignItems: "center"
     }
-  }, /*#__PURE__*/React__default.createElement(Typography, {
+  }, /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+    component: "label",
+    className: "cursor-pointer"
+  }, /*#__PURE__*/React__default.createElement("a", {
+    href: window.location.origin,
+    target: "_blank"
+  }, "Preview")), /*#__PURE__*/React__default.createElement(Typography, {
     variant: "body",
     component: "label",
     htmlFor: "easyblocks-edit-mode-button"

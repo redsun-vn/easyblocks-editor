@@ -2843,7 +2843,13 @@ const EditorTopBar = _ref => {
       gap: "6px",
       alignItems: "center"
     }
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+    component: "label",
+    className: "cursor-pointer"
+  }, /*#__PURE__*/React__default["default"].createElement("a", {
+    href: window.location.origin,
+    target: "_blank"
+  }, "Preview")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
     variant: "body",
     component: "label",
     htmlFor: "easyblocks-edit-mode-button"
