@@ -7748,5 +7748,6 @@ function EasyblocksEditor(props) {
 }
 
 exports.EasyblocksEditor = EasyblocksEditor;
+exports.EditorContext = EditorContext;
 exports.useEditorContext = useEditorContext;
 //# sourceMappingURL=index.cjs.map

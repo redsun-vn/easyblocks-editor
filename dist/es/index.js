@@ -7713,5 +7713,5 @@ function EasyblocksEditor(props) {
   }), selectedWindow === "preview" && /*#__PURE__*/React__default.createElement(PreviewRenderer, props));
 }
 
-export { EasyblocksEditor, useEditorContext };
+export { EasyblocksEditor, EditorContext, useEditorContext };
 //# sourceMappingURL=index.js.map
