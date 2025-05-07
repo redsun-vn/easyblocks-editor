@@ -2,7 +2,7 @@ import { responsiveValueForceGet } from "@redsun-vn/easyblocks-core";
 import { Colors, Fonts, Icons } from "@redsun-vn/easyblocks-design-system";
 import { dotNotationGet, toArray } from "@/utils";
 import React from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { useConfigAfterAuto } from "../../../../ConfigAfterAutoContext";
 import { useEditorContext } from "../../../../EditorContext";
 import { FieldBuilder } from "../../../form-builder";

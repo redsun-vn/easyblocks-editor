@@ -6,7 +6,7 @@ import {
   Modal,
 } from "@redsun-vn/easyblocks-design-system";
 import React, { useRef } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { EditorContextType, useEditorContext } from "./EditorContext";
 import { TemplatePicker } from "./TemplatePicker";
 

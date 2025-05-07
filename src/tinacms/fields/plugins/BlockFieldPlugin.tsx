@@ -28,7 +28,7 @@ import {
 import { dotNotationGet, toArray } from "@/utils";
 import React from "react";
 import ReactDOM from "react-dom";
-import styled, { css, keyframes } from "styled-components";
+import { styled, css, keyframes } from "styled-components";
 import { useConfigAfterAuto } from "../../../ConfigAfterAutoContext";
 import { EditorContextType, useEditorContext } from "../../../EditorContext";
 import { useEditorExternalData } from "../../../EditorExternalDataProvider";

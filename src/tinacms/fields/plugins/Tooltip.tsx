@@ -1,7 +1,7 @@
 import { Fonts } from "@redsun-vn/easyblocks-design-system";
 import React, { CSSProperties, forwardRef, ReactNode } from "react";
 import { createPortal } from "react-dom";
-import styled from "styled-components";
+import { styled } from "styled-components";
 
 interface TooltipProps {
   children: ReactNode;

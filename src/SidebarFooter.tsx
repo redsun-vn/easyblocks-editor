@@ -12,7 +12,7 @@ import {
 } from "@redsun-vn/easyblocks-design-system";
 import { dotNotationGet } from "@/utils";
 import * as React from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { useEditorContext } from "./EditorContext";
 import { pathToCompiledPath } from "./pathToCompiledPath";
 import { copyToClipboard } from "./utils/copyToClipboard";

@@ -6,7 +6,7 @@ import {
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import * as RadixRadioGroup from "@radix-ui/react-radio-group";
 import React from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 
 const StyledRadioItem = styled(RadixRadioGroup.Item)<{
   horizontal: PositionHorizontal;

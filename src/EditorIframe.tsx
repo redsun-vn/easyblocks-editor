@@ -1,6 +1,6 @@
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React, { useState } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { ExtraKeys, useWindowKeyDown } from "./useWindowKeyDown";
 
 interface EditorIframeWrapperProps {

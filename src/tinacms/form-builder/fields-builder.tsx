@@ -2,7 +2,7 @@ import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors, Fonts, Typography } from "@redsun-vn/easyblocks-design-system";
 import { toArray } from "@/utils";
 import React, { useContext } from "react";
-import styled, { css } from "styled-components";
+import { styled, css } from "styled-components";
 import { useEditorContext } from "../../EditorContext";
 import { Form } from "../../form";
 import {

@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@redsun-vn/easyblocks-design-system";
 import React, { ReactNode, useRef } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { useOnClickNTimes } from "./useOnClickNTimes";
 
 export const TOP_BAR_HEIGHT = 40;

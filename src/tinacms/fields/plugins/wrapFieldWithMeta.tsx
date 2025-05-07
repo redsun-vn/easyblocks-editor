@@ -24,7 +24,7 @@ import {
 } from "@redsun-vn/easyblocks-design-system";
 import { dotNotationGet, toArray, uniqueId } from "@/utils";
 import React, { ReactNode, useState } from "react";
-import styled, { css } from "styled-components";
+import { styled, css } from "styled-components";
 import { useConfigAfterAuto } from "../../../ConfigAfterAutoContext";
 import {
   EditorExternalTypeDefinition,

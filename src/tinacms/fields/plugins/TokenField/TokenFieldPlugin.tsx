@@ -27,7 +27,7 @@ import React, {
   useState,
 } from "react";
 import { FieldRenderProps } from "react-final-form";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { EditorContextType, useEditorContext } from "../../../../EditorContext";
 import { FieldMixedValue } from "../../../../types";
 import { MIXED_VALUE } from "../../components/constants";

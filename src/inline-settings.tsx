@@ -1,6 +1,6 @@
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
 import React, { MouseEvent } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { useEditorContext } from "./EditorContext";
 import { SidebarFooter } from "./SidebarFooter";
 import { FieldsBuilder } from "./tinacms/form-builder";
