@@ -104,6 +104,8 @@ export const EditorTopBar: React.FC<{
   readOnly,
 }) => {
   const headingRef = useRef<HTMLDivElement>(null);
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId");
 
   useOnClickNTimes(headingRef, 5, () => {
     onAdminModeChange(true);
@@ -169,11 +171,11 @@ export const EditorTopBar: React.FC<{
             alignItems: "center",
           }}
         >
-          <ButtonPrimary component="label" className="cursor-pointer">
-            <a href={window.location.origin} target="_blank">
+          <a href={`/?previewId=${themeId}`} target="_blank">
+            <ButtonPrimary component="label" className="cursor-pointer">
               Preview
-            </a>
-          </ButtonPrimary>
+            </ButtonPrimary>
+          </a>
           <Typography
             variant={"body"}
             component="label"

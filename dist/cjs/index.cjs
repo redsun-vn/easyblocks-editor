@@ -2800,6 +2800,8 @@ const EditorTopBar = _ref => {
     readOnly
   } = _ref;
   const headingRef = React.useRef(null);
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId");
   useOnClickNTimes(headingRef, 5, () => {
     onAdminModeChange(true);
   });
@@ -2842,12 +2844,12 @@ const EditorTopBar = _ref => {
       gap: "6px",
       alignItems: "center"
     }
+  }, /*#__PURE__*/React__default["default"].createElement("a", {
+    href: `/?previewId=${themeId}`,
+    target: "_blank"
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
     component: "label",
     className: "cursor-pointer"
-  }, /*#__PURE__*/React__default["default"].createElement("a", {
-    href: window.location.origin,
-    target: "_blank"
   }, "Preview")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
     variant: "body",
     component: "label",
