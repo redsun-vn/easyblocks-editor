@@ -412,7 +412,6 @@ const IdWrapper = styledComponents.styled.div.withConfig({
 })(["display:block;padding:16px;", " color:", ";"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black40);
 function SidebarFooter(props) {
   const editorContext = useEditorContext();
-  const toaster = easyblocksDesignSystem.useToaster();
   const {
     form,
     isAdminMode
@@ -450,7 +449,6 @@ function SidebarFooter(props) {
     onClick: async () => {
       try {
         await copyToClipboard(JSON.stringify(value));
-        toaster.success("Copied!");
       } catch (error) {
         alert("Copy error");
       }

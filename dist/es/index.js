@@ -1,7 +1,7 @@
 "use client";
 import * as React from 'react';
 import React__default, { useContext, useState, useRef, createContext, useEffect, forwardRef, Fragment, useLayoutEffect, memo, useCallback } from 'react';
-import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, Fonts, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, useToaster, Modal, FormElement, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
@@ -379,7 +379,6 @@ const IdWrapper = styled.div.withConfig({
 })(["display:block;padding:16px;", " color:", ";"], Fonts.body, Colors.black40);
 function SidebarFooter(props) {
   const editorContext = useEditorContext();
-  const toaster = useToaster();
   const {
     form,
     isAdminMode
@@ -417,7 +416,6 @@ function SidebarFooter(props) {
     onClick: async () => {
       try {
         await copyToClipboard(JSON.stringify(value));
-        toaster.success("Copied!");
       } catch (error) {
         alert("Copy error");
       }
