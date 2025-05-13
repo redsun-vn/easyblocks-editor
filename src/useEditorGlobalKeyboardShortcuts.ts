@@ -2,10 +2,7 @@ import {
   EditorContextType,
   duplicateConfig,
 } from "@redsun-vn/easyblocks-core/_internals";
-import {
-  dotNotationGet,
-  preOrderPathComparator,
-} from "@/utils";
+import { dotNotationGet, preOrderPathComparator } from "@/utils";
 import { useEffect } from "react";
 
 const GLOBAL_SHORTCUTS_KEYS = [
@@ -35,6 +32,7 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
       }
 
       if (event.key === "Delete" || event.key === "Backspace") {
+        if (!focusedFields) return;
         actions.removeItems(focusedFields);
       } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         actions.moveItems(focusedFields, "top");

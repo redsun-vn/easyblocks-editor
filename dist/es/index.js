@@ -4800,6 +4800,7 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
         return;
       }
       if (event.key === "Delete" || event.key === "Backspace") {
+        if (!focusedFields) return;
         actions.removeItems(focusedFields);
       } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         actions.moveItems(focusedFields, "top");
