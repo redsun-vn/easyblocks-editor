@@ -1,1 +1,1 @@
-{"version":3,"file":"useEditorGlobalKeyboardShortcuts.d.ts","sourceRoot":"","sources":["../../src/useEditorGlobalKeyboardShortcuts.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,iBAAiB,EAElB,MAAM,uCAAuC,CAAC;AAoB/C,iBAAS,gCAAgC,CAAC,aAAa,EAAE,iBAAiB,QA0FzE;AA+CD,OAAO,EAAE,gCAAgC,EAAE,CAAC"}
+{"version":3,"file":"useEditorGlobalKeyboardShortcuts.d.ts","sourceRoot":"","sources":["../../src/useEditorGlobalKeyboardShortcuts.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,iBAAiB,EAElB,MAAM,uCAAuC,CAAC;AAiB/C,iBAAS,gCAAgC,CAAC,aAAa,EAAE,iBAAiB,QAoGzE;AA+CD,OAAO,EAAE,gCAAgC,EAAE,CAAC"}

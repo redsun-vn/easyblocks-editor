@@ -4820,6 +4820,7 @@ function useDataSaver(initialDocument, editorContext) {
 const GLOBAL_SHORTCUTS_KEYS = ["Delete", "Backspace", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "l", "L"];
 const DATA_TRANSFER_FORMAT = "text/x-shopstory";
 function useEditorGlobalKeyboardShortcuts(editorContext) {
+  let isDeleting = false;
   React.useEffect(() => {
     const {
       focussedField: focusedFields,
@@ -4832,8 +4833,12 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
       if (!isGlobalShortcut(event) || !isAnyFieldSelected(focusedFields)) {
         return;
       }
-      if (event.key === "Delete" || event.key === "Backspace") {
+      if ((event.key === "Delete" || event.key === "Backspace") && !isDeleting) {
+        isDeleting = true;
         actions.removeItems(focusedFields);
+        setTimeout(() => {
+          isDeleting = false;
+        }, 2000);
       } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         actions.moveItems(focusedFields, "top");
       } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
