@@ -645,12 +645,13 @@ const EditorContent = ({
   const handleSetFocussedField = React.useRef(
     (field: Array<string> | string) => {
       const nextFocusedField = Array.isArray(field) ? field : [field];
+
       setFocussedField(nextFocusedField);
     }
   ).current;
-
   const handleSetEditing = useCallback(() => {
     compilationCache.current.clear();
+
     setEditing(!isEditing);
   }, [isEditing]);
 
@@ -671,6 +672,7 @@ const EditorContent = ({
 
   const { undo, redo, push } = useEditorHistory({
     onChange: ({ config, focusedField }) => {
+      console.log("onChange", config, focusedField);
       setFocussedField(focusedField);
       form.finalForm.change("", config);
     },
@@ -770,8 +772,7 @@ const EditorContent = ({
           config: form.values,
           focussedField: fieldsToFocus,
         });
-
-        setFocussedField(fieldsToFocus);
+        // setFocussedField(fieldsToFocus);
       });
     },
     logSelectedItems: () => {

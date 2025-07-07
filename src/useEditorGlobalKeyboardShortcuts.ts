@@ -21,7 +21,11 @@ const DATA_TRANSFER_FORMAT = "text/x-shopstory";
 function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
   let isDeleting = false;
   useEffect(() => {
-    const { focussedField: focusedFields, actions } = editorContext;
+    const {
+      focussedField: focusedFields,
+      actions,
+      setFocussedField,
+    } = editorContext;
 
     function handleKeydown(event: KeyboardEvent): void {
       if (isTargetInputElement(event.target)) {
@@ -31,6 +35,9 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
       if (!isGlobalShortcut(event) || !isAnyFieldSelected(focusedFields)) {
         return;
       }
+      const parts = focusedFields[0].split(".");
+      const trimmedPath = parts.slice(0, -2).join(".");
+      setFocussedField(trimmedPath);
 
       if (
         (event.key === "Delete" || event.key === "Backspace") &&
