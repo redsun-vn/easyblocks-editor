@@ -767,12 +767,17 @@ const EditorContent = ({
         // Making a shallow copy of `focussedField` will make the second invocation of `useEffect` different from the first
         // triggered by calling `setFocussedField`.
         fieldsToFocus = configChangeCallback() ?? [...focussedField];
+        const parts = fieldsToFocus[0].split(".");
+        const trimmedPath = parts.slice(0, -2).join(".");
+        if (parts.length == 4) {
+          fieldsToFocus = [trimmedPath];
+        }
 
         push({
           config: form.values,
           focussedField: fieldsToFocus,
         });
-        // setFocussedField(fieldsToFocus);
+        setFocussedField(fieldsToFocus);
       });
     },
     logSelectedItems: () => {
