@@ -54,8 +54,8 @@ function AddButton({ position, index, offset, onClick }: AddButtonProps) {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="23"
-          height="23"
+          width="18"
+          height="18"
           viewBox="0 0 23 23"
           fill="none"
         >
@@ -78,6 +78,8 @@ interface AddMenuProps {
 const AddIconButton = styled(IconButton)<AddMenuProps>`
   display: flex;
   align-items: center;
+  width: 18px;
+  height: 18px;
 
   &:focus {
     outline: none !important;
@@ -99,21 +101,24 @@ interface AddButtonWrapperProps {
 
 const AddButtonWrapper = styled.div<AddButtonWrapperProps>`
   position: absolute;
-  top: var(
-    ${({ position }) =>
-      position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP}
-  );
-  left: var(
-    ${({ position }) =>
-      position === "before" ? BEFORE_ADD_BUTTON_LEFT : AFTER_ADD_BUTTON_LEFT}
-  );
+
+  top: ${({ position }) =>
+    position === "before"
+      ? "calc(var(--shopstory-editor-before-add-button-top) + 2px)"
+      : "calc(var(--shopstory-editor-after-add-button-top) + 2px)"};
+
+  left: ${({ position }) =>
+    position === "before"
+      ? "calc(var(--shopstory-editor-before-add-button-left) + 2px)"
+      : "calc(var(--shopstory-editor-after-add-button-left) + 2px)"};
 
   display: var(
     ${({ position }) =>
       position === "before"
-        ? BEFORE_ADD_BUTTON_DISPLAY
-        : AFTER_ADD_BUTTON_DISPLAY},
+        ? "--shopstory-editor-before-add-button-display"
+        : "--shopstory-editor-after-add-button-display"},
     none
   );
+
   pointer-events: all;
 `;

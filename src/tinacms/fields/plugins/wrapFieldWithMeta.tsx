@@ -188,6 +188,7 @@ export function FieldMetaWrapper<
                 externalValues !== undefined && "error" in externalValues
               }
               {...triggerProps}
+              title={label}
             >
               <span
                 style={{
