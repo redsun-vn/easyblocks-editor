@@ -141,7 +141,6 @@ export function BlocksControls({
   }
 
   const focusOnBlock = (event: React.MouseEvent<HTMLElement>) => {
-    console.log("focus", event);
     event.stopPropagation();
 
     if (isActive) {

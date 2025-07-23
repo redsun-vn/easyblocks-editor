@@ -78,8 +78,6 @@ interface AddMenuProps {
 const AddIconButton = styled(IconButton)<AddMenuProps>`
   display: flex;
   align-items: center;
-  width: 18px;
-  height: 18px;
 
   &:focus {
     outline: none !important;
@@ -102,21 +100,20 @@ interface AddButtonWrapperProps {
 const AddButtonWrapper = styled.div<AddButtonWrapperProps>`
   position: absolute;
 
-  top: ${({ position }) =>
-    position === "before"
-      ? "calc(var(--shopstory-editor-before-add-button-top) + 2px)"
-      : "calc(var(--shopstory-editor-after-add-button-top) + 2px)"};
-
-  left: ${({ position }) =>
-    position === "before"
-      ? "calc(var(--shopstory-editor-before-add-button-left) + 2px)"
-      : "calc(var(--shopstory-editor-after-add-button-left) + 2px)"};
+  top: var(
+    ${({ position }) =>
+      position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP}
+  );
+  left: var(
+    ${({ position }) =>
+      position === "before" ? BEFORE_ADD_BUTTON_LEFT : AFTER_ADD_BUTTON_LEFT}
+  );
 
   display: var(
     ${({ position }) =>
       position === "before"
-        ? "--shopstory-editor-before-add-button-display"
-        : "--shopstory-editor-after-add-button-display"},
+        ? BEFORE_ADD_BUTTON_DISPLAY
+        : AFTER_ADD_BUTTON_DISPLAY},
     none
   );
 
