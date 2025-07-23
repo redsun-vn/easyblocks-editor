@@ -716,7 +716,9 @@ function FieldMetaWrapper({
   }) ?? /*#__PURE__*/React__default.createElement(FieldLabel, _extends({
     htmlFor: toArray(field.name).join(","),
     isError: externalValues !== undefined && "error" in externalValues
-  }, triggerProps), /*#__PURE__*/React__default.createElement("span", {
+  }, triggerProps, {
+    title: label
+  }), /*#__PURE__*/React__default.createElement("span", {
     style: {
       lineHeight: "100%",
       overflow: "hidden",
@@ -3774,8 +3776,8 @@ function AddButton({
     small: true
   }, /*#__PURE__*/React__default.createElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
-    width: "23",
-    height: "23",
+    width: "18",
+    height: "18",
     viewBox: "0 0 23 23",
     fill: "none"
   }, /*#__PURE__*/React__default.createElement("line", {

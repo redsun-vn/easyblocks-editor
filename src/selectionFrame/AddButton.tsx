@@ -54,8 +54,8 @@ function AddButton({ position, index, offset, onClick }: AddButtonProps) {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="23"
-          height="23"
+          width="18"
+          height="18"
           viewBox="0 0 23 23"
           fill="none"
         >
@@ -99,6 +99,7 @@ interface AddButtonWrapperProps {
 
 const AddButtonWrapper = styled.div<AddButtonWrapperProps>`
   position: absolute;
+
   top: var(
     ${({ position }) =>
       position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP}
@@ -115,5 +116,6 @@ const AddButtonWrapper = styled.div<AddButtonWrapperProps>`
         : AFTER_ADD_BUTTON_DISPLAY},
     none
   );
+
   pointer-events: all;
 `;
