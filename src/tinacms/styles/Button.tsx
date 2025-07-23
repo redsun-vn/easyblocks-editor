@@ -86,8 +86,8 @@ const Button = styled.button<ButtonProps>`
     `};
 `;
 
-export const ICON_BUTTON_SIZE = 23;
-const ICON_SIZE = 23;
+export const ICON_BUTTON_SIZE = 18;
+const ICON_SIZE = 18;
 
 export const IconButton = styled(Button)`
   padding: 0;
