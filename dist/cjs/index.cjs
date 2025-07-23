@@ -2593,8 +2593,8 @@ const Button = styledComponents.styled.button.withConfig({
   displayName: "Button",
   componentId: "sc-qplww2-0"
 })(["text-align:center;border:0;border-radius:var(--tina-radius-big);box-shadow:var(--tina-shadow-small);background-color:var(--tina-color-grey-0);border:1px solid var(--tina-color-grey-2);color:var(--tina-color-primary);fill:var(--tina-color-primary);font-weight:var(--tina-font-weight-regular);cursor:pointer;font-size:var(--tina-font-size-1);height:40px;padding:0 var(--tina-padding-big);transition:all 85ms ease-out;&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);outline:none;}", ";", ";", ";", ";", ";", ";"], p => p.disabled && styledComponents.css(["opacity:0.3;pointer:not-allowed;pointer-events:none;"]), p => p.primary && styledComponents.css(["background-color:var(--tina-color-primary);color:var(--tina-color-grey-0);fill:var(--tina-color-grey-0);border:none;&:hover{background-color:var(--tina-color-primary-light);}&:active{background-color:var(--tina-color-primary-dark);}"]), p => p.small && styledComponents.css(["height:32px;font-size:var(--tina-font-size-0);padding:0 var(--tina-padding-big);"]), p => p.margin && styledComponents.css(["&:not(:first-child){margin-left:8px;}"]), p => p.grow && styledComponents.css(["flex-grow:1;"]), p => p.busy && styledComponents.css(["cursor:wait;"]));
-const ICON_BUTTON_SIZE = 23;
-const ICON_SIZE = 23;
+const ICON_BUTTON_SIZE = 18;
+const ICON_SIZE = 18;
 const IconButton = styledComponents.styled(Button).withConfig({
   displayName: "Button__IconButton",
   componentId: "sc-qplww2-1"
