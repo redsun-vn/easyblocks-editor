@@ -4683,7 +4683,8 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
   useEffect(() => {
     const {
       focussedField: focusedFields,
-      actions
+      actions,
+      setFocussedField
     } = editorContext;
     function handleKeydown(event) {
       if (isTargetInputElement(event.target)) {
@@ -4692,6 +4693,9 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
       if (!isGlobalShortcut(event) || !isAnyFieldSelected(focusedFields)) {
         return;
       }
+      const parts = focusedFields[0].split(".");
+      const trimmedPath = parts.slice(0, -2).join(".");
+      setFocussedField(trimmedPath);
       if ((event.key === "Delete" || event.key === "Backspace") && !isDeleting) {
         isDeleting = true;
         actions.removeItems(focusedFields);
@@ -5301,6 +5305,7 @@ const EditorContent = ({
       config,
       focusedField
     }) => {
+      console.log("onChange", config, focusedField);
       setFocussedField(focusedField);
       form.finalForm.change("", config);
     }
@@ -5388,6 +5393,11 @@ const EditorContent = ({
         // Making a shallow copy of `focussedField` will make the second invocation of `useEffect` different from the first
         // triggered by calling `setFocussedField`.
         fieldsToFocus = configChangeCallback() ?? [...focussedField];
+        const parts = fieldsToFocus[0].split(".");
+        const trimmedPath = parts.slice(0, -2).join(".");
+        if (parts.length == 4) {
+          fieldsToFocus = [trimmedPath];
+        }
         push({
           config: form.values,
           focussedField: fieldsToFocus
