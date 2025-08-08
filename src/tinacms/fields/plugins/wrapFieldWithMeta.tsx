@@ -79,9 +79,7 @@ export function FieldMetaWrapper<
   const editorContext = useEditorContext();
   const configAfterAuto = useConfigAfterAuto();
   const externalData = useEditorExternalData();
-  const { isOpen, tooltipProps, triggerProps, arrowProps } = useTooltip({
-    isDisabled: field.description === undefined,
-  });
+  const { isOpen, tooltipProps, triggerProps, arrowProps } = useTooltip();
 
   const {
     actions: { runChange },
@@ -202,7 +200,7 @@ export function FieldMetaWrapper<
               {isOpen && (
                 <Tooltip {...tooltipProps}>
                   <TooltipArrow {...arrowProps} />
-                  <TooltipBody>{field.description}</TooltipBody>
+                  <TooltipBody>{field.description ?? field.label}</TooltipBody>
                 </Tooltip>
               )}
             </FieldLabel>

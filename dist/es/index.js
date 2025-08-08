@@ -657,9 +657,7 @@ function FieldMetaWrapper({
     tooltipProps,
     triggerProps,
     arrowProps
-  } = useTooltip({
-    isDisabled: field.description === undefined
-  });
+  } = useTooltip();
   const {
     actions: {
       runChange
@@ -724,7 +722,7 @@ function FieldMetaWrapper({
       overflow: "hidden",
       textOverflow: "ellipsis"
     }
-  }, label), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, field.description))), isLoadingExternalValue && /*#__PURE__*/React__default.createElement("div", {
+  }, label), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, field.description ?? field.label))), isLoadingExternalValue && /*#__PURE__*/React__default.createElement("div", {
     style: {
       marginLeft: "6px"
     }
