@@ -747,9 +747,7 @@ function FieldMetaWrapper({
   }) ?? /*#__PURE__*/React__default["default"].createElement(FieldLabel, _extends__default["default"]({
     htmlFor: toArray(field.name).join(","),
     isError: externalValues !== undefined && "error" in externalValues
-  }, triggerProps, {
-    title: label
-  }), /*#__PURE__*/React__default["default"].createElement("span", {
+  }, triggerProps), /*#__PURE__*/React__default["default"].createElement("span", {
     style: {
       lineHeight: "100%",
       overflow: "hidden",
