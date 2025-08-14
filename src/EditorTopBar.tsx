@@ -171,7 +171,7 @@ export const EditorTopBar: React.FC<{
             dataSaverStatus?.type !== "pending" && onSaveDocument?.()
           }
           style={{
-            background:
+            backgroundColor:
               dataSaverStatus?.type !== "pending"
                 ? Colors.blue50
                 : Colors.black5,

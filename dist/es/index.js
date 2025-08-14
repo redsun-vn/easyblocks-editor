@@ -2789,7 +2789,7 @@ const EditorTopBar = _ref => {
     disabled: dataSaverStatus?.type === "pending",
     onClick: () => dataSaverStatus?.type !== "pending" && onSaveDocument?.(),
     style: {
-      background: dataSaverStatus?.type !== "pending" ? Colors.blue50 : Colors.black5
+      backgroundColor: dataSaverStatus?.type !== "pending" ? Colors.blue50 : Colors.black5
     }
   }, dataSaverStatus?.type === "pending" ? "Saving..." : "Save"), /*#__PURE__*/React__default.createElement(Label, {
     style: {
