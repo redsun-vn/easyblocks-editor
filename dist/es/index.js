@@ -1,7 +1,7 @@
 "use client";
 import * as React from 'react';
 import React__default, { useContext, useState, useRef, createContext, useEffect, forwardRef, Fragment, useLayoutEffect, memo, useMemo, useCallback } from 'react';
-import { Colors, Fonts, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, useToaster, Modal, FormElement, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
@@ -379,6 +379,7 @@ const IdWrapper = styled.div.withConfig({
 })(["display:block;padding:16px;", " color:", ";"], Fonts.body, Colors.black40);
 function SidebarFooter(props) {
   const editorContext = useEditorContext();
+  const toaster = useToaster();
   const {
     form,
     isAdminMode
@@ -416,8 +417,9 @@ function SidebarFooter(props) {
     onClick: async () => {
       try {
         await copyToClipboard(JSON.stringify(value));
+        toaster.success("Copied");
       } catch (error) {
-        alert("Copy error");
+        toaster.error("Copy Entry Error!");
       }
     }
   }, "Copy entry")), value._master && /*#__PURE__*/React.createElement("div", {
@@ -4680,6 +4682,7 @@ function removeLocalizedFlag(config, context) {
  */
 function useDataSaver(initialDocument, editorContext) {
   const remoteDocument = useRef(initialDocument);
+  const toaster = useToaster();
 
   /**
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
@@ -4760,11 +4763,13 @@ function useDataSaver(initialDocument, editorContext) {
           // Let's do nothing, no remote and local change
         } else {
           console.debug("updating the document", remoteDocument.current.id);
+          toaster.notify("Document saving...");
           const updatedDocument = await editorContext.backend.documents.update({
             id: remoteDocument.current.id,
             entry: configToSaveWithLocalisedFlag,
             version: remoteDocument.current.version
           });
+          toaster.success("Document saved");
           remoteDocument.current.entry = localConfigSnapshot;
           remoteDocument.current.version = updatedDocument.version;
           await runSaveCallback();

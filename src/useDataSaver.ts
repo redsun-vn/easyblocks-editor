@@ -5,6 +5,7 @@ import { EditorContextType } from "./EditorContext";
 import { getConfigSnapshot } from "./utils/config/getConfigSnapshot";
 import { addLocalizedFlag } from "./utils/locales/addLocalizedFlag";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
+import { useToaster } from "@redsun-vn/easyblocks-design-system";
 
 /**
  * useDataSaver works in a realm of SINGLE CONFIG.
@@ -17,6 +18,7 @@ export function useDataSaver(
   editorContext: EditorContextType
 ) {
   const remoteDocument = useRef<Document | null>(initialDocument);
+  const toaster = useToaster();
 
   /**
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
@@ -133,11 +135,15 @@ export function useDataSaver(
         } else {
           console.debug("updating the document", remoteDocument.current.id);
 
+          toaster.notify("Document saving...");
+
           const updatedDocument = await editorContext.backend.documents.update({
             id: remoteDocument.current.id,
             entry: configToSaveWithLocalisedFlag,
             version: remoteDocument.current.version,
           });
+
+          toaster.success("Document saved");
 
           remoteDocument.current.entry = localConfigSnapshot;
           remoteDocument.current.version = updatedDocument.version;

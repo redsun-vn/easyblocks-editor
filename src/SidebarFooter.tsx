@@ -9,6 +9,7 @@ import {
   ButtonSecondary,
   Colors,
   Fonts,
+  useToaster,
 } from "@redsun-vn/easyblocks-design-system";
 import * as React from "react";
 import { styled } from "styled-components";
@@ -25,6 +26,7 @@ const IdWrapper = styled.div`
 
 export function SidebarFooter(props: { paths: string[] }) {
   const editorContext = useEditorContext();
+  const toaster = useToaster();
   const { form, isAdminMode } = editorContext;
 
   if (props.paths.length === 0) {
@@ -84,8 +86,9 @@ export function SidebarFooter(props: { paths: string[] }) {
                 onClick={async () => {
                   try {
                     await copyToClipboard(JSON.stringify(value));
+                    toaster.success("Copied");
                   } catch (error) {
-                    alert("Copy error");
+                    toaster.error("Copy Entry Error!");
                   }
                 }}
               >

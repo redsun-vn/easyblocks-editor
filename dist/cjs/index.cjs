@@ -412,6 +412,7 @@ const IdWrapper = styledComponents.styled.div.withConfig({
 })(["display:block;padding:16px;", " color:", ";"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black40);
 function SidebarFooter(props) {
   const editorContext = useEditorContext();
+  const toaster = easyblocksDesignSystem.useToaster();
   const {
     form,
     isAdminMode
@@ -449,8 +450,9 @@ function SidebarFooter(props) {
     onClick: async () => {
       try {
         await copyToClipboard(JSON.stringify(value));
+        toaster.success("Copied");
       } catch (error) {
-        alert("Copy error");
+        toaster.error("Copy Entry Error!");
       }
     }
   }, "Copy entry")), value._master && /*#__PURE__*/React__namespace.createElement("div", {
@@ -4713,6 +4715,7 @@ function removeLocalizedFlag(config, context) {
  */
 function useDataSaver(initialDocument, editorContext) {
   const remoteDocument = React.useRef(initialDocument);
+  const toaster = easyblocksDesignSystem.useToaster();
 
   /**
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
@@ -4793,11 +4796,13 @@ function useDataSaver(initialDocument, editorContext) {
           // Let's do nothing, no remote and local change
         } else {
           console.debug("updating the document", remoteDocument.current.id);
+          toaster.notify("Document saving...");
           const updatedDocument = await editorContext.backend.documents.update({
             id: remoteDocument.current.id,
             entry: configToSaveWithLocalisedFlag,
             version: remoteDocument.current.version
           });
+          toaster.success("Document saved");
           remoteDocument.current.entry = localConfigSnapshot;
           remoteDocument.current.version = updatedDocument.version;
           await runSaveCallback();
