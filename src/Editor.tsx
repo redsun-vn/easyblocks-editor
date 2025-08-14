@@ -1,4 +1,4 @@
-import { dotNotationGet, uniqueId, useForceRerender } from "@/utils";
+import { dotNotationGet, sleep, uniqueId, useForceRerender } from "@/utils";
 import {
   CompilationCache,
   CompilationMetadata,
@@ -43,6 +43,7 @@ import React, {
   memo,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -633,6 +634,10 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
+  const [currentLocale, setCurrentLocale] = useState(
+    compilationContext.contextParams.locale
+  );
+  const prevLocale = useRef<string>("");
   const [componentPickerData, setComponentPickerData] = useState<
     | {
         promiseResolve: (config: NoCodeComponentEntry | undefined) => void;
@@ -648,6 +653,13 @@ const EditorContent = ({
       setFocussedField(nextFocusedField);
     }
   ).current;
+
+  const isEditMode = useMemo(() => {
+    if (!prevLocale.current || prevLocale.current === currentLocale) {
+      return isEditing;
+    }
+    return !isEditing;
+  }, [currentLocale, isEditing]);
 
   const handleSetEditing = useCallback(() => {
     compilationCache.current.clear();
@@ -867,6 +879,10 @@ const EditorContent = ({
   };
 
   useEffect(() => {
+    prevLocale.current = currentLocale;
+  }, [currentLocale]);
+
+  useEffect(() => {
     syncTemplates();
   }, [props.config.components, props.config.templates]);
 
@@ -955,6 +971,15 @@ const EditorContent = ({
   window.editorWindowAPI.compiled =
     renderableContent as unknown as NonEmptyRenderableContent;
   window.editorWindowAPI.externalData = externalData;
+
+  const onLocaleChange = async (localeValue: string) => {
+    compilationCache.current.clear();
+    compilationContext.contextParams.locale = localeValue;
+    setCurrentLocale(localeValue);
+    setEditing((prev) => !prev);
+    await sleep(1);
+    setEditing((prev) => !prev);
+  };
 
   useEffect(() => {
     push({
@@ -1125,11 +1150,11 @@ const EditorContent = ({
               viewport={currentViewport}
               onViewportChange={setCurrentViewport}
               onIsEditingChange={handleSetEditing}
-              isEditing={isEditing}
-              saveLabel={"Save"}
-              locale={compilationContext.contextParams.locale}
+              isEditing={isEditMode}
+              saveLabel="Save"
+              locale={currentLocale}
               locales={editorContext.locales}
-              onLocaleChange={() => {}}
+              onLocaleChange={onLocaleChange}
               onAdminModeChange={(val) => {
                 setAdminMode(val);
               }}
@@ -1150,7 +1175,7 @@ const EditorContent = ({
                   transform={iframeSize.transform}
                   containerRef={iframeContainerRef}
                 />
-                {isEditing && (
+                {isEditMode && (
                   <SelectionFrame
                     width={iframeSize.width}
                     height={iframeSize.height}
@@ -1158,7 +1183,7 @@ const EditorContent = ({
                   />
                 )}
               </ContentContainer>
-              {isEditing && (
+              {isEditMode && (
                 <SidebarContainer ref={sidebarNodeRef}>
                   <EditorSidebar focussedField={focussedField} form={form} />
                 </SidebarContainer>

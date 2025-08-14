@@ -5,6 +5,8 @@ import {
   Colors,
   Fonts,
   Icons,
+  Select,
+  SelectItem,
   Toggle,
   ToggleGroup,
   ToggleGroupItem,
@@ -74,6 +76,18 @@ const TopBarCenter = styled.div`
   transform: translate(-50%, -50%);
 `;
 
+const ImageContainer = styled.div`
+  position: relative;
+  width: 20px;
+  height: 20px;
+`;
+
+const Image = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+`;
+
 export const EditorTopBar: React.FC<{
   saveLabel: string;
   onClose?: () => void;
@@ -99,6 +113,9 @@ export const EditorTopBar: React.FC<{
   isEditing,
   onUndo,
   onRedo,
+  locales,
+  locale,
+  onLocaleChange,
   onAdminModeChange,
   hideCloseButton,
   readOnly,
@@ -172,6 +189,28 @@ export const EditorTopBar: React.FC<{
             alignItems: "center",
           }}
         >
+          <Select value={locale} onChange={onLocaleChange}>
+            {locales.map((l) => (
+              <SelectItem key={l.code} value={l.code}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    gap: 4,
+                  }}
+                >
+                  {l.icon ? (
+                    <ImageContainer>
+                      <Image src={l.icon} alt={l.name} />
+                    </ImageContainer>
+                  ) : null}
+                  {l.name}
+                </div>
+              </SelectItem>
+            ))}
+          </Select>
           <a href={`/?previewId=${themeId}&shopId=${shopId}`} target="_blank">
             <ButtonPrimary component="label" className="cursor-pointer">
               Preview
