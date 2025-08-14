@@ -95,6 +95,12 @@ export function useDataSaver(
       const latestDocument = await editorContext.backend.documents.get({
         id: remoteDocument.current.id,
       });
+      if (!latestDocument?.id) {
+        setStatus({
+          type: "error",
+          message: "Error comparing latest document!",
+        });
+      }
 
       const latestRemoteDocumentVersion = latestDocument.version ?? -1;
 
