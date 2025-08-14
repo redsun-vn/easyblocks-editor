@@ -2820,7 +2820,10 @@ const EditorTopBar = _ref => {
     component: "label",
     className: dataSaverStatus?.type !== "pending" ? "cursor-pointer" : "",
     disabled: dataSaverStatus?.type === "pending",
-    onClick: () => dataSaverStatus?.type !== "pending" && onSaveDocument?.()
+    onClick: () => dataSaverStatus?.type !== "pending" && onSaveDocument?.(),
+    style: {
+      background: dataSaverStatus?.type !== "pending" ? easyblocksDesignSystem.Colors.blue50 : easyblocksDesignSystem.Colors.black5
+    }
   }, dataSaverStatus?.type === "pending" ? "Saving..." : "Save"), /*#__PURE__*/React__default["default"].createElement(Label, {
     style: {
       background: "none",
