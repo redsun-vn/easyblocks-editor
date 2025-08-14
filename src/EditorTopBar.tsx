@@ -128,6 +128,9 @@ export const EditorTopBar: React.FC<{
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
 
+  const SavingButton =
+    dataSaverStatus?.type !== "pending" ? ButtonPrimary : ButtonSecondary;
+
   return (
     <TopBar ref={headingRef}>
       <TopBarLeft>
@@ -161,7 +164,7 @@ export const EditorTopBar: React.FC<{
           Redo
         </ButtonGhost>
 
-        <ButtonSecondary
+        <SavingButton
           component="label"
           className={
             dataSaverStatus?.type !== "pending" ? "cursor-pointer" : ""
@@ -170,15 +173,9 @@ export const EditorTopBar: React.FC<{
           onClick={() =>
             dataSaverStatus?.type !== "pending" && onSaveDocument?.()
           }
-          style={{
-            backgroundColor:
-              dataSaverStatus?.type !== "pending"
-                ? Colors.blue50
-                : Colors.black5,
-          }}
         >
           {dataSaverStatus?.type === "pending" ? "Saving..." : "Save"}
-        </ButtonSecondary>
+        </SavingButton>
 
         <Label style={{ background: "none", color: Colors.black800 }}>
           {dataSaverStatus?.message}

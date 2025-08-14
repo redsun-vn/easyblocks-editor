@@ -2759,6 +2759,7 @@ const EditorTopBar = _ref => {
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
+  const SavingButton = dataSaverStatus?.type !== "pending" ? ButtonPrimary : ButtonSecondary;
   return /*#__PURE__*/React__default.createElement(TopBar, {
     ref: headingRef
   }, /*#__PURE__*/React__default.createElement(TopBarLeft, null, !hideCloseButton && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
@@ -2783,14 +2784,11 @@ const EditorTopBar = _ref => {
     onClick: () => {
       onRedo();
     }
-  }, "Redo"), /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+  }, "Redo"), /*#__PURE__*/React__default.createElement(SavingButton, {
     component: "label",
     className: dataSaverStatus?.type !== "pending" ? "cursor-pointer" : "",
     disabled: dataSaverStatus?.type === "pending",
-    onClick: () => dataSaverStatus?.type !== "pending" && onSaveDocument?.(),
-    style: {
-      backgroundColor: dataSaverStatus?.type !== "pending" ? Colors.blue50 : Colors.black5
-    }
+    onClick: () => dataSaverStatus?.type !== "pending" && onSaveDocument?.()
   }, dataSaverStatus?.type === "pending" ? "Saving..." : "Save"), /*#__PURE__*/React__default.createElement(Label, {
     style: {
       background: "none",

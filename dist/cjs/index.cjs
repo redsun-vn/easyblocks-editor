@@ -2792,6 +2792,7 @@ const EditorTopBar = _ref => {
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
+  const SavingButton = dataSaverStatus?.type !== "pending" ? easyblocksDesignSystem.ButtonPrimary : easyblocksDesignSystem.ButtonSecondary;
   return /*#__PURE__*/React__default["default"].createElement(TopBar, {
     ref: headingRef
   }, /*#__PURE__*/React__default["default"].createElement(TopBarLeft, null, !hideCloseButton && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
@@ -2816,14 +2817,11 @@ const EditorTopBar = _ref => {
     onClick: () => {
       onRedo();
     }
-  }, "Redo"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+  }, "Redo"), /*#__PURE__*/React__default["default"].createElement(SavingButton, {
     component: "label",
     className: dataSaverStatus?.type !== "pending" ? "cursor-pointer" : "",
     disabled: dataSaverStatus?.type === "pending",
-    onClick: () => dataSaverStatus?.type !== "pending" && onSaveDocument?.(),
-    style: {
-      backgroundColor: dataSaverStatus?.type !== "pending" ? easyblocksDesignSystem.Colors.blue50 : easyblocksDesignSystem.Colors.black5
-    }
+    onClick: () => dataSaverStatus?.type !== "pending" && onSaveDocument?.()
   }, dataSaverStatus?.type === "pending" ? "Saving..." : "Save"), /*#__PURE__*/React__default["default"].createElement(Label, {
     style: {
       background: "none",
