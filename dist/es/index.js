@@ -5701,8 +5701,10 @@ const EditorContent = _ref => {
     compilationCache.current.clear();
     compilationContext.contextParams.locale = localeValue;
     setCurrentLocale(localeValue);
+    compilationCache.current.clear();
     setEditing(prev => !prev);
     await sleep(1);
+    compilationCache.current.clear();
     setEditing(prev => !prev);
   };
   useEffect(() => {
