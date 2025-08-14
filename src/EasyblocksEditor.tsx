@@ -70,6 +70,7 @@ export function EasyblocksEditor(props: EasyblocksEditorProps) {
           widgets={props.widgets}
           components={props.components}
           pickers={props.pickers}
+          isAdminMode={props.isAdminMode}
         />
       )}
 

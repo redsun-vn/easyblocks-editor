@@ -87,6 +87,7 @@ export function useDataSaver(
     else {
       console.debug("Existing document");
 
+      toaster.notify("Comparing latest document...");
       const latestDocument = await editorContext.backend.documents.get({
         id: remoteDocument.current.id,
       });
@@ -131,6 +132,7 @@ export function useDataSaver(
       else {
         if (isConfigTheSame) {
           console.debug("no local changes -> bye");
+          toaster.notify("No changes in the document");
           // Let's do nothing, no remote and local change
         } else {
           console.debug("updating the document", remoteDocument.current.id);
@@ -143,7 +145,11 @@ export function useDataSaver(
             version: remoteDocument.current.version,
           });
 
-          toaster.success("Document saved");
+          if (updatedDocument?.id) {
+            toaster.success("Document saved");
+          } else {
+            toaster.error("Error saving document. Please try again!");
+          }
 
           remoteDocument.current.entry = localConfigSnapshot;
           remoteDocument.current.version = updatedDocument.version;

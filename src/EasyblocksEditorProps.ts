@@ -26,4 +26,5 @@ export type EasyblocksEditorProps = {
   >;
   pickers?: Record<string, TemplatePicker>;
   __debug?: boolean;
+  isAdminMode?: boolean;
 };

@@ -172,6 +172,7 @@ type EditorProps = {
   config: Config;
   locale?: string;
   readOnly: boolean;
+  isAdminMode?: boolean;
   documentId: string | null;
   rootComponentId: string | null;
   rootTemplateId: string | null;
@@ -609,6 +610,7 @@ const EditorContent = ({
   initialDocument,
   initialEntry,
   externalData,
+  isAdminMode = false,
   ...props
 }: EditorContentProps) => {
   const [currentViewport, setCurrentViewport] = useState<string>(
@@ -790,8 +792,6 @@ const EditorContent = ({
       logItems(editorContext.form, focussedField);
     },
   };
-
-  const [isAdminMode, setAdminMode] = useState(false);
 
   const syncTemplates = ({
     mode,
@@ -1129,6 +1129,7 @@ const EditorContent = ({
             <EditorTopBar
               onUndo={undo}
               onRedo={redo}
+              onSaveDocument={saveNow}
               onClose={() => {
                 setDataSaverOverlayOpen(true);
                 saveNow().finally(() => {
@@ -1155,9 +1156,6 @@ const EditorContent = ({
               locale={currentLocale}
               locales={editorContext.locales}
               onLocaleChange={onLocaleChange}
-              onAdminModeChange={(val) => {
-                setAdminMode(val);
-              }}
               hideCloseButton={props.config.hideCloseButton ?? false}
               readOnly={editorContext.readOnly}
             />

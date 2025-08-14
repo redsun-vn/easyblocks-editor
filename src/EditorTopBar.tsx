@@ -2,6 +2,7 @@ import { Devices, Locale } from "@redsun-vn/easyblocks-core";
 import {
   ButtonGhost,
   ButtonPrimary,
+  ButtonSecondary,
   Colors,
   Fonts,
   Icons,
@@ -17,7 +18,6 @@ import {
 } from "@redsun-vn/easyblocks-design-system";
 import React, { ReactNode, useRef } from "react";
 import { styled } from "styled-components";
-import { useOnClickNTimes } from "./useOnClickNTimes";
 
 export const TOP_BAR_HEIGHT = 40;
 
@@ -91,6 +91,7 @@ const Image = styled.img`
 export const EditorTopBar: React.FC<{
   saveLabel: string;
   onClose?: () => void;
+  onSaveDocument?: () => void;
   onIsEditingChange: () => void;
   viewport: string;
   onViewportChange: (viewport: string) => void;
@@ -101,11 +102,11 @@ export const EditorTopBar: React.FC<{
   locales: Locale[];
   locale: string;
   onLocaleChange: (locale: string) => void;
-  onAdminModeChange: (x: boolean) => void;
   hideCloseButton: boolean;
   readOnly: boolean;
 }> = ({
   onClose,
+  onSaveDocument,
   onViewportChange,
   devices,
   viewport,
@@ -116,7 +117,6 @@ export const EditorTopBar: React.FC<{
   locales,
   locale,
   onLocaleChange,
-  onAdminModeChange,
   hideCloseButton,
   readOnly,
 }) => {
@@ -125,24 +125,12 @@ export const EditorTopBar: React.FC<{
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
 
-  useOnClickNTimes(headingRef, 5, () => {
-    onAdminModeChange(true);
-  });
-
   return (
     <TopBar ref={headingRef}>
       <TopBarLeft>
         {!hideCloseButton && (
           <>
-            <ButtonGhost
-              icon={Icons.Close}
-              hideLabel
-              onClick={() => {
-                if (onClose) {
-                  onClose();
-                }
-              }}
-            >
+            <ButtonGhost icon={Icons.Close} hideLabel onClick={onClose}>
               Close
             </ButtonGhost>
 
@@ -169,6 +157,15 @@ export const EditorTopBar: React.FC<{
         >
           Redo
         </ButtonGhost>
+
+        <ButtonSecondary
+          component="label"
+          className="cursor-pointer"
+          onClick={onSaveDocument}
+        >
+          Save
+        </ButtonSecondary>
+
         {readOnly && <Label>Read-Only</Label>}
       </TopBarLeft>
 

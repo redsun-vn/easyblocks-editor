@@ -10,5 +10,6 @@ export type EasyblocksEditorProps = {
     widgets?: Record<string, ComponentType<WidgetComponentProps<any>> | ComponentType<InlineTypeWidgetComponentProps<any>>>;
     pickers?: Record<string, TemplatePicker>;
     __debug?: boolean;
+    isAdminMode?: boolean;
 };
 //# sourceMappingURL=EasyblocksEditorProps.d.ts.map

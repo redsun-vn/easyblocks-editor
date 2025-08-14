@@ -9,6 +9,7 @@ type EasyblocksParentProps = {
     widgets?: Record<string, ComponentType<WidgetComponentProps<any>> | ComponentType<InlineTypeWidgetComponentProps<any>>>;
     components?: Record<string, ComponentType<any>>;
     pickers?: Record<string, TemplatePicker>;
+    isAdminMode?: boolean;
 };
 export declare function EasyblocksParent(props: EasyblocksParentProps): React.JSX.Element;
 export {};

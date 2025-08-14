@@ -2708,27 +2708,6 @@ const EditorSidebar = props => {
   }));
 };
 
-function useOnClickNTimes(ref, count, event) {
-  const counterRef = useRef(0);
-  const timerRef = useRef();
-  useEffect(() => {
-    if (!ref.current) {
-      return;
-    }
-    ref.current?.addEventListener("click", () => {
-      clearTimeout(timerRef.current);
-      counterRef.current++;
-      if (counterRef.current === count) {
-        event();
-        counterRef.current = 0;
-      }
-      timerRef.current = setTimeout(() => {
-        counterRef.current = 0;
-      }, 300);
-    });
-  }, []);
-}
-
 const TOP_BAR_HEIGHT = 40;
 const TopBar = styled.div.withConfig({
   displayName: "EditorTopBar__TopBar",
@@ -2761,6 +2740,7 @@ const Image = styled.img.withConfig({
 const EditorTopBar = _ref => {
   let {
     onClose,
+    onSaveDocument,
     onViewportChange,
     devices,
     viewport,
@@ -2771,7 +2751,6 @@ const EditorTopBar = _ref => {
     locales,
     locale,
     onLocaleChange,
-    onAdminModeChange,
     hideCloseButton,
     readOnly
   } = _ref;
@@ -2779,19 +2758,12 @@ const EditorTopBar = _ref => {
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
-  useOnClickNTimes(headingRef, 5, () => {
-    onAdminModeChange(true);
-  });
   return /*#__PURE__*/React__default.createElement(TopBar, {
     ref: headingRef
   }, /*#__PURE__*/React__default.createElement(TopBarLeft, null, !hideCloseButton && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Close,
     hideLabel: true,
-    onClick: () => {
-      if (onClose) {
-        onClose();
-      }
-    }
+    onClick: onClose
   }, "Close"), /*#__PURE__*/React__default.createElement("div", {
     style: {
       height: "100%",
@@ -2810,7 +2782,11 @@ const EditorTopBar = _ref => {
     onClick: () => {
       onRedo();
     }
-  }, "Redo"), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only")), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
+  }, "Redo"), /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+    component: "label",
+    className: "cursor-pointer",
+    onClick: onSaveDocument
+  }, "Save"), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only")), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
     onDeviceChange: onViewportChange
@@ -4730,6 +4706,7 @@ function useDataSaver(initialDocument, editorContext) {
     // Document update
     else {
       console.debug("Existing document");
+      toaster.notify("Comparing latest document...");
       const latestDocument = await editorContext.backend.documents.get({
         id: remoteDocument.current.id
       });
@@ -4760,6 +4737,7 @@ function useDataSaver(initialDocument, editorContext) {
       else {
         if (isConfigTheSame) {
           console.debug("no local changes -> bye");
+          toaster.notify("No changes in the document");
           // Let's do nothing, no remote and local change
         } else {
           console.debug("updating the document", remoteDocument.current.id);
@@ -4769,7 +4747,11 @@ function useDataSaver(initialDocument, editorContext) {
             entry: configToSaveWithLocalisedFlag,
             version: remoteDocument.current.version
           });
-          toaster.success("Document saved");
+          if (updatedDocument?.id) {
+            toaster.success("Document saved");
+          } else {
+            toaster.error("Error saving document. Please try again!");
+          }
           remoteDocument.current.entry = localConfigSnapshot;
           remoteDocument.current.version = updatedDocument.version;
           await runSaveCallback();
@@ -5395,6 +5377,7 @@ const EditorContent = _ref => {
     initialDocument,
     initialEntry,
     externalData,
+    isAdminMode = false,
     ...props
   } = _ref;
   const [currentViewport, setCurrentViewport] = useState(compilationContext.mainBreakpointIndex); // "{ breakpoint }" or "fit-screen"
@@ -5551,7 +5534,6 @@ const EditorContent = _ref => {
       logItems(editorContext.form, focussedField);
     }
   };
-  const [isAdminMode, setAdminMode] = useState(false);
   const syncTemplates = function () {
     let {
       mode,
@@ -5784,6 +5766,7 @@ const EditorContent = _ref => {
   }), /*#__PURE__*/React__default.createElement(EditorTopBar, {
     onUndo: undo,
     onRedo: redo,
+    onSaveDocument: saveNow,
     onClose: () => {
       setDataSaverOverlayOpen(true);
       saveNow().finally(() => {
@@ -5805,9 +5788,6 @@ const EditorContent = _ref => {
     locale: currentLocale,
     locales: editorContext.locales,
     onLocaleChange: onLocaleChange,
-    onAdminModeChange: val => {
-      setAdminMode(val);
-    },
     hideCloseButton: props.config.hideCloseButton ?? false,
     readOnly: editorContext.readOnly
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
@@ -6538,7 +6518,8 @@ function EasyblocksParent(props) {
     pickers: {
       ...builinPickers,
       ...props.pickers
-    }
+    },
+    isAdminMode: props.isAdminMode
   })), /*#__PURE__*/React__default.createElement(Toaster, {
     containerStyle: {
       zIndex: 100100
@@ -7763,7 +7744,8 @@ function EasyblocksEditor(props) {
     onExternalDataChange: props.onExternalDataChange ?? (() => ({})),
     widgets: props.widgets,
     components: props.components,
-    pickers: props.pickers
+    pickers: props.pickers,
+    isAdminMode: props.isAdminMode
   }), selectedWindow === "child" && /*#__PURE__*/React__default.createElement(EasyblocksCanvas, {
     components: props.components
   }), selectedWindow === "preview" && /*#__PURE__*/React__default.createElement(PreviewRenderer, props));

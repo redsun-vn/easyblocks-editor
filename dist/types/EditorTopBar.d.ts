@@ -4,6 +4,7 @@ export declare const TOP_BAR_HEIGHT = 40;
 export declare const EditorTopBar: React.FC<{
     saveLabel: string;
     onClose?: () => void;
+    onSaveDocument?: () => void;
     onIsEditingChange: () => void;
     viewport: string;
     onViewportChange: (viewport: string) => void;
@@ -14,7 +15,6 @@ export declare const EditorTopBar: React.FC<{
     locales: Locale[];
     locale: string;
     onLocaleChange: (locale: string) => void;
-    onAdminModeChange: (x: boolean) => void;
     hideCloseButton: boolean;
     readOnly: boolean;
 }>;

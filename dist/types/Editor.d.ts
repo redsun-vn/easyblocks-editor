@@ -18,6 +18,7 @@ type EditorProps = {
     config: Config;
     locale?: string;
     readOnly: boolean;
+    isAdminMode?: boolean;
     documentId: string | null;
     rootComponentId: string | null;
     rootTemplateId: string | null;
