@@ -4751,73 +4751,74 @@ function useDataSaver(initialDocument, editorContext) {
         type: "pending",
         message: "Comparing latest document..."
       });
-      const latestDocument = await editorContext.backend.documents.get({
-        id: remoteDocument.current.id
-      });
-      if (!latestDocument?.id) {
+      try {
+        const latestDocument = await editorContext.backend.documents.get({
+          id: remoteDocument.current.id
+        });
+        const latestRemoteDocumentVersion = latestDocument.version ?? -1;
+        const isNewerDocumentVersionAvailable = remoteDocument.current.version < latestRemoteDocumentVersion;
+
+        // Newer version of document is available
+        if (isNewerDocumentVersionAvailable) {
+          console.debug("new remote version detected, updating");
+          if (!latestDocument) {
+            throw new Error("unexpected error");
+          }
+          const latestConfig = removeLocalizedFlag(latestDocument.entry, editorContext);
+          editorContext.actions.runChange(() => {
+            editorContext.form.change("", latestConfig);
+            return [];
+          });
+          remoteDocument.current = latestDocument;
+
+          // Notify when local config was modified
+          if (!isConfigTheSame) {
+            console.debug("there were local changes -> notify");
+            editorContext.actions.notify("Remote changes detected, local changes have been overwritten.");
+          }
+          return;
+        }
+        // No remote change occurred
+        else {
+          if (isConfigTheSame) {
+            console.debug("no local changes -> bye");
+            setStatus({
+              type: "notify",
+              message: "No changes in the document"
+            });
+            // Let's do nothing, no remote and local change
+          } else {
+            console.debug("updating the document", remoteDocument.current.id);
+            setStatus({
+              type: "pending",
+              message: "Document saving..."
+            });
+            const updatedDocument = await editorContext.backend.documents.update({
+              id: remoteDocument.current.id,
+              entry: configToSaveWithLocalisedFlag,
+              version: remoteDocument.current.version
+            });
+            if (updatedDocument?.id) {
+              setStatus({
+                type: "success",
+                message: "Document saved"
+              });
+            } else {
+              setStatus({
+                type: "error",
+                message: "Error saving document. Please try again!"
+              });
+            }
+            remoteDocument.current.entry = localConfigSnapshot;
+            remoteDocument.current.version = updatedDocument.version;
+            await runSaveCallback();
+          }
+        }
+      } catch (error) {
         setStatus({
           type: "error",
           message: "Error comparing latest document!"
         });
-      }
-      const latestRemoteDocumentVersion = latestDocument.version ?? -1;
-      const isNewerDocumentVersionAvailable = remoteDocument.current.version < latestRemoteDocumentVersion;
-
-      // Newer version of document is available
-      if (isNewerDocumentVersionAvailable) {
-        console.debug("new remote version detected, updating");
-        if (!latestDocument) {
-          throw new Error("unexpected error");
-        }
-        const latestConfig = removeLocalizedFlag(latestDocument.entry, editorContext);
-        editorContext.actions.runChange(() => {
-          editorContext.form.change("", latestConfig);
-          return [];
-        });
-        remoteDocument.current = latestDocument;
-
-        // Notify when local config was modified
-        if (!isConfigTheSame) {
-          console.debug("there were local changes -> notify");
-          editorContext.actions.notify("Remote changes detected, local changes have been overwritten.");
-        }
-        return;
-      }
-      // No remote change occurred
-      else {
-        if (isConfigTheSame) {
-          console.debug("no local changes -> bye");
-          setStatus({
-            type: "notify",
-            message: "No changes in the document"
-          });
-          // Let's do nothing, no remote and local change
-        } else {
-          console.debug("updating the document", remoteDocument.current.id);
-          setStatus({
-            type: "pending",
-            message: "Document saving..."
-          });
-          const updatedDocument = await editorContext.backend.documents.update({
-            id: remoteDocument.current.id,
-            entry: configToSaveWithLocalisedFlag,
-            version: remoteDocument.current.version
-          });
-          if (updatedDocument?.id) {
-            setStatus({
-              type: "success",
-              message: "Document saved"
-            });
-          } else {
-            setStatus({
-              type: "error",
-              message: "Error saving document. Please try again!"
-            });
-          }
-          remoteDocument.current.entry = localConfigSnapshot;
-          remoteDocument.current.version = updatedDocument.version;
-          await runSaveCallback();
-        }
       }
     }
   };
