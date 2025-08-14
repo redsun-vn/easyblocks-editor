@@ -5,7 +5,11 @@ import { EditorContextType } from "./EditorContext";
 import { getConfigSnapshot } from "./utils/config/getConfigSnapshot";
 import { addLocalizedFlag } from "./utils/locales/addLocalizedFlag";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
-import { useToaster } from "@redsun-vn/easyblocks-design-system";
+
+export interface IDataSaverStatus {
+  type: "error" | "notify" | "success" | "pending";
+  message: string;
+}
 
 /**
  * useDataSaver works in a realm of SINGLE CONFIG.
@@ -18,7 +22,7 @@ export function useDataSaver(
   editorContext: EditorContextType
 ) {
   const remoteDocument = useRef<Document | null>(initialDocument);
-  const toaster = useToaster();
+  const [status, setStatus] = useState<IDataSaverStatus>();
 
   /**
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
@@ -87,7 +91,7 @@ export function useDataSaver(
     else {
       console.debug("Existing document");
 
-      toaster.notify("Comparing latest document...");
+      setStatus({ type: "pending", message: "Comparing latest document..." });
       const latestDocument = await editorContext.backend.documents.get({
         id: remoteDocument.current.id,
       });
@@ -132,12 +136,11 @@ export function useDataSaver(
       else {
         if (isConfigTheSame) {
           console.debug("no local changes -> bye");
-          toaster.notify("No changes in the document");
+          setStatus({ type: "notify", message: "No changes in the document" });
           // Let's do nothing, no remote and local change
         } else {
           console.debug("updating the document", remoteDocument.current.id);
-
-          toaster.notify("Document saving...");
+          setStatus({ type: "pending", message: "Document saving..." });
 
           const updatedDocument = await editorContext.backend.documents.update({
             id: remoteDocument.current.id,
@@ -146,9 +149,12 @@ export function useDataSaver(
           });
 
           if (updatedDocument?.id) {
-            toaster.success("Document saved");
+            setStatus({ type: "success", message: "Document saved" });
           } else {
-            toaster.error("Error saving document. Please try again!");
+            setStatus({
+              type: "error",
+              message: "Error saving document. Please try again!",
+            });
           }
 
           remoteDocument.current.entry = localConfigSnapshot;
@@ -201,5 +207,6 @@ export function useDataSaver(
       console.debug("Last save!");
       await onTick();
     },
+    dataSaverStatus: status!,
   };
 }

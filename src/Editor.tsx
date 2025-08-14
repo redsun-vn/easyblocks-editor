@@ -1103,7 +1103,10 @@ const EditorContent = ({
 
   useEditorGlobalKeyboardShortcuts(editorContext);
 
-  const { saveNow } = useDataSaver(initialDocument, editorContext);
+  const { saveNow, dataSaverStatus } = useDataSaver(
+    initialDocument,
+    editorContext
+  );
 
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
 
@@ -1158,6 +1161,7 @@ const EditorContent = ({
               onLocaleChange={onLocaleChange}
               hideCloseButton={props.config.hideCloseButton ?? false}
               readOnly={editorContext.readOnly}
+              dataSaverStatus={dataSaverStatus}
             />
             <SidebarAndContentContainer height={appHeight}>
               <ContentContainer

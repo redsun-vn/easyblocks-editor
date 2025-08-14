@@ -2752,7 +2752,8 @@ const EditorTopBar = _ref => {
     locale,
     onLocaleChange,
     hideCloseButton,
-    readOnly
+    readOnly,
+    dataSaverStatus
   } = _ref;
   const headingRef = useRef(null);
   const router = new URLSearchParams(window.location.search);
@@ -2784,9 +2785,15 @@ const EditorTopBar = _ref => {
     }
   }, "Redo"), /*#__PURE__*/React__default.createElement(ButtonSecondary, {
     component: "label",
-    className: "cursor-pointer",
-    onClick: onSaveDocument
-  }, "Save"), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only")), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
+    className: dataSaverStatus?.type !== "pending" ? "cursor-pointer" : "",
+    disabled: dataSaverStatus?.type === "pending",
+    onClick: () => dataSaverStatus?.type !== "pending" && onSaveDocument?.()
+  }, dataSaverStatus?.type === "pending" ? "Saving..." : "Save"), /*#__PURE__*/React__default.createElement(Label, {
+    style: {
+      background: "none",
+      color: Colors.black800
+    }
+  }, dataSaverStatus?.message), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only")), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
     onDeviceChange: onViewportChange
@@ -4658,7 +4665,7 @@ function removeLocalizedFlag(config, context) {
  */
 function useDataSaver(initialDocument, editorContext) {
   const remoteDocument = useRef(initialDocument);
-  const toaster = useToaster();
+  const [status, setStatus] = useState();
 
   /**
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
@@ -4706,7 +4713,10 @@ function useDataSaver(initialDocument, editorContext) {
     // Document update
     else {
       console.debug("Existing document");
-      toaster.notify("Comparing latest document...");
+      setStatus({
+        type: "pending",
+        message: "Comparing latest document..."
+      });
       const latestDocument = await editorContext.backend.documents.get({
         id: remoteDocument.current.id
       });
@@ -4737,20 +4747,32 @@ function useDataSaver(initialDocument, editorContext) {
       else {
         if (isConfigTheSame) {
           console.debug("no local changes -> bye");
-          toaster.notify("No changes in the document");
+          setStatus({
+            type: "notify",
+            message: "No changes in the document"
+          });
           // Let's do nothing, no remote and local change
         } else {
           console.debug("updating the document", remoteDocument.current.id);
-          toaster.notify("Document saving...");
+          setStatus({
+            type: "pending",
+            message: "Document saving..."
+          });
           const updatedDocument = await editorContext.backend.documents.update({
             id: remoteDocument.current.id,
             entry: configToSaveWithLocalisedFlag,
             version: remoteDocument.current.version
           });
           if (updatedDocument?.id) {
-            toaster.success("Document saved");
+            setStatus({
+              type: "success",
+              message: "Document saved"
+            });
           } else {
-            toaster.error("Error saving document. Please try again!");
+            setStatus({
+              type: "error",
+              message: "Error saving document. Please try again!"
+            });
           }
           remoteDocument.current.entry = localConfigSnapshot;
           remoteDocument.current.version = updatedDocument.version;
@@ -4794,7 +4816,8 @@ function useDataSaver(initialDocument, editorContext) {
       }
       console.debug("Last save!");
       await onTick();
-    }
+    },
+    dataSaverStatus: status
   };
 }
 
@@ -5743,7 +5766,8 @@ const EditorContent = _ref => {
   const [isDataSaverOverlayOpen, setDataSaverOverlayOpen] = useState(false);
   useEditorGlobalKeyboardShortcuts(editorContext);
   const {
-    saveNow
+    saveNow,
+    dataSaverStatus
   } = useDataSaver(initialDocument, editorContext);
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
   useEffect(() => {
@@ -5789,7 +5813,8 @@ const EditorContent = _ref => {
     locales: editorContext.locales,
     onLocaleChange: onLocaleChange,
     hideCloseButton: props.config.hideCloseButton ?? false,
-    readOnly: editorContext.readOnly
+    readOnly: editorContext.readOnly,
+    dataSaverStatus: dataSaverStatus
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
     height: appHeight
   }, /*#__PURE__*/React__default.createElement(ContentContainer, {

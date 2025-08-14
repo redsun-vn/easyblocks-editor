@@ -18,6 +18,7 @@ import {
 } from "@redsun-vn/easyblocks-design-system";
 import React, { ReactNode, useRef } from "react";
 import { styled } from "styled-components";
+import { IDataSaverStatus } from "./useDataSaver";
 
 export const TOP_BAR_HEIGHT = 40;
 
@@ -104,6 +105,7 @@ export const EditorTopBar: React.FC<{
   onLocaleChange: (locale: string) => void;
   hideCloseButton: boolean;
   readOnly: boolean;
+  dataSaverStatus: IDataSaverStatus;
 }> = ({
   onClose,
   onSaveDocument,
@@ -119,6 +121,7 @@ export const EditorTopBar: React.FC<{
   onLocaleChange,
   hideCloseButton,
   readOnly,
+  dataSaverStatus,
 }) => {
   const headingRef = useRef<HTMLDivElement>(null);
   const router = new URLSearchParams(window.location.search);
@@ -160,11 +163,20 @@ export const EditorTopBar: React.FC<{
 
         <ButtonSecondary
           component="label"
-          className="cursor-pointer"
-          onClick={onSaveDocument}
+          className={
+            dataSaverStatus?.type !== "pending" ? "cursor-pointer" : ""
+          }
+          disabled={dataSaverStatus?.type === "pending"}
+          onClick={() =>
+            dataSaverStatus?.type !== "pending" && onSaveDocument?.()
+          }
         >
-          Save
+          {dataSaverStatus?.type === "pending" ? "Saving..." : "Save"}
         </ButtonSecondary>
+
+        <Label style={{ background: "none", color: Colors.black800 }}>
+          {dataSaverStatus?.message}
+        </Label>
 
         {readOnly && <Label>Read-Only</Label>}
       </TopBarLeft>
