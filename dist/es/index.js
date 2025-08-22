@@ -1,7 +1,7 @@
 "use client";
 import * as React from 'react';
 import React__default, { useContext, useState, useRef, createContext, useEffect, forwardRef, Fragment, useLayoutEffect, memo, useMemo, useCallback } from 'react';
-import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ButtonDanger, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
@@ -41,29 +41,26 @@ function toArray(scalarOrCollection) {
 }
 
 const takeNumbers = path => path.split(".").map(x => parseInt(x, 10)).filter(x => !Number.isNaN(x));
-const preOrderPathComparator = function () {
-  let direction = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "ascending";
-  return (pathA, pathB) => {
-    const order = direction === "ascending" ? 1 : -1;
-    const numbersA = takeNumbers(pathA);
-    const numbersB = takeNumbers(pathB);
-    const numberALength = numbersA.length;
-    const numberBLength = numbersB.length;
-    if (numberALength === 0 || numberBLength === 0) {
-      throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
+const preOrderPathComparator = (direction = "ascending") => (pathA, pathB) => {
+  const order = direction === "ascending" ? 1 : -1;
+  const numbersA = takeNumbers(pathA);
+  const numbersB = takeNumbers(pathB);
+  const numberALength = numbersA.length;
+  const numberBLength = numbersB.length;
+  if (numberALength === 0 || numberBLength === 0) {
+    throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
+  }
+  const shorterLength = Math.min(numberALength, numberBLength);
+  let index = 0;
+  while (index < shorterLength) {
+    const valueA = numbersA[index];
+    const valueB = numbersB[index];
+    if (valueA !== valueB) {
+      return order * Math.sign(valueA - valueB);
     }
-    const shorterLength = Math.min(numberALength, numberBLength);
-    let index = 0;
-    while (index < shorterLength) {
-      const valueA = numbersA[index];
-      const valueB = numbersB[index];
-      if (valueA !== valueB) {
-        return order * Math.sign(valueA - valueB);
-      }
-      index++;
-    }
-    return order * Math.sign(numberBLength - numberALength);
-  };
+    index++;
+  }
+  return order * Math.sign(numberBLength - numberALength);
 };
 
 function includesAny(a, b) {
@@ -74,10 +71,10 @@ function deepClone(source) {
   return JSON.parse(JSON.stringify(source));
 }
 
-function deepCompare() {
-  for (let index = 0; index < arguments.length - 1; index++) {
-    const currentObject = sortObject(index < 0 || arguments.length <= index ? undefined : arguments[index]);
-    const nextObject = sortObject(index + 1 < 0 || arguments.length <= index + 1 ? undefined : arguments[index + 1]);
+function deepCompare(...objectsToCompare) {
+  for (let index = 0; index < objectsToCompare.length - 1; index++) {
+    const currentObject = sortObject(objectsToCompare[index]);
+    const nextObject = sortObject(objectsToCompare[index + 1]);
     const areObjectsHashesEqual = JSON.stringify(currentObject) === JSON.stringify(nextObject);
     if (!areObjectsHashesEqual) {
       return false;
@@ -157,11 +154,10 @@ function useConfigAfterAuto() {
 }
 
 const ExternalDataContext = /*#__PURE__*/createContext({});
-function EditorExternalDataProvider(_ref) {
-  let {
-    children,
-    externalData
-  } = _ref;
+function EditorExternalDataProvider({
+  children,
+  externalData
+}) {
   return /*#__PURE__*/React__default.createElement(ExternalDataContext.Provider, {
     value: externalData
   }, children);
@@ -178,14 +174,13 @@ let ExtraKeys = /*#__PURE__*/function (ExtraKeys) {
   return ExtraKeys;
 }({});
 const actionKeys = [ExtraKeys.ALT_KEY, ExtraKeys.CTRL_KEY, ExtraKeys.META_KEY, ExtraKeys.SHIFT_KEY];
-const useWindowKeyDown = function (key, callback) {
-  let {
-    extraKeys,
-    isDisabled
-  } = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
-    extraKeys: [],
-    isDisabled: false
-  };
+const useWindowKeyDown = (key, callback, {
+  extraKeys,
+  isDisabled
+} = {
+  extraKeys: [],
+  isDisabled: false
+}) => {
   const downHandler = event => {
     const isExtraKeysPressed = extraKeys.every(k => event[k]);
     const extraKeysSet = new Set([...extraKeys]);
@@ -206,15 +201,14 @@ const useWindowKeyDown = function (key, callback) {
   }, [isDisabled]);
 };
 
-function EditorIframe(_ref) {
-  let {
-    onEditorHistoryRedo,
-    onEditorHistoryUndo,
-    width,
-    height,
-    transform,
-    containerRef
-  } = _ref;
+function EditorIframe({
+  onEditorHistoryRedo,
+  onEditorHistoryUndo,
+  width,
+  height,
+  transform,
+  containerRef
+}) {
   const [isIframeReady, setIframeReady] = useState(false);
   const handleIframeLoaded = () => {
     setIframeReady(true);
@@ -429,12 +423,11 @@ function SidebarFooter(props) {
   }, "Master: ", value._master))));
 }
 
-const Toggle = _ref => {
-  let {
-    input,
-    field,
-    disabled = false
-  } = _ref;
+const Toggle = ({
+  input,
+  field,
+  disabled = false
+}) => {
   const checked = !!(input.value || input.checked);
   const toggleProps = {
     ...input,
@@ -458,12 +451,11 @@ function isMixedFieldValue(value) {
   return typeof value === "object" && value !== null && "__mixed__" in value && value.__mixed__;
 }
 
-const SelectFieldComponent = _ref => {
-  let {
-    input,
-    field,
-    options
-  } = _ref;
+const SelectFieldComponent = ({
+  input,
+  field,
+  options
+}) => {
   const {
     value,
     onChange
@@ -508,12 +500,11 @@ function toComponent(option) {
   }, option.label);
 }
 
-const RadioGroup = _ref => {
-  let {
-    input,
-    field,
-    options
-  } = _ref;
+const RadioGroup = ({
+  input,
+  field,
+  options
+}) => {
   const {
     value
   } = input;
@@ -546,33 +537,29 @@ const RadioGroup = _ref => {
   }));
 };
 
-const NumberInput = _ref => {
-  let {
-    onChange,
-    value,
-    step,
-    min,
-    max
-  } = _ref;
-  return /*#__PURE__*/React.createElement(Input, {
-    type: "number"
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    ,
-    step: step,
-    value: value,
-    onChange: onChange,
-    min: min,
-    max: max
-  });
-};
+const NumberInput = ({
+  onChange,
+  value,
+  step,
+  min,
+  max
+}) => /*#__PURE__*/React.createElement(Input, {
+  type: "number"
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  ,
+  step: step,
+  value: value,
+  onChange: onChange,
+  min: min,
+  max: max
+});
 
-const Tooltip = /*#__PURE__*/forwardRef((_ref, ref) => {
-  let {
-    children,
-    style = {},
-    ...rest
-  } = _ref;
+const Tooltip = /*#__PURE__*/forwardRef(({
+  children,
+  style = {},
+  ...rest
+}, ref) => {
   return /*#__PURE__*/createPortal(/*#__PURE__*/React__default.createElement("div", _extends({
     style: {
       ...style,
@@ -590,11 +577,10 @@ const TooltipArrow = styled.div.withConfig({
   componentId: "sc-tkogle-1"
 })(["width:12px;height:6px;margin:0 auto;background:#333333;clip-path:polygon(50% 0%,0% 100%,100% 100%);"]);
 
-function useTooltip() {
-  let {
-    isDisabled,
-    onClick
-  } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+function useTooltip({
+  isDisabled,
+  onClick
+} = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [triggerElement, setTriggerElement] = useState(null);
   const [tooltipElement, setTooltipElement] = useState(null);
@@ -656,16 +642,15 @@ function useTooltip() {
 // Wraps the Field component in labels describing the field's meta state
 // Add any other fields that the Field component should expect onto the ExtraFieldProps generic type
 
-function FieldMetaWrapper(_ref) {
-  let {
-    children,
-    field,
-    input,
-    noWrap,
-    layout = "row",
-    renderLabel,
-    isLabelHidden
-  } = _ref;
+function FieldMetaWrapper({
+  children,
+  field,
+  input,
+  noWrap,
+  layout = "row",
+  renderLabel,
+  isLabelHidden
+}) {
   const editorContext = useEditorContext();
   const configAfterAuto = useConfigAfterAuto();
   const externalData = useEditorExternalData();
@@ -776,13 +761,12 @@ function FieldMetaWrapper(_ref) {
     layout: resolvedLayout
   }, content), !isMixedFieldValue && isExternalField && externalValues.length > 0 && "error" in externalValues[0] && /*#__PURE__*/React__default.createElement(FieldError, null, externalValues[0].error.message));
 }
-function WidgetsSelect(_ref2) {
-  let {
-    value,
-    onChange,
-    schemaProp,
-    isRootComponent
-  } = _ref2;
+function WidgetsSelect({
+  value,
+  onChange,
+  schemaProp,
+  isRootComponent
+}) {
   const editorContext = useEditorContext();
   const [selectedWidgetId, setSelectedWidgetId] = useState(value.widgetId);
   const widgets = editorContext.types[schemaProp.type].widgets;
@@ -835,42 +819,27 @@ function wrapFieldsWithMeta(Field, extraProps) {
 const FieldWrapper$1 = styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldWrapper",
   componentId: "sc-1asy4oy-1"
-})(["display:flex;flex-direction:", ";gap:", ";justify-content:space-between;align-items:flex-start;", " position:relative;padding:4px 16px;"], _ref3 => {
-  let {
-    layout
-  } = _ref3;
-  return layout;
-}, _ref4 => {
-  let {
-    layout
-  } = _ref4;
-  return layout === "row" ? "10px" : "4px";
-}, _ref5 => {
-  let {
-    layout
-  } = _ref5;
-  return layout === "column" && css(["flex-grow:1;"]);
-});
+})(["display:flex;flex-direction:", ";gap:", ";justify-content:space-between;align-items:flex-start;", " position:relative;padding:4px 16px;"], ({
+  layout
+}) => layout, ({
+  layout
+}) => layout === "row" ? "10px" : "4px", ({
+  layout
+}) => layout === "column" && css(["flex-grow:1;"]));
 const FieldLabelWrapper = styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelWrapper",
   componentId: "sc-1asy4oy-2"
-})(["all:unset;position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], _ref6 => {
-  let {
-    isFullWidth
-  } = _ref6;
-  return isFullWidth && {
-    width: "100%"
-  };
+})(["all:unset;position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], ({
+  isFullWidth
+}) => isFullWidth && {
+  width: "100%"
 });
 const FieldLabel = styled.label.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabel",
   componentId: "sc-1asy4oy-3"
-})(["all:unset;", ";color:", ";text-overflow:ellipsis;overflow:hidden;cursor:default;"], Fonts.body, _ref7 => {
-  let {
-    isError
-  } = _ref7;
-  return isError ? "red" : "#000";
-});
+})(["all:unset;", ";color:", ";text-overflow:ellipsis;overflow:hidden;cursor:default;"], Fonts.body, ({
+  isError
+}) => isError ? "red" : "#000");
 const FieldLabelIconWrapper = styled.span.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelIconWrapper",
   componentId: "sc-1asy4oy-4"
@@ -882,20 +851,16 @@ const FieldError = styled.span.withConfig({
 const FieldInputWrapper = styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldInputWrapper",
   componentId: "sc-1asy4oy-6"
-})(["display:flex;justify-content:flex-end;align-items:center;", ";min-height:28px;"], _ref8 => {
-  let {
-    layout
-  } = _ref8;
-  return layout === "row" ? css(["flex-grow:1;"]) : css(["width:100%;"]);
-});
+})(["display:flex;justify-content:flex-end;align-items:center;", ";min-height:28px;"], ({
+  layout
+}) => layout === "row" ? css(["flex-grow:1;"]) : css(["width:100%;"]));
 
 const parse$1 = value => value && +value;
 
-const NumberField = wrapFieldsWithMeta(_ref => {
-  let {
-    input,
-    field
-  } = _ref;
+const NumberField = wrapFieldsWithMeta(({
+  input,
+  field
+}) => {
   return /*#__PURE__*/React__default.createElement(NumberInput, _extends({}, input, {
     step: field.step,
     min: field.min,
@@ -924,12 +889,11 @@ const RadioGroupFieldPlugin = {
   Component: RadioGroupField
 };
 
-function TextField(_ref) {
-  let {
-    input,
-    field,
-    noWrap
-  } = _ref;
+function TextField({
+  input,
+  field,
+  noWrap
+}) {
   const editorContext = useEditorContext();
   const {
     value,
@@ -985,11 +949,10 @@ function useTokenTypes() {
   }));
   return tokenTypes;
 }
-function TokenFieldComponent(_ref) {
-  let {
-    input,
-    field
-  } = _ref;
+function TokenFieldComponent({
+  input,
+  field
+}) {
   const editorContext = useEditorContext();
   const tokenTypes = useTokenTypes();
   const tokenTypeDefinition = tokenTypes[field.schemaProp.type];
@@ -998,8 +961,7 @@ function TokenFieldComponent(_ref) {
   const extraValues = field.extraValues ?? [];
   const [inputValue, setInputValue] = useState(isMixedFieldValue(input.value) ? "" : input.value?.value.toString() ?? "");
   const customValueTextFieldRef = useRef(null);
-  const options = Object.entries(field.tokens).map(_ref2 => {
-    let [tokenId, tokenValue] = _ref2;
+  const options = Object.entries(field.tokens).map(([tokenId, tokenValue]) => {
     if (tokenTypeDefinition.token === "fonts") {
       const fontTokenLabel = getFontTokenLabel(tokenId, tokenValue, editorContext);
       return {
@@ -1224,10 +1186,9 @@ function getUniqueValues(collection, mapper) {
   return Array.from(new Set(collection));
 }
 
-function mergeCommonFields(_ref) {
-  let {
-    fields
-  } = _ref;
+function mergeCommonFields({
+  fields
+}) {
   const mergedCommonFields = [];
   const fieldsGroupedByProperty = groupFieldsByPropertyName(fields.flat());
   for (const currentFields of Object.values(fieldsGroupedByProperty)) {
@@ -1291,12 +1252,11 @@ function getFieldSchemaWithDefinition(field) {
   return field.schemaProp;
 }
 
-const BlockField = _ref => {
-  let {
-    field,
-    input,
-    isLabelHidden
-  } = _ref;
+const BlockField = ({
+  field,
+  input,
+  isLabelHidden
+}) => {
   const [isSubcomponentPanelExpanded, setIsSubcomponentPanelExpanded] = React__default.useState(false);
   const editorContext = useEditorContext();
   const {
@@ -1381,10 +1341,9 @@ const BlockField = _ref => {
     }
   }))));
 };
-function AddButton$1(_ref2) {
-  let {
-    onAdd
-  } = _ref2;
+function AddButton$1({
+  onAdd
+}) {
   return /*#__PURE__*/React__default.createElement(ButtonGhost, {
     style: {
       width: "100%",
@@ -1414,13 +1373,12 @@ function AddButton$1(_ref2) {
     size: 16
   })), "Add"));
 }
-const SubComponentPanelButton = _ref3 => {
-  let {
-    paths,
-    isExpanded,
-    onExpand,
-    onCollapse
-  } = _ref3;
+const SubComponentPanelButton = ({
+  paths,
+  isExpanded,
+  onExpand,
+  onCollapse
+}) => {
   const sidebarPanelsRoot = document.getElementById("sidebar-panels-root");
   const editorContext = useEditorContext();
   const externalData = useEditorExternalData();
@@ -1469,12 +1427,11 @@ const Error$2 = styled.div.withConfig({
   componentId: "sc-5mryxt-0"
 })(["", " padding:7px 6px 7px;color:hsl(0deg 0% 50% / 0.8);white-space:normal;background:hsl(0deg 100% 50% / 0.2);margin-right:10px;border-radius:2px;"], Fonts.body);
 const PanelContext = /*#__PURE__*/React__default.createContext(undefined);
-function Panel(_ref4) {
-  let {
-    onCollapse,
-    isExpanded,
-    paths
-  } = _ref4;
+function Panel({
+  onCollapse,
+  isExpanded,
+  paths
+}) {
   const editorContext = useEditorContext();
   const fields = React__default.useMemo(() => {
     if (!isExpanded) {
@@ -1516,11 +1473,10 @@ const GroupPanel = styled.div.withConfig({
   componentId: "sc-5mryxt-2"
 })(["position:absolute;width:100%;top:0;bottom:0;left:0;overflow:hidden;pointer-events:", ";> *{", ";", ";}"], p => p.isExpanded ? "all" : "none", p => p.isExpanded && css(["animation-name:", ";animation-duration:150ms;animation-delay:0ms;animation-iteration-count:1;animation-timing-function:ease-out;animation-fill-mode:backwards;"], GroupPanelKeyframes), p => !p.isExpanded && css(["transition:transform 150ms ease-out;transform:translate3d(100%,0,0);"]));
 
-function IdentityField(_ref) {
-  let {
-    input,
-    field
-  } = _ref;
+function IdentityField({
+  input,
+  field
+}) {
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
   const isMixed = isMixedFieldValue(input.value);
@@ -1712,11 +1668,7 @@ function getWidgetComponentForRootParam(externalReference, editorContext) {
   return Object.values(editorContext.types).filter(t => t.type === "external").flatMap(t => t.widgets).find(w => w.id === externalReference.widgetId)?.component;
 }
 function getBasicResourcesOfType(compoundResourceValues, type) {
-  return Object.entries(compoundResourceValues).filter(_ref => {
-    let [, r] = _ref;
-    return r.type === type;
-  }).map(_ref2 => {
-    let [key, r] = _ref2;
+  return Object.entries(compoundResourceValues).filter(([, r]) => r.type === type).map(([key, r]) => {
     return {
       key,
       ...r
@@ -1898,14 +1850,11 @@ const ResponsiveField = props => {
   });
   return /*#__PURE__*/React__default.createElement(FieldMetaWrapper, _extends({}, props, {
     layout: isExternalField ? "column" : "row",
-    renderLabel: isValueDifferentFromMainBreakpoint ? _ref => {
-      let {
-        label
-      } = _ref;
-      return /*#__PURE__*/React__default.createElement(ResetButton, _extends({
-        "aria-label": "Revert to auto"
-      }, triggerProps), /*#__PURE__*/React__default.createElement(Icons.Reset, null), /*#__PURE__*/React__default.createElement(ResetButtonLabel, null, label), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, "Revert to auto")));
-    } : undefined
+    renderLabel: isValueDifferentFromMainBreakpoint ? ({
+      label
+    }) => /*#__PURE__*/React__default.createElement(ResetButton, _extends({
+      "aria-label": "Revert to auto"
+    }, triggerProps), /*#__PURE__*/React__default.createElement(Icons.Reset, null), /*#__PURE__*/React__default.createElement(ResetButtonLabel, null, label), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, "Revert to auto"))) : undefined
   }), /*#__PURE__*/React__default.createElement("div", {
     style: {
       width: "100%"
@@ -1972,12 +1921,11 @@ function transformStrokeAndFill(node) {
   }
   Array.from(node.children).forEach(child => transformStrokeAndFill(child));
 }
-const SVGPicker = wrapFieldsWithMeta(_ref => {
-  let {
-    input,
-    meta,
-    field
-  } = _ref;
+const SVGPicker = wrapFieldsWithMeta(({
+  input,
+  meta,
+  field
+}) => {
   const svgString = input.value.value;
   const inputRef = useRef(null);
   useEffect(() => {
@@ -2038,11 +1986,10 @@ const SVGPickerFieldPlugin = {
   Component: SVGPicker
 };
 
-const Slider = wrapFieldsWithMeta(_ref => {
-  let {
-    input,
-    field
-  } = _ref;
+const Slider = wrapFieldsWithMeta(({
+  input,
+  field
+}) => {
   return /*#__PURE__*/React__default.createElement(RangeSlider, _extends({}, input, {
     max: field.max,
     min: field.min,
@@ -2064,11 +2011,10 @@ function useInlineTypes() {
 }
 const LocalFieldPlugin = {
   name: "local",
-  Component: wrapFieldsWithMeta(function LocalField(_ref) {
-    let {
-      field,
-      input
-    } = _ref;
+  Component: wrapFieldsWithMeta(function LocalField({
+    field,
+    input
+  }) {
     const inlineTypes = useInlineTypes();
     const inlineTypeDefinition = inlineTypes[field.schemaProp.type];
     const WidgetComponent = inlineTypeDefinition?.widget.component;
@@ -2142,11 +2088,10 @@ function verticalPositionToFlexAlignItemsValue(position) {
       return "flex-end";
   }
 }
-function PositionPickerInput(_ref) {
-  let {
-    position,
-    onPositionChange
-  } = _ref;
+function PositionPickerInput({
+  position,
+  onPositionChange
+}) {
   return /*#__PURE__*/React__default.createElement(RadixRadioGroup.Root, {
     value: position,
     onValueChange: newPosition => {
@@ -2220,13 +2165,12 @@ const PositionFieldPlugin = {
 // "any" here is on purpose (although doesn't make sense from TS perspective).
 // It suggests that in onChange you can pass event OR any value. It's a bit confusing and should be cleaned up in the future.
 
-function createFieldController(_ref) {
-  let {
-    field,
-    editorContext,
-    format = v => v,
-    parse = v => v
-  } = _ref;
+function createFieldController({
+  field,
+  editorContext,
+  format = v => v,
+  parse = v => v
+}) {
   const {
     actions,
     contextParams,
@@ -2236,10 +2180,7 @@ function createFieldController(_ref) {
   } = editorContext;
   const normalizedFieldName = toArray(field.name);
   return {
-    onChange(mainNewValue) {
-      for (var _len = arguments.length, extraNewValues = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-        extraNewValues[_key - 1] = arguments[_key];
-      }
+    onChange(mainNewValue, ...extraNewValues) {
       /**
        * There are 2 modes of onChange: single param and multiple params
        *
@@ -2443,10 +2384,9 @@ const richTextCacheInvalidator = (cache, changedPath, context) => {
   if (isRichTextOrRichTextAncestorComponent) {
     const richTextPath = templateId === "@easyblocks/rich-text" && fieldName ? changedPath.replace(`.${fieldName}`, "") : findPathOfFirstAncestorOfType(changedPath, "@easyblocks/rich-text", context.form);
     const richTextConfig = dotNotationGet(context.form.values, richTextPath);
-    traverseComponents(richTextConfig, context, _ref2 => {
-      let {
-        componentConfig
-      } = _ref2;
+    traverseComponents(richTextConfig, context, ({
+      componentConfig
+    }) => {
       if (componentConfig && componentConfig._component.startsWith("@easyblocks/rich-text")) {
         cacheKeysToRemove.push(componentConfig._id);
       }
@@ -2475,13 +2415,12 @@ function shouldFieldBeDisplayed(field) {
   return true;
 }
 const FIELD_COMPONENTS = [TextFieldPlugin, NumberFieldPlugin, ToggleFieldPlugin, SelectFieldPlugin, RadioGroupFieldPlugin, PositionFieldPlugin, BlockFieldPlugin, SliderFieldPlugin, SVGPickerFieldPlugin, ResponsiveFieldPlugin, ExternalFieldPlugin, TokenFieldPlugin, IdentityFieldPlugin, LocalFieldPlugin];
-function FieldBuilder(_ref) {
-  let {
-    form,
-    field,
-    noWrap,
-    isLabelHidden
-  } = _ref;
+function FieldBuilder({
+  form,
+  field,
+  noWrap,
+  isLabelHidden
+}) {
   const editorContext = useEditorContext();
   if (!shouldFieldBeDisplayed(field)) {
     return null;
@@ -2546,11 +2485,10 @@ const HorizontalLine = styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
   componentId: "sc-ignixa-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
-function FieldsBuilder(_ref2) {
-  let {
-    form,
-    fields
-  } = _ref2;
+function FieldsBuilder({
+  form,
+  fields
+}) {
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
   const grouped = {};
@@ -2629,10 +2567,9 @@ const IconButton = styled(Button).withConfig({
   componentId: "sc-qplww2-1"
 })(["padding:0;width:", "px;height:", "px;margin:0;position:relative;transform-origin:50% 50%;transition:all 150ms ease-out;padding:0;display:flex;flex-shrink:0;justify-content:center;align-items:center;svg{width:", "px;height:", "px;transition:all 150ms ease-out;}", ";"], ICON_BUTTON_SIZE, ICON_BUTTON_SIZE, ICON_SIZE, ICON_SIZE, props => props.open && css(["background-color:var(--tina-color-grey-0);border-color:var(--tina-color-grey-2);outline:none;fill:var(--tina-color-primary);svg{transform:rotate(45deg);}&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);}"]));
 
-function InlineSettings(_ref) {
-  let {
-    fields
-  } = _ref;
+function InlineSettings({
+  fields
+}) {
   const hasNoExtraFields = !(fields && fields.length);
   if (hasNoExtraFields) {
     return null;
@@ -2648,10 +2585,9 @@ function InlineSettings(_ref) {
     fields: fields
   }));
 }
-function SettingsContent(_ref2) {
-  let {
-    fields
-  } = _ref2;
+function SettingsContent({
+  fields
+}) {
   const {
     form,
     focussedField
@@ -2737,29 +2673,26 @@ const Image = styled.img.withConfig({
   displayName: "EditorTopBar__Image",
   componentId: "sc-726nw9-6"
 })(["width:100%;height:100%;object-fit:contain;"]);
-const EditorTopBar = _ref => {
-  let {
-    onClose,
-    onSaveDocument,
-    onViewportChange,
-    devices,
-    viewport,
-    onIsEditingChange,
-    isEditing,
-    onUndo,
-    onRedo,
-    locales,
-    locale,
-    onLocaleChange,
-    hideCloseButton,
-    readOnly,
-    dataSaverStatus
-  } = _ref;
+const EditorTopBar = ({
+  onClose,
+  onSaveDocument,
+  onViewportChange,
+  devices,
+  viewport,
+  onIsEditingChange,
+  isEditing,
+  onUndo,
+  onRedo,
+  locales,
+  locale,
+  onLocaleChange,
+  hideCloseButton,
+  readOnly
+}) => {
   const headingRef = useRef(null);
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
-  const SavingButton = dataSaverStatus?.type !== "pending" ? ButtonPrimary : ButtonSecondary;
   return /*#__PURE__*/React__default.createElement(TopBar, {
     ref: headingRef
   }, /*#__PURE__*/React__default.createElement(TopBarLeft, null, !hideCloseButton && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
@@ -2784,17 +2717,11 @@ const EditorTopBar = _ref => {
     onClick: () => {
       onRedo();
     }
-  }, "Redo"), /*#__PURE__*/React__default.createElement(SavingButton, {
+  }, "Redo"), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only"), /*#__PURE__*/React__default.createElement(ButtonDanger, {
+    className: "cursor-pointer",
     component: "label",
-    className: dataSaverStatus?.type !== "pending" ? "cursor-pointer" : "",
-    disabled: dataSaverStatus?.type === "pending",
-    onClick: () => dataSaverStatus?.type !== "pending" && onSaveDocument?.()
-  }, dataSaverStatus?.type === "pending" ? "Saving..." : "Save"), /*#__PURE__*/React__default.createElement(Label, {
-    style: {
-      background: "none",
-      color: Colors.black800
-    }
-  }, dataSaverStatus?.message), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only")), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
+    onClick: () => onSaveDocument?.()
+  }, "Save")), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
     onDeviceChange: onViewportChange
@@ -2962,12 +2889,11 @@ const DEVICE_ID_TO_ICON = {
     fill: "black"
   }))
 };
-function DeviceSwitch(_ref2) {
-  let {
-    deviceId,
-    devices,
-    onDeviceChange
-  } = _ref2;
+function DeviceSwitch({
+  deviceId,
+  devices,
+  onDeviceChange
+}) {
   return /*#__PURE__*/React__default.createElement(ToggleGroup, {
     value: deviceId,
     onChange: deviceId => {
@@ -3004,10 +2930,9 @@ function getAllComponentTypes(editorContext) {
 }
 function getComponentTypesFromDefinitions(definitions) {
   const types = new Set();
-  definitions.forEach(_ref => {
-    let {
-      type
-    } = _ref;
+  definitions.forEach(({
+    type
+  }) => {
     normalizeToStringArray(type).forEach(componentType => {
       types.add(componentType);
     });
@@ -3043,12 +2968,11 @@ function unrollAcceptsFieldIntoComponents(accepts, editorContext) {
   return Array.from(idsSet);
 }
 
-const ModalPicker = _ref => {
-  let {
-    config,
-    onClose,
-    pickers
-  } = _ref;
+const ModalPicker = ({
+  config,
+  onClose,
+  pickers
+}) => {
   const editorContext = useEditorContext();
   const {
     form
@@ -3309,12 +3233,11 @@ const TemplateModal = props => {
   }, ctaLabel)))));
 };
 
-function duplicateItem(form, _ref, compilationContext) {
-  let {
-    name,
-    sourceIndex,
-    targetIndex
-  } = _ref;
+function duplicateItem(form, {
+  name,
+  sourceIndex,
+  targetIndex
+}, compilationContext) {
   // Placeholders are not copyable
   if (isPlaceholder(name + "." + sourceIndex, form.values)) {
     return;
@@ -3322,13 +3245,12 @@ function duplicateItem(form, _ref, compilationContext) {
   const configToDuplicate = dotNotationGet(form.values, name + "." + sourceIndex);
   form.mutators.insert(name, targetIndex, duplicateConfig(configToDuplicate, compilationContext));
 }
-function pasteItems(_ref2) {
-  let {
-    what,
-    where,
-    resolveDestination,
-    pasteCommand
-  } = _ref2;
+function pasteItems({
+  what,
+  where,
+  resolveDestination,
+  pasteCommand
+}) {
   const successfulInsertsPaths = [];
   takeLastOfEachParent(where).sort(preOrderPathComparator()).map(initialDestination => {
     const destination = successfulInsertsPaths.reduce((acc, current) => shiftPath(acc, current, "downward"), initialDestination);
@@ -3374,12 +3296,11 @@ function duplicateItems(form, fieldNames, compilationContext) {
   });
   return nextFocusedFieldsPerGroup.flat();
 }
-function moveItem(form, _ref3) {
-  let {
-    from,
-    to,
-    name
-  } = _ref3;
+function moveItem(form, {
+  from,
+  to,
+  name
+}) {
   // Placeholders are not movable
   if (isPlaceholder(name + "." + from, form.values)) {
     return;
@@ -3458,11 +3379,10 @@ function moveItems(form, fieldsToMove, direction) {
     }
   }
 }
-function removeItem(form, _ref4) {
-  let {
-    index,
-    name
-  } = _ref4;
+function removeItem(form, {
+  index,
+  name
+}) {
   const configPathToRemove = name + "." + index;
 
   // Placeholders are not removable
@@ -3571,8 +3491,7 @@ function groupFieldsByParentPath(fields, sortDirection) {
     accumulator[parentPath] = [index];
     return accumulator;
   }, {});
-  return Object.fromEntries(Object.entries(fieldsIndicesGroupedByParentPath).map(_ref5 => {
-    let [parentPath, indices] = _ref5;
+  return Object.fromEntries(Object.entries(fieldsIndicesGroupedByParentPath).map(([parentPath, indices]) => {
     return [parentPath, indices.map(index => parentPath + "." + index)];
   }));
 }
@@ -3618,8 +3537,7 @@ function isFieldRemovable(fieldName, form, compilationContext) {
 function isFieldDuplicatable(fieldName, form, compilationContext) {
   return isFieldRemovable(fieldName, form, compilationContext);
 }
-const shiftPath = function (originalPath, shiftingPath) {
-  let direction = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "downward";
+const shiftPath = (originalPath, shiftingPath, direction = "downward") => {
   const directionFactor = direction === "downward" ? 1 : -1;
   const original = shiftingPath.split(".");
   const shifting = originalPath.split(".");
@@ -3652,18 +3570,14 @@ function takeLastOfEachParent(where) {
     acc[trimmed] = Math.max(index, acc[trimmed] ?? Number.MIN_SAFE_INTEGER);
     return acc;
   }, {});
-  return Object.entries(lastOfEachParent).map(_ref6 => {
-    let [key, value] = _ref6;
-    return `${key}.${value}`;
-  });
+  return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
 }
 
-function reconcile(_ref) {
-  let {
-    context,
-    templateId,
-    fieldName
-  } = _ref;
+function reconcile({
+  context,
+  templateId,
+  fieldName
+}) {
   return item => {
     if (!fieldName || !templateId) {
       return item;
@@ -3689,13 +3603,12 @@ const getTypes = schema => {
   }
   return [];
 };
-const insertCommand = _ref => {
-  let {
-    context,
-    form,
-    schema,
-    templateId
-  } = _ref;
+const insertCommand = ({
+  context,
+  form,
+  schema,
+  templateId
+}) => {
   const types = getTypes(schema);
   const reconcileItem = reconcile({
     context,
@@ -3724,19 +3637,16 @@ function getSchema(path, context) {
   return schema;
 }
 const toName = destination => [destination.parent?.path, destination.parent?.fieldName].filter(Boolean).join(".");
-const fixIndexInCollection = function () {
-  let index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-  let schema = arguments.length > 1 ? arguments[1] : undefined;
+const fixIndexInCollection = (index = 0, schema) => {
   if (schema?.type === "component-collection") {
     return index + 1;
   }
   return index;
 };
-function destinationResolver(_ref) {
-  let {
-    form,
-    context
-  } = _ref;
+function destinationResolver({
+  form,
+  context
+}) {
   return function (initialDestinationPath) {
     const resolvedDestinations = [];
     const resolvedPaths = new Set();
@@ -3769,12 +3679,9 @@ function destinationResolver(_ref) {
         })
       });
       for (const slot of definition.pasteSlots ?? []) {
-        const slotSchema = definition.schema.find(_ref2 => {
-          let {
-            prop
-          } = _ref2;
-          return prop === slot;
-        });
+        const slotSchema = definition.schema.find(({
+          prop
+        }) => prop === slot);
         if (!slotSchema) {
           continue;
         }
@@ -3835,13 +3742,12 @@ const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
 const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
 const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
 
-function AddButton(_ref) {
-  let {
-    position,
-    index,
-    offset,
-    onClick
-  } = _ref;
+function AddButton({
+  position,
+  index,
+  offset,
+  onClick
+}) {
   const [isOpen, setIsOpen] = React__default.useState(false);
   const addBlockButtonRef = React__default.useRef(null);
   const handleOpenBlockMenu = event => {
@@ -3897,33 +3803,23 @@ const AddIconButton = styled(IconButton).withConfig({
 const AddButtonWrapper = styled.div.withConfig({
   displayName: "AddButton__AddButtonWrapper",
   componentId: "sc-79bcl2-1"
-})(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;"], _ref2 => {
-  let {
-    position
-  } = _ref2;
-  return position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP;
-}, _ref3 => {
-  let {
-    position
-  } = _ref3;
-  return position === "before" ? BEFORE_ADD_BUTTON_LEFT : AFTER_ADD_BUTTON_LEFT;
-}, _ref4 => {
-  let {
-    position
-  } = _ref4;
-  return position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY;
-});
+})(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;"], ({
+  position
+}) => position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP, ({
+  position
+}) => position === "before" ? BEFORE_ADD_BUTTON_LEFT : AFTER_ADD_BUTTON_LEFT, ({
+  position
+}) => position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY);
 
 const Wrapper = styled.div.withConfig({
   displayName: "SelectionFramestyles__Wrapper",
   componentId: "sc-xqih8j-0"
 })(["position:absolute;top:0;left:0;bottom:0;right:0;display:grid;place-items:center;pointer-events:none;"]);
-const FrameWrapper = styled.div.attrs(_ref => {
-  let {
-    width,
-    height,
-    transform
-  } = _ref;
+const FrameWrapper = styled.div.attrs(({
+  width,
+  height,
+  transform
+}) => {
   return {
     style: {
       width,
@@ -4022,12 +3918,11 @@ function isButtonWithinViewport(target, viewport) {
   return target.top >= 0 && target.top <= viewport.height && target.left >= 0 && target.left <= viewport.width;
 }
 
-function SelectionFrame(_ref) {
-  let {
-    width,
-    height,
-    transform
-  } = _ref;
+function SelectionFrame({
+  width,
+  height,
+  transform
+}) {
   const editorContext = useEditorContext();
   const {
     focussedField,
@@ -4246,13 +4141,9 @@ function getDefaultTemplateForDefinition(def, editorContext) {
   };
 }
 function getDefaultTokenId(tokens) {
-  return Object.entries(tokens).find(_ref => {
-    let [, value] = _ref;
-    return value.isDefault;
-  })?.[0];
+  return Object.entries(tokens).find(([, value]) => value.isDefault)?.[0];
 }
-async function getTemplates(editorContext) {
-  let configTemplates = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+async function getTemplates(editorContext, configTemplates = []) {
   const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates ? await editorContext.backend.templates.getAll() : [];
   return getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates);
 }
@@ -4267,11 +4158,10 @@ function getNecessaryDefaultTemplates(components, templates, editorContext) {
   return result;
 }
 function normalizeTextLocales(config, editorContext) {
-  return configMap(config, editorContext, _ref2 => {
-    let {
-      value,
-      schemaProp
-    } = _ref2;
+  return configMap(config, editorContext, ({
+    value,
+    schemaProp
+  }) => {
     if (schemaProp.type === "text") {
       const firstDefinedValue = Object.values(value.value).filter(x => x !== null && x !== undefined)[0];
       return {
@@ -4329,18 +4219,17 @@ function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedT
 
 class Form {
   loading = false;
-  constructor(_ref) {
-    let {
-      id,
-      label,
-      fields,
-      actions,
-      buttons,
-      reset,
-      loadInitialValues,
-      onChange,
-      ...options
-    } = _ref;
+  constructor({
+    id,
+    label,
+    fields,
+    actions,
+    buttons,
+    reset,
+    loadInitialValues,
+    onChange,
+    ...options
+  }) {
     const initialValues = options.initialValues || {};
     this.__type = options.__type || "form";
     this.id = id;
@@ -4496,15 +4385,13 @@ class Form {
   }
 }
 function updateEverything(form, values) {
-  Object.entries(values).forEach(_ref2 => {
-    let [path, value] = _ref2;
+  Object.entries(values).forEach(([path, value]) => {
     form.change(path, value);
   });
 }
 function updateSelectively(form, values, prefix) {
   const activePath = form.getState().active;
-  Object.entries(values).forEach(_ref3 => {
-    let [name, value] = _ref3;
+  Object.entries(values).forEach(([name, value]) => {
     const path = prefix ? `${prefix}.${name}` : name;
     if (typeof value === "object") {
       if (activePath.startsWith(path)) {
@@ -4521,12 +4408,10 @@ function updateSelectively(form, values, prefix) {
 /**
  * A hook that creates a form and updates it's watched properties.
  */
-function useForm(_ref) {
-  let {
-    loadInitialValues,
-    ...options
-  } = _ref;
-  let watch = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+function useForm({
+  loadInitialValues,
+  ...options
+}, watch = {}) {
   /**
    * `initialValues` will be usually be undefined if `loadInitialValues` is used.
    *
@@ -4630,11 +4515,10 @@ function getConfigSnapshot(config) {
 }
 
 function addLocalizedFlag(config, context) {
-  return configMap(config, context, _ref => {
-    let {
-      value,
-      schemaProp
-    } = _ref;
+  return configMap(config, context, ({
+    value,
+    schemaProp
+  }) => {
     if (schemaProp.type === "text" && value.id?.startsWith("local.") || schemaProp.type === "component-collection-localised") {
       return {
         __localized: true,
@@ -4646,11 +4530,10 @@ function addLocalizedFlag(config, context) {
 }
 
 function removeLocalizedFlag(config, context) {
-  return configMap(config, context, _ref => {
-    let {
-      value,
-      schemaProp
-    } = _ref;
+  return configMap(config, context, ({
+    value,
+    schemaProp
+  }) => {
     if (schemaProp.type === "text" && value?.id.startsWith("local.") || schemaProp.type === "component-collection-localised") {
       delete value.__localized;
     }
@@ -4666,7 +4549,7 @@ function removeLocalizedFlag(config, context) {
  */
 function useDataSaver(initialDocument, editorContext) {
   const remoteDocument = useRef(initialDocument);
-  const [status, setStatus] = useState();
+  const toaster = useToaster();
 
   /**
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
@@ -4714,10 +4597,6 @@ function useDataSaver(initialDocument, editorContext) {
     // Document update
     else {
       console.debug("Existing document");
-      setStatus({
-        type: "pending",
-        message: "Comparing latest document..."
-      });
       try {
         const latestDocument = await editorContext.backend.documents.get({
           id: remoteDocument.current.id
@@ -4749,32 +4628,18 @@ function useDataSaver(initialDocument, editorContext) {
         else {
           if (isConfigTheSame) {
             console.debug("no local changes -> bye");
-            setStatus({
-              type: "notify",
-              message: "No changes in the document"
-            });
             // Let's do nothing, no remote and local change
           } else {
             console.debug("updating the document", remoteDocument.current.id);
-            setStatus({
-              type: "pending",
-              message: "Document saving..."
-            });
             const updatedDocument = await editorContext.backend.documents.update({
               id: remoteDocument.current.id,
               entry: configToSaveWithLocalisedFlag,
               version: remoteDocument.current.version
             });
             if (updatedDocument?.id) {
-              setStatus({
-                type: "success",
-                message: "Document saved"
-              });
+              toaster.success("Saved.");
             } else {
-              setStatus({
-                type: "error",
-                message: "Error saving document. Please try again!"
-              });
+              toaster.error("Error saving... Please try again.");
             }
             remoteDocument.current.entry = localConfigSnapshot;
             remoteDocument.current.version = updatedDocument.version;
@@ -4782,10 +4647,7 @@ function useDataSaver(initialDocument, editorContext) {
           }
         }
       } catch (error) {
-        setStatus({
-          type: "error",
-          message: "Error comparing latest document!"
-        });
+        toaster.error("Error saving... Please try again!");
       }
     }
   };
@@ -4824,8 +4686,7 @@ function useDataSaver(initialDocument, editorContext) {
       }
       console.debug("Last save!");
       await onTick();
-    },
-    dataSaverStatus: status
+    }
   };
 }
 
@@ -5009,10 +4870,9 @@ class EditorHistory {
   }
 }
 
-function useEditorHistory(_ref) {
-  let {
-    onChange
-  } = _ref;
+function useEditorHistory({
+  onChange
+}) {
   const editorHistory = useRef(new EditorHistory()).current;
   function undo() {
     ReactDOM.unstable_batchedUpdates(() => {
@@ -5401,16 +5261,15 @@ function useRerenderOnIframeResize(iframe) {
     };
   }, [iframe]);
 }
-const EditorContent = _ref => {
-  let {
-    compilationContext,
-    heightMode = "viewport",
-    initialDocument,
-    initialEntry,
-    externalData,
-    isAdminMode = false,
-    ...props
-  } = _ref;
+const EditorContent = ({
+  compilationContext,
+  heightMode = "viewport",
+  initialDocument,
+  initialEntry,
+  externalData,
+  isAdminMode = false,
+  ...props
+}) => {
   const [currentViewport, setCurrentViewport] = useState(compilationContext.mainBreakpointIndex); // "{ breakpoint }" or "fit-screen"
 
   const iframeContainerRef = useRef(null);
@@ -5461,11 +5320,10 @@ const EditorContent = _ref => {
     redo,
     push
   } = useEditorHistory({
-    onChange: _ref2 => {
-      let {
-        config,
-        focusedField
-      } = _ref2;
+    onChange: ({
+      config,
+      focusedField
+    }) => {
       setFocussedField(focusedField);
       form.finalForm.change("", config);
     }
@@ -5503,12 +5361,11 @@ const EditorContent = _ref => {
         return removeItems(form, fieldNames, editorContext);
       });
     },
-    insertItem: _ref3 => {
-      let {
-        name,
-        index,
-        block
-      } = _ref3;
+    insertItem: ({
+      name,
+      index,
+      block
+    }) => {
       actions.runChange(() => {
         form.mutators.insert(name, index, duplicateConfig(block, compilationContext));
         return [`${name}.${index}`];
@@ -5565,11 +5422,10 @@ const EditorContent = _ref => {
       logItems(editorContext.form, focussedField);
     }
   };
-  const syncTemplates = function () {
-    let {
-      mode,
-      template
-    } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  const syncTemplates = ({
+    mode,
+    template
+  } = {}) => {
     let templateDefined;
     if (template) {
       templateDefined = {
@@ -5641,8 +5497,7 @@ const EditorContent = _ref => {
   useEffect(() => {
     syncTemplates();
   }, [props.config.components, props.config.templates]);
-  const editorTypes = Object.fromEntries(Object.entries(compilationContext.types).map(_ref4 => {
-    let [typeName, typeDefinition] = _ref4;
+  const editorTypes = Object.fromEntries(Object.entries(compilationContext.types).map(([typeName, typeDefinition]) => {
     return [typeName, {
       ...typeDefinition,
       ...(typeDefinition.type === "external" ? {
@@ -5776,13 +5631,25 @@ const EditorContent = _ref => {
   const [isDataSaverOverlayOpen, setDataSaverOverlayOpen] = useState(false);
   useEditorGlobalKeyboardShortcuts(editorContext);
   const {
-    saveNow,
-    dataSaverStatus
+    saveNow
   } = useDataSaver(initialDocument, editorContext);
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
   useEffect(() => {
     Modal$1.setAppElement("#shopstory-app");
   }, []);
+  const EditorSidebarRight = ({
+    sidebarNodeRef,
+    focussedField,
+    form
+  }) => {
+    return /*#__PURE__*/React__default.createElement(SidebarContainer, {
+      ref: sidebarNodeRef
+    }, /*#__PURE__*/React__default.createElement(EditorSidebar, {
+      focussedField: focussedField,
+      form: form
+    }));
+  };
+  const MemoEditorSidebarRight = /*#__PURE__*/React__default.memo(EditorSidebarRight);
   return /*#__PURE__*/React__default.createElement("div", {
     id: "shopstory-app",
     style: {
@@ -5823,8 +5690,7 @@ const EditorContent = _ref => {
     locales: editorContext.locales,
     onLocaleChange: onLocaleChange,
     hideCloseButton: props.config.hideCloseButton ?? false,
-    readOnly: editorContext.readOnly,
-    dataSaverStatus: dataSaverStatus
+    readOnly: editorContext.readOnly
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
     height: appHeight
   }, /*#__PURE__*/React__default.createElement(ContentContainer, {
@@ -5842,12 +5708,15 @@ const EditorContent = _ref => {
     width: iframeSize.width,
     height: iframeSize.height,
     transform: iframeSize.transform
-  })), isEditMode && /*#__PURE__*/React__default.createElement(SidebarContainer, {
-    ref: sidebarNodeRef
-  }, /*#__PURE__*/React__default.createElement(EditorSidebar, {
+  })), isEditMode && /*#__PURE__*/React__default.createElement(MemoEditorSidebarRight, {
+    sidebarNodeRef: sidebarNodeRef,
     focussedField: focussedField,
     form: form
-  })), componentPickerData && /*#__PURE__*/React__default.createElement(ModalPicker, {
+  })
+  // <SidebarContainer ref={sidebarNodeRef}>
+  //   <EditorSidebar focussedField={focussedField} form={form} />
+  // </SidebarContainer>
+  , componentPickerData && /*#__PURE__*/React__default.createElement(ModalPicker, {
     onClose: closeComponentPickerModal,
     config: componentPickerData.config,
     pickers: props.pickers
@@ -5916,10 +5785,9 @@ function getMostCommonSubPath(path1, path2) {
 }
 function findConfigById(config, context, configId) {
   let foundConfig;
-  traverseComponents(config, context, _ref5 => {
-    let {
-      componentConfig
-    } = _ref5;
+  traverseComponents(config, context, ({
+    componentConfig
+  }) => {
     if (foundConfig) {
       return;
     }
@@ -6138,13 +6006,12 @@ function parseQueryParams() {
   return editorSearchParams;
 }
 
-function DocumentDataWidgetComponent(_ref) {
-  let {
-    id,
-    onChange,
-    resourceKey,
-    path
-  } = _ref;
+function DocumentDataWidgetComponent({
+  id,
+  onChange,
+  resourceKey,
+  path
+}) {
   if (id !== null && typeof id !== "string") {
     return /*#__PURE__*/React__default.createElement(Typography, {
       style: {
@@ -6165,17 +6032,14 @@ function DocumentDataWidgetComponent(_ref) {
   const entry = dotNotationGet(editorContext.form.values, path.slice(0, path.lastIndexOf(".")));
   const definition = findComponentDefinitionById(entry._component, editorContext);
   const schemaProp = definition.schema.find(s => s.prop === path.split(".").pop());
-  const options = documentCompoundResources.flatMap(_ref2 => {
-    let [externalId, externalDataValue] = _ref2;
-    return getBasicResourcesOfType(externalDataValue.value, schemaProp.type).map(r => {
-      const resourceSchemaProp = assertDefined(schema?.find(s => s.prop === externalId.split(".")[1]));
-      return {
-        id: externalId,
-        key: r.key,
-        label: `${resourceSchemaProp.label ?? resourceSchemaProp.prop} > ${r.label ?? r.key}`
-      };
-    });
-  });
+  const options = documentCompoundResources.flatMap(([externalId, externalDataValue]) => getBasicResourcesOfType(externalDataValue.value, schemaProp.type).map(r => {
+    const resourceSchemaProp = assertDefined(schema?.find(s => s.prop === externalId.split(".")[1]));
+    return {
+      id: externalId,
+      key: r.key,
+      label: `${resourceSchemaProp.label ?? resourceSchemaProp.prop} > ${r.label ?? r.key}`
+    };
+  }));
   if (options.length === 1 && !id && path) {
     // We perform form change manually to avoid storing this change in editor's history
     editorContext.form.change(path, {
@@ -6266,12 +6130,11 @@ function getTemplatePreviewImage(template, editorContext) {
   //   });
   // }
 }
-const SectionCard = _ref => {
-  let {
-    template,
-    onSelect,
-    mode
-  } = _ref;
+const SectionCard = ({
+  template,
+  onSelect,
+  mode
+}) => {
   const imageRef = useRef(null);
   const editorContext = useEditorContext();
   const previewImage = getTemplatePreviewImage(template);
@@ -6344,13 +6207,12 @@ const GridRoot = styled.div.withConfig({
   displayName: "SectionPicker__GridRoot",
   componentId: "sc-5szert-15"
 })(["padding:0px 16px;height:100%;overflow-x:hidden;overflow-y:auto;"]);
-const SectionPickerModal = _ref2 => {
-  let {
-    isOpen,
-    onClose,
-    templates,
-    mode = "large"
-  } = _ref2;
+const SectionPickerModal = ({
+  isOpen,
+  onClose,
+  templates,
+  mode = "large"
+}) => {
   const templateGroups = templates;
   const gridRootRef = useRef(null);
   const templateSelected = template => {
@@ -6369,72 +6231,64 @@ const SectionPickerModal = _ref2 => {
     },
     mode: "center-huge",
     headerLine: true
-  }, /*#__PURE__*/React__default.createElement(ModalRoot, null, /*#__PURE__*/React__default.createElement(Sidebar, null, templateGroups && /*#__PURE__*/React__default.createElement(SidebarContent, null, Object.entries(templateGroups).map(_ref3 => {
-    let [componentId, {
-      component: {
-        label
-      }
-    }] = _ref3;
-    return /*#__PURE__*/React__default.createElement(SidebarButton, {
-      key: `sectionPicker__group__${componentId}`,
-      onClick: () => {
-        const groupNode = document.getElementById(`sectionPicker__group__${componentId}`);
-        const groupOffsetTop = groupNode.offsetTop;
-        gridRootRef.current.scrollTo({
-          top: groupOffsetTop,
-          behavior: "smooth"
-        });
-      }
-    }, label ?? componentId);
-  }))), /*#__PURE__*/React__default.createElement(GridRoot, {
+  }, /*#__PURE__*/React__default.createElement(ModalRoot, null, /*#__PURE__*/React__default.createElement(Sidebar, null, templateGroups && /*#__PURE__*/React__default.createElement(SidebarContent, null, Object.entries(templateGroups).map(([componentId, {
+    component: {
+      label
+    }
+  }]) => /*#__PURE__*/React__default.createElement(SidebarButton, {
+    key: `sectionPicker__group__${componentId}`,
+    onClick: () => {
+      const groupNode = document.getElementById(`sectionPicker__group__${componentId}`);
+      const groupOffsetTop = groupNode.offsetTop;
+      gridRootRef.current.scrollTo({
+        top: groupOffsetTop,
+        behavior: "smooth"
+      });
+    }
+  }, label ?? componentId)))), /*#__PURE__*/React__default.createElement(GridRoot, {
     ref: gridRootRef
-  }, templates === undefined && /*#__PURE__*/React__default.createElement(Message, null, "Loading..."), templateGroups && Object.entries(templateGroups).map((_ref4, index) => {
-    let [componentId, {
-      component: {
-        label
-      },
-      templates
-    }] = _ref4;
-    return /*#__PURE__*/React__default.createElement("div", {
-      style: {
-        paddingTop: "32px",
-        paddingBottom: "32px"
-      },
-      id: `sectionPicker__group__${componentId}`,
-      key: `sectionPicker__group__${componentId}`
-    }, /*#__PURE__*/React__default.createElement(TitleContainer, null, /*#__PURE__*/React__default.createElement(Title, null, label ?? componentId)), /*#__PURE__*/React__default.createElement(ModalGridRoot, {
-      mode: mode
-    }, templates.map((template, index) => /*#__PURE__*/React__default.createElement(SectionCard, {
-      key: index,
-      template: template,
-      onSelect: () => {
-        templateSelected(template);
-      },
-      mode: mode
-    }))));
-  }))));
+  }, templates === undefined && /*#__PURE__*/React__default.createElement(Message, null, "Loading..."), templateGroups && Object.entries(templateGroups).map(([componentId, {
+    component: {
+      label
+    },
+    templates
+  }], index) => /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      paddingTop: "32px",
+      paddingBottom: "32px"
+    },
+    id: `sectionPicker__group__${componentId}`,
+    key: `sectionPicker__group__${componentId}`
+  }, /*#__PURE__*/React__default.createElement(TitleContainer, null, /*#__PURE__*/React__default.createElement(Title, null, label ?? componentId)), /*#__PURE__*/React__default.createElement(ModalGridRoot, {
+    mode: mode
+  }, templates.map((template, index) => /*#__PURE__*/React__default.createElement(SectionCard, {
+    key: index,
+    template: template,
+    onSelect: () => {
+      templateSelected(template);
+    },
+    mode: mode
+  }))))))));
 };
 
 function checkQueryForTemplate(query, template, component) {
   return `${template.label ?? ""}${component.label ?? component.id}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
 }
-const SearchableSmallPickerModal = _ref => {
-  let {
-    onClose,
-    templates,
-    isOpen
-  } = _ref;
+const SearchableSmallPickerModal = ({
+  onClose,
+  templates,
+  isOpen
+}) => {
   const editorContext = useEditorContext();
   const templatesDict = templates;
   const [query, setQuery] = useState("");
   const trimmedQuery = query.trim().toLocaleLowerCase();
   const filteredTemplatesDict = {};
   if (templatesDict) {
-    Object.values(templatesDict).forEach(_ref2 => {
-      let {
-        templates,
-        component
-      } = _ref2;
+    Object.values(templatesDict).forEach(({
+      templates,
+      component
+    }) => {
       const filteredTemplates = trimmedQuery === "" ? templates : templates.filter(template => checkQueryForTemplate(trimmedQuery, template, component));
       if (filteredTemplates.length > 0) {
         filteredTemplatesDict[component.id] = {
@@ -6469,11 +6323,10 @@ const SearchableSmallPickerModal = _ref => {
       }
     },
     headerSymbol: "S"
-  }, templatesDict === undefined && "Loading...", templatesDict !== undefined && Object.entries(filteredTemplatesDict).map(_ref3 => {
-    let [, {
-      templates,
-      component
-    }] = _ref3;
+  }, templatesDict === undefined && "Loading...", templatesDict !== undefined && Object.entries(filteredTemplatesDict).map(([, {
+    templates,
+    component
+  }]) => {
     const isOnlyOne = templates.length === 1;
     const componentLabel = component.label ?? component.id;
     return templates.map(template => {
@@ -6711,18 +6564,17 @@ const globalEditorRendererStyles = `
   }
 `;
 
-function SelectionFrameController(_ref) {
-  let {
-    isActive,
-    isChildrenSelectionDisabled,
-    children,
-    onSelect,
-    stitches,
-    sortable,
-    id,
-    direction,
-    path
-  } = _ref;
+function SelectionFrameController({
+  isActive,
+  isChildrenSelectionDisabled,
+  children,
+  onSelect,
+  stitches,
+  sortable,
+  id,
+  direction,
+  path
+}) {
   const [node, setNode] = useState(null);
   useUpdateFramePosition({
     node,
@@ -6812,11 +6664,10 @@ function SelectionFrameController(_ref) {
     onClick: onSelect
   }, sortable.attributes, sortable.listeners), children);
 }
-function useUpdateFramePosition(_ref2) {
-  let {
-    node,
-    isDisabled
-  } = _ref2;
+function useUpdateFramePosition({
+  node,
+  isDisabled
+}) {
   const dispatch = window.parent.postMessage;
   useEffect(() => {
     if (isDisabled || !node) {
@@ -6871,16 +6722,15 @@ function createThrottledHandler(callback) {
   };
 }
 
-function BlocksControls(_ref) {
-  let {
-    children,
-    path,
-    disabled,
-    direction,
-    id,
-    index,
-    length
-  } = _ref;
+function BlocksControls({
+  children,
+  path,
+  disabled,
+  direction,
+  id,
+  index,
+  length
+}) {
   const {
     focussedField,
     setFocussedField,
@@ -6997,13 +6847,12 @@ function isPathsParentEqual(path1, path2) {
   const currentPathParts = path2.split(".");
   return activePathParts.slice(0, -1).join(".") === currentPathParts.slice(0, -1).join(".");
 }
-function DroppablePlaceholder(_ref2) {
-  let {
-    id,
-    direction,
-    path,
-    position
-  } = _ref2;
+function DroppablePlaceholder({
+  id,
+  direction,
+  path,
+  position
+}) {
   const meta = useEasyblocksMetadata();
   const sortable = useSortable({
     id: `${id}.${position}`,
@@ -7254,10 +7103,9 @@ function customCollisionDetection(args) {
   // If there are no collisions with the pointer, return rectangle intersections
   return rectIntersection(args);
 }
-function EasyblocksCanvas(_ref) {
-  let {
-    components
-  } = _ref;
+function EasyblocksCanvas({
+  components
+}) {
   const {
     meta,
     compiled,
@@ -7351,12 +7199,11 @@ function EasyblocksCanvas(_ref) {
 }
 function getSortableItems(rootNoCodeEntry, editorContext) {
   const sortableItems = [];
-  configTraverse(rootNoCodeEntry, editorContext, _ref2 => {
-    let {
-      value,
-      schemaProp,
-      config
-    } = _ref2;
+  configTraverse(rootNoCodeEntry, editorContext, ({
+    value,
+    schemaProp,
+    config
+  }) => {
     if (schemaProp.type === "component-collection") {
       if (value.length === 0) {
         sortableItems.push(`placeholder.${config._id}`);
@@ -7656,20 +7503,19 @@ const debugTokens = {
   }]
 };
 
-function DebugSection(_ref) {
-  let {
-    inline_never,
-    inline_optional_disabled,
-    inline_optional_enabled,
-    inline_always,
-    token_never,
-    token_optional_disabled_no_custom,
-    token_optional_enabled_no_custom,
-    token_optional_disabled_custom,
-    token_optional_enabled_custom,
-    token_always_no_custom,
-    token_always_custom
-  } = _ref;
+function DebugSection({
+  inline_never,
+  inline_optional_disabled,
+  inline_optional_enabled,
+  inline_always,
+  token_never,
+  token_optional_disabled_no_custom,
+  token_optional_enabled_no_custom,
+  token_optional_disabled_custom,
+  token_optional_enabled_custom,
+  token_always_no_custom,
+  token_always_custom
+}) {
   return /*#__PURE__*/React__default.createElement("div", null, /*#__PURE__*/React__default.createElement("pre", null, JSON.stringify({
     inline_never,
     inline_optional_disabled,

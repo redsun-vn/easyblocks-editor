@@ -1,9 +1,5 @@
 import { Document } from "@redsun-vn/easyblocks-core";
 import { EditorContextType } from "./EditorContext";
-export interface IDataSaverStatus {
-    type: "error" | "notify" | "success" | "pending";
-    message: string;
-}
 /**
  * useDataSaver works in a realm of SINGLE CONFIG.
  * @param initialDocument
@@ -12,6 +8,5 @@ export interface IDataSaverStatus {
  */
 export declare function useDataSaver(initialDocument: Document | null, editorContext: EditorContextType): {
     saveNow: () => Promise<void>;
-    dataSaverStatus: IDataSaverStatus;
 };
 //# sourceMappingURL=useDataSaver.d.ts.map
