@@ -868,12 +868,11 @@ const EditorContent = ({
       }
 
       default: {
-        setTemplates(props.config.templates);
-        // getTemplates(editorContext, (props.config.templates as any) ?? []).then(
-        //   (newTemplates) => {
-        //     setTemplates(newTemplates);
-        //   }
-        // );
+        getTemplates(editorContext, (props.config.templates as any) ?? []).then(
+          (newTemplates) => {
+            setTemplates(newTemplates);
+          }
+        );
         break;
       }
     }

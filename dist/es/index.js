@@ -5,7 +5,7 @@ import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as To
 import isPropValid from '@emotion/is-prop-valid';
 import { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
-import { getExternalReferenceLocationKey, isTrulyResponsiveValue, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, isNoCodeComponentOfType, getDefaultLocale, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks } from '@redsun-vn/easyblocks-core';
+import { getExternalReferenceLocationKey, isTrulyResponsiveValue, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, isNoCodeComponentOfType, buildRichTextNoCodeEntry, getDefaultLocale, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks } from '@redsun-vn/easyblocks-core';
 import { parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, findComponentDefinition, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
 import throttle from 'lodash.throttle';
 import Modal$1 from 'react-modal';
@@ -4138,6 +4138,140 @@ function isAddingEnabledForSelectedFields(focusedFields, editorContext) {
   }
 }
 
+/**
+ * Traverses recursively the config tree (similar to traverseConfig) but behaves like "Array.map". It returns new tree with elements mapped to new ones.
+ * Responsive values are mapped "per breakpoint", it smells a bit, maybe in the future we'll have to apply some flag to have option whether we want to disassemble responsives or not.
+ */
+
+function configMapArray(configArray, context, callback, prefix) {
+  /**
+   * Why this?
+   *
+   * Sometimes you might need configMap for config that have not yet been normalized. Such config still can be considered correct if it has a component that have a new schema property. Example of this is mergeSingleLocaleConfigsIntoConfig.
+   */
+  if (configArray === undefined) {
+    return;
+  }
+  if (!Array.isArray(configArray)) {
+    return;
+  }
+  return configArray.map((x, index) => configMapInternal(x, context, callback, `${prefix}.${index}`));
+}
+function configMap(config, context, callback) {
+  return configMapInternal(config, context, callback, "");
+}
+function configMapInternal(config, context, callback, prefix) {
+  const componentDefinition = findComponentDefinition(config, context);
+  const result = {
+    ...config
+  };
+  if (!componentDefinition) {
+    return result;
+  }
+  prefix = prefix === undefined || prefix === "" ? "" : `${prefix}.`;
+  componentDefinition.schema.forEach(schemaProp => {
+    if (schemaProp.type === "component-collection-localised") {
+      if (config[schemaProp.prop] === undefined) {
+        return;
+      }
+      result[schemaProp.prop] = {};
+      for (const locale in config[schemaProp.prop]) {
+        if (locale === "__fallback") {
+          continue;
+        }
+        result[schemaProp.prop][locale] = configMapArray(config[schemaProp.prop][locale], context, callback, `${prefix}${schemaProp.prop}.${locale}`);
+      }
+      result[schemaProp.prop] = callback({
+        value: result[schemaProp.prop],
+        path: `${prefix}${schemaProp.prop}`,
+        schemaProp
+      });
+    } else if (schemaProp.type === "component" || schemaProp.type === "component-collection") {
+      result[schemaProp.prop] = configMapArray(config[schemaProp.prop], context, callback, `${prefix}${schemaProp.prop}`);
+      result[schemaProp.prop] = callback({
+        value: result[schemaProp.prop],
+        path: `${prefix}${schemaProp.prop}`,
+        schemaProp
+      });
+    } else {
+      if (isTrulyResponsiveValue(result[schemaProp.prop])) {
+        const mappedVal = {
+          $res: true
+        };
+        for (const key in result[schemaProp.prop]) {
+          if (key === "$res") {
+            continue;
+          }
+          mappedVal[key] = callback({
+            value: result[schemaProp.prop][key],
+            schemaProp,
+            path: `${prefix}${schemaProp.prop}.${key}`
+          });
+        }
+        result[schemaProp.prop] = mappedVal;
+      } else {
+        result[schemaProp.prop] = callback({
+          value: result[schemaProp.prop],
+          schemaProp,
+          path: `${prefix}${schemaProp.prop}`
+        });
+      }
+    }
+  });
+  return result;
+}
+
+function getDefaultTemplateForDefinition(def, editorContext) {
+  // Text has different way of building a default config
+  const config = def.id === "@easyblocks/rich-text" ? buildRichTextNoCodeEntry({
+    color: getDefaultTokenId(editorContext.theme.colors),
+    font: getDefaultTokenId(editorContext.theme.fonts)
+  }) : {
+    _component: def.id,
+    _id: uniqueId()
+  };
+  return {
+    id: `${def.id}_default`,
+    label: def.label ?? def.id,
+    entry: config,
+    isUserDefined: false
+  };
+}
+function getDefaultTokenId(tokens) {
+  return Object.entries(tokens).find(_ref => {
+    let [, value] = _ref;
+    return value.isDefault;
+  })?.[0];
+}
+async function getTemplates(editorContext) {
+  let configTemplates = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates ? await editorContext.backend.templates.getAll() : [];
+  return getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates);
+}
+function getNecessaryDefaultTemplates(components, templates, editorContext) {
+  const result = [];
+  components.forEach(component => {
+    const componentTemplates = templates.filter(template => template.entry._component === component.id);
+    if (componentTemplates.length === 0) {
+      result.push(getDefaultTemplateForDefinition(component, editorContext));
+    }
+  });
+  return result;
+}
+function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates) {
+  // If a component doesn't have a template, here's one added
+  const allBuiltinTemplates = [...configTemplates, ...getNecessaryDefaultTemplates(editorContext.definitions.components, configTemplates, editorContext)];
+  const allUserTemplates = [...remoteUserDefinedTemplates, ...allBuiltinTemplates];
+  const result = allUserTemplates.filter(template => {
+    const definition = findComponentDefinitionById(template.entry._component, editorContext);
+    if (!definition || definition.hideTemplates) {
+      return false;
+    }
+    return true;
+  });
+  return result;
+}
+
 class Form {
   loading = false;
   constructor(_ref) {
@@ -4438,89 +4572,6 @@ function useUpdateFormValues(form, values) {
 function getConfigSnapshot(config) {
   const strippedConfig = deepClone(config);
   return strippedConfig;
-}
-
-/**
- * Traverses recursively the config tree (similar to traverseConfig) but behaves like "Array.map". It returns new tree with elements mapped to new ones.
- * Responsive values are mapped "per breakpoint", it smells a bit, maybe in the future we'll have to apply some flag to have option whether we want to disassemble responsives or not.
- */
-
-function configMapArray(configArray, context, callback, prefix) {
-  /**
-   * Why this?
-   *
-   * Sometimes you might need configMap for config that have not yet been normalized. Such config still can be considered correct if it has a component that have a new schema property. Example of this is mergeSingleLocaleConfigsIntoConfig.
-   */
-  if (configArray === undefined) {
-    return;
-  }
-  if (!Array.isArray(configArray)) {
-    return;
-  }
-  return configArray.map((x, index) => configMapInternal(x, context, callback, `${prefix}.${index}`));
-}
-function configMap(config, context, callback) {
-  return configMapInternal(config, context, callback, "");
-}
-function configMapInternal(config, context, callback, prefix) {
-  const componentDefinition = findComponentDefinition(config, context);
-  const result = {
-    ...config
-  };
-  if (!componentDefinition) {
-    return result;
-  }
-  prefix = prefix === undefined || prefix === "" ? "" : `${prefix}.`;
-  componentDefinition.schema.forEach(schemaProp => {
-    if (schemaProp.type === "component-collection-localised") {
-      if (config[schemaProp.prop] === undefined) {
-        return;
-      }
-      result[schemaProp.prop] = {};
-      for (const locale in config[schemaProp.prop]) {
-        if (locale === "__fallback") {
-          continue;
-        }
-        result[schemaProp.prop][locale] = configMapArray(config[schemaProp.prop][locale], context, callback, `${prefix}${schemaProp.prop}.${locale}`);
-      }
-      result[schemaProp.prop] = callback({
-        value: result[schemaProp.prop],
-        path: `${prefix}${schemaProp.prop}`,
-        schemaProp
-      });
-    } else if (schemaProp.type === "component" || schemaProp.type === "component-collection") {
-      result[schemaProp.prop] = configMapArray(config[schemaProp.prop], context, callback, `${prefix}${schemaProp.prop}`);
-      result[schemaProp.prop] = callback({
-        value: result[schemaProp.prop],
-        path: `${prefix}${schemaProp.prop}`,
-        schemaProp
-      });
-    } else {
-      if (isTrulyResponsiveValue(result[schemaProp.prop])) {
-        const mappedVal = {
-          $res: true
-        };
-        for (const key in result[schemaProp.prop]) {
-          if (key === "$res") {
-            continue;
-          }
-          mappedVal[key] = callback({
-            value: result[schemaProp.prop][key],
-            schemaProp,
-            path: `${prefix}${schemaProp.prop}.${key}`
-          });
-        }
-        result[schemaProp.prop] = mappedVal;
-      } else {
-        result[schemaProp.prop] = callback({
-          value: result[schemaProp.prop],
-          schemaProp,
-          path: `${prefix}${schemaProp.prop}`
-        });
-      }
-    }
-  });
-  return result;
 }
 
 function addLocalizedFlag(config, context) {
@@ -5500,12 +5551,10 @@ const EditorContent = _ref => {
         }
       default:
         {
-          setTemplates(props.config.templates);
-          // getTemplates(editorContext, (props.config.templates as any) ?? []).then(
-          //   (newTemplates) => {
-          //     setTemplates(newTemplates);
-          //   }
-          // );
+          // setTemplates(props.config.templates);
+          getTemplates(editorContext, props.config.templates ?? []).then(newTemplates => {
+            setTemplates(newTemplates);
+          });
           break;
         }
     }

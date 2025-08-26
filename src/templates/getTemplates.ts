@@ -23,13 +23,13 @@ function getDefaultTemplateForDefinition(
   const config: NoCodeComponentEntry =
     def.id === "@easyblocks/rich-text"
       ? buildRichTextNoCodeEntry({
-        color: getDefaultTokenId(editorContext.theme.colors),
-        font: getDefaultTokenId(editorContext.theme.fonts),
-      })
+          color: getDefaultTokenId(editorContext.theme.colors),
+          font: getDefaultTokenId(editorContext.theme.fonts),
+        })
       : {
-        _component: def.id,
-        _id: uniqueId(),
-      };
+          _component: def.id,
+          _id: uniqueId(),
+        };
 
   return {
     id: `${def.id}_default`,
@@ -128,43 +128,17 @@ function getTemplatesInternal(
     ...allBuiltinTemplates,
   ];
 
-  const result = allUserTemplates
-    .filter((template) => {
-      const definition = findComponentDefinitionById(
-        template.entry._component,
-        editorContext
-      );
+  const result = allUserTemplates.filter((template) => {
+    const definition = findComponentDefinitionById(
+      template.entry._component,
+      editorContext
+    );
 
-      if (!definition || definition.hideTemplates) {
-        return false;
-      }
-      return true;
-    })
-    // .filter((template) => {
-    //
-    //   const result = template.entry._itemProps
-    //     ? Object.keys(template.entry._itemProps).every((componentId) =>
-    //       findComponentDefinitionById(componentId, editorContext)
-    //     )
-    //     : true;
-    //
-    //   if (template.entry._component === "ProductCard") {
-    //     console.log('WOW2222!!!', result);
-    //   }
-    //
-    //   return result;
-    // })
-    .map((template) => {
-      const newTemplate: Template = {
-        ...template,
-        entry: normalizeTextLocales(
-          normalize({ ...template.entry, _itemProps: {} }, editorContext),
-          editorContext
-        ),
-      };
-
-      return newTemplate;
-    });
+    if (!definition || definition.hideTemplates) {
+      return false;
+    }
+    return true;
+  });
 
   return result;
 }
