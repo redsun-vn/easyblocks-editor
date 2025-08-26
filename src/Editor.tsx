@@ -291,7 +291,7 @@ const EditorWrapper = memo(
 
     const rootTemplateEntry = props.rootTemplateId
       ? props.config.templates?.find((t) => t.id === props.rootTemplateId)
-        ?.entry
+          ?.entry
       : null;
 
     const rootComponentId = props.document
@@ -309,12 +309,12 @@ const EditorWrapper = memo(
     const initialEntry = props.document
       ? adaptRemoteConfig(props.document.entry, compilationContext)
       : normalize(
-        rootTemplateEntry ?? {
-          _id: uniqueId(),
-          _component: rootComponentId!,
-        },
-        compilationContext
-      );
+          rootTemplateEntry ?? {
+            _id: uniqueId(),
+            _component: rootComponentId!,
+          },
+          compilationContext
+        );
 
     return (
       <EditorContent
@@ -620,9 +620,9 @@ const EditorContent = ({
   const iframeContainerRef = useRef<HTMLIFrameElement>(null);
   const availableSize = iframeContainerRef.current
     ? {
-      width: iframeContainerRef.current.clientWidth,
-      height: iframeContainerRef.current.clientHeight,
-    }
+        width: iframeContainerRef.current.clientWidth,
+        height: iframeContainerRef.current.clientHeight,
+      }
     : undefined;
 
   const { breakpointIndex, iframeSize } = calculateViewportRelatedStuff(
@@ -642,9 +642,9 @@ const EditorContent = ({
   const prevLocale = useRef<string>("");
   const [componentPickerData, setComponentPickerData] = useState<
     | {
-      promiseResolve: (config: NoCodeComponentEntry | undefined) => void;
-      config: OpenComponentPickerConfig;
-    }
+        promiseResolve: (config: NoCodeComponentEntry | undefined) => void;
+        config: OpenComponentPickerConfig;
+      }
     | undefined
   >(undefined);
   const [focussedField, setFocussedField] = useState<Array<string>>([]);
@@ -680,7 +680,7 @@ const EditorContent = ({
     label: "Edit entry",
     fields: [],
     initialValues: initialEntry,
-    onSubmit: async () => { },
+    onSubmit: async () => {},
   });
 
   const { undo, redo, push } = useEditorHistory({
@@ -868,11 +868,12 @@ const EditorContent = ({
       }
 
       default: {
-        getTemplates(editorContext, (props.config.templates as any) ?? []).then(
-          (newTemplates) => {
-            setTemplates(newTemplates);
-          }
-        );
+        setTemplates(props.config.templates);
+        // getTemplates(editorContext, (props.config.templates as any) ?? []).then(
+        //   (newTemplates) => {
+        //     setTemplates(newTemplates);
+        //   }
+        // );
         break;
       }
     }
@@ -895,21 +896,21 @@ const EditorContent = ({
             ...typeDefinition,
             ...(typeDefinition.type === "external"
               ? {
-                widgets: typeDefinition.widgets.map((w) => {
-                  return {
-                    ...w,
-                    component: props.widgets?.[w.id] as any,
-                  };
-                }),
-              }
+                  widgets: typeDefinition.widgets.map((w) => {
+                    return {
+                      ...w,
+                      component: props.widgets?.[w.id] as any,
+                    };
+                  }),
+                }
               : typeDefinition.widget
-                ? {
+              ? {
                   widget: {
                     ...typeDefinition.widget,
                     component: props.widgets?.[typeDefinition.widget.id] as any,
                   },
                 }
-                : {}),
+              : {}),
           },
         ];
       }
@@ -1042,10 +1043,11 @@ const EditorContent = ({
         }
 
         if (fromPathParseResult.parent.path === toPathParseResult.parent.path) {
-          const pathToMove = `${fromPathParseResult.parent.path
-            ? fromPathParseResult.parent.path + "."
-            : ""
-            }${fromPathParseResult.parent.fieldName}`;
+          const pathToMove = `${
+            fromPathParseResult.parent.path
+              ? fromPathParseResult.parent.path + "."
+              : ""
+          }${fromPathParseResult.parent.fieldName}`;
 
           actions.runChange(() => {
             form.mutators.move(
@@ -1060,13 +1062,15 @@ const EditorContent = ({
           // TODO: We should reuse logic of pasting items here, but we need to handle the case of pasting into placeholder (empty array)
           const isToPathPlaceholder = toPathParseResult.fieldName !== undefined;
 
-          const insertionPath = `${toPathParseResult.parent.path === ""
-            ? ""
-            : toPathParseResult.parent.path + "."
-            }${toPathParseResult.parent.fieldName}${isToPathPlaceholder
+          const insertionPath = `${
+            toPathParseResult.parent.path === ""
+              ? ""
+              : toPathParseResult.parent.path + "."
+          }${toPathParseResult.parent.fieldName}${
+            isToPathPlaceholder
               ? `.${toPathParseResult.index}.${toPathParseResult.fieldName}`
               : ""
-            }`;
+          }`;
 
           actions.runChange(() => {
             const newConfig = duplicateConfig(
@@ -1104,10 +1108,7 @@ const EditorContent = ({
 
   useEditorGlobalKeyboardShortcuts(editorContext);
 
-  const { saveNow } = useDataSaver(
-    initialDocument,
-    editorContext
-  );
+  const { saveNow } = useDataSaver(initialDocument, editorContext);
 
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
 
@@ -1118,20 +1119,19 @@ const EditorContent = ({
   const EditorSidebarRight = ({
     sidebarNodeRef,
     focussedField,
-    form
+    form,
   }: {
-    sidebarNodeRef: React.MutableRefObject<HTMLDivElement | null>,
-    focussedField: Array<string>,
-    form: Form
+    sidebarNodeRef: React.MutableRefObject<HTMLDivElement | null>;
+    focussedField: Array<string>;
+    form: Form;
   }) => {
-
     return (
       <SidebarContainer ref={sidebarNodeRef}>
         <EditorSidebar focussedField={focussedField} form={form} />
       </SidebarContainer>
-    )
+    );
   };
-  const MemoEditorSidebarRight = React.memo(EditorSidebarRight)
+  const MemoEditorSidebarRight = React.memo(EditorSidebarRight);
 
   return (
     <div id={"shopstory-app"} style={{ height: appHeight, overflow: "hidden" }}>

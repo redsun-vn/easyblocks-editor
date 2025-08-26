@@ -74,26 +74,29 @@ function toArray(scalarOrCollection) {
 }
 
 const takeNumbers = path => path.split(".").map(x => parseInt(x, 10)).filter(x => !Number.isNaN(x));
-const preOrderPathComparator = (direction = "ascending") => (pathA, pathB) => {
-  const order = direction === "ascending" ? 1 : -1;
-  const numbersA = takeNumbers(pathA);
-  const numbersB = takeNumbers(pathB);
-  const numberALength = numbersA.length;
-  const numberBLength = numbersB.length;
-  if (numberALength === 0 || numberBLength === 0) {
-    throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
-  }
-  const shorterLength = Math.min(numberALength, numberBLength);
-  let index = 0;
-  while (index < shorterLength) {
-    const valueA = numbersA[index];
-    const valueB = numbersB[index];
-    if (valueA !== valueB) {
-      return order * Math.sign(valueA - valueB);
+const preOrderPathComparator = function () {
+  let direction = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "ascending";
+  return (pathA, pathB) => {
+    const order = direction === "ascending" ? 1 : -1;
+    const numbersA = takeNumbers(pathA);
+    const numbersB = takeNumbers(pathB);
+    const numberALength = numbersA.length;
+    const numberBLength = numbersB.length;
+    if (numberALength === 0 || numberBLength === 0) {
+      throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
     }
-    index++;
-  }
-  return order * Math.sign(numberBLength - numberALength);
+    const shorterLength = Math.min(numberALength, numberBLength);
+    let index = 0;
+    while (index < shorterLength) {
+      const valueA = numbersA[index];
+      const valueB = numbersB[index];
+      if (valueA !== valueB) {
+        return order * Math.sign(valueA - valueB);
+      }
+      index++;
+    }
+    return order * Math.sign(numberBLength - numberALength);
+  };
 };
 
 function includesAny(a, b) {
@@ -104,10 +107,10 @@ function deepClone(source) {
   return JSON.parse(JSON.stringify(source));
 }
 
-function deepCompare(...objectsToCompare) {
-  for (let index = 0; index < objectsToCompare.length - 1; index++) {
-    const currentObject = sortObject(objectsToCompare[index]);
-    const nextObject = sortObject(objectsToCompare[index + 1]);
+function deepCompare() {
+  for (let index = 0; index < arguments.length - 1; index++) {
+    const currentObject = sortObject(index < 0 || arguments.length <= index ? undefined : arguments[index]);
+    const nextObject = sortObject(index + 1 < 0 || arguments.length <= index + 1 ? undefined : arguments[index + 1]);
     const areObjectsHashesEqual = JSON.stringify(currentObject) === JSON.stringify(nextObject);
     if (!areObjectsHashesEqual) {
       return false;
@@ -187,10 +190,11 @@ function useConfigAfterAuto() {
 }
 
 const ExternalDataContext = /*#__PURE__*/React.createContext({});
-function EditorExternalDataProvider({
-  children,
-  externalData
-}) {
+function EditorExternalDataProvider(_ref) {
+  let {
+    children,
+    externalData
+  } = _ref;
   return /*#__PURE__*/React__default["default"].createElement(ExternalDataContext.Provider, {
     value: externalData
   }, children);
@@ -207,13 +211,14 @@ let ExtraKeys = /*#__PURE__*/function (ExtraKeys) {
   return ExtraKeys;
 }({});
 const actionKeys = [ExtraKeys.ALT_KEY, ExtraKeys.CTRL_KEY, ExtraKeys.META_KEY, ExtraKeys.SHIFT_KEY];
-const useWindowKeyDown = (key, callback, {
-  extraKeys,
-  isDisabled
-} = {
-  extraKeys: [],
-  isDisabled: false
-}) => {
+const useWindowKeyDown = function (key, callback) {
+  let {
+    extraKeys,
+    isDisabled
+  } = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
+    extraKeys: [],
+    isDisabled: false
+  };
   const downHandler = event => {
     const isExtraKeysPressed = extraKeys.every(k => event[k]);
     const extraKeysSet = new Set([...extraKeys]);
@@ -234,14 +239,15 @@ const useWindowKeyDown = (key, callback, {
   }, [isDisabled]);
 };
 
-function EditorIframe({
-  onEditorHistoryRedo,
-  onEditorHistoryUndo,
-  width,
-  height,
-  transform,
-  containerRef
-}) {
+function EditorIframe(_ref) {
+  let {
+    onEditorHistoryRedo,
+    onEditorHistoryUndo,
+    width,
+    height,
+    transform,
+    containerRef
+  } = _ref;
   const [isIframeReady, setIframeReady] = React.useState(false);
   const handleIframeLoaded = () => {
     setIframeReady(true);
@@ -456,11 +462,12 @@ function SidebarFooter(props) {
   }, "Master: ", value._master))));
 }
 
-const Toggle = ({
-  input,
-  field,
-  disabled = false
-}) => {
+const Toggle = _ref => {
+  let {
+    input,
+    field,
+    disabled = false
+  } = _ref;
   const checked = !!(input.value || input.checked);
   const toggleProps = {
     ...input,
@@ -484,11 +491,12 @@ function isMixedFieldValue(value) {
   return typeof value === "object" && value !== null && "__mixed__" in value && value.__mixed__;
 }
 
-const SelectFieldComponent = ({
-  input,
-  field,
-  options
-}) => {
+const SelectFieldComponent = _ref => {
+  let {
+    input,
+    field,
+    options
+  } = _ref;
   const {
     value,
     onChange
@@ -533,11 +541,12 @@ function toComponent(option) {
   }, option.label);
 }
 
-const RadioGroup = ({
-  input,
-  field,
-  options
-}) => {
+const RadioGroup = _ref => {
+  let {
+    input,
+    field,
+    options
+  } = _ref;
   const {
     value
   } = input;
@@ -570,29 +579,33 @@ const RadioGroup = ({
   }));
 };
 
-const NumberInput = ({
-  onChange,
-  value,
-  step,
-  min,
-  max
-}) => /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.Input, {
-  type: "number"
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  ,
-  step: step,
-  value: value,
-  onChange: onChange,
-  min: min,
-  max: max
-});
+const NumberInput = _ref => {
+  let {
+    onChange,
+    value,
+    step,
+    min,
+    max
+  } = _ref;
+  return /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.Input, {
+    type: "number"
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    ,
+    step: step,
+    value: value,
+    onChange: onChange,
+    min: min,
+    max: max
+  });
+};
 
-const Tooltip = /*#__PURE__*/React.forwardRef(({
-  children,
-  style = {},
-  ...rest
-}, ref) => {
+const Tooltip = /*#__PURE__*/React.forwardRef((_ref, ref) => {
+  let {
+    children,
+    style = {},
+    ...rest
+  } = _ref;
   return /*#__PURE__*/ReactDOM.createPortal(/*#__PURE__*/React__default["default"].createElement("div", _extends__default["default"]({
     style: {
       ...style,
@@ -610,10 +623,11 @@ const TooltipArrow = styledComponents.styled.div.withConfig({
   componentId: "sc-tkogle-1"
 })(["width:12px;height:6px;margin:0 auto;background:#333333;clip-path:polygon(50% 0%,0% 100%,100% 100%);"]);
 
-function useTooltip({
-  isDisabled,
-  onClick
-} = {}) {
+function useTooltip() {
+  let {
+    isDisabled,
+    onClick
+  } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   const [isOpen, setIsOpen] = React.useState(false);
   const [triggerElement, setTriggerElement] = React.useState(null);
   const [tooltipElement, setTooltipElement] = React.useState(null);
@@ -675,15 +689,16 @@ function useTooltip({
 // Wraps the Field component in labels describing the field's meta state
 // Add any other fields that the Field component should expect onto the ExtraFieldProps generic type
 
-function FieldMetaWrapper({
-  children,
-  field,
-  input,
-  noWrap,
-  layout = "row",
-  renderLabel,
-  isLabelHidden
-}) {
+function FieldMetaWrapper(_ref) {
+  let {
+    children,
+    field,
+    input,
+    noWrap,
+    layout = "row",
+    renderLabel,
+    isLabelHidden
+  } = _ref;
   const editorContext = useEditorContext();
   const configAfterAuto = useConfigAfterAuto();
   const externalData = useEditorExternalData();
@@ -794,12 +809,13 @@ function FieldMetaWrapper({
     layout: resolvedLayout
   }, content), !isMixedFieldValue && isExternalField && externalValues.length > 0 && "error" in externalValues[0] && /*#__PURE__*/React__default["default"].createElement(FieldError, null, externalValues[0].error.message));
 }
-function WidgetsSelect({
-  value,
-  onChange,
-  schemaProp,
-  isRootComponent
-}) {
+function WidgetsSelect(_ref2) {
+  let {
+    value,
+    onChange,
+    schemaProp,
+    isRootComponent
+  } = _ref2;
   const editorContext = useEditorContext();
   const [selectedWidgetId, setSelectedWidgetId] = React.useState(value.widgetId);
   const widgets = editorContext.types[schemaProp.type].widgets;
@@ -852,27 +868,42 @@ function wrapFieldsWithMeta(Field, extraProps) {
 const FieldWrapper$1 = styledComponents.styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldWrapper",
   componentId: "sc-1asy4oy-1"
-})(["display:flex;flex-direction:", ";gap:", ";justify-content:space-between;align-items:flex-start;", " position:relative;padding:4px 16px;"], ({
-  layout
-}) => layout, ({
-  layout
-}) => layout === "row" ? "10px" : "4px", ({
-  layout
-}) => layout === "column" && styledComponents.css(["flex-grow:1;"]));
+})(["display:flex;flex-direction:", ";gap:", ";justify-content:space-between;align-items:flex-start;", " position:relative;padding:4px 16px;"], _ref3 => {
+  let {
+    layout
+  } = _ref3;
+  return layout;
+}, _ref4 => {
+  let {
+    layout
+  } = _ref4;
+  return layout === "row" ? "10px" : "4px";
+}, _ref5 => {
+  let {
+    layout
+  } = _ref5;
+  return layout === "column" && styledComponents.css(["flex-grow:1;"]);
+});
 const FieldLabelWrapper = styledComponents.styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelWrapper",
   componentId: "sc-1asy4oy-2"
-})(["all:unset;position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], ({
-  isFullWidth
-}) => isFullWidth && {
-  width: "100%"
+})(["all:unset;position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], _ref6 => {
+  let {
+    isFullWidth
+  } = _ref6;
+  return isFullWidth && {
+    width: "100%"
+  };
 });
 const FieldLabel = styledComponents.styled.label.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabel",
   componentId: "sc-1asy4oy-3"
-})(["all:unset;", ";color:", ";text-overflow:ellipsis;overflow:hidden;cursor:default;"], easyblocksDesignSystem.Fonts.body, ({
-  isError
-}) => isError ? "red" : "#000");
+})(["all:unset;", ";color:", ";text-overflow:ellipsis;overflow:hidden;cursor:default;"], easyblocksDesignSystem.Fonts.body, _ref7 => {
+  let {
+    isError
+  } = _ref7;
+  return isError ? "red" : "#000";
+});
 const FieldLabelIconWrapper = styledComponents.styled.span.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelIconWrapper",
   componentId: "sc-1asy4oy-4"
@@ -884,16 +915,20 @@ const FieldError = styledComponents.styled.span.withConfig({
 const FieldInputWrapper = styledComponents.styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldInputWrapper",
   componentId: "sc-1asy4oy-6"
-})(["display:flex;justify-content:flex-end;align-items:center;", ";min-height:28px;"], ({
-  layout
-}) => layout === "row" ? styledComponents.css(["flex-grow:1;"]) : styledComponents.css(["width:100%;"]));
+})(["display:flex;justify-content:flex-end;align-items:center;", ";min-height:28px;"], _ref8 => {
+  let {
+    layout
+  } = _ref8;
+  return layout === "row" ? styledComponents.css(["flex-grow:1;"]) : styledComponents.css(["width:100%;"]);
+});
 
 const parse$1 = value => value && +value;
 
-const NumberField = wrapFieldsWithMeta(({
-  input,
-  field
-}) => {
+const NumberField = wrapFieldsWithMeta(_ref => {
+  let {
+    input,
+    field
+  } = _ref;
   return /*#__PURE__*/React__default["default"].createElement(NumberInput, _extends__default["default"]({}, input, {
     step: field.step,
     min: field.min,
@@ -922,11 +957,12 @@ const RadioGroupFieldPlugin = {
   Component: RadioGroupField
 };
 
-function TextField({
-  input,
-  field,
-  noWrap
-}) {
+function TextField(_ref) {
+  let {
+    input,
+    field,
+    noWrap
+  } = _ref;
   const editorContext = useEditorContext();
   const {
     value,
@@ -982,10 +1018,11 @@ function useTokenTypes() {
   }));
   return tokenTypes;
 }
-function TokenFieldComponent({
-  input,
-  field
-}) {
+function TokenFieldComponent(_ref) {
+  let {
+    input,
+    field
+  } = _ref;
   const editorContext = useEditorContext();
   const tokenTypes = useTokenTypes();
   const tokenTypeDefinition = tokenTypes[field.schemaProp.type];
@@ -994,7 +1031,8 @@ function TokenFieldComponent({
   const extraValues = field.extraValues ?? [];
   const [inputValue, setInputValue] = React.useState(isMixedFieldValue(input.value) ? "" : input.value?.value.toString() ?? "");
   const customValueTextFieldRef = React.useRef(null);
-  const options = Object.entries(field.tokens).map(([tokenId, tokenValue]) => {
+  const options = Object.entries(field.tokens).map(_ref2 => {
+    let [tokenId, tokenValue] = _ref2;
     if (tokenTypeDefinition.token === "fonts") {
       const fontTokenLabel = getFontTokenLabel(tokenId, tokenValue, editorContext);
       return {
@@ -1219,9 +1257,10 @@ function getUniqueValues(collection, mapper) {
   return Array.from(new Set(collection));
 }
 
-function mergeCommonFields({
-  fields
-}) {
+function mergeCommonFields(_ref) {
+  let {
+    fields
+  } = _ref;
   const mergedCommonFields = [];
   const fieldsGroupedByProperty = groupFieldsByPropertyName(fields.flat());
   for (const currentFields of Object.values(fieldsGroupedByProperty)) {
@@ -1285,11 +1324,12 @@ function getFieldSchemaWithDefinition(field) {
   return field.schemaProp;
 }
 
-const BlockField = ({
-  field,
-  input,
-  isLabelHidden
-}) => {
+const BlockField = _ref => {
+  let {
+    field,
+    input,
+    isLabelHidden
+  } = _ref;
   const [isSubcomponentPanelExpanded, setIsSubcomponentPanelExpanded] = React__default["default"].useState(false);
   const editorContext = useEditorContext();
   const {
@@ -1374,9 +1414,10 @@ const BlockField = ({
     }
   }))));
 };
-function AddButton$1({
-  onAdd
-}) {
+function AddButton$1(_ref2) {
+  let {
+    onAdd
+  } = _ref2;
   return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
     style: {
       width: "100%",
@@ -1406,12 +1447,13 @@ function AddButton$1({
     size: 16
   })), "Add"));
 }
-const SubComponentPanelButton = ({
-  paths,
-  isExpanded,
-  onExpand,
-  onCollapse
-}) => {
+const SubComponentPanelButton = _ref3 => {
+  let {
+    paths,
+    isExpanded,
+    onExpand,
+    onCollapse
+  } = _ref3;
   const sidebarPanelsRoot = document.getElementById("sidebar-panels-root");
   const editorContext = useEditorContext();
   const externalData = useEditorExternalData();
@@ -1460,11 +1502,12 @@ const Error$2 = styledComponents.styled.div.withConfig({
   componentId: "sc-5mryxt-0"
 })(["", " padding:7px 6px 7px;color:hsl(0deg 0% 50% / 0.8);white-space:normal;background:hsl(0deg 100% 50% / 0.2);margin-right:10px;border-radius:2px;"], easyblocksDesignSystem.Fonts.body);
 const PanelContext = /*#__PURE__*/React__default["default"].createContext(undefined);
-function Panel({
-  onCollapse,
-  isExpanded,
-  paths
-}) {
+function Panel(_ref4) {
+  let {
+    onCollapse,
+    isExpanded,
+    paths
+  } = _ref4;
   const editorContext = useEditorContext();
   const fields = React__default["default"].useMemo(() => {
     if (!isExpanded) {
@@ -1506,10 +1549,11 @@ const GroupPanel = styledComponents.styled.div.withConfig({
   componentId: "sc-5mryxt-2"
 })(["position:absolute;width:100%;top:0;bottom:0;left:0;overflow:hidden;pointer-events:", ";> *{", ";", ";}"], p => p.isExpanded ? "all" : "none", p => p.isExpanded && styledComponents.css(["animation-name:", ";animation-duration:150ms;animation-delay:0ms;animation-iteration-count:1;animation-timing-function:ease-out;animation-fill-mode:backwards;"], GroupPanelKeyframes), p => !p.isExpanded && styledComponents.css(["transition:transform 150ms ease-out;transform:translate3d(100%,0,0);"]));
 
-function IdentityField({
-  input,
-  field
-}) {
+function IdentityField(_ref) {
+  let {
+    input,
+    field
+  } = _ref;
   const editorContext = useEditorContext();
   const panelContext = React.useContext(PanelContext);
   const isMixed = isMixedFieldValue(input.value);
@@ -1701,7 +1745,11 @@ function getWidgetComponentForRootParam(externalReference, editorContext) {
   return Object.values(editorContext.types).filter(t => t.type === "external").flatMap(t => t.widgets).find(w => w.id === externalReference.widgetId)?.component;
 }
 function getBasicResourcesOfType(compoundResourceValues, type) {
-  return Object.entries(compoundResourceValues).filter(([, r]) => r.type === type).map(([key, r]) => {
+  return Object.entries(compoundResourceValues).filter(_ref => {
+    let [, r] = _ref;
+    return r.type === type;
+  }).map(_ref2 => {
+    let [key, r] = _ref2;
     return {
       key,
       ...r
@@ -1883,11 +1931,14 @@ const ResponsiveField = props => {
   });
   return /*#__PURE__*/React__default["default"].createElement(FieldMetaWrapper, _extends__default["default"]({}, props, {
     layout: isExternalField ? "column" : "row",
-    renderLabel: isValueDifferentFromMainBreakpoint ? ({
-      label
-    }) => /*#__PURE__*/React__default["default"].createElement(ResetButton, _extends__default["default"]({
-      "aria-label": "Revert to auto"
-    }, triggerProps), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.Reset, null), /*#__PURE__*/React__default["default"].createElement(ResetButtonLabel, null, label), isOpen && /*#__PURE__*/React__default["default"].createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default["default"].createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default["default"].createElement(TooltipBody, null, "Revert to auto"))) : undefined
+    renderLabel: isValueDifferentFromMainBreakpoint ? _ref => {
+      let {
+        label
+      } = _ref;
+      return /*#__PURE__*/React__default["default"].createElement(ResetButton, _extends__default["default"]({
+        "aria-label": "Revert to auto"
+      }, triggerProps), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.Reset, null), /*#__PURE__*/React__default["default"].createElement(ResetButtonLabel, null, label), isOpen && /*#__PURE__*/React__default["default"].createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default["default"].createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default["default"].createElement(TooltipBody, null, "Revert to auto")));
+    } : undefined
   }), /*#__PURE__*/React__default["default"].createElement("div", {
     style: {
       width: "100%"
@@ -1954,11 +2005,12 @@ function transformStrokeAndFill(node) {
   }
   Array.from(node.children).forEach(child => transformStrokeAndFill(child));
 }
-const SVGPicker = wrapFieldsWithMeta(({
-  input,
-  meta,
-  field
-}) => {
+const SVGPicker = wrapFieldsWithMeta(_ref => {
+  let {
+    input,
+    meta,
+    field
+  } = _ref;
   const svgString = input.value.value;
   const inputRef = React.useRef(null);
   React.useEffect(() => {
@@ -2019,10 +2071,11 @@ const SVGPickerFieldPlugin = {
   Component: SVGPicker
 };
 
-const Slider = wrapFieldsWithMeta(({
-  input,
-  field
-}) => {
+const Slider = wrapFieldsWithMeta(_ref => {
+  let {
+    input,
+    field
+  } = _ref;
   return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.RangeSlider, _extends__default["default"]({}, input, {
     max: field.max,
     min: field.min,
@@ -2044,10 +2097,11 @@ function useInlineTypes() {
 }
 const LocalFieldPlugin = {
   name: "local",
-  Component: wrapFieldsWithMeta(function LocalField({
-    field,
-    input
-  }) {
+  Component: wrapFieldsWithMeta(function LocalField(_ref) {
+    let {
+      field,
+      input
+    } = _ref;
     const inlineTypes = useInlineTypes();
     const inlineTypeDefinition = inlineTypes[field.schemaProp.type];
     const WidgetComponent = inlineTypeDefinition?.widget.component;
@@ -2121,10 +2175,11 @@ function verticalPositionToFlexAlignItemsValue(position) {
       return "flex-end";
   }
 }
-function PositionPickerInput({
-  position,
-  onPositionChange
-}) {
+function PositionPickerInput(_ref) {
+  let {
+    position,
+    onPositionChange
+  } = _ref;
   return /*#__PURE__*/React__default["default"].createElement(RadixRadioGroup__namespace.Root, {
     value: position,
     onValueChange: newPosition => {
@@ -2198,12 +2253,13 @@ const PositionFieldPlugin = {
 // "any" here is on purpose (although doesn't make sense from TS perspective).
 // It suggests that in onChange you can pass event OR any value. It's a bit confusing and should be cleaned up in the future.
 
-function createFieldController({
-  field,
-  editorContext,
-  format = v => v,
-  parse = v => v
-}) {
+function createFieldController(_ref) {
+  let {
+    field,
+    editorContext,
+    format = v => v,
+    parse = v => v
+  } = _ref;
   const {
     actions,
     contextParams,
@@ -2213,7 +2269,10 @@ function createFieldController({
   } = editorContext;
   const normalizedFieldName = toArray(field.name);
   return {
-    onChange(mainNewValue, ...extraNewValues) {
+    onChange(mainNewValue) {
+      for (var _len = arguments.length, extraNewValues = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        extraNewValues[_key - 1] = arguments[_key];
+      }
       /**
        * There are 2 modes of onChange: single param and multiple params
        *
@@ -2417,9 +2476,10 @@ const richTextCacheInvalidator = (cache, changedPath, context) => {
   if (isRichTextOrRichTextAncestorComponent) {
     const richTextPath = templateId === "@easyblocks/rich-text" && fieldName ? changedPath.replace(`.${fieldName}`, "") : _internals.findPathOfFirstAncestorOfType(changedPath, "@easyblocks/rich-text", context.form);
     const richTextConfig = dotNotationGet(context.form.values, richTextPath);
-    _internals.traverseComponents(richTextConfig, context, ({
-      componentConfig
-    }) => {
+    _internals.traverseComponents(richTextConfig, context, _ref2 => {
+      let {
+        componentConfig
+      } = _ref2;
       if (componentConfig && componentConfig._component.startsWith("@easyblocks/rich-text")) {
         cacheKeysToRemove.push(componentConfig._id);
       }
@@ -2448,12 +2508,13 @@ function shouldFieldBeDisplayed(field) {
   return true;
 }
 const FIELD_COMPONENTS = [TextFieldPlugin, NumberFieldPlugin, ToggleFieldPlugin, SelectFieldPlugin, RadioGroupFieldPlugin, PositionFieldPlugin, BlockFieldPlugin, SliderFieldPlugin, SVGPickerFieldPlugin, ResponsiveFieldPlugin, ExternalFieldPlugin, TokenFieldPlugin, IdentityFieldPlugin, LocalFieldPlugin];
-function FieldBuilder({
-  form,
-  field,
-  noWrap,
-  isLabelHidden
-}) {
+function FieldBuilder(_ref) {
+  let {
+    form,
+    field,
+    noWrap,
+    isLabelHidden
+  } = _ref;
   const editorContext = useEditorContext();
   if (!shouldFieldBeDisplayed(field)) {
     return null;
@@ -2518,10 +2579,11 @@ const HorizontalLine = styledComponents.styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
   componentId: "sc-ignixa-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
-function FieldsBuilder({
-  form,
-  fields
-}) {
+function FieldsBuilder(_ref2) {
+  let {
+    form,
+    fields
+  } = _ref2;
   const editorContext = useEditorContext();
   const panelContext = React.useContext(PanelContext);
   const grouped = {};
@@ -2600,9 +2662,10 @@ const IconButton = styledComponents.styled(Button).withConfig({
   componentId: "sc-qplww2-1"
 })(["padding:0;width:", "px;height:", "px;margin:0;position:relative;transform-origin:50% 50%;transition:all 150ms ease-out;padding:0;display:flex;flex-shrink:0;justify-content:center;align-items:center;svg{width:", "px;height:", "px;transition:all 150ms ease-out;}", ";"], ICON_BUTTON_SIZE, ICON_BUTTON_SIZE, ICON_SIZE, ICON_SIZE, props => props.open && styledComponents.css(["background-color:var(--tina-color-grey-0);border-color:var(--tina-color-grey-2);outline:none;fill:var(--tina-color-primary);svg{transform:rotate(45deg);}&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);}"]));
 
-function InlineSettings({
-  fields
-}) {
+function InlineSettings(_ref) {
+  let {
+    fields
+  } = _ref;
   const hasNoExtraFields = !(fields && fields.length);
   if (hasNoExtraFields) {
     return null;
@@ -2618,9 +2681,10 @@ function InlineSettings({
     fields: fields
   }));
 }
-function SettingsContent({
-  fields
-}) {
+function SettingsContent(_ref2) {
+  let {
+    fields
+  } = _ref2;
   const {
     form,
     focussedField
@@ -2706,22 +2770,23 @@ const Image = styledComponents.styled.img.withConfig({
   displayName: "EditorTopBar__Image",
   componentId: "sc-726nw9-6"
 })(["width:100%;height:100%;object-fit:contain;"]);
-const EditorTopBar = ({
-  onClose,
-  onSaveDocument,
-  onViewportChange,
-  devices,
-  viewport,
-  onIsEditingChange,
-  isEditing,
-  onUndo,
-  onRedo,
-  locales,
-  locale,
-  onLocaleChange,
-  hideCloseButton,
-  readOnly
-}) => {
+const EditorTopBar = _ref => {
+  let {
+    onClose,
+    onSaveDocument,
+    onViewportChange,
+    devices,
+    viewport,
+    onIsEditingChange,
+    isEditing,
+    onUndo,
+    onRedo,
+    locales,
+    locale,
+    onLocaleChange,
+    hideCloseButton,
+    readOnly
+  } = _ref;
   const headingRef = React.useRef(null);
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
@@ -2922,11 +2987,12 @@ const DEVICE_ID_TO_ICON = {
     fill: "black"
   }))
 };
-function DeviceSwitch({
-  deviceId,
-  devices,
-  onDeviceChange
-}) {
+function DeviceSwitch(_ref2) {
+  let {
+    deviceId,
+    devices,
+    onDeviceChange
+  } = _ref2;
   return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ToggleGroup, {
     value: deviceId,
     onChange: deviceId => {
@@ -2963,9 +3029,10 @@ function getAllComponentTypes(editorContext) {
 }
 function getComponentTypesFromDefinitions(definitions) {
   const types = new Set();
-  definitions.forEach(({
-    type
-  }) => {
+  definitions.forEach(_ref => {
+    let {
+      type
+    } = _ref;
     normalizeToStringArray(type).forEach(componentType => {
       types.add(componentType);
     });
@@ -3001,11 +3068,12 @@ function unrollAcceptsFieldIntoComponents(accepts, editorContext) {
   return Array.from(idsSet);
 }
 
-const ModalPicker = ({
-  config,
-  onClose,
-  pickers
-}) => {
+const ModalPicker = _ref => {
+  let {
+    config,
+    onClose,
+    pickers
+  } = _ref;
   const editorContext = useEditorContext();
   const {
     form
@@ -3266,11 +3334,12 @@ const TemplateModal = props => {
   }, ctaLabel)))));
 };
 
-function duplicateItem(form, {
-  name,
-  sourceIndex,
-  targetIndex
-}, compilationContext) {
+function duplicateItem(form, _ref, compilationContext) {
+  let {
+    name,
+    sourceIndex,
+    targetIndex
+  } = _ref;
   // Placeholders are not copyable
   if (isPlaceholder(name + "." + sourceIndex, form.values)) {
     return;
@@ -3278,12 +3347,13 @@ function duplicateItem(form, {
   const configToDuplicate = dotNotationGet(form.values, name + "." + sourceIndex);
   form.mutators.insert(name, targetIndex, _internals.duplicateConfig(configToDuplicate, compilationContext));
 }
-function pasteItems({
-  what,
-  where,
-  resolveDestination,
-  pasteCommand
-}) {
+function pasteItems(_ref2) {
+  let {
+    what,
+    where,
+    resolveDestination,
+    pasteCommand
+  } = _ref2;
   const successfulInsertsPaths = [];
   takeLastOfEachParent(where).sort(preOrderPathComparator()).map(initialDestination => {
     const destination = successfulInsertsPaths.reduce((acc, current) => shiftPath(acc, current, "downward"), initialDestination);
@@ -3329,11 +3399,12 @@ function duplicateItems(form, fieldNames, compilationContext) {
   });
   return nextFocusedFieldsPerGroup.flat();
 }
-function moveItem(form, {
-  from,
-  to,
-  name
-}) {
+function moveItem(form, _ref3) {
+  let {
+    from,
+    to,
+    name
+  } = _ref3;
   // Placeholders are not movable
   if (isPlaceholder(name + "." + from, form.values)) {
     return;
@@ -3412,10 +3483,11 @@ function moveItems(form, fieldsToMove, direction) {
     }
   }
 }
-function removeItem(form, {
-  index,
-  name
-}) {
+function removeItem(form, _ref4) {
+  let {
+    index,
+    name
+  } = _ref4;
   const configPathToRemove = name + "." + index;
 
   // Placeholders are not removable
@@ -3524,7 +3596,8 @@ function groupFieldsByParentPath(fields, sortDirection) {
     accumulator[parentPath] = [index];
     return accumulator;
   }, {});
-  return Object.fromEntries(Object.entries(fieldsIndicesGroupedByParentPath).map(([parentPath, indices]) => {
+  return Object.fromEntries(Object.entries(fieldsIndicesGroupedByParentPath).map(_ref5 => {
+    let [parentPath, indices] = _ref5;
     return [parentPath, indices.map(index => parentPath + "." + index)];
   }));
 }
@@ -3570,7 +3643,8 @@ function isFieldRemovable(fieldName, form, compilationContext) {
 function isFieldDuplicatable(fieldName, form, compilationContext) {
   return isFieldRemovable(fieldName, form, compilationContext);
 }
-const shiftPath = (originalPath, shiftingPath, direction = "downward") => {
+const shiftPath = function (originalPath, shiftingPath) {
+  let direction = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "downward";
   const directionFactor = direction === "downward" ? 1 : -1;
   const original = shiftingPath.split(".");
   const shifting = originalPath.split(".");
@@ -3603,14 +3677,18 @@ function takeLastOfEachParent(where) {
     acc[trimmed] = Math.max(index, acc[trimmed] ?? Number.MIN_SAFE_INTEGER);
     return acc;
   }, {});
-  return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
+  return Object.entries(lastOfEachParent).map(_ref6 => {
+    let [key, value] = _ref6;
+    return `${key}.${value}`;
+  });
 }
 
-function reconcile({
-  context,
-  templateId,
-  fieldName
-}) {
+function reconcile(_ref) {
+  let {
+    context,
+    templateId,
+    fieldName
+  } = _ref;
   return item => {
     if (!fieldName || !templateId) {
       return item;
@@ -3636,12 +3714,13 @@ const getTypes = schema => {
   }
   return [];
 };
-const insertCommand = ({
-  context,
-  form,
-  schema,
-  templateId
-}) => {
+const insertCommand = _ref => {
+  let {
+    context,
+    form,
+    schema,
+    templateId
+  } = _ref;
   const types = getTypes(schema);
   const reconcileItem = reconcile({
     context,
@@ -3670,16 +3749,19 @@ function getSchema(path, context) {
   return schema;
 }
 const toName = destination => [destination.parent?.path, destination.parent?.fieldName].filter(Boolean).join(".");
-const fixIndexInCollection = (index = 0, schema) => {
+const fixIndexInCollection = function () {
+  let index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+  let schema = arguments.length > 1 ? arguments[1] : undefined;
   if (schema?.type === "component-collection") {
     return index + 1;
   }
   return index;
 };
-function destinationResolver({
-  form,
-  context
-}) {
+function destinationResolver(_ref) {
+  let {
+    form,
+    context
+  } = _ref;
   return function (initialDestinationPath) {
     const resolvedDestinations = [];
     const resolvedPaths = new Set();
@@ -3712,9 +3794,12 @@ function destinationResolver({
         })
       });
       for (const slot of definition.pasteSlots ?? []) {
-        const slotSchema = definition.schema.find(({
-          prop
-        }) => prop === slot);
+        const slotSchema = definition.schema.find(_ref2 => {
+          let {
+            prop
+          } = _ref2;
+          return prop === slot;
+        });
         if (!slotSchema) {
           continue;
         }
@@ -3775,12 +3860,13 @@ const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
 const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
 const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
 
-function AddButton({
-  position,
-  index,
-  offset,
-  onClick
-}) {
+function AddButton(_ref) {
+  let {
+    position,
+    index,
+    offset,
+    onClick
+  } = _ref;
   const [isOpen, setIsOpen] = React__default["default"].useState(false);
   const addBlockButtonRef = React__default["default"].useRef(null);
   const handleOpenBlockMenu = event => {
@@ -3836,23 +3922,33 @@ const AddIconButton = styledComponents.styled(IconButton).withConfig({
 const AddButtonWrapper = styledComponents.styled.div.withConfig({
   displayName: "AddButton__AddButtonWrapper",
   componentId: "sc-79bcl2-1"
-})(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;"], ({
-  position
-}) => position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP, ({
-  position
-}) => position === "before" ? BEFORE_ADD_BUTTON_LEFT : AFTER_ADD_BUTTON_LEFT, ({
-  position
-}) => position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY);
+})(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;"], _ref2 => {
+  let {
+    position
+  } = _ref2;
+  return position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP;
+}, _ref3 => {
+  let {
+    position
+  } = _ref3;
+  return position === "before" ? BEFORE_ADD_BUTTON_LEFT : AFTER_ADD_BUTTON_LEFT;
+}, _ref4 => {
+  let {
+    position
+  } = _ref4;
+  return position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY;
+});
 
 const Wrapper = styledComponents.styled.div.withConfig({
   displayName: "SelectionFramestyles__Wrapper",
   componentId: "sc-xqih8j-0"
 })(["position:absolute;top:0;left:0;bottom:0;right:0;display:grid;place-items:center;pointer-events:none;"]);
-const FrameWrapper = styledComponents.styled.div.attrs(({
-  width,
-  height,
-  transform
-}) => {
+const FrameWrapper = styledComponents.styled.div.attrs(_ref => {
+  let {
+    width,
+    height,
+    transform
+  } = _ref;
   return {
     style: {
       width,
@@ -3951,11 +4047,12 @@ function isButtonWithinViewport(target, viewport) {
   return target.top >= 0 && target.top <= viewport.height && target.left >= 0 && target.left <= viewport.width;
 }
 
-function SelectionFrame({
-  width,
-  height,
-  transform
-}) {
+function SelectionFrame(_ref) {
+  let {
+    width,
+    height,
+    transform
+  } = _ref;
   const editorContext = useEditorContext();
   const {
     focussedField,
@@ -4074,195 +4171,20 @@ function isAddingEnabledForSelectedFields(focusedFields, editorContext) {
   }
 }
 
-/**
- * Traverses recursively the config tree (similar to traverseConfig) but behaves like "Array.map". It returns new tree with elements mapped to new ones.
- * Responsive values are mapped "per breakpoint", it smells a bit, maybe in the future we'll have to apply some flag to have option whether we want to disassemble responsives or not.
- */
-
-function configMapArray(configArray, context, callback, prefix) {
-  /**
-   * Why this?
-   *
-   * Sometimes you might need configMap for config that have not yet been normalized. Such config still can be considered correct if it has a component that have a new schema property. Example of this is mergeSingleLocaleConfigsIntoConfig.
-   */
-  if (configArray === undefined) {
-    return;
-  }
-  if (!Array.isArray(configArray)) {
-    return;
-  }
-  return configArray.map((x, index) => configMapInternal(x, context, callback, `${prefix}.${index}`));
-}
-function configMap(config, context, callback) {
-  return configMapInternal(config, context, callback, "");
-}
-function configMapInternal(config, context, callback, prefix) {
-  const componentDefinition = _internals.findComponentDefinition(config, context);
-  const result = {
-    ...config
-  };
-  if (!componentDefinition) {
-    return result;
-  }
-  prefix = prefix === undefined || prefix === "" ? "" : `${prefix}.`;
-  componentDefinition.schema.forEach(schemaProp => {
-    if (schemaProp.type === "component-collection-localised") {
-      if (config[schemaProp.prop] === undefined) {
-        return;
-      }
-      result[schemaProp.prop] = {};
-      for (const locale in config[schemaProp.prop]) {
-        if (locale === "__fallback") {
-          continue;
-        }
-        result[schemaProp.prop][locale] = configMapArray(config[schemaProp.prop][locale], context, callback, `${prefix}${schemaProp.prop}.${locale}`);
-      }
-      result[schemaProp.prop] = callback({
-        value: result[schemaProp.prop],
-        path: `${prefix}${schemaProp.prop}`,
-        schemaProp
-      });
-    } else if (schemaProp.type === "component" || schemaProp.type === "component-collection") {
-      result[schemaProp.prop] = configMapArray(config[schemaProp.prop], context, callback, `${prefix}${schemaProp.prop}`);
-      result[schemaProp.prop] = callback({
-        value: result[schemaProp.prop],
-        path: `${prefix}${schemaProp.prop}`,
-        schemaProp
-      });
-    } else {
-      if (easyblocksCore.isTrulyResponsiveValue(result[schemaProp.prop])) {
-        const mappedVal = {
-          $res: true
-        };
-        for (const key in result[schemaProp.prop]) {
-          if (key === "$res") {
-            continue;
-          }
-          mappedVal[key] = callback({
-            value: result[schemaProp.prop][key],
-            schemaProp,
-            path: `${prefix}${schemaProp.prop}.${key}`
-          });
-        }
-        result[schemaProp.prop] = mappedVal;
-      } else {
-        result[schemaProp.prop] = callback({
-          value: result[schemaProp.prop],
-          schemaProp,
-          path: `${prefix}${schemaProp.prop}`
-        });
-      }
-    }
-  });
-  return result;
-}
-
-function getDefaultTemplateForDefinition(def, editorContext) {
-  // Text has different way of building a default config
-  const config = def.id === "@easyblocks/rich-text" ? easyblocksCore.buildRichTextNoCodeEntry({
-    color: getDefaultTokenId(editorContext.theme.colors),
-    font: getDefaultTokenId(editorContext.theme.fonts)
-  }) : {
-    _component: def.id,
-    _id: uniqueId()
-  };
-  return {
-    id: `${def.id}_default`,
-    label: def.label ?? def.id,
-    entry: config,
-    isUserDefined: false
-  };
-}
-function getDefaultTokenId(tokens) {
-  return Object.entries(tokens).find(([, value]) => value.isDefault)?.[0];
-}
-async function getTemplates(editorContext, configTemplates = []) {
-  const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates ? await editorContext.backend.templates.getAll() : [];
-  return getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates);
-}
-function getNecessaryDefaultTemplates(components, templates, editorContext) {
-  const result = [];
-  components.forEach(component => {
-    const componentTemplates = templates.filter(template => template.entry._component === component.id);
-    if (componentTemplates.length === 0) {
-      result.push(getDefaultTemplateForDefinition(component, editorContext));
-    }
-  });
-  return result;
-}
-function normalizeTextLocales(config, editorContext) {
-  return configMap(config, editorContext, ({
-    value,
-    schemaProp
-  }) => {
-    if (schemaProp.type === "text") {
-      const firstDefinedValue = Object.values(value.value).filter(x => x !== null && x !== undefined)[0];
-      return {
-        ...value,
-        value: {
-          [easyblocksCore.getDefaultLocale(editorContext.locales).code]: firstDefinedValue
-        }
-      };
-    } else if (schemaProp.type === "component-collection-localised") {
-      const firstDefinedValue = Object.values(value).filter(x => x !== null && x !== undefined)[0];
-      return {
-        [easyblocksCore.getDefaultLocale(editorContext.locales).code]: firstDefinedValue
-      };
-    }
-    return value;
-  });
-}
-function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates) {
-  // If a component doesn't have a template, here's one added
-  const allBuiltinTemplates = [...configTemplates, ...getNecessaryDefaultTemplates(editorContext.definitions.components, configTemplates, editorContext)];
-  const allUserTemplates = [...remoteUserDefinedTemplates, ...allBuiltinTemplates];
-  const result = allUserTemplates.filter(template => {
-    const definition = _internals.findComponentDefinitionById(template.entry._component, editorContext);
-    if (!definition || definition.hideTemplates) {
-      return false;
-    }
-    return true;
-  })
-  // .filter((template) => {
-  //
-  //   const result = template.entry._itemProps
-  //     ? Object.keys(template.entry._itemProps).every((componentId) =>
-  //       findComponentDefinitionById(componentId, editorContext)
-  //     )
-  //     : true;
-  //
-  //   if (template.entry._component === "ProductCard") {
-  //     console.log('WOW2222!!!', result);
-  //   }
-  //
-  //   return result;
-  // })
-  .map(template => {
-    const newTemplate = {
-      ...template,
-      entry: normalizeTextLocales(_internals.normalize({
-        ...template.entry,
-        _itemProps: {}
-      }, editorContext), editorContext)
-    };
-    return newTemplate;
-  });
-  return result;
-}
-
 class Form {
   loading = false;
-  constructor({
-    id,
-    label,
-    fields,
-    actions,
-    buttons,
-    reset,
-    loadInitialValues,
-    onChange,
-    ...options
-  }) {
+  constructor(_ref) {
+    let {
+      id,
+      label,
+      fields,
+      actions,
+      buttons,
+      reset,
+      loadInitialValues,
+      onChange,
+      ...options
+    } = _ref;
     const initialValues = options.initialValues || {};
     this.__type = options.__type || "form";
     this.id = id;
@@ -4418,13 +4340,15 @@ class Form {
   }
 }
 function updateEverything(form, values) {
-  Object.entries(values).forEach(([path, value]) => {
+  Object.entries(values).forEach(_ref2 => {
+    let [path, value] = _ref2;
     form.change(path, value);
   });
 }
 function updateSelectively(form, values, prefix) {
   const activePath = form.getState().active;
-  Object.entries(values).forEach(([name, value]) => {
+  Object.entries(values).forEach(_ref3 => {
+    let [name, value] = _ref3;
     const path = prefix ? `${prefix}.${name}` : name;
     if (typeof value === "object") {
       if (activePath.startsWith(path)) {
@@ -4441,10 +4365,12 @@ function updateSelectively(form, values, prefix) {
 /**
  * A hook that creates a form and updates it's watched properties.
  */
-function useForm({
-  loadInitialValues,
-  ...options
-}, watch = {}) {
+function useForm(_ref) {
+  let {
+    loadInitialValues,
+    ...options
+  } = _ref;
+  let watch = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   /**
    * `initialValues` will be usually be undefined if `loadInitialValues` is used.
    *
@@ -4547,11 +4473,95 @@ function getConfigSnapshot(config) {
   return strippedConfig;
 }
 
+/**
+ * Traverses recursively the config tree (similar to traverseConfig) but behaves like "Array.map". It returns new tree with elements mapped to new ones.
+ * Responsive values are mapped "per breakpoint", it smells a bit, maybe in the future we'll have to apply some flag to have option whether we want to disassemble responsives or not.
+ */
+
+function configMapArray(configArray, context, callback, prefix) {
+  /**
+   * Why this?
+   *
+   * Sometimes you might need configMap for config that have not yet been normalized. Such config still can be considered correct if it has a component that have a new schema property. Example of this is mergeSingleLocaleConfigsIntoConfig.
+   */
+  if (configArray === undefined) {
+    return;
+  }
+  if (!Array.isArray(configArray)) {
+    return;
+  }
+  return configArray.map((x, index) => configMapInternal(x, context, callback, `${prefix}.${index}`));
+}
+function configMap(config, context, callback) {
+  return configMapInternal(config, context, callback, "");
+}
+function configMapInternal(config, context, callback, prefix) {
+  const componentDefinition = _internals.findComponentDefinition(config, context);
+  const result = {
+    ...config
+  };
+  if (!componentDefinition) {
+    return result;
+  }
+  prefix = prefix === undefined || prefix === "" ? "" : `${prefix}.`;
+  componentDefinition.schema.forEach(schemaProp => {
+    if (schemaProp.type === "component-collection-localised") {
+      if (config[schemaProp.prop] === undefined) {
+        return;
+      }
+      result[schemaProp.prop] = {};
+      for (const locale in config[schemaProp.prop]) {
+        if (locale === "__fallback") {
+          continue;
+        }
+        result[schemaProp.prop][locale] = configMapArray(config[schemaProp.prop][locale], context, callback, `${prefix}${schemaProp.prop}.${locale}`);
+      }
+      result[schemaProp.prop] = callback({
+        value: result[schemaProp.prop],
+        path: `${prefix}${schemaProp.prop}`,
+        schemaProp
+      });
+    } else if (schemaProp.type === "component" || schemaProp.type === "component-collection") {
+      result[schemaProp.prop] = configMapArray(config[schemaProp.prop], context, callback, `${prefix}${schemaProp.prop}`);
+      result[schemaProp.prop] = callback({
+        value: result[schemaProp.prop],
+        path: `${prefix}${schemaProp.prop}`,
+        schemaProp
+      });
+    } else {
+      if (easyblocksCore.isTrulyResponsiveValue(result[schemaProp.prop])) {
+        const mappedVal = {
+          $res: true
+        };
+        for (const key in result[schemaProp.prop]) {
+          if (key === "$res") {
+            continue;
+          }
+          mappedVal[key] = callback({
+            value: result[schemaProp.prop][key],
+            schemaProp,
+            path: `${prefix}${schemaProp.prop}.${key}`
+          });
+        }
+        result[schemaProp.prop] = mappedVal;
+      } else {
+        result[schemaProp.prop] = callback({
+          value: result[schemaProp.prop],
+          schemaProp,
+          path: `${prefix}${schemaProp.prop}`
+        });
+      }
+    }
+  });
+  return result;
+}
+
 function addLocalizedFlag(config, context) {
-  return configMap(config, context, ({
-    value,
-    schemaProp
-  }) => {
+  return configMap(config, context, _ref => {
+    let {
+      value,
+      schemaProp
+    } = _ref;
     if (schemaProp.type === "text" && value.id?.startsWith("local.") || schemaProp.type === "component-collection-localised") {
       return {
         __localized: true,
@@ -4563,10 +4573,11 @@ function addLocalizedFlag(config, context) {
 }
 
 function removeLocalizedFlag(config, context) {
-  return configMap(config, context, ({
-    value,
-    schemaProp
-  }) => {
+  return configMap(config, context, _ref => {
+    let {
+      value,
+      schemaProp
+    } = _ref;
     if (schemaProp.type === "text" && value?.id.startsWith("local.") || schemaProp.type === "component-collection-localised") {
       delete value.__localized;
     }
@@ -4903,9 +4914,10 @@ class EditorHistory {
   }
 }
 
-function useEditorHistory({
-  onChange
-}) {
+function useEditorHistory(_ref) {
+  let {
+    onChange
+  } = _ref;
   const editorHistory = React.useRef(new EditorHistory()).current;
   function undo() {
     ReactDOM__default["default"].unstable_batchedUpdates(() => {
@@ -5294,15 +5306,16 @@ function useRerenderOnIframeResize(iframe) {
     };
   }, [iframe]);
 }
-const EditorContent = ({
-  compilationContext,
-  heightMode = "viewport",
-  initialDocument,
-  initialEntry,
-  externalData,
-  isAdminMode = false,
-  ...props
-}) => {
+const EditorContent = _ref => {
+  let {
+    compilationContext,
+    heightMode = "viewport",
+    initialDocument,
+    initialEntry,
+    externalData,
+    isAdminMode = false,
+    ...props
+  } = _ref;
   const [currentViewport, setCurrentViewport] = React.useState(compilationContext.mainBreakpointIndex); // "{ breakpoint }" or "fit-screen"
 
   const iframeContainerRef = React.useRef(null);
@@ -5353,10 +5366,11 @@ const EditorContent = ({
     redo,
     push
   } = useEditorHistory({
-    onChange: ({
-      config,
-      focusedField
-    }) => {
+    onChange: _ref2 => {
+      let {
+        config,
+        focusedField
+      } = _ref2;
       setFocussedField(focusedField);
       form.finalForm.change("", config);
     }
@@ -5394,11 +5408,12 @@ const EditorContent = ({
         return removeItems(form, fieldNames, editorContext);
       });
     },
-    insertItem: ({
-      name,
-      index,
-      block
-    }) => {
+    insertItem: _ref3 => {
+      let {
+        name,
+        index,
+        block
+      } = _ref3;
       actions.runChange(() => {
         form.mutators.insert(name, index, _internals.duplicateConfig(block, compilationContext));
         return [`${name}.${index}`];
@@ -5455,10 +5470,11 @@ const EditorContent = ({
       logItems(editorContext.form, focussedField);
     }
   };
-  const syncTemplates = ({
-    mode,
-    template
-  } = {}) => {
+  const syncTemplates = function () {
+    let {
+      mode,
+      template
+    } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     let templateDefined;
     if (template) {
       templateDefined = {
@@ -5517,9 +5533,12 @@ const EditorContent = ({
         }
       default:
         {
-          getTemplates(editorContext, props.config.templates ?? []).then(newTemplates => {
-            setTemplates(newTemplates);
-          });
+          setTemplates(props.config.templates);
+          // getTemplates(editorContext, (props.config.templates as any) ?? []).then(
+          //   (newTemplates) => {
+          //     setTemplates(newTemplates);
+          //   }
+          // );
           break;
         }
     }
@@ -5530,7 +5549,8 @@ const EditorContent = ({
   React.useEffect(() => {
     syncTemplates();
   }, [props.config.components, props.config.templates]);
-  const editorTypes = Object.fromEntries(Object.entries(compilationContext.types).map(([typeName, typeDefinition]) => {
+  const editorTypes = Object.fromEntries(Object.entries(compilationContext.types).map(_ref4 => {
+    let [typeName, typeDefinition] = _ref4;
     return [typeName, {
       ...typeDefinition,
       ...(typeDefinition.type === "external" ? {
@@ -5670,11 +5690,12 @@ const EditorContent = ({
   React.useEffect(() => {
     Modal__default["default"].setAppElement("#shopstory-app");
   }, []);
-  const EditorSidebarRight = ({
-    sidebarNodeRef,
-    focussedField,
-    form
-  }) => {
+  const EditorSidebarRight = _ref5 => {
+    let {
+      sidebarNodeRef,
+      focussedField,
+      form
+    } = _ref5;
     return /*#__PURE__*/React__default["default"].createElement(SidebarContainer, {
       ref: sidebarNodeRef
     }, /*#__PURE__*/React__default["default"].createElement(EditorSidebar, {
@@ -5818,9 +5839,10 @@ function getMostCommonSubPath(path1, path2) {
 }
 function findConfigById(config, context, configId) {
   let foundConfig;
-  _internals.traverseComponents(config, context, ({
-    componentConfig
-  }) => {
+  _internals.traverseComponents(config, context, _ref6 => {
+    let {
+      componentConfig
+    } = _ref6;
     if (foundConfig) {
       return;
     }
@@ -6039,12 +6061,13 @@ function parseQueryParams() {
   return editorSearchParams;
 }
 
-function DocumentDataWidgetComponent({
-  id,
-  onChange,
-  resourceKey,
-  path
-}) {
+function DocumentDataWidgetComponent(_ref) {
+  let {
+    id,
+    onChange,
+    resourceKey,
+    path
+  } = _ref;
   if (id !== null && typeof id !== "string") {
     return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
       style: {
@@ -6065,14 +6088,17 @@ function DocumentDataWidgetComponent({
   const entry = dotNotationGet(editorContext.form.values, path.slice(0, path.lastIndexOf(".")));
   const definition = _internals.findComponentDefinitionById(entry._component, editorContext);
   const schemaProp = definition.schema.find(s => s.prop === path.split(".").pop());
-  const options = documentCompoundResources.flatMap(([externalId, externalDataValue]) => getBasicResourcesOfType(externalDataValue.value, schemaProp.type).map(r => {
-    const resourceSchemaProp = assertDefined(schema?.find(s => s.prop === externalId.split(".")[1]));
-    return {
-      id: externalId,
-      key: r.key,
-      label: `${resourceSchemaProp.label ?? resourceSchemaProp.prop} > ${r.label ?? r.key}`
-    };
-  }));
+  const options = documentCompoundResources.flatMap(_ref2 => {
+    let [externalId, externalDataValue] = _ref2;
+    return getBasicResourcesOfType(externalDataValue.value, schemaProp.type).map(r => {
+      const resourceSchemaProp = assertDefined(schema?.find(s => s.prop === externalId.split(".")[1]));
+      return {
+        id: externalId,
+        key: r.key,
+        label: `${resourceSchemaProp.label ?? resourceSchemaProp.prop} > ${r.label ?? r.key}`
+      };
+    });
+  });
   if (options.length === 1 && !id && path) {
     // We perform form change manually to avoid storing this change in editor's history
     editorContext.form.change(path, {
@@ -6163,11 +6189,12 @@ function getTemplatePreviewImage(template, editorContext) {
   //   });
   // }
 }
-const SectionCard = ({
-  template,
-  onSelect,
-  mode
-}) => {
+const SectionCard = _ref => {
+  let {
+    template,
+    onSelect,
+    mode
+  } = _ref;
   const imageRef = React.useRef(null);
   const editorContext = useEditorContext();
   const previewImage = getTemplatePreviewImage(template);
@@ -6240,12 +6267,13 @@ const GridRoot = styledComponents.styled.div.withConfig({
   displayName: "SectionPicker__GridRoot",
   componentId: "sc-5szert-15"
 })(["padding:0px 16px;height:100%;overflow-x:hidden;overflow-y:auto;"]);
-const SectionPickerModal = ({
-  isOpen,
-  onClose,
-  templates,
-  mode = "large"
-}) => {
+const SectionPickerModal = _ref2 => {
+  let {
+    isOpen,
+    onClose,
+    templates,
+    mode = "large"
+  } = _ref2;
   const templateGroups = templates;
   const gridRootRef = React.useRef(null);
   const templateSelected = template => {
@@ -6264,64 +6292,72 @@ const SectionPickerModal = ({
     },
     mode: "center-huge",
     headerLine: true
-  }, /*#__PURE__*/React__default["default"].createElement(ModalRoot, null, /*#__PURE__*/React__default["default"].createElement(Sidebar, null, templateGroups && /*#__PURE__*/React__default["default"].createElement(SidebarContent, null, Object.entries(templateGroups).map(([componentId, {
-    component: {
-      label
-    }
-  }]) => /*#__PURE__*/React__default["default"].createElement(SidebarButton, {
-    key: `sectionPicker__group__${componentId}`,
-    onClick: () => {
-      const groupNode = document.getElementById(`sectionPicker__group__${componentId}`);
-      const groupOffsetTop = groupNode.offsetTop;
-      gridRootRef.current.scrollTo({
-        top: groupOffsetTop,
-        behavior: "smooth"
-      });
-    }
-  }, label ?? componentId)))), /*#__PURE__*/React__default["default"].createElement(GridRoot, {
+  }, /*#__PURE__*/React__default["default"].createElement(ModalRoot, null, /*#__PURE__*/React__default["default"].createElement(Sidebar, null, templateGroups && /*#__PURE__*/React__default["default"].createElement(SidebarContent, null, Object.entries(templateGroups).map(_ref3 => {
+    let [componentId, {
+      component: {
+        label
+      }
+    }] = _ref3;
+    return /*#__PURE__*/React__default["default"].createElement(SidebarButton, {
+      key: `sectionPicker__group__${componentId}`,
+      onClick: () => {
+        const groupNode = document.getElementById(`sectionPicker__group__${componentId}`);
+        const groupOffsetTop = groupNode.offsetTop;
+        gridRootRef.current.scrollTo({
+          top: groupOffsetTop,
+          behavior: "smooth"
+        });
+      }
+    }, label ?? componentId);
+  }))), /*#__PURE__*/React__default["default"].createElement(GridRoot, {
     ref: gridRootRef
-  }, templates === undefined && /*#__PURE__*/React__default["default"].createElement(Message, null, "Loading..."), templateGroups && Object.entries(templateGroups).map(([componentId, {
-    component: {
-      label
-    },
-    templates
-  }], index) => /*#__PURE__*/React__default["default"].createElement("div", {
-    style: {
-      paddingTop: "32px",
-      paddingBottom: "32px"
-    },
-    id: `sectionPicker__group__${componentId}`,
-    key: `sectionPicker__group__${componentId}`
-  }, /*#__PURE__*/React__default["default"].createElement(TitleContainer, null, /*#__PURE__*/React__default["default"].createElement(Title, null, label ?? componentId)), /*#__PURE__*/React__default["default"].createElement(ModalGridRoot, {
-    mode: mode
-  }, templates.map((template, index) => /*#__PURE__*/React__default["default"].createElement(SectionCard, {
-    key: index,
-    template: template,
-    onSelect: () => {
-      templateSelected(template);
-    },
-    mode: mode
-  }))))))));
+  }, templates === undefined && /*#__PURE__*/React__default["default"].createElement(Message, null, "Loading..."), templateGroups && Object.entries(templateGroups).map((_ref4, index) => {
+    let [componentId, {
+      component: {
+        label
+      },
+      templates
+    }] = _ref4;
+    return /*#__PURE__*/React__default["default"].createElement("div", {
+      style: {
+        paddingTop: "32px",
+        paddingBottom: "32px"
+      },
+      id: `sectionPicker__group__${componentId}`,
+      key: `sectionPicker__group__${componentId}`
+    }, /*#__PURE__*/React__default["default"].createElement(TitleContainer, null, /*#__PURE__*/React__default["default"].createElement(Title, null, label ?? componentId)), /*#__PURE__*/React__default["default"].createElement(ModalGridRoot, {
+      mode: mode
+    }, templates.map((template, index) => /*#__PURE__*/React__default["default"].createElement(SectionCard, {
+      key: index,
+      template: template,
+      onSelect: () => {
+        templateSelected(template);
+      },
+      mode: mode
+    }))));
+  }))));
 };
 
 function checkQueryForTemplate(query, template, component) {
   return `${template.label ?? ""}${component.label ?? component.id}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
 }
-const SearchableSmallPickerModal = ({
-  onClose,
-  templates,
-  isOpen
-}) => {
+const SearchableSmallPickerModal = _ref => {
+  let {
+    onClose,
+    templates,
+    isOpen
+  } = _ref;
   const editorContext = useEditorContext();
   const templatesDict = templates;
   const [query, setQuery] = React.useState("");
   const trimmedQuery = query.trim().toLocaleLowerCase();
   const filteredTemplatesDict = {};
   if (templatesDict) {
-    Object.values(templatesDict).forEach(({
-      templates,
-      component
-    }) => {
+    Object.values(templatesDict).forEach(_ref2 => {
+      let {
+        templates,
+        component
+      } = _ref2;
       const filteredTemplates = trimmedQuery === "" ? templates : templates.filter(template => checkQueryForTemplate(trimmedQuery, template, component));
       if (filteredTemplates.length > 0) {
         filteredTemplatesDict[component.id] = {
@@ -6356,10 +6392,11 @@ const SearchableSmallPickerModal = ({
       }
     },
     headerSymbol: "S"
-  }, templatesDict === undefined && "Loading...", templatesDict !== undefined && Object.entries(filteredTemplatesDict).map(([, {
-    templates,
-    component
-  }]) => {
+  }, templatesDict === undefined && "Loading...", templatesDict !== undefined && Object.entries(filteredTemplatesDict).map(_ref3 => {
+    let [, {
+      templates,
+      component
+    }] = _ref3;
     const isOnlyOne = templates.length === 1;
     const componentLabel = component.label ?? component.id;
     return templates.map(template => {
@@ -6597,17 +6634,18 @@ const globalEditorRendererStyles = `
   }
 `;
 
-function SelectionFrameController({
-  isActive,
-  isChildrenSelectionDisabled,
-  children,
-  onSelect,
-  stitches,
-  sortable,
-  id,
-  direction,
-  path
-}) {
+function SelectionFrameController(_ref) {
+  let {
+    isActive,
+    isChildrenSelectionDisabled,
+    children,
+    onSelect,
+    stitches,
+    sortable,
+    id,
+    direction,
+    path
+  } = _ref;
   const [node, setNode] = React.useState(null);
   useUpdateFramePosition({
     node,
@@ -6697,10 +6735,11 @@ function SelectionFrameController({
     onClick: onSelect
   }, sortable.attributes, sortable.listeners), children);
 }
-function useUpdateFramePosition({
-  node,
-  isDisabled
-}) {
+function useUpdateFramePosition(_ref2) {
+  let {
+    node,
+    isDisabled
+  } = _ref2;
   const dispatch = window.parent.postMessage;
   React.useEffect(() => {
     if (isDisabled || !node) {
@@ -6755,15 +6794,16 @@ function createThrottledHandler(callback) {
   };
 }
 
-function BlocksControls({
-  children,
-  path,
-  disabled,
-  direction,
-  id,
-  index,
-  length
-}) {
+function BlocksControls(_ref) {
+  let {
+    children,
+    path,
+    disabled,
+    direction,
+    id,
+    index,
+    length
+  } = _ref;
   const {
     focussedField,
     setFocussedField,
@@ -6880,12 +6920,13 @@ function isPathsParentEqual(path1, path2) {
   const currentPathParts = path2.split(".");
   return activePathParts.slice(0, -1).join(".") === currentPathParts.slice(0, -1).join(".");
 }
-function DroppablePlaceholder({
-  id,
-  direction,
-  path,
-  position
-}) {
+function DroppablePlaceholder(_ref2) {
+  let {
+    id,
+    direction,
+    path,
+    position
+  } = _ref2;
   const meta = _internals.useEasyblocksMetadata();
   const sortable$1 = sortable.useSortable({
     id: `${id}.${position}`,
@@ -7136,9 +7177,10 @@ function customCollisionDetection(args) {
   // If there are no collisions with the pointer, return rectangle intersections
   return core.rectIntersection(args);
 }
-function EasyblocksCanvas({
-  components
-}) {
+function EasyblocksCanvas(_ref) {
+  let {
+    components
+  } = _ref;
   const {
     meta,
     compiled,
@@ -7232,11 +7274,12 @@ function EasyblocksCanvas({
 }
 function getSortableItems(rootNoCodeEntry, editorContext) {
   const sortableItems = [];
-  _internals.configTraverse(rootNoCodeEntry, editorContext, ({
-    value,
-    schemaProp,
-    config
-  }) => {
+  _internals.configTraverse(rootNoCodeEntry, editorContext, _ref2 => {
+    let {
+      value,
+      schemaProp,
+      config
+    } = _ref2;
     if (schemaProp.type === "component-collection") {
       if (value.length === 0) {
         sortableItems.push(`placeholder.${config._id}`);
@@ -7536,19 +7579,20 @@ const debugTokens = {
   }]
 };
 
-function DebugSection({
-  inline_never,
-  inline_optional_disabled,
-  inline_optional_enabled,
-  inline_always,
-  token_never,
-  token_optional_disabled_no_custom,
-  token_optional_enabled_no_custom,
-  token_optional_disabled_custom,
-  token_optional_enabled_custom,
-  token_always_no_custom,
-  token_always_custom
-}) {
+function DebugSection(_ref) {
+  let {
+    inline_never,
+    inline_optional_disabled,
+    inline_optional_enabled,
+    inline_always,
+    token_never,
+    token_optional_disabled_no_custom,
+    token_optional_enabled_no_custom,
+    token_optional_disabled_custom,
+    token_optional_enabled_custom,
+    token_always_no_custom,
+    token_always_custom
+  } = _ref;
   return /*#__PURE__*/React__default["default"].createElement("div", null, /*#__PURE__*/React__default["default"].createElement("pre", null, JSON.stringify({
     inline_never,
     inline_optional_disabled,
