@@ -2529,6 +2529,13 @@ function FieldBuilder(_ref) {
     format: field.format ?? fieldComponent?.format,
     parse: field.parse ?? fieldComponent?.parse
   });
+  const fieldParsed = React.useMemo(() => {
+    let fieldResult = field;
+    if (typeof field.label === "object") {
+      field.label = field.label?.[editorContext.contextParams.locale] ?? field.label;
+    }
+    return fieldResult;
+  }, [field]);
   if (fieldComponent) {
     return /*#__PURE__*/React__default["default"].createElement(fieldComponent.Component, {
       // Let's talk about this code
@@ -2546,7 +2553,7 @@ function FieldBuilder(_ref) {
       meta: {},
       tinaForm: form,
       form: form.finalForm,
-      field: field,
+      field: fieldParsed,
       noWrap: noWrap,
       isLabelHidden: isLabelHidden
     });
@@ -5584,7 +5591,6 @@ const EditorContent = _ref => {
         }
       default:
         {
-          // setTemplates(props.config.templates);
           getTemplates(editorContext, props.config.templates ?? []).then(newTemplates => {
             setTemplates(newTemplates);
           });

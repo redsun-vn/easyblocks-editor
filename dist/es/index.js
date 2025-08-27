@@ -1,6 +1,6 @@
 "use client";
 import * as React from 'react';
-import React__default, { useContext, useState, useRef, createContext, useEffect, forwardRef, Fragment, useLayoutEffect, memo, useMemo, useCallback } from 'react';
+import React__default, { useContext, useState, useRef, createContext, useEffect, forwardRef, Fragment, useLayoutEffect, useMemo, memo, useCallback } from 'react';
 import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ButtonDanger, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
@@ -2496,6 +2496,13 @@ function FieldBuilder(_ref) {
     format: field.format ?? fieldComponent?.format,
     parse: field.parse ?? fieldComponent?.parse
   });
+  const fieldParsed = useMemo(() => {
+    let fieldResult = field;
+    if (typeof field.label === "object") {
+      field.label = field.label?.[editorContext.contextParams.locale] ?? field.label;
+    }
+    return fieldResult;
+  }, [field]);
   if (fieldComponent) {
     return /*#__PURE__*/React__default.createElement(fieldComponent.Component, {
       // Let's talk about this code
@@ -2513,7 +2520,7 @@ function FieldBuilder(_ref) {
       meta: {},
       tinaForm: form,
       form: form.finalForm,
-      field: field,
+      field: fieldParsed,
       noWrap: noWrap,
       isLabelHidden: isLabelHidden
     });
@@ -5551,7 +5558,6 @@ const EditorContent = _ref => {
         }
       default:
         {
-          // setTemplates(props.config.templates);
           getTemplates(editorContext, props.config.templates ?? []).then(newTemplates => {
             setTemplates(newTemplates);
           });
