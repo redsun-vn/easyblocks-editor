@@ -4298,6 +4298,29 @@ function getNecessaryDefaultTemplates(components, templates, editorContext) {
   });
   return result;
 }
+function normalizeTextLocales(config, editorContext) {
+  return configMap(config, editorContext, _ref2 => {
+    let {
+      value,
+      schemaProp
+    } = _ref2;
+    if (schemaProp.type === "text") {
+      const firstDefinedValue = Object.values(value.value).filter(x => x !== null && x !== undefined)[0];
+      return {
+        ...value,
+        value: {
+          [easyblocksCore.getDefaultLocale(editorContext.locales).code]: firstDefinedValue
+        }
+      };
+    } else if (schemaProp.type === "component-collection-localised") {
+      const firstDefinedValue = Object.values(value).filter(x => x !== null && x !== undefined)[0];
+      return {
+        [easyblocksCore.getDefaultLocale(editorContext.locales).code]: firstDefinedValue
+      };
+    }
+    return value;
+  });
+}
 function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates) {
   // If a component doesn't have a template, here's one added
   const allBuiltinTemplates = [...configTemplates, ...getNecessaryDefaultTemplates(editorContext.definitions.components, configTemplates, editorContext)];
@@ -4308,6 +4331,15 @@ function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedT
       return false;
     }
     return true;
+  }).map(template => {
+    const newTemplate = {
+      ...template,
+      entry: normalizeTextLocales(_internals.normalize({
+        ...template.entry,
+        _itemProps: {}
+      }, editorContext), editorContext)
+    };
+    return newTemplate;
   });
   return result;
 }

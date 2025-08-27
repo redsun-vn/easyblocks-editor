@@ -5,7 +5,7 @@ import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as To
 import isPropValid from '@emotion/is-prop-valid';
 import { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
-import { getExternalReferenceLocationKey, isTrulyResponsiveValue, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, isNoCodeComponentOfType, buildRichTextNoCodeEntry, getDefaultLocale, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks } from '@redsun-vn/easyblocks-core';
+import { getExternalReferenceLocationKey, isTrulyResponsiveValue, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, isNoCodeComponentOfType, getDefaultLocale, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks } from '@redsun-vn/easyblocks-core';
 import { parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, findComponentDefinition, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
 import throttle from 'lodash.throttle';
 import Modal$1 from 'react-modal';
@@ -4265,6 +4265,29 @@ function getNecessaryDefaultTemplates(components, templates, editorContext) {
   });
   return result;
 }
+function normalizeTextLocales(config, editorContext) {
+  return configMap(config, editorContext, _ref2 => {
+    let {
+      value,
+      schemaProp
+    } = _ref2;
+    if (schemaProp.type === "text") {
+      const firstDefinedValue = Object.values(value.value).filter(x => x !== null && x !== undefined)[0];
+      return {
+        ...value,
+        value: {
+          [getDefaultLocale(editorContext.locales).code]: firstDefinedValue
+        }
+      };
+    } else if (schemaProp.type === "component-collection-localised") {
+      const firstDefinedValue = Object.values(value).filter(x => x !== null && x !== undefined)[0];
+      return {
+        [getDefaultLocale(editorContext.locales).code]: firstDefinedValue
+      };
+    }
+    return value;
+  });
+}
 function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates) {
   // If a component doesn't have a template, here's one added
   const allBuiltinTemplates = [...configTemplates, ...getNecessaryDefaultTemplates(editorContext.definitions.components, configTemplates, editorContext)];
@@ -4275,6 +4298,15 @@ function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedT
       return false;
     }
     return true;
+  }).map(template => {
+    const newTemplate = {
+      ...template,
+      entry: normalizeTextLocales(normalize({
+        ...template.entry,
+        _itemProps: {}
+      }, editorContext), editorContext)
+    };
+    return newTemplate;
   });
   return result;
 }

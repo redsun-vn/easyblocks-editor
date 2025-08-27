@@ -128,17 +128,30 @@ function getTemplatesInternal(
     ...allBuiltinTemplates,
   ];
 
-  const result = allUserTemplates.filter((template) => {
-    const definition = findComponentDefinitionById(
-      template.entry._component,
-      editorContext
-    );
+  const result = allUserTemplates
+    .filter((template) => {
+      const definition = findComponentDefinitionById(
+        template.entry._component,
+        editorContext
+      );
 
-    if (!definition || definition.hideTemplates) {
-      return false;
-    }
-    return true;
-  });
+      if (!definition || definition.hideTemplates) {
+        return false;
+      }
+
+      return true;
+    })
+    .map((template) => {
+      const newTemplate: Template = {
+        ...template,
+        entry: normalizeTextLocales(
+          normalize({ ...template.entry, _itemProps: {} }, editorContext),
+          editorContext
+        ),
+      };
+
+      return newTemplate;
+    });
 
   return result;
 }
