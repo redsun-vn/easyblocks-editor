@@ -1115,23 +1115,6 @@ const EditorContent = ({
     Modal.setAppElement("#shopstory-app");
   }, []);
 
-  const EditorSidebarRight = ({
-    sidebarNodeRef,
-    focussedField,
-    form,
-  }: {
-    sidebarNodeRef: React.MutableRefObject<HTMLDivElement | null>;
-    focussedField: Array<string>;
-    form: Form;
-  }) => {
-    return (
-      <SidebarContainer ref={sidebarNodeRef}>
-        <EditorSidebar focussedField={focussedField} form={form} />
-      </SidebarContainer>
-    );
-  };
-  const MemoEditorSidebarRight = React.memo(EditorSidebarRight);
-
   return (
     <div id={"shopstory-app"} style={{ height: appHeight, overflow: "hidden" }}>
       {isDataSaverOverlayOpen && (
@@ -1203,14 +1186,9 @@ const EditorContent = ({
                 )}
               </ContentContainer>
               {isEditMode && (
-                <MemoEditorSidebarRight
-                  sidebarNodeRef={sidebarNodeRef}
-                  focussedField={focussedField}
-                  form={form}
-                />
-                // <SidebarContainer ref={sidebarNodeRef}>
-                //   <EditorSidebar focussedField={focussedField} form={form} />
-                // </SidebarContainer>
+                <SidebarContainer ref={sidebarNodeRef}>
+                  <EditorSidebar focussedField={focussedField} form={form} />
+                </SidebarContainer>
               )}
               {componentPickerData && (
                 <ModalPicker

@@ -5777,20 +5777,24 @@ const EditorContent = _ref => {
   React.useEffect(() => {
     Modal__default["default"].setAppElement("#shopstory-app");
   }, []);
-  const EditorSidebarRight = _ref5 => {
-    let {
-      sidebarNodeRef,
-      focussedField,
-      form
-    } = _ref5;
-    return /*#__PURE__*/React__default["default"].createElement(SidebarContainer, {
-      ref: sidebarNodeRef
-    }, /*#__PURE__*/React__default["default"].createElement(EditorSidebar, {
-      focussedField: focussedField,
-      form: form
-    }));
-  };
-  const MemoEditorSidebarRight = /*#__PURE__*/React__default["default"].memo(EditorSidebarRight);
+
+  // const EditorSidebarRight = ({
+  //   sidebarNodeRef,
+  //   focussedField,
+  //   form,
+  // }: {
+  //   sidebarNodeRef: React.MutableRefObject<HTMLDivElement | null>;
+  //   focussedField: Array<string>;
+  //   form: Form;
+  // }) => {
+  //   return (
+  //     <SidebarContainer ref={sidebarNodeRef}>
+  //       <EditorSidebar focussedField={focussedField} form={form} />
+  //     </SidebarContainer>
+  //   );
+  // };
+  // const MemoEditorSidebarRight = React.memo(EditorSidebarRight);
+
   return /*#__PURE__*/React__default["default"].createElement("div", {
     id: "shopstory-app",
     style: {
@@ -5849,15 +5853,19 @@ const EditorContent = _ref => {
     width: iframeSize.width,
     height: iframeSize.height,
     transform: iframeSize.transform
-  })), isEditMode && /*#__PURE__*/React__default["default"].createElement(MemoEditorSidebarRight, {
-    sidebarNodeRef: sidebarNodeRef,
+  })), isEditMode &&
+  /*#__PURE__*/
+  // <MemoEditorSidebarRight
+  //   sidebarNodeRef={sidebarNodeRef}
+  //   focussedField={focussedField}
+  //   form={form}
+  // />
+  React__default["default"].createElement(SidebarContainer, {
+    ref: sidebarNodeRef
+  }, /*#__PURE__*/React__default["default"].createElement(EditorSidebar, {
     focussedField: focussedField,
     form: form
-  })
-  // <SidebarContainer ref={sidebarNodeRef}>
-  //   <EditorSidebar focussedField={focussedField} form={form} />
-  // </SidebarContainer>
-  , componentPickerData && /*#__PURE__*/React__default["default"].createElement(ModalPicker, {
+  })), componentPickerData && /*#__PURE__*/React__default["default"].createElement(ModalPicker, {
     onClose: closeComponentPickerModal,
     config: componentPickerData.config,
     pickers: props.pickers
@@ -5926,10 +5934,10 @@ function getMostCommonSubPath(path1, path2) {
 }
 function findConfigById(config, context, configId) {
   let foundConfig;
-  _internals.traverseComponents(config, context, _ref6 => {
+  _internals.traverseComponents(config, context, _ref5 => {
     let {
       componentConfig
-    } = _ref6;
+    } = _ref5;
     if (foundConfig) {
       return;
     }
