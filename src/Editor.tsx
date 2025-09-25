@@ -173,6 +173,7 @@ type EditorProps = {
   locale?: string;
   readOnly: boolean;
   isAdminMode?: boolean;
+  onLocaleChange?: (locale: string) => void;
   documentId: string | null;
   rootComponentId: string | null;
   rootTemplateId: string | null;
@@ -611,6 +612,7 @@ const EditorContent = ({
   initialEntry,
   externalData,
   isAdminMode = false,
+  onLocaleChange: _onLocaleChange,
   ...props
 }: EditorContentProps) => {
   const [currentViewport, setCurrentViewport] = useState<string>(
@@ -975,6 +977,7 @@ const EditorContent = ({
   const onLocaleChange = async (localeValue: string) => {
     compilationCache.current.clear();
     compilationContext.contextParams.locale = localeValue;
+    _onLocaleChange?.(localeValue);
     setCurrentLocale(localeValue);
     compilationCache.current.clear();
     setEditing((prev) => !prev);

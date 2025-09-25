@@ -10,6 +10,7 @@ type EasyblocksParentProps = {
     components?: Record<string, ComponentType<any>>;
     pickers?: Record<string, TemplatePicker>;
     isAdminMode?: boolean;
+    onLocaleChange?: (locale: string) => void;
 };
 export declare function EasyblocksParent(props: EasyblocksParentProps): React.JSX.Element;
 export {};
