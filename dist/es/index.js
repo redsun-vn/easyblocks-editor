@@ -7605,7 +7605,8 @@ function EasyblocksEditor(props) {
     widgets: props.widgets,
     components: props.components,
     pickers: props.pickers,
-    isAdminMode: props.isAdminMode
+    isAdminMode: props.isAdminMode,
+    onLocaleChange: props.onLocaleChange
   }), selectedWindow === "child" && /*#__PURE__*/React__default.createElement(EasyblocksCanvas, {
     components: props.components
   }), selectedWindow === "preview" && /*#__PURE__*/React__default.createElement(PreviewRenderer, props));
