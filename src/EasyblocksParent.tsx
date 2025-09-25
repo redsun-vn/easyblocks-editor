@@ -36,7 +36,7 @@ type EasyblocksParentProps = {
   components?: Record<string, ComponentType<any>>;
   pickers?: Record<string, TemplatePicker>;
   isAdminMode?: boolean;
-  onLocaleChange?: (locale: string) => void;
+  defaultLocale?: string;
 };
 
 const shouldForwardProp: ShouldForwardProp<"web"> = (propName, target) => {
@@ -99,7 +99,7 @@ export function EasyblocksParent(props: EasyblocksParentProps) {
               ...props.pickers,
             }}
             isAdminMode={props.isAdminMode}
-            onLocaleChange={props.onLocaleChange}
+            defaultLocale={props.defaultLocale}
           />
         </TooltipProvider>
         <Toaster containerStyle={{ zIndex: 100100 }} />

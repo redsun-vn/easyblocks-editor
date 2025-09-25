@@ -2774,7 +2774,7 @@ const EditorTopBar = ({
     }
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
     value: locale,
-    onChange: onLocaleChange
+    onChange: locale => onLocaleChange(locale)
   }, locales.map(l => /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
     key: l.code,
     value: l.code
@@ -5087,7 +5087,7 @@ const EditorWrapper = /*#__PURE__*/React.memo(props => {
   const rootTemplateEntry = props.rootTemplateId ? props.config.templates?.find(t => t.id === props.rootTemplateId)?.entry : null;
   const rootComponentId = props.document ? props.document.entry._component : rootTemplateEntry?._component ?? props.rootComponentId;
   const compilationContext = easyblocksCore.createCompilationContext(props.config, {
-    locale
+    locale: props?.defaultLocale ?? locale
   }, rootComponentId);
   const initialEntry = props.document ? adaptRemoteConfig(props.document.entry, compilationContext) : easyblocksCore.normalize(rootTemplateEntry ?? {
     _id: uniqueId(),
@@ -5293,7 +5293,7 @@ const EditorContent = ({
   initialEntry,
   externalData,
   isAdminMode = false,
-  onLocaleChange: _onLocaleChange,
+  defaultLocale,
   ...props
 }) => {
   const [currentViewport, setCurrentViewport] = React.useState(compilationContext.mainBreakpointIndex); // "{ breakpoint }" or "fit-screen"
@@ -5586,11 +5586,10 @@ const EditorContent = ({
   window.editorWindowAPI.meta = meta;
   window.editorWindowAPI.compiled = renderableContent;
   window.editorWindowAPI.externalData = externalData;
-  const onLocaleChange = async localeValue => {
+  const onLocaleChange = async newLocale => {
     compilationCache.current.clear();
-    compilationContext.contextParams.locale = localeValue;
-    _onLocaleChange?.(localeValue);
-    setCurrentLocale(localeValue);
+    editorContext.contextParams.locale = newLocale;
+    setCurrentLocale(newLocale);
     compilationCache.current.clear();
     setEditing(prev => !prev);
     await sleep(1);
@@ -6419,7 +6418,7 @@ function EasyblocksParent(props) {
       ...props.pickers
     },
     isAdminMode: props.isAdminMode,
-    onLocaleChange: props.onLocaleChange
+    defaultLocale: props.defaultLocale
   })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toaster, {
     containerStyle: {
       zIndex: 100100
@@ -7639,7 +7638,7 @@ function EasyblocksEditor(props) {
     components: props.components,
     pickers: props.pickers,
     isAdminMode: props.isAdminMode,
-    onLocaleChange: props.onLocaleChange
+    defaultLocale: props.defaultLocale
   }), selectedWindow === "child" && /*#__PURE__*/React__default["default"].createElement(EasyblocksCanvas, {
     components: props.components
   }), selectedWindow === "preview" && /*#__PURE__*/React__default["default"].createElement(PreviewRenderer, props));

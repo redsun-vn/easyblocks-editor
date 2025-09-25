@@ -19,7 +19,7 @@ type EditorProps = {
     locale?: string;
     readOnly: boolean;
     isAdminMode?: boolean;
-    onLocaleChange?: (locale: string) => void;
+    defaultLocale?: string;
     documentId: string | null;
     rootComponentId: string | null;
     rootTemplateId: string | null;

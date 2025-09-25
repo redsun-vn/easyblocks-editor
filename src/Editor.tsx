@@ -173,7 +173,7 @@ type EditorProps = {
   locale?: string;
   readOnly: boolean;
   isAdminMode?: boolean;
-  onLocaleChange?: (locale: string) => void;
+  defaultLocale?: string;
   documentId: string | null;
   rootComponentId: string | null;
   rootTemplateId: string | null;
@@ -302,7 +302,7 @@ const EditorWrapper = memo(
     const compilationContext = createCompilationContext(
       props.config,
       {
-        locale,
+        locale: props?.defaultLocale ?? locale,
       },
       rootComponentId!
     );
@@ -612,7 +612,7 @@ const EditorContent = ({
   initialEntry,
   externalData,
   isAdminMode = false,
-  onLocaleChange: _onLocaleChange,
+  defaultLocale,
   ...props
 }: EditorContentProps) => {
   const [currentViewport, setCurrentViewport] = useState<string>(
@@ -974,11 +974,10 @@ const EditorContent = ({
     renderableContent as unknown as NonEmptyRenderableContent;
   window.editorWindowAPI.externalData = externalData;
 
-  const onLocaleChange = async (localeValue: string) => {
+  const onLocaleChange = async (newLocale: string) => {
     compilationCache.current.clear();
-    compilationContext.contextParams.locale = localeValue;
-    _onLocaleChange?.(localeValue);
-    setCurrentLocale(localeValue);
+    editorContext.contextParams.locale = newLocale;
+    setCurrentLocale(newLocale);
     compilationCache.current.clear();
     setEditing((prev) => !prev);
 

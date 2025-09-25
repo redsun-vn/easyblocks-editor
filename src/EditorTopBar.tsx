@@ -118,124 +118,120 @@ export const EditorTopBar: React.FC<{
   locale,
   onLocaleChange,
   hideCloseButton,
-  readOnly
+  readOnly,
 }) => {
-    const headingRef = useRef<HTMLDivElement>(null);
-    const router = new URLSearchParams(window.location.search);
-    const themeId = router.get("themeId");
-    const shopId = router.get("shopId");
+  const headingRef = useRef<HTMLDivElement>(null);
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId");
+  const shopId = router.get("shopId");
 
-    return (
-      <TopBar ref={headingRef}>
-        <TopBarLeft>
-          {!hideCloseButton && (
-            <>
-              <ButtonGhost icon={Icons.Close} hideLabel onClick={onClose}>
-                Close
-              </ButtonGhost>
+  return (
+    <TopBar ref={headingRef}>
+      <TopBarLeft>
+        {!hideCloseButton && (
+          <>
+            <ButtonGhost icon={Icons.Close} hideLabel onClick={onClose}>
+              Close
+            </ButtonGhost>
 
-              <div
-                style={{ height: "100%", background: Colors.black10, width: 1 }}
-              />
-            </>
-          )}
-          <ButtonGhost
-            icon={Icons.Undo}
-            hideLabel
-            onClick={() => {
-              onUndo();
-            }}
-          >
-            Undo
-          </ButtonGhost>
-          <ButtonGhost
-            icon={Icons.Redo}
-            hideLabel
-            onClick={() => {
-              onRedo();
-            }}
-          >
-            Redo
-          </ButtonGhost>
-
-          {readOnly && <Label>Read-Only</Label>}
-
-          <ButtonDanger
-            className="cursor-pointer"
-            component="label"
-            onClick={() => onSaveDocument?.()}
-          >
-            Save
-          </ButtonDanger>
-
-        </TopBarLeft>
-
-        <TopBarCenter>
-          <DeviceSwitch
-            devices={devices}
-            deviceId={viewport}
-            onDeviceChange={onViewportChange}
-          />
-        </TopBarCenter>
-
-        <TopBarRight>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              gap: "6px",
-              alignItems: "center",
-            }}
-          >
-            <Select value={locale} onChange={onLocaleChange}>
-              {locales.map((l) => (
-                <SelectItem key={l.code} value={l.code}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      gap: 4,
-                    }}
-                  >
-                    {l.icon ? (
-                      <ImageContainer>
-                        <Image src={l.icon} alt={l.name} />
-                      </ImageContainer>
-                    ) : null}
-                    {l.name}
-                  </div>
-                </SelectItem>
-              ))}
-            </Select>
-
-            <a href={`/?previewId=${themeId}&shopId=${shopId}`} target="_blank">
-              <ButtonPrimary component="label" className="cursor-pointer">
-                Preview
-              </ButtonPrimary>
-            </a>
-
-            <Typography
-              variant={"body"}
-              component="label"
-              htmlFor="easyblocks-edit-mode-button"
-            >
-              Edit mode
-            </Typography>{" "}
-
-            <Toggle
-              name="easyblocks-edit-mode-button"
-              checked={isEditing}
-              onChange={() => {
-                onIsEditingChange();
-              }}
+            <div
+              style={{ height: "100%", background: Colors.black10, width: 1 }}
             />
-          </div>
-        </TopBarRight>
-      </TopBar>
-    );
-  };
+          </>
+        )}
+        <ButtonGhost
+          icon={Icons.Undo}
+          hideLabel
+          onClick={() => {
+            onUndo();
+          }}
+        >
+          Undo
+        </ButtonGhost>
+        <ButtonGhost
+          icon={Icons.Redo}
+          hideLabel
+          onClick={() => {
+            onRedo();
+          }}
+        >
+          Redo
+        </ButtonGhost>
+
+        {readOnly && <Label>Read-Only</Label>}
+
+        <ButtonDanger
+          className="cursor-pointer"
+          component="label"
+          onClick={() => onSaveDocument?.()}
+        >
+          Save
+        </ButtonDanger>
+      </TopBarLeft>
+
+      <TopBarCenter>
+        <DeviceSwitch
+          devices={devices}
+          deviceId={viewport}
+          onDeviceChange={onViewportChange}
+        />
+      </TopBarCenter>
+
+      <TopBarRight>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: "6px",
+            alignItems: "center",
+          }}
+        >
+          <Select value={locale} onChange={(locale) => onLocaleChange(locale)}>
+            {locales.map((l) => (
+              <SelectItem key={l.code} value={l.code}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    gap: 4,
+                  }}
+                >
+                  {l.icon ? (
+                    <ImageContainer>
+                      <Image src={l.icon} alt={l.name} />
+                    </ImageContainer>
+                  ) : null}
+                  {l.name}
+                </div>
+              </SelectItem>
+            ))}
+          </Select>
+          <a href={`/?previewId=${themeId}&shopId=${shopId}`} target="_blank">
+            <ButtonPrimary component="label" className="cursor-pointer">
+              Preview
+            </ButtonPrimary>
+          </a>
+          <Typography
+            variant={"body"}
+            component="label"
+            htmlFor="easyblocks-edit-mode-button"
+          >
+            Edit mode
+          </Typography>{" "}
+          <Toggle
+            name="easyblocks-edit-mode-button"
+            checked={isEditing}
+            onChange={() => {
+              onIsEditingChange();
+            }}
+          />
+        </div>
+      </TopBarRight>
+    </TopBar>
+  );
+};
 
 const DEVICE_ID_TO_ICON: Record<
   Devices[number]["id"] | "fit-screen",

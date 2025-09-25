@@ -27,5 +27,5 @@ export type EasyblocksEditorProps = {
   pickers?: Record<string, TemplatePicker>;
   __debug?: boolean;
   isAdminMode?: boolean;
-  onLocaleChange?: (locale: string) => void;
+  defaultLocale?: string;
 };
