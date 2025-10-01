@@ -48,7 +48,7 @@ import React, {
   useState,
 } from "react";
 import Modal from "react-modal";
-import { styled } from "styled-components";
+import {  styled } from "styled-components";
 import { ConfigAfterAutoContext } from "./ConfigAfterAutoContext";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
 import { EditorContext, EditorContextType } from "./EditorContext";
@@ -83,6 +83,7 @@ import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShort
 import { useEditorHistory } from "./useEditorHistory";
 import { checkLocalesCorrectness } from "./utils/locales/checkLocalesCorrectness";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
+import { SkeletonEditor } from "./SkeletonEditor";
 
 declare global {
   interface Window {
@@ -229,7 +230,11 @@ function EditorBackendInitializer(props: EditorProps) {
   }, []);
 
   if (!enabled) {
-    return <AuthenticationScreen>Loading...</AuthenticationScreen>;
+    return (
+      <AuthenticationScreen>
+        <SkeletonEditor />
+      </AuthenticationScreen>
+    );
   }
 
   if (error) {

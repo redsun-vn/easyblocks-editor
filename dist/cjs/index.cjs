@@ -6,7 +6,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var React = require('react');
 var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
 var isPropValid = require('@emotion/is-prop-valid');
-var styledComponents = require('styled-components');
+var styled = require('styled-components');
 var _extends = require('@babel/runtime/helpers/extends');
 var easyblocksCore = require('@redsun-vn/easyblocks-core');
 var _internals = require('@redsun-vn/easyblocks-core/_internals');
@@ -45,6 +45,7 @@ function _interopNamespace(e) {
 var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
 var React__namespace = /*#__PURE__*/_interopNamespace(React);
 var isPropValid__default = /*#__PURE__*/_interopDefaultLegacy(isPropValid);
+var styled__default = /*#__PURE__*/_interopDefaultLegacy(styled);
 var _extends__default = /*#__PURE__*/_interopDefaultLegacy(_extends);
 var throttle__default = /*#__PURE__*/_interopDefaultLegacy(throttle);
 var Modal__default = /*#__PURE__*/_interopDefaultLegacy(Modal);
@@ -277,15 +278,15 @@ function EditorIframe({
     }
   })));
 }
-const IframeContainer = styledComponents.styled.div.withConfig({
+const IframeContainer = styled.styled.div.withConfig({
   displayName: "EditorIframe__IframeContainer",
   componentId: "sc-1k2h6r-0"
 })(["position:relative;flex:1 1 auto;background:", ";"], easyblocksDesignSystem.Colors.black100);
-const IframeInnerContainer = styledComponents.styled.div.withConfig({
+const IframeInnerContainer = styled.styled.div.withConfig({
   displayName: "EditorIframe__IframeInnerContainer",
   componentId: "sc-1k2h6r-1"
 })(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;justify-content:center;align-items:center;"]);
-const Iframe = styledComponents.styled.iframe.withConfig({
+const Iframe = styled.styled.iframe.withConfig({
   displayName: "EditorIframe__Iframe",
   componentId: "sc-1k2h6r-2"
 })(["background:white;border:none;transform-origin:center;"]);
@@ -400,7 +401,7 @@ async function copyToClipboard(textToCopy) {
   }
 }
 
-const IdWrapper = styledComponents.styled.div.withConfig({
+const IdWrapper = styled.styled.div.withConfig({
   displayName: "SidebarFooter__IdWrapper",
   componentId: "sc-17xf0ak-0"
 })(["display:block;padding:16px;", " color:", ";"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black40);
@@ -472,7 +473,7 @@ const Toggle = ({
   };
   return /*#__PURE__*/React__default["default"].createElement(ToggleFieldWrapper, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toggle, toggleProps));
 };
-const ToggleFieldWrapper = styledComponents.styled.div.withConfig({
+const ToggleFieldWrapper = styled.styled.div.withConfig({
   displayName: "Toggle__ToggleFieldWrapper",
   componentId: "sc-1ldymt4-0"
 })(["display:flex;justify-content:flex-end;"]);
@@ -601,11 +602,11 @@ const Tooltip = /*#__PURE__*/React.forwardRef(({
     ref: ref
   }, rest), children), document.body);
 });
-const TooltipBody = styledComponents.styled.div.withConfig({
+const TooltipBody = styled.styled.div.withConfig({
   displayName: "Tooltip__TooltipBody",
   componentId: "sc-tkogle-0"
 })(["position:relative;top:6px;display:flex;flex-direction:row;justify-content:center;align-items:center;padding:6px 4px;background:#333333;border-radius:2px;", " color:#fff;"], easyblocksDesignSystem.Fonts.body);
-const TooltipArrow = styledComponents.styled.div.withConfig({
+const TooltipArrow = styled.styled.div.withConfig({
   displayName: "Tooltip__TooltipArrow",
   componentId: "sc-tkogle-1"
 })(["width:12px;height:6px;margin:0 auto;background:#333333;clip-path:polygon(50% 0%,0% 100%,100% 100%);"]);
@@ -840,7 +841,7 @@ function isMixedValueSupportedByComponent(component) {
   }
   return false;
 }
-const TextButton = styledComponents.styled(easyblocksDesignSystem.Typography).withConfig({
+const TextButton = styled.styled(easyblocksDesignSystem.Typography).withConfig({
   displayName: "wrapFieldWithMeta__TextButton",
   componentId: "sc-1asy4oy-0"
 })(["padding:0;margin:0;background:transparent;border:0;font-weight:500;&:hover{color:black;cursor:pointer;text-decoration:underline;}"]);
@@ -849,7 +850,7 @@ function wrapFieldsWithMeta(Field, extraProps) {
     return /*#__PURE__*/React__default["default"].createElement(FieldMetaWrapper, _extends__default["default"]({}, props, extraProps), /*#__PURE__*/React__default["default"].createElement(Field, props));
   };
 }
-const FieldWrapper$1 = styledComponents.styled.div.withConfig({
+const FieldWrapper$1 = styled.styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldWrapper",
   componentId: "sc-1asy4oy-1"
 })(["display:flex;flex-direction:", ";gap:", ";justify-content:space-between;align-items:flex-start;", " position:relative;padding:4px 16px;"], ({
@@ -858,8 +859,8 @@ const FieldWrapper$1 = styledComponents.styled.div.withConfig({
   layout
 }) => layout === "row" ? "10px" : "4px", ({
   layout
-}) => layout === "column" && styledComponents.css(["flex-grow:1;"]));
-const FieldLabelWrapper = styledComponents.styled.div.withConfig({
+}) => layout === "column" && styled.css(["flex-grow:1;"]));
+const FieldLabelWrapper = styled.styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelWrapper",
   componentId: "sc-1asy4oy-2"
 })(["all:unset;position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], ({
@@ -867,26 +868,26 @@ const FieldLabelWrapper = styledComponents.styled.div.withConfig({
 }) => isFullWidth && {
   width: "100%"
 });
-const FieldLabel = styledComponents.styled.label.withConfig({
+const FieldLabel = styled.styled.label.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabel",
   componentId: "sc-1asy4oy-3"
 })(["all:unset;", ";color:", ";text-overflow:ellipsis;overflow:hidden;cursor:default;"], easyblocksDesignSystem.Fonts.body, ({
   isError
 }) => isError ? "red" : "#000");
-const FieldLabelIconWrapper = styledComponents.styled.span.withConfig({
+const FieldLabelIconWrapper = styled.styled.span.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelIconWrapper",
   componentId: "sc-1asy4oy-4"
 })(["display:flex;font-size:14px;line-height:1;margin-left:auto;padding-left:8px;svg{width:14px;height:14px;flex-shrink:0;}"]);
-const FieldError = styledComponents.styled.span.withConfig({
+const FieldError = styled.styled.span.withConfig({
   displayName: "wrapFieldWithMeta__FieldError",
   componentId: "sc-1asy4oy-5"
 })(["display:block;color:red;font-size:var(--tina-font-size-1);margin-top:8px;font-weight:var(--tina-font-weight-regular);"]);
-const FieldInputWrapper = styledComponents.styled.div.withConfig({
+const FieldInputWrapper = styled.styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldInputWrapper",
   componentId: "sc-1asy4oy-6"
 })(["display:flex;justify-content:flex-end;align-items:center;", ";min-height:28px;"], ({
   layout
-}) => layout === "row" ? styledComponents.css(["flex-grow:1;"]) : styledComponents.css(["width:100%;"]));
+}) => layout === "row" ? styled.css(["flex-grow:1;"]) : styled.css(["width:100%;"]));
 
 const parse$1 = value => value && +value;
 
@@ -1158,7 +1159,7 @@ function stripPxUnit(value) {
 function isValidFontTokenValue(value) {
   return typeof value === "object" && value !== null && "fontSize" in value && "lineHeight" in value;
 }
-const Root = styledComponents.styled.div.withConfig({
+const Root = styled.styled.div.withConfig({
   displayName: "TokenFieldPlugin__Root",
   componentId: "sc-1hbwipe-0"
 })(["display:flex;flex-direction:column;align-items:flex-end;"]);
@@ -1455,7 +1456,7 @@ function getSidebarPreview(componentDefinition, entryAfterAuto, externalData, ed
     externalData
   });
 }
-const Error$2 = styledComponents.styled.div.withConfig({
+const Error$2 = styled.styled.div.withConfig({
   displayName: "BlockFieldPlugin__Error",
   componentId: "sc-5mryxt-0"
 })(["", " padding:7px 6px 7px;color:hsl(0deg 0% 50% / 0.8);white-space:normal;background:hsl(0deg 100% 50% / 0.2);margin-right:10px;border-radius:2px;"], easyblocksDesignSystem.Fonts.body);
@@ -1496,15 +1497,15 @@ const BlockFieldPlugin = {
   name: "block",
   Component: BlockField
 };
-const PanelBody = styledComponents.styled.div.withConfig({
+const PanelBody = styled.styled.div.withConfig({
   displayName: "BlockFieldPlugin__PanelBody",
   componentId: "sc-5mryxt-1"
 })(["background:white;position:relative;height:100%;overflow-y:auto;"]);
-const GroupPanelKeyframes = styledComponents.keyframes(["0%{transform:translate3d( 100%,0,0 );}100%{transform:translate3d( 0,0,0 );}"]);
-const GroupPanel = styledComponents.styled.div.withConfig({
+const GroupPanelKeyframes = styled.keyframes(["0%{transform:translate3d( 100%,0,0 );}100%{transform:translate3d( 0,0,0 );}"]);
+const GroupPanel = styled.styled.div.withConfig({
   displayName: "BlockFieldPlugin__GroupPanel",
   componentId: "sc-5mryxt-2"
-})(["position:absolute;width:100%;top:0;bottom:0;left:0;overflow:hidden;pointer-events:", ";> *{", ";", ";}"], p => p.isExpanded ? "all" : "none", p => p.isExpanded && styledComponents.css(["animation-name:", ";animation-duration:150ms;animation-delay:0ms;animation-iteration-count:1;animation-timing-function:ease-out;animation-fill-mode:backwards;"], GroupPanelKeyframes), p => !p.isExpanded && styledComponents.css(["transition:transform 150ms ease-out;transform:translate3d(100%,0,0);"]));
+})(["position:absolute;width:100%;top:0;bottom:0;left:0;overflow:hidden;pointer-events:", ";> *{", ";", ";}"], p => p.isExpanded ? "all" : "none", p => p.isExpanded && styled.css(["animation-name:", ";animation-duration:150ms;animation-delay:0ms;animation-iteration-count:1;animation-timing-function:ease-out;animation-fill-mode:backwards;"], GroupPanelKeyframes), p => !p.isExpanded && styled.css(["transition:transform 150ms ease-out;transform:translate3d(100%,0,0);"]));
 
 function IdentityField({
   input,
@@ -1907,15 +1908,15 @@ const ResponsiveFieldPlugin = {
   name: "responsive2",
   Component: ResponsiveField
 };
-const AutoLabel = styledComponents.styled.div.withConfig({
+const AutoLabel = styled.styled.div.withConfig({
   displayName: "ResponsiveFieldPlugin__AutoLabel",
   componentId: "sc-1m7fdh0-0"
 })(["", ";color:", ";text-align:", ";&:hover{color:black;cursor:pointer;text-decoration:underline;}"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black40, props => props.align);
-const ResetButton = styledComponents.styled.button.withConfig({
+const ResetButton = styled.styled.button.withConfig({
   displayName: "ResponsiveFieldPlugin__ResetButton",
   componentId: "sc-1m7fdh0-1"
 })(["display:flex;align-items:center;gap:4px;background-color:transparent;border:0;padding:0;color:", ";cursor:pointer;"], easyblocksDesignSystem.Colors.purple);
-const ResetButtonLabel = styledComponents.styled.span.withConfig({
+const ResetButtonLabel = styled.styled.span.withConfig({
   displayName: "ResponsiveFieldPlugin__ResetButtonLabel",
   componentId: "sc-1m7fdh0-2"
 })(["", ";line-height:16px;"], easyblocksDesignSystem.Fonts.body);
@@ -2069,7 +2070,7 @@ const LocalFieldPlugin = {
   })
 };
 
-const StyledRadioItem = styledComponents.styled(RadixRadioGroup__namespace.Item).withConfig({
+const StyledRadioItem = styled.styled(RadixRadioGroup__namespace.Item).withConfig({
   displayName: "PositionPickerInput__StyledRadioItem",
   componentId: "sc-1uvtpi7-0"
 })(["all:unset;position:relative;display:flex;justify-content:", ";align-items:", ";box-sizing:border-box;width:20px;height:20px;padding:8px;&:hover > div{opacity:", ";}"], props => horizontalPositionToFlexJustifyContentValue(props.horizontal), props => verticalPositionToFlexAlignItemsValue(props.vertical), props => props.p.value === props.position ? 1 : 0.5);
@@ -2177,7 +2178,7 @@ function PositionPickerInput({
     })));
   }));
 }
-const PositionIndicator = styledComponents.styled.div.withConfig({
+const PositionIndicator = styled.styled.div.withConfig({
   displayName: "PositionPickerInput__PositionIndicator",
   componentId: "sc-1uvtpi7-1"
 })(["width:", ";height:4px;background-color:#202123;"], p => p.$size === "full" ? "100%" : "75%");
@@ -2521,7 +2522,7 @@ function FieldBuilder({
     layout: "column"
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, null, "Unrecognized field type"));
 }
-const HorizontalLine = styledComponents.styled.div.withConfig({
+const HorizontalLine = styled.styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
   componentId: "sc-ignixa-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
@@ -2575,37 +2576,37 @@ function generateFieldKey(field, breakpointIndex) {
   const key = `${toArray(field.name).join("_")}_${field.schemaProp.type}${breakpointIndex ? `_${breakpointIndex}` : ""}`;
   return key;
 }
-const FieldWrapper = styledComponents.styled.div.withConfig({
+const FieldWrapper = styled.styled.div.withConfig({
   displayName: "fields-builder__FieldWrapper",
   componentId: "sc-ignixa-1"
 })(["margin-bottom:", ";"], props => props.isLast ? "8px" : 0);
-const FieldsGroupLabel = styledComponents.styled.div.withConfig({
+const FieldsGroupLabel = styled.styled.div.withConfig({
   displayName: "fields-builder__FieldsGroupLabel",
   componentId: "sc-ignixa-2"
 })(["display:flex;align-items:center;padding:20px 16px 10px 16px;", ";color:#000;"], easyblocksDesignSystem.Fonts.label);
-const FieldsGroup = styledComponents.styled.div.withConfig({
+const FieldsGroup = styled.styled.div.withConfig({
   displayName: "fields-builder__FieldsGroup",
   componentId: "sc-ignixa-3"
 })(["position:relative;display:block;width:100%;padding:0;white-space:nowrap;overflow-x:hidden;overflow-y:auto !important;"]);
 
-const theme = styledComponents.css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Inter\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
-const GlobalStyles = styledComponents.createGlobalStyle(["", ";"], theme);
-const tina_reset_styles = styledComponents.css(["*{font-family:\"Inter\",sans-serif;&::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:transparent;border-left:1px solid var(--tina-color-grey-2);}&::-webkit-scrollbar-thumb{background-color:var(--tina-color-grey-3);border-radius:0;border:none;}}*,*:before,*:after{box-sizing:border-box;}hr{border-color:var(--tina-color-grey-2);color:var(--tina-color-grey-2);margin-bottom:var(--tina-padding-big);margin-left:calc(var(--tina-padding-big) * -1);margin-right:calc(var(--tina-padding-big) * -1);border-top:1px solid var(--tina-color-grey-2);border-bottom:none;height:0;box-sizing:content-box;}h1,h2,h3,h4,h5,h6,p{:not([class]){font-family:\"Inter\",sans-serif;&:first-child{margin-top:0;}&:last-child{margin-bottom:0;}}}td,th{padding:0;width:auto;height:auto;border:inherit;margin:0;}h1,h2,h3,h4,h5,h6{:not([class]){font-weight:var(--tina-font-weight-bold);}}h1:not([class]){font-size:var(--tina-font-size-8);}h2:not([class]){font-size:var(--tina-font-size-7);}h3:not([class]){font-size:var(--tina-font-size-5);}h4:not([class]){font-size:var(--tina-font-size-4);}h5:not([class]){font-size:var(--tina-font-size-3);}h6:not([class]){font-size:var(--tina-font-size-2);}"]);
-const StyleReset = styledComponents.styled.div.withConfig({
+const theme = styled.css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Inter\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
+const GlobalStyles = styled.createGlobalStyle(["", ";"], theme);
+const tina_reset_styles = styled.css(["*{font-family:\"Inter\",sans-serif;&::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:transparent;border-left:1px solid var(--tina-color-grey-2);}&::-webkit-scrollbar-thumb{background-color:var(--tina-color-grey-3);border-radius:0;border:none;}}*,*:before,*:after{box-sizing:border-box;}hr{border-color:var(--tina-color-grey-2);color:var(--tina-color-grey-2);margin-bottom:var(--tina-padding-big);margin-left:calc(var(--tina-padding-big) * -1);margin-right:calc(var(--tina-padding-big) * -1);border-top:1px solid var(--tina-color-grey-2);border-bottom:none;height:0;box-sizing:content-box;}h1,h2,h3,h4,h5,h6,p{:not([class]){font-family:\"Inter\",sans-serif;&:first-child{margin-top:0;}&:last-child{margin-bottom:0;}}}td,th{padding:0;width:auto;height:auto;border:inherit;margin:0;}h1,h2,h3,h4,h5,h6{:not([class]){font-weight:var(--tina-font-weight-bold);}}h1:not([class]){font-size:var(--tina-font-size-8);}h2:not([class]){font-size:var(--tina-font-size-7);}h3:not([class]){font-size:var(--tina-font-size-5);}h4:not([class]){font-size:var(--tina-font-size-4);}h5:not([class]){font-size:var(--tina-font-size-3);}h6:not([class]){font-size:var(--tina-font-size-2);}"]);
+const StyleReset = styled.styled.div.withConfig({
   displayName: "Styles__StyleReset",
   componentId: "sc-1igvyu7-0"
 })(["", ""], tina_reset_styles);
 
-const Button = styledComponents.styled.button.withConfig({
+const Button = styled.styled.button.withConfig({
   displayName: "Button",
   componentId: "sc-qplww2-0"
-})(["text-align:center;border:0;border-radius:var(--tina-radius-big);box-shadow:var(--tina-shadow-small);background-color:var(--tina-color-grey-0);border:1px solid var(--tina-color-grey-2);color:var(--tina-color-primary);fill:var(--tina-color-primary);font-weight:var(--tina-font-weight-regular);cursor:pointer;font-size:var(--tina-font-size-1);height:40px;padding:0 var(--tina-padding-big);transition:all 85ms ease-out;&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);outline:none;}", ";", ";", ";", ";", ";", ";"], p => p.disabled && styledComponents.css(["opacity:0.3;pointer:not-allowed;pointer-events:none;"]), p => p.primary && styledComponents.css(["background-color:var(--tina-color-primary);color:var(--tina-color-grey-0);fill:var(--tina-color-grey-0);border:none;&:hover{background-color:var(--tina-color-primary-light);}&:active{background-color:var(--tina-color-primary-dark);}"]), p => p.small && styledComponents.css(["height:32px;font-size:var(--tina-font-size-0);padding:0 var(--tina-padding-big);"]), p => p.margin && styledComponents.css(["&:not(:first-child){margin-left:8px;}"]), p => p.grow && styledComponents.css(["flex-grow:1;"]), p => p.busy && styledComponents.css(["cursor:wait;"]));
+})(["text-align:center;border:0;border-radius:var(--tina-radius-big);box-shadow:var(--tina-shadow-small);background-color:var(--tina-color-grey-0);border:1px solid var(--tina-color-grey-2);color:var(--tina-color-primary);fill:var(--tina-color-primary);font-weight:var(--tina-font-weight-regular);cursor:pointer;font-size:var(--tina-font-size-1);height:40px;padding:0 var(--tina-padding-big);transition:all 85ms ease-out;&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);outline:none;}", ";", ";", ";", ";", ";", ";"], p => p.disabled && styled.css(["opacity:0.3;pointer:not-allowed;pointer-events:none;"]), p => p.primary && styled.css(["background-color:var(--tina-color-primary);color:var(--tina-color-grey-0);fill:var(--tina-color-grey-0);border:none;&:hover{background-color:var(--tina-color-primary-light);}&:active{background-color:var(--tina-color-primary-dark);}"]), p => p.small && styled.css(["height:32px;font-size:var(--tina-font-size-0);padding:0 var(--tina-padding-big);"]), p => p.margin && styled.css(["&:not(:first-child){margin-left:8px;}"]), p => p.grow && styled.css(["flex-grow:1;"]), p => p.busy && styled.css(["cursor:wait;"]));
 const ICON_BUTTON_SIZE = 18;
 const ICON_SIZE = 18;
-const IconButton = styledComponents.styled(Button).withConfig({
+const IconButton = styled.styled(Button).withConfig({
   displayName: "Button__IconButton",
   componentId: "sc-qplww2-1"
-})(["padding:0;width:", "px;height:", "px;margin:0;position:relative;transform-origin:50% 50%;transition:all 150ms ease-out;padding:0;display:flex;flex-shrink:0;justify-content:center;align-items:center;svg{width:", "px;height:", "px;transition:all 150ms ease-out;}", ";"], ICON_BUTTON_SIZE, ICON_BUTTON_SIZE, ICON_SIZE, ICON_SIZE, props => props.open && styledComponents.css(["background-color:var(--tina-color-grey-0);border-color:var(--tina-color-grey-2);outline:none;fill:var(--tina-color-primary);svg{transform:rotate(45deg);}&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);}"]));
+})(["padding:0;width:", "px;height:", "px;margin:0;position:relative;transform-origin:50% 50%;transition:all 150ms ease-out;padding:0;display:flex;flex-shrink:0;justify-content:center;align-items:center;svg{width:", "px;height:", "px;transition:all 150ms ease-out;}", ";"], ICON_BUTTON_SIZE, ICON_BUTTON_SIZE, ICON_SIZE, ICON_SIZE, props => props.open && styled.css(["background-color:var(--tina-color-grey-0);border-color:var(--tina-color-grey-2);outline:none;fill:var(--tina-color-primary);svg{transform:rotate(45deg);}&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);}"]));
 
 function InlineSettings({
   fields
@@ -2641,16 +2642,16 @@ function SettingsContent({
     paths: focussedField
   })));
 }
-const FormBody = styledComponents.styled.div.withConfig({
+const FormBody = styled.styled.div.withConfig({
   displayName: "inline-settings__FormBody",
   componentId: "sc-fe5cee-0"
 })(["position:relative;flex:1 1 auto;display:flex;flex-direction:column;width:100%;height:100%;border-top:1px solid var(--tina-color-grey-2);background-color:white;"]);
-const Wrapper$1 = styledComponents.styled.div.withConfig({
+const Wrapper$1 = styled.styled.div.withConfig({
   displayName: "inline-settings__Wrapper",
   componentId: "sc-fe5cee-1"
 })(["display:block;margin:0 auto;width:100%;height:100%;overflow-y:auto;"]);
 
-const Error$1 = styledComponents.styled.div.withConfig({
+const Error$1 = styled.styled.div.withConfig({
   displayName: "EditorSidebar__Error",
   componentId: "sc-xkxfa3-0"
 })(["", " padding:7px 6px 7px;color:hsl(0deg 0% 50% / 0.8);white-space:normal;background:hsl(0deg 100% 50% / 0.2);margin-right:10px;border-radius:2px;margin:16px;"], easyblocksDesignSystem.Fonts.body);
@@ -2685,31 +2686,31 @@ const EditorSidebar = props => {
 };
 
 const TOP_BAR_HEIGHT = 40;
-const TopBar = styledComponents.styled.div.withConfig({
+const TopBar = styled.styled.div.withConfig({
   displayName: "EditorTopBar__TopBar",
   componentId: "sc-726nw9-0"
 })(["position:relative;box-sizing:border-box;background-color:white;border-bottom:1px solid #eaeaea;padding:0 64px;min-height:", "px;display:flex;flex-direction:row;justify-content:center;align-items:center;"], TOP_BAR_HEIGHT);
-const Label = styledComponents.styled.div.withConfig({
+const Label = styled.styled.div.withConfig({
   displayName: "EditorTopBar__Label",
   componentId: "sc-726nw9-1"
 })(["background:", ";height:24px;", " display:flex;justify-content:center;align-items:center;padding-left:12px;padding-right:12px;border-radius:12px;color:white;"], easyblocksDesignSystem.Colors.purple, easyblocksDesignSystem.Fonts.label);
-const TopBarLeft = styledComponents.styled.div.withConfig({
+const TopBarLeft = styled.styled.div.withConfig({
   displayName: "EditorTopBar__TopBarLeft",
   componentId: "sc-726nw9-2"
 })(["position:absolute;top:0;left:4px;height:100%;display:flex;flex-direction:row;align-items:center;gap:4px;"]);
-const TopBarRight = styledComponents.styled.div.withConfig({
+const TopBarRight = styled.styled.div.withConfig({
   displayName: "EditorTopBar__TopBarRight",
   componentId: "sc-726nw9-3"
 })(["position:absolute;top:0;right:8px;height:100%;display:flex;flex-direction:row;align-items:center;gap:16px;"]);
-const TopBarCenter = styledComponents.styled.div.withConfig({
+const TopBarCenter = styled.styled.div.withConfig({
   displayName: "EditorTopBar__TopBarCenter",
   componentId: "sc-726nw9-4"
 })(["position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"]);
-const ImageContainer$1 = styledComponents.styled.div.withConfig({
+const ImageContainer$1 = styled.styled.div.withConfig({
   displayName: "EditorTopBar__ImageContainer",
   componentId: "sc-726nw9-5"
 })(["position:relative;width:20px;height:20px;"]);
-const Image = styledComponents.styled.img.withConfig({
+const Image = styled.styled.img.withConfig({
   displayName: "EditorTopBar__Image",
   componentId: "sc-726nw9-6"
 })(["width:100%;height:100%;object-fit:contain;"]);
@@ -3836,11 +3837,11 @@ function AddButton({
     stroke: "currentColor"
   }))));
 }
-const AddIconButton = styledComponents.styled(IconButton).withConfig({
+const AddIconButton = styled.styled(IconButton).withConfig({
   displayName: "AddButton__AddIconButton",
   componentId: "sc-79bcl2-0"
-})(["display:flex;align-items:center;&:focus{outline:none !important;}", ";"], props => props.isOpen && styledComponents.css(["pointer-events:none;"]));
-const AddButtonWrapper = styledComponents.styled.div.withConfig({
+})(["display:flex;align-items:center;&:focus{outline:none !important;}", ";"], props => props.isOpen && styled.css(["pointer-events:none;"]));
+const AddButtonWrapper = styled.styled.div.withConfig({
   displayName: "AddButton__AddButtonWrapper",
   componentId: "sc-79bcl2-1"
 })(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;"], ({
@@ -3851,11 +3852,11 @@ const AddButtonWrapper = styledComponents.styled.div.withConfig({
   position
 }) => position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY);
 
-const Wrapper = styledComponents.styled.div.withConfig({
+const Wrapper = styled.styled.div.withConfig({
   displayName: "SelectionFramestyles__Wrapper",
   componentId: "sc-xqih8j-0"
 })(["position:absolute;top:0;left:0;bottom:0;right:0;display:grid;place-items:center;pointer-events:none;"]);
-const FrameWrapper = styledComponents.styled.div.attrs(({
+const FrameWrapper = styled.styled.div.attrs(({
   width,
   height,
   transform
@@ -4994,31 +4995,289 @@ function checkLocalesCorrectness(locales) {
   return true;
 }
 
-const ContentContainer = styledComponents.styled.div.withConfig({
+const shimmer = styled.keyframes(["0%{background-position:-800px 0;}100%{background-position:800px 0;}"]);
+const SkeletonBox = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonBox",
+  componentId: "sc-133np0d-0"
+})(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || '100%', props => props.height || '20px', shimmer, props => props.borderRadius || '4px');
+
+// Mimic the actual editor structure
+const SkeletonEditorContainer = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonEditorContainer",
+  componentId: "sc-133np0d-1"
+})(["height:100vh;width:100%;display:flex;flex-direction:column;background:#fafafa;"]);
+const SkeletonTopBar = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBar",
+  componentId: "sc-133np0d-2"
+})(["height:40px;background:", ";border-bottom:1px solid ", ";display:flex;align-items:center;justify-content:space-between;padding:0 4px;gap:16px;"], easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100);
+const SkeletonTopBarLeft = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBarLeft",
+  componentId: "sc-133np0d-3"
+})(["display:flex;gap:8px;align-items:center;"]);
+const SkeletonTopBarCenter = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBarCenter",
+  componentId: "sc-133np0d-4"
+})(["display:flex;gap:8px;align-items:center;"]);
+const SkeletonTopBarRight = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBarRight",
+  componentId: "sc-133np0d-5"
+})(["display:flex;gap:16px;align-items:center;"]);
+const SkeletonMainContent = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonMainContent",
+  componentId: "sc-133np0d-6"
+})(["flex:1;display:flex;overflow:hidden;"]);
+const SkeletonCanvasArea = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonCanvasArea",
+  componentId: "sc-133np0d-7"
+})(["flex:1;background:#e5e5e5;padding:32px;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;"]);
+const SkeletonCanvas = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonCanvas",
+  componentId: "sc-133np0d-8"
+})(["width:100%;max-width:1300px;background:white;padding:32px;display:flex;flex-direction:column;gap:24px;margin-top:32px;"]);
+const SkeletonSidebar = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonSidebar",
+  componentId: "sc-133np0d-9"
+})(["flex:0 0 240px;background:", ";border-left:1px solid ", ";padding:16px;display:flex;flex-direction:column;gap:24px;"], easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100);
+const SkeletonSection = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonSection",
+  componentId: "sc-133np0d-10"
+})(["display:flex;flex-direction:column;gap:12px;"]);
+const SkeletonItem = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonItem",
+  componentId: "sc-133np0d-11"
+})(["display:flex;gap:16px;padding:16px;border-radius:8px;"]);
+const SkeletonContent = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonContent",
+  componentId: "sc-133np0d-12"
+})(["flex:1;display:flex;flex-direction:column;gap:8px;"]);
+const SkeletonMeta = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonMeta",
+  componentId: "sc-133np0d-13"
+})(["display:flex;gap:12px;margin-top:4px;"]);
+const SkeletonEditor = () => {
+  return /*#__PURE__*/React__default["default"].createElement(SkeletonEditorContainer, null, /*#__PURE__*/React__default["default"].createElement(SkeletonTopBar, null, /*#__PURE__*/React__default["default"].createElement(SkeletonTopBarLeft, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "60px",
+    height: "28px",
+    borderRadius: "6px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonTopBarCenter, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonTopBarRight, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "28px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "60px",
+    height: "28px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "86px",
+    height: "28px",
+    borderRadius: "6px"
+  }))), /*#__PURE__*/React__default["default"].createElement(SkeletonMainContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonCanvasArea, null, /*#__PURE__*/React__default["default"].createElement(SkeletonCanvas, null, /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "24px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "85%",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "16px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "60px",
+    height: "24px"
+  }))), /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "95%",
+    height: "24px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "70%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "16px"
+  })))), /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "90%",
+    height: "24px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "16px"
+  })))), /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "90%",
+    height: "24px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "16px"
+  })))))), /*#__PURE__*/React__default["default"].createElement(SkeletonSidebar, null, /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "120px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "120px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "120px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })))));
+};
+
+const ContentContainer = styled.styled.div.withConfig({
   displayName: "Editor__ContentContainer",
   componentId: "sc-t95yuf-0"
 })(["position:relative;flex:1 1 auto;display:flex;flex-direction:column;"]);
-const SidebarAndContentContainer = styledComponents.styled.div.withConfig({
+const SidebarAndContentContainer = styled.styled.div.withConfig({
   displayName: "Editor__SidebarAndContentContainer",
   componentId: "sc-t95yuf-1"
 })(["height:", ";width:100%;background:#fafafa;display:flex;flex-direction:row;align-items:stretch;"], props => `calc(${props.height} - ${TOP_BAR_HEIGHT}px)`);
-const SidebarContainer = styledComponents.styled.div.withConfig({
+const SidebarContainer = styled.styled.div.withConfig({
   displayName: "Editor__SidebarContainer",
   componentId: "sc-t95yuf-2"
 })(["flex:0 0 240px;background:", ";border-left:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}overflow-y:auto;"], easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100);
-const DataSaverRoot = styledComponents.styled.div.withConfig({
+const DataSaverRoot = styled.styled.div.withConfig({
   displayName: "Editor__DataSaverRoot",
   componentId: "sc-t95yuf-3"
 })(["position:fixed;width:100%;height:100%;z-index:100000;display:flex;justify-content:center;align-items:center;"]);
-const DataSaverOverlay = styledComponents.styled.div.withConfig({
+const DataSaverOverlay = styled.styled.div.withConfig({
   displayName: "Editor__DataSaverOverlay",
   componentId: "sc-t95yuf-4"
 })(["z-index:-1;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.25);"]);
-const DataSaverModal = styledComponents.styled.div.withConfig({
+const DataSaverModal = styled.styled.div.withConfig({
   displayName: "Editor__DataSaverModal",
   componentId: "sc-t95yuf-5"
 })(["background:white;padding:32px;border-radius:8px;display:flex;justify-content:center;align-items:center;", " font-size:16px;"], easyblocksDesignSystem.Fonts.body);
-const AuthenticationScreen = styledComponents.styled.div.withConfig({
+const AuthenticationScreen = styled.styled.div.withConfig({
   displayName: "Editor__AuthenticationScreen",
   componentId: "sc-t95yuf-6"
 })(["width:100vw;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px;text-align:center;", ""], easyblocksDesignSystem.Fonts.bodyLarge);
@@ -5049,7 +5308,7 @@ function EditorBackendInitializer(props) {
     run();
   }, []);
   if (!enabled) {
-    return /*#__PURE__*/React__default["default"].createElement(AuthenticationScreen, null, "Loading...");
+    return /*#__PURE__*/React__default["default"].createElement(AuthenticationScreen, null, /*#__PURE__*/React__default["default"].createElement(SkeletonEditor, null));
   }
   if (error) {
     return /*#__PURE__*/React__default["default"].createElement(DataSaverRoot, null, /*#__PURE__*/React__default["default"].createElement(DataSaverOverlay, null), /*#__PURE__*/React__default["default"].createElement(DataSaverModal, null, error));
@@ -6084,43 +6343,43 @@ function DocumentDataWidgetComponent({
  * CARD
  */
 
-const CardRoot = styledComponents.styled.div.withConfig({
+const CardRoot = styled.styled.div.withConfig({
   displayName: "SectionPicker__CardRoot",
   componentId: "sc-5szert-0"
 })(["&:hover{outline:1px solid ", ";outline-offset:8px;}.editButton{opacity:0;}&:hover{.editButton{opacity:1;}}"], easyblocksDesignSystem.Colors.black10);
-const ImageContainer = styledComponents.styled.div.withConfig({
+const ImageContainer = styled.styled.div.withConfig({
   displayName: "SectionPicker__ImageContainer",
   componentId: "sc-5szert-1"
 })(["position:relative;background-color:", ";margin-bottom:8px;padding-bottom:", ";cursor:pointer;"], easyblocksDesignSystem.Colors.black10, p => p.mode === "large-3" ? "90%" : "60%");
-const CardImg = styledComponents.styled.img.withConfig({
+const CardImg = styled.styled.img.withConfig({
   displayName: "SectionPicker__CardImg",
   componentId: "sc-5szert-2"
 })(["position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;padding:24px;box-sizing:border-box;"]);
-const CardImgPlaceholder = styledComponents.styled.div.withConfig({
+const CardImgPlaceholder = styled.styled.div.withConfig({
   displayName: "SectionPicker__CardImgPlaceholder",
   componentId: "sc-5szert-3"
 })(["position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;"]);
-const CardFooter = styledComponents.styled.div.withConfig({
+const CardFooter = styled.styled.div.withConfig({
   displayName: "SectionPicker__CardFooter",
   componentId: "sc-5szert-4"
 })(["display:flex;flex-direction:row;justify-content:space-between;align-items:center;margin-top:8px;"]);
-const CardLabelContainer = styledComponents.styled.div.withConfig({
+const CardLabelContainer = styled.styled.div.withConfig({
   displayName: "SectionPicker__CardLabelContainer",
   componentId: "sc-5szert-5"
 })(["display:flex;flex-direction:row;align-items:center;"]);
-const CardLabelTemplateName = styledComponents.styled.div.withConfig({
+const CardLabelTemplateName = styled.styled.div.withConfig({
   displayName: "SectionPicker__CardLabelTemplateName",
   componentId: "sc-5szert-6"
 })(["", ";color:black;"], easyblocksDesignSystem.Fonts.body);
-const Title = styledComponents.styled.div.withConfig({
+const Title = styled.styled.div.withConfig({
   displayName: "SectionPicker__Title",
   componentId: "sc-5szert-7"
 })(["", ""], easyblocksDesignSystem.Fonts.label);
-const TitleContainer = styledComponents.styled.div.withConfig({
+const TitleContainer = styled.styled.div.withConfig({
   displayName: "SectionPicker__TitleContainer",
   componentId: "sc-5szert-8"
 })(["display:flex;flex-direction:row;gap:8px;align-items:center;margin-bottom:24px;"]);
-const Message = styledComponents.styled.div.withConfig({
+const Message = styled.styled.div.withConfig({
   displayName: "SectionPicker__Message",
   componentId: "sc-5szert-9"
 })(["padding-top:32px;", ";"], easyblocksDesignSystem.Fonts.body);
@@ -6193,27 +6452,27 @@ const SectionCard = ({
  * MODAL
  */
 
-const ModalRoot = styledComponents.styled.div.withConfig({
+const ModalRoot = styled.styled.div.withConfig({
   displayName: "SectionPicker__ModalRoot",
   componentId: "sc-5szert-10"
 })(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;grid-template-columns:200px 1fr;"]);
-const ModalGridRoot = styledComponents.styled.div.withConfig({
+const ModalGridRoot = styled.styled.div.withConfig({
   displayName: "SectionPicker__ModalGridRoot",
   componentId: "sc-5szert-11"
 })(["display:grid;grid-template-columns:", ";grid-column-gap:16px;grid-row-gap:30px;"], p => p.mode === "large-3" ? "1fr 1fr 1fr" : "1fr 1fr");
-const Sidebar = styledComponents.styled.div.withConfig({
+const Sidebar = styled.styled.div.withConfig({
   displayName: "SectionPicker__Sidebar",
   componentId: "sc-5szert-12"
 })(["overflow-y:hidden;overflow-x:hidden;border-right:1px solid ", ";height:100%;"], easyblocksDesignSystem.Colors.black5);
-const SidebarContent = styledComponents.styled.div.withConfig({
+const SidebarContent = styled.styled.div.withConfig({
   displayName: "SectionPicker__SidebarContent",
   componentId: "sc-5szert-13"
 })(["padding:24px 4px;display:flex;flex-direction:column;gap:8px;"]);
-const SidebarButton = styledComponents.styled.button.withConfig({
+const SidebarButton = styled.styled.button.withConfig({
   displayName: "SectionPicker__SidebarButton",
   componentId: "sc-5szert-14"
 })(["all:unset;height:38px;", " display:flex;padding-left:16px;align-items:center;&:hover{background:", ";}cursor:pointer;"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black5);
-const GridRoot = styledComponents.styled.div.withConfig({
+const GridRoot = styled.styled.div.withConfig({
   displayName: "SectionPicker__GridRoot",
   componentId: "sc-5szert-15"
 })(["padding:0px 16px;height:100%;overflow-x:hidden;overflow-y:auto;"]);
@@ -6384,7 +6643,7 @@ const builinPickers = {
 };
 function EasyblocksParent(props) {
   const editorSearchParams = parseQueryParams();
-  return /*#__PURE__*/React__default["default"].createElement(styledComponents.StyleSheetManager, {
+  return /*#__PURE__*/React__default["default"].createElement(styled.StyleSheetManager, {
     shouldForwardProp: shouldForwardProp,
     enableVendorPrefixes: true
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ModalContext.Provider, {

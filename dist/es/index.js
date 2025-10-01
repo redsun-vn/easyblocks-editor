@@ -3,7 +3,7 @@ import * as React from 'react';
 import React__default, { useContext, useState, useRef, createContext, useEffect, forwardRef, Fragment, useLayoutEffect, useMemo, memo, useCallback } from 'react';
 import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ButtonDanger, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
-import { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
+import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
 import { getExternalReferenceLocationKey, isTrulyResponsiveValue, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, isNoCodeComponentOfType, getDefaultLocale, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks } from '@redsun-vn/easyblocks-core';
 import { parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, findComponentDefinition, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
@@ -4961,6 +4961,264 @@ function checkLocalesCorrectness(locales) {
   return true;
 }
 
+const shimmer = keyframes(["0%{background-position:-800px 0;}100%{background-position:800px 0;}"]);
+const SkeletonBox = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonBox",
+  componentId: "sc-133np0d-0"
+})(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || '100%', props => props.height || '20px', shimmer, props => props.borderRadius || '4px');
+
+// Mimic the actual editor structure
+const SkeletonEditorContainer = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonEditorContainer",
+  componentId: "sc-133np0d-1"
+})(["height:100vh;width:100%;display:flex;flex-direction:column;background:#fafafa;"]);
+const SkeletonTopBar = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBar",
+  componentId: "sc-133np0d-2"
+})(["height:40px;background:", ";border-bottom:1px solid ", ";display:flex;align-items:center;justify-content:space-between;padding:0 4px;gap:16px;"], Colors.white, Colors.black100);
+const SkeletonTopBarLeft = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBarLeft",
+  componentId: "sc-133np0d-3"
+})(["display:flex;gap:8px;align-items:center;"]);
+const SkeletonTopBarCenter = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBarCenter",
+  componentId: "sc-133np0d-4"
+})(["display:flex;gap:8px;align-items:center;"]);
+const SkeletonTopBarRight = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBarRight",
+  componentId: "sc-133np0d-5"
+})(["display:flex;gap:16px;align-items:center;"]);
+const SkeletonMainContent = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonMainContent",
+  componentId: "sc-133np0d-6"
+})(["flex:1;display:flex;overflow:hidden;"]);
+const SkeletonCanvasArea = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonCanvasArea",
+  componentId: "sc-133np0d-7"
+})(["flex:1;background:#e5e5e5;padding:32px;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;"]);
+const SkeletonCanvas = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonCanvas",
+  componentId: "sc-133np0d-8"
+})(["width:100%;max-width:1300px;background:white;padding:32px;display:flex;flex-direction:column;gap:24px;margin-top:32px;"]);
+const SkeletonSidebar = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonSidebar",
+  componentId: "sc-133np0d-9"
+})(["flex:0 0 240px;background:", ";border-left:1px solid ", ";padding:16px;display:flex;flex-direction:column;gap:24px;"], Colors.white, Colors.black100);
+const SkeletonSection = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonSection",
+  componentId: "sc-133np0d-10"
+})(["display:flex;flex-direction:column;gap:12px;"]);
+const SkeletonItem = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonItem",
+  componentId: "sc-133np0d-11"
+})(["display:flex;gap:16px;padding:16px;border-radius:8px;"]);
+const SkeletonContent = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonContent",
+  componentId: "sc-133np0d-12"
+})(["flex:1;display:flex;flex-direction:column;gap:8px;"]);
+const SkeletonMeta = styled$1.div.withConfig({
+  displayName: "SkeletonEditor__SkeletonMeta",
+  componentId: "sc-133np0d-13"
+})(["display:flex;gap:12px;margin-top:4px;"]);
+const SkeletonEditor = () => {
+  return /*#__PURE__*/React__default.createElement(SkeletonEditorContainer, null, /*#__PURE__*/React__default.createElement(SkeletonTopBar, null, /*#__PURE__*/React__default.createElement(SkeletonTopBarLeft, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "60px",
+    height: "28px",
+    borderRadius: "6px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonTopBarCenter, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonTopBarRight, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100px",
+    height: "28px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "60px",
+    height: "28px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "86px",
+    height: "28px",
+    borderRadius: "6px"
+  }))), /*#__PURE__*/React__default.createElement(SkeletonMainContent, null, /*#__PURE__*/React__default.createElement(SkeletonCanvasArea, null, /*#__PURE__*/React__default.createElement(SkeletonCanvas, null, /*#__PURE__*/React__default.createElement(SkeletonItem, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonContent, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "24px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "85%",
+    height: "20px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonMeta, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "80px",
+    height: "16px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "60px",
+    height: "24px"
+  }))), /*#__PURE__*/React__default.createElement(SkeletonItem, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonContent, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "95%",
+    height: "24px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "70%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonMeta, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "80px",
+    height: "16px"
+  })))), /*#__PURE__*/React__default.createElement(SkeletonItem, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonContent, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "90%",
+    height: "24px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonMeta, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "80px",
+    height: "16px"
+  })))), /*#__PURE__*/React__default.createElement(SkeletonItem, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonContent, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "90%",
+    height: "24px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonMeta, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "80px",
+    height: "16px"
+  })))))), /*#__PURE__*/React__default.createElement(SkeletonSidebar, null, /*#__PURE__*/React__default.createElement(SkeletonSection, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100px",
+    height: "20px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonSection, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "120px",
+    height: "20px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonSection, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "80px",
+    height: "20px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonSection, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "80px",
+    height: "20px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonSection, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100px",
+    height: "20px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonSection, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "120px",
+    height: "20px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonSection, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "120px",
+    height: "20px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default.createElement(SkeletonSection, null, /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "80px",
+    height: "20px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default.createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })))));
+};
+
 const ContentContainer = styled.div.withConfig({
   displayName: "Editor__ContentContainer",
   componentId: "sc-t95yuf-0"
@@ -5016,7 +5274,7 @@ function EditorBackendInitializer(props) {
     run();
   }, []);
   if (!enabled) {
-    return /*#__PURE__*/React__default.createElement(AuthenticationScreen, null, "Loading...");
+    return /*#__PURE__*/React__default.createElement(AuthenticationScreen, null, /*#__PURE__*/React__default.createElement(SkeletonEditor, null));
   }
   if (error) {
     return /*#__PURE__*/React__default.createElement(DataSaverRoot, null, /*#__PURE__*/React__default.createElement(DataSaverOverlay, null), /*#__PURE__*/React__default.createElement(DataSaverModal, null, error));
