@@ -1,6 +1,7 @@
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React from "react";
 import styled, { keyframes } from "styled-components";
+import SkeletonEditorCanvasArea from "./SkeletonEditorCanvasArea";
 
 const shimmer = keyframes`
   0% {
@@ -74,21 +75,11 @@ const SkeletonCanvasArea = styled.div`
   flex: 1;
   background: #e5e5e5;
   padding: 32px;
+  padding-top: 64px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   overflow-y: auto;
-`;
-
-const SkeletonCanvas = styled.div`
-  width: 100%;
-  max-width: 1300px;
-  background: white;
-  padding: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  margin-top: 32px;
 `;
 
 const SkeletonSidebar = styled.div`
@@ -105,26 +96,6 @@ const SkeletonSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-`;
-
-const SkeletonItem = styled.div`
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  border-radius: 8px;
-`;
-
-const SkeletonContent = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const SkeletonMeta = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-top: 4px;
 `;
 
 export const SkeletonEditor = () => {
@@ -160,56 +131,7 @@ export const SkeletonEditor = () => {
         <SkeletonMainContent>
           {/* Canvas Area */}
           <SkeletonCanvasArea>
-            <SkeletonCanvas>
-              {/* Items */}
-              <SkeletonItem>
-                <SkeletonBox width="188px" height="138px" borderRadius="6px" />
-                <SkeletonContent>
-                  <SkeletonBox width="100%" height="24px" />
-                  <SkeletonBox width="85%" height="20px" />
-                  <SkeletonMeta>
-                    <SkeletonBox width="100px" height="16px" />
-                    <SkeletonBox width="80px" height="16px" />
-                  </SkeletonMeta>
-                  <SkeletonBox width="60px" height="24px" />
-                </SkeletonContent>
-              </SkeletonItem>
-
-              <SkeletonItem>
-                <SkeletonBox width="188px" height="138px" borderRadius="6px" />
-                <SkeletonContent>
-                  <SkeletonBox width="95%" height="24px" />
-                  <SkeletonBox width="100%" height="18px" />
-                  <SkeletonBox width="70%" height="18px" />
-                  <SkeletonMeta>
-                    <SkeletonBox width="100px" height="16px" />
-                    <SkeletonBox width="80px" height="16px" />
-                  </SkeletonMeta>
-                </SkeletonContent>
-              </SkeletonItem>
-
-              <SkeletonItem>
-                <SkeletonBox width="188px" height="138px" borderRadius="6px" />
-                <SkeletonContent>
-                  <SkeletonBox width="90%" height="24px" />
-                  <SkeletonMeta>
-                    <SkeletonBox width="100px" height="16px" />
-                    <SkeletonBox width="80px" height="16px" />
-                  </SkeletonMeta>
-                </SkeletonContent>
-              </SkeletonItem>
-
-              <SkeletonItem>
-                <SkeletonBox width="188px" height="138px" borderRadius="6px" />
-                <SkeletonContent>
-                  <SkeletonBox width="90%" height="24px" />
-                  <SkeletonMeta>
-                    <SkeletonBox width="100px" height="16px" />
-                    <SkeletonBox width="80px" height="16px" />
-                  </SkeletonMeta>
-                </SkeletonContent>
-              </SkeletonItem>
-            </SkeletonCanvas>
+            <SkeletonEditorCanvasArea />
           </SkeletonCanvasArea>
 
           {/* Sidebar Skeleton */}

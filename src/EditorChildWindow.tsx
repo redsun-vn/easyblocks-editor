@@ -22,6 +22,7 @@ import { z } from "zod";
 import { CanvasRoot } from "./CanvasRoot/CanvasRoot";
 import EditableComponentBuilder from "./EditableComponentBuilder/EditableComponentBuilder.editor";
 import TypePlaceholder from "./Placeholder";
+import SkeletonEditorCanvasArea from "./SkeletonEditorCanvasArea";
 
 const dragDataSchema = z.object({
   path: z.string(),
@@ -80,7 +81,7 @@ export function EasyblocksCanvas({
   const shouldNotRender = !enabled || !meta || !compiled || !externalData;
 
   if (shouldNotRender) {
-    return <div>Loading...</div>;
+    return <div><SkeletonEditorCanvasArea /></div>;
   }
 
   const sortableItems = getSortableItems(
