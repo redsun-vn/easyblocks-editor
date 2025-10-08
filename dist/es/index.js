@@ -4620,6 +4620,7 @@ function useDataSaver(initialDocument, editorContext) {
         else {
           if (isConfigTheSame) {
             console.debug("no local changes -> bye");
+            toaster.success("No local changes.");
             // Let's do nothing, no remote and local change
           } else {
             console.debug("updating the document", remoteDocument.current.id);
