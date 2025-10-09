@@ -29,7 +29,7 @@ export function useDataSaver(
   );
   const onTickRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
-  const onTick = async () => {
+  const onTick = async ({ mode }: { mode: "auto" | "force" }) => {
     // Playground mode is a special case, we don't want to save anything
     if (editorContext.readOnly) {
       return;
@@ -131,7 +131,10 @@ export function useDataSaver(
         else {
           if (isConfigTheSame) {
             console.debug("no local changes -> bye");
-            toaster.success("No local changes.");
+
+            if (mode === "force") {
+              toaster.success("No local changes.");
+            }
             // Let's do nothing, no remote and local change
           } else {
             console.debug("updating the document", remoteDocument.current.id);
@@ -162,7 +165,7 @@ export function useDataSaver(
   };
 
   // We're keeping this in ref, because of setInterval keeping initial closure
-  onTickRef.current = onTick;
+  onTickRef.current = () => onTick({ mode: "auto" });
 
   const inProgress = useRef<boolean>(false);
   const wasSaveNowCalled = useRef<boolean>(false);
@@ -200,7 +203,7 @@ export function useDataSaver(
       }
 
       console.debug("Last save!");
-      await onTick();
+      await onTick({ mode: "force" });
     },
   };
 }

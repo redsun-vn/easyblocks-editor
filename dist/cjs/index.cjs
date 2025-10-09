@@ -4590,7 +4590,9 @@ function useDataSaver(initialDocument, editorContext) {
    */
   const [initialConfigInCaseOfMissingDocument] = React.useState(deepClone(editorContext.form.values));
   const onTickRef = React.useRef(() => Promise.resolve());
-  const onTick = async () => {
+  const onTick = async ({
+    mode
+  }) => {
     // Playground mode is a special case, we don't want to save anything
     if (editorContext.readOnly) {
       return;
@@ -4661,7 +4663,9 @@ function useDataSaver(initialDocument, editorContext) {
         else {
           if (isConfigTheSame) {
             console.debug("no local changes -> bye");
-            toaster.success("No local changes.");
+            if (mode === "force") {
+              toaster.success("No local changes.");
+            }
             // Let's do nothing, no remote and local change
           } else {
             console.debug("updating the document", remoteDocument.current.id);
@@ -4687,7 +4691,9 @@ function useDataSaver(initialDocument, editorContext) {
   };
 
   // We're keeping this in ref, because of setInterval keeping initial closure
-  onTickRef.current = onTick;
+  onTickRef.current = () => onTick({
+    mode: "auto"
+  });
   const inProgress = React.useRef(false);
   const wasSaveNowCalled = React.useRef(false);
   React.useEffect(() => {
@@ -4719,7 +4725,9 @@ function useDataSaver(initialDocument, editorContext) {
         }
       }
       console.debug("Last save!");
-      await onTick();
+      await onTick({
+        mode: "force"
+      });
     }
   };
 }
