@@ -2716,6 +2716,7 @@ const Image = styled.styled.img.withConfig({
   displayName: "EditorTopBar__Image",
   componentId: "sc-726nw9-6"
 })(["width:100%;height:100%;object-fit:contain;"]);
+const debouncedSave = debounce__default["default"](fn => fn(), 200);
 const EditorTopBar = ({
   onClose,
   onSaveDocument: _onSaveDocument,
@@ -2738,7 +2739,7 @@ const EditorTopBar = ({
   const shopId = router.get("shopId");
   const onSaveDocument = () => {
     if (_onSaveDocument) {
-      debounce__default["default"](_onSaveDocument, 200);
+      debouncedSave(_onSaveDocument);
     }
   };
   return /*#__PURE__*/React__default["default"].createElement(TopBar, {

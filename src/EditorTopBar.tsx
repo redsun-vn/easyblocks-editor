@@ -89,6 +89,8 @@ const Image = styled.img`
   object-fit: contain;
 `;
 
+const debouncedSave = debounce((fn: () => void) => fn(), 200);
+
 export const EditorTopBar: React.FC<{
   saveLabel: string;
   onClose?: () => void;
@@ -128,7 +130,7 @@ export const EditorTopBar: React.FC<{
 
   const onSaveDocument = () => {
     if (_onSaveDocument) {
-      debounce(_onSaveDocument, 200);
+      debouncedSave(_onSaveDocument);
     }
   };
 
