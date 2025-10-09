@@ -16,6 +16,7 @@ var ReactDOM = require('react-dom');
 var tooltip = require('@react-aria/tooltip');
 var reactPopper = require('react-popper');
 var RadixRadioGroup = require('@radix-ui/react-radio-group');
+var debounce = require('lodash/debounce');
 var finalForm = require('final-form');
 var arrayMutators = require('final-form-arrays');
 var core = require('@dnd-kit/core');
@@ -51,6 +52,7 @@ var throttle__default = /*#__PURE__*/_interopDefaultLegacy(throttle);
 var Modal__default = /*#__PURE__*/_interopDefaultLegacy(Modal);
 var ReactDOM__default = /*#__PURE__*/_interopDefaultLegacy(ReactDOM);
 var RadixRadioGroup__namespace = /*#__PURE__*/_interopNamespace(RadixRadioGroup);
+var debounce__default = /*#__PURE__*/_interopDefaultLegacy(debounce);
 var arrayMutators__default = /*#__PURE__*/_interopDefaultLegacy(arrayMutators);
 
 const EditorContext = /*#__PURE__*/React__default["default"].createContext(null);
@@ -2716,7 +2718,7 @@ const Image = styled.styled.img.withConfig({
 })(["width:100%;height:100%;object-fit:contain;"]);
 const EditorTopBar = ({
   onClose,
-  onSaveDocument,
+  onSaveDocument: _onSaveDocument,
   onViewportChange,
   devices,
   viewport,
@@ -2734,6 +2736,11 @@ const EditorTopBar = ({
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
+  const onSaveDocument = () => {
+    if (_onSaveDocument) {
+      debounce__default["default"](_onSaveDocument, 200);
+    }
+  };
   return /*#__PURE__*/React__default["default"].createElement(TopBar, {
     ref: headingRef
   }, /*#__PURE__*/React__default["default"].createElement(TopBarLeft, null, !hideCloseButton && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
@@ -2761,7 +2768,7 @@ const EditorTopBar = ({
   }, "Redo"), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "Read-Only"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
     className: "cursor-pointer",
     component: "label",
-    onClick: () => onSaveDocument?.()
+    onClick: onSaveDocument
   }, "Save")), /*#__PURE__*/React__default["default"].createElement(TopBarCenter, null, /*#__PURE__*/React__default["default"].createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,

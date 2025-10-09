@@ -1,8 +1,8 @@
 import { Devices, Locale } from "@redsun-vn/easyblocks-core";
 import {
+  ButtonDanger,
   ButtonGhost,
   ButtonPrimary,
-  ButtonDanger,
   Colors,
   Fonts,
   Icons,
@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
   Typography,
 } from "@redsun-vn/easyblocks-design-system";
+import debounce from "lodash/debounce";
 import React, { ReactNode, useRef } from "react";
 import { styled } from "styled-components";
 
@@ -106,7 +107,7 @@ export const EditorTopBar: React.FC<{
   readOnly: boolean;
 }> = ({
   onClose,
-  onSaveDocument,
+  onSaveDocument: _onSaveDocument,
   onViewportChange,
   devices,
   viewport,
@@ -124,6 +125,12 @@ export const EditorTopBar: React.FC<{
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
+
+  const onSaveDocument = () => {
+    if (_onSaveDocument) {
+      debounce(_onSaveDocument, 200);
+    }
+  };
 
   return (
     <TopBar ref={headingRef}>
@@ -163,7 +170,7 @@ export const EditorTopBar: React.FC<{
         <ButtonDanger
           className="cursor-pointer"
           component="label"
-          onClick={() => onSaveDocument?.()}
+          onClick={onSaveDocument}
         >
           Save
         </ButtonDanger>

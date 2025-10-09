@@ -13,6 +13,7 @@ import ReactDOM, { createPortal } from 'react-dom';
 import { useTooltipTrigger } from '@react-aria/tooltip';
 import { usePopper } from 'react-popper';
 import * as RadixRadioGroup from '@radix-ui/react-radio-group';
+import debounce from 'lodash/debounce';
 import { createForm as createForm$1, FORM_ERROR } from 'final-form';
 import arrayMutators from 'final-form-arrays';
 import { useDndContext, useSensor, MouseSensor, DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
@@ -2682,7 +2683,7 @@ const Image = styled.img.withConfig({
 })(["width:100%;height:100%;object-fit:contain;"]);
 const EditorTopBar = ({
   onClose,
-  onSaveDocument,
+  onSaveDocument: _onSaveDocument,
   onViewportChange,
   devices,
   viewport,
@@ -2700,6 +2701,11 @@ const EditorTopBar = ({
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
+  const onSaveDocument = () => {
+    if (_onSaveDocument) {
+      debounce(_onSaveDocument, 200);
+    }
+  };
   return /*#__PURE__*/React__default.createElement(TopBar, {
     ref: headingRef
   }, /*#__PURE__*/React__default.createElement(TopBarLeft, null, !hideCloseButton && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
@@ -2727,7 +2733,7 @@ const EditorTopBar = ({
   }, "Redo"), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only"), /*#__PURE__*/React__default.createElement(ButtonDanger, {
     className: "cursor-pointer",
     component: "label",
-    onClick: () => onSaveDocument?.()
+    onClick: onSaveDocument
   }, "Save")), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
