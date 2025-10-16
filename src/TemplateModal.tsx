@@ -1,18 +1,19 @@
-import React, { MouseEvent, useEffect, useState } from "react";
+import { Backend, Template } from "@redsun-vn/easyblocks-core";
 import {
-  OpenTemplateModalAction,
-  OpenTemplateModalActionCreate,
-} from "./types";
-import {
-  FormElement,
   ButtonDanger,
   ButtonPrimary,
+  FormElement,
   Input,
   Modal,
   useToaster,
 } from "@redsun-vn/easyblocks-design-system";
+import React, { MouseEvent, useEffect, useState } from "react";
 import { useEditorContext } from "./EditorContext";
-import { Backend, Template } from "@redsun-vn/easyblocks-core";
+import {
+  OpenTemplateModalAction,
+  OpenTemplateModalActionCreate,
+} from "./types";
+import { useTranslation } from "./useTranslation";
 
 type TemplateModalProps = {
   action: OpenTemplateModalAction;
@@ -30,6 +31,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
   const [isLoadingDelete, setLoadingDelete] = useState(false);
 
   const toaster = useToaster();
+  const { t } = useTranslation();
   const [template, setTemplate] = useState(() => {
     if (props.action.mode === "edit") {
       return props.action.template;
@@ -52,7 +54,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
   } = template as Template;
   const open = props.action !== undefined;
   const canSend = label.trim() !== "";
-  const ctaLabel = "Save";
+  const ctaLabel = t("template.save.default");
 
   useEffect(() => {
     if (open) {
@@ -62,7 +64,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
 
   return (
     <Modal
-      title={`Template details`}
+      title={t("template.save.title")}
       isOpen={true}
       onRequestClose={() => {
         props.onClose();
@@ -103,11 +105,11 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                     ...template,
                   },
                 });
-                toaster.success("Template created!");
+                toaster.success(t("template.save.success"));
                 props.onClose();
               })
               .catch(() => {
-                toaster.error("Couldn't save template");
+                toaster.error(t("template.save.error"));
               })
               .finally(() => {
                 setLoadingEdit(false);
@@ -126,11 +128,11 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                   mode: "edit",
                   template: template as Template,
                 });
-                toaster.success("Template updated!");
+                toaster.success(t("template.save.success"));
                 props.onClose();
               })
               .catch(() => {
-                toaster.error("Couldn't update template");
+                toaster.error(t("template.save.error"));
               })
               .finally(() => {
                 setLoadingEdit(false);
@@ -148,9 +150,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
             marginTop: "8px",
           }}
         >
-          <FormElement name="label" label="Name">
+          <FormElement name="label" label={t("template.save.name")}>
             <Input
-              placeholder="My template name"
+              placeholder={t("template.save.name")}
               required={true}
               value={label}
               onChange={(e) => {
@@ -164,9 +166,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
             />
           </FormElement>
 
-          <FormElement name="group" label="Group">
+          <FormElement name="group" label={t("template.save.group")}>
             <Input
-              placeholder="My template group"
+              placeholder={t("template.save.group")}
               value={group}
               onChange={(e) => {
                 setTemplate({
@@ -179,9 +181,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
             />
           </FormElement>
 
-          <FormElement name="thumbnail" label="Thumbnail url">
+          <FormElement
+            name="thumbnail"
+            label={t("template.save.thumbnailLink")}
+          >
             <Input
-              placeholder="My template thumbnail url"
+              placeholder={t("template.save.thumbnailLink")}
               value={thumbnail}
               onChange={(e) => {
                 setTemplate({
@@ -194,9 +199,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
             />
           </FormElement>
 
-          <FormElement name="thumbnailLabel" label="Thumbnail label">
+          <FormElement
+            name="thumbnailLabel"
+            label={t("template.save.thumbnailLabel")}
+          >
             <Input
-              placeholder="My template thumbnail label"
+              placeholder={t("template.save.thumbnailLabel")}
               value={thumbnailLabel}
               onChange={(e) => {
                 setTemplate({
@@ -232,11 +240,11 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                           mode: "delete",
                           template: template as Template,
                         });
-                        toaster.success("Template deleted");
+                        toaster.success(t("template.delete.success"));
                         props.onClose();
                       })
                       .catch(() => {
-                        toaster.error("Couldn't delete template");
+                        toaster.error(t("template.delete.error"));
                       })
                       .finally(() => {
                         setLoadingDelete(false);
@@ -244,7 +252,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                   }}
                   isLoading={isLoadingDelete}
                 >
-                  Delete
+                  {t("template.delete.default")}
                 </ButtonDanger>
               )}
             </div>
@@ -253,6 +261,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
               type={"submit"}
               disabled={!canSend}
               isLoading={isLoadingEdit}
+              style={{ opacity: !canSend ? 0.7 : 1 }}
             >
               {ctaLabel}
             </ButtonPrimary>

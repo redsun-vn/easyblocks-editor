@@ -11,7 +11,7 @@ export interface FieldProps<InputProps extends Record<string, unknown>> extends 
     field: InternalField;
     form: Form;
 }
-type InputFieldType<ExtraFieldProps extends Record<string, unknown>, InputProps extends Record<string, unknown>> = Omit<FieldProps<InputProps>, "meta"> & ExtraFieldProps & ExtraFieldMetaWrapperFields & {
+export type InputFieldType<ExtraFieldProps extends Record<string, unknown>, InputProps extends Record<string, unknown>> = Omit<FieldProps<InputProps>, "meta"> & ExtraFieldProps & ExtraFieldMetaWrapperFields & {
     children: ReactNode;
     renderLabel?: (props: {
         label: string;

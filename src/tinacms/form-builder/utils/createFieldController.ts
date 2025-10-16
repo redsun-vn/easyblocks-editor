@@ -34,8 +34,8 @@ function createFieldController({
   field: InternalField;
   editorContext: EditorContextType;
   format?:
-  | ((value: any, name: string, field: InternalAnyTinaField) => any)
-  | undefined;
+    | ((value: any, name: string, field: InternalAnyTinaField) => any)
+    | undefined;
   parse?: (value: any, name: string, field: InternalAnyTinaField) => any;
 }) {
   const { actions, contextParams, form, locales, focussedField } =
@@ -417,10 +417,10 @@ const richTextCacheInvalidator: CacheInvalidator = (
       templateId === "@easyblocks/rich-text" && fieldName
         ? changedPath.replace(`.${fieldName}`, "")
         : findPathOfFirstAncestorOfType(
-          changedPath,
-          "@easyblocks/rich-text",
-          context.form
-        );
+            changedPath,
+            "@easyblocks/rich-text",
+            context.form
+          );
 
     const richTextConfig = dotNotationGet(context.form.values, richTextPath);
 

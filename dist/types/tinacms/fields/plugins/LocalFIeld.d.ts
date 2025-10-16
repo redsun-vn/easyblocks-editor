@@ -4,18 +4,9 @@ import React from "react";
 import { FieldRenderProps } from "react-final-form";
 declare const LocalFieldPlugin: {
     name: string;
-    Component: (props: Omit<import("./wrapFieldWithMeta").FieldProps<Record<string, any>>, "meta"> & FieldRenderProps<LocalValue<any>, HTMLElement, LocalValue<any>> & {
+    Component: (props: import("./wrapFieldWithMeta").InputFieldType<FieldRenderProps<LocalValue<any>, HTMLElement, LocalValue<any>> & {
         field: InternalField;
-    } & {
-        layout?: "column" | "row";
-        noWrap?: boolean;
-        isLabelHidden?: boolean;
-    } & {
-        children: React.ReactNode;
-        renderLabel?: (props: {
-            label: string;
-        }) => React.ReactNode;
-    }) => React.JSX.Element;
+    }, Record<string, any>>) => React.JSX.Element;
 };
 export { LocalFieldPlugin };
 //# sourceMappingURL=LocalFIeld.d.ts.map

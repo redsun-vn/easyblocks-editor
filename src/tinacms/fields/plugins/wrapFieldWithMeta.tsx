@@ -1,3 +1,4 @@
+import { dotNotationGet, toArray, uniqueId } from "@/utils";
 import {
   ExternalReference,
   ExternalSchemaProp,
@@ -22,9 +23,8 @@ import {
   SelectItem,
   Typography,
 } from "@redsun-vn/easyblocks-design-system";
-import { dotNotationGet, toArray, uniqueId } from "@/utils";
 import React, { ReactNode, useState } from "react";
-import { styled, css } from "styled-components";
+import { css, styled } from "styled-components";
 import { useConfigAfterAuto } from "../../../ConfigAfterAutoContext";
 import {
   EditorExternalTypeDefinition,
@@ -33,8 +33,12 @@ import {
 import { useEditorExternalData } from "../../../EditorExternalDataProvider";
 import { Form } from "../../../form";
 import { FieldRenderProps } from "../../form-builder";
-import { COMPONENTS_SUPPORTING_MIXED_VALUES } from "../components/constants";
+import {
+  COMPONENTS_SUPPORTING_MIXED_VALUES,
+  MIXED_VALUE,
+} from "../components/constants";
 import { isMixedFieldValue } from "../components/isMixedFieldValue";
+import { CustomField } from "./CustomFields";
 import type { ResponsiveFieldDefinition } from "./ResponsiveField/responsiveFieldController";
 import { Tooltip, TooltipArrow, TooltipBody } from "./Tooltip";
 import { useTooltip } from "./useTooltip";
@@ -51,7 +55,7 @@ export interface FieldProps<InputProps extends Record<string, unknown>>
   form: Form;
 }
 
-type InputFieldType<
+export type InputFieldType<
   ExtraFieldProps extends Record<string, unknown>,
   InputProps extends Record<string, unknown>
 > = Omit<FieldProps<InputProps>, "meta"> &
@@ -63,6 +67,8 @@ type InputFieldType<
 
 // Wraps the Field component in labels describing the field's meta state
 // Add any other fields that the Field component should expect onto the ExtraFieldProps generic type
+
+const CUSTOM_OPTION_VALUE = "__custom__";
 
 export function FieldMetaWrapper<
   ExtraFieldProps extends Record<string, unknown> = Record<string, unknown>,
@@ -93,6 +99,7 @@ export function FieldMetaWrapper<
 
   const isMixedValue = isMixedFieldValue(input.value);
   const fieldNames = toArray(field.name);
+  const allowCustom = field.allowCustom ?? false;
 
   function handleButtonMixedClick() {
     runChange(() => {
@@ -175,102 +182,117 @@ export function FieldMetaWrapper<
         !isIdReferenceToDocumentExternalValue(v.id)
     );
 
+  const selectValue = isMixedFieldValue(input.value)
+    ? MIXED_VALUE
+    : input.value.tokenId ??
+      input.value[editorContext.breakpointIndex]?.tokenId ??
+      CUSTOM_OPTION_VALUE;
+  const isCustomField = selectValue === CUSTOM_OPTION_VALUE && allowCustom;
+
   return (
-    <FieldWrapper margin={false} layout={resolvedLayout}>
-      {!isLabelHidden && (
-        <FieldLabelWrapper isFullWidth={resolvedLayout === "column"}>
-          {renderLabel?.({ label }) ?? (
-            <FieldLabel
-              htmlFor={toArray(field.name).join(",")}
-              isError={
-                externalValues !== undefined && "error" in externalValues
-              }
-              {...triggerProps}
-            >
-              <span
+    <>
+      <FieldWrapper margin={false} layout={resolvedLayout}>
+        {!isLabelHidden && (
+          <FieldLabelWrapper isFullWidth={resolvedLayout === "column"}>
+            {renderLabel?.({ label }) ?? (
+              <FieldLabel
+                htmlFor={toArray(field.name).join(",")}
+                isError={
+                  externalValues !== undefined && "error" in externalValues
+                }
+                {...triggerProps}
+              >
+                <span
+                  style={{
+                    lineHeight: "100%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {label}
+                </span>
+                {isOpen && (
+                  <Tooltip {...tooltipProps}>
+                    <TooltipArrow {...arrowProps} />
+                    <TooltipBody>
+                      {field.description ?? field.label}
+                    </TooltipBody>
+                  </Tooltip>
+                )}
+              </FieldLabel>
+            )}
+
+            {isLoadingExternalValue && (
+              <div
                 style={{
-                  lineHeight: "100%",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  marginLeft: "6px",
                 }}
               >
-                {label}
-              </span>
-              {isOpen && (
-                <Tooltip {...tooltipProps}>
-                  <TooltipArrow {...arrowProps} />
-                  <TooltipBody>{field.description ?? field.label}</TooltipBody>
-                </Tooltip>
-              )}
-            </FieldLabel>
-          )}
+                <Loader />
+              </div>
+            )}
 
-          {isLoadingExternalValue && (
-            <div
-              style={{
-                marginLeft: "6px",
-              }}
-            >
-              <Loader />
-            </div>
-          )}
-
-          {resolvedLayout === "column" &&
-            (isExternalSchemaProp(schemaProp, editorContext.types) ||
-              schemaProp.type === "text") &&
-            !isMixedValue && (
-              <WidgetsSelect
-                schemaProp={schemaProp}
-                value={currentBreakpointFieldValues[0]}
-                onChange={(widgetId) => {
-                  if (widgetId === "@easyblocks/local-text") {
-                    const newFieldValue: LocalTextReference = {
-                      id: `local.${uniqueId()}`,
-                      value: {},
-                      widgetId,
-                    };
-
-                    input.onChange(newFieldValue);
-                    return;
-                  }
-
-                  if (isTrulyResponsiveValue(input.value)) {
-                    const newFieldValue: TrulyResponsiveValue<ExternalReference> =
-                      {
-                        ...input.value,
-                        [editorContext.breakpointIndex]: {
-                          id: null,
-                          widgetId,
-                        },
+            {resolvedLayout === "column" &&
+              (isExternalSchemaProp(schemaProp, editorContext.types) ||
+                schemaProp.type === "text") &&
+              !isMixedValue && (
+                <WidgetsSelect
+                  schemaProp={schemaProp}
+                  value={currentBreakpointFieldValues[0]}
+                  onChange={(widgetId) => {
+                    if (widgetId === "@easyblocks/local-text") {
+                      const newFieldValue: LocalTextReference = {
+                        id: `local.${uniqueId()}`,
+                        value: {},
+                        widgetId,
                       };
 
-                    input.onChange(newFieldValue);
-                  } else {
-                    const newFieldValue: ExternalReference = {
-                      id: null,
-                      widgetId,
-                    };
+                      input.onChange(newFieldValue);
+                      return;
+                    }
 
-                    input.onChange(newFieldValue);
-                  }
-                }}
-                isRootComponent={fieldNames.some(
-                  (f) => f.split(".").length === 1
-                )}
-              />
-            )}
-        </FieldLabelWrapper>
-      )}
+                    if (isTrulyResponsiveValue(input.value)) {
+                      const newFieldValue: TrulyResponsiveValue<ExternalReference> =
+                        {
+                          ...input.value,
+                          [editorContext.breakpointIndex]: {
+                            id: null,
+                            widgetId,
+                          },
+                        };
 
-      <FieldInputWrapper layout={resolvedLayout}>{content}</FieldInputWrapper>
+                      input.onChange(newFieldValue);
+                    } else {
+                      const newFieldValue: ExternalReference = {
+                        id: null,
+                        widgetId,
+                      };
 
-      {!isMixedFieldValue &&
-        isExternalField &&
-        externalValues!.length > 0 &&
-        "error" in externalValues![0] && (
-          <FieldError>{externalValues![0].error.message}</FieldError>
+                      input.onChange(newFieldValue);
+                    }
+                  }}
+                  isRootComponent={fieldNames.some(
+                    (f) => f.split(".").length === 1
+                  )}
+                />
+              )}
+          </FieldLabelWrapper>
         )}
-    </FieldWrapper>
+
+        <FieldInputWrapper layout={resolvedLayout}>{content}</FieldInputWrapper>
+
+        {!isMixedFieldValue &&
+          isExternalField &&
+          externalValues!.length > 0 &&
+          "error" in externalValues![0] && (
+            <FieldError>{externalValues![0].error.message}</FieldError>
+          )}
+      </FieldWrapper>
+
+      <FieldWrapper margin={false} layout={resolvedLayout}>
+        {isCustomField ? <CustomField input={input} field={field} /> : null}
+      </FieldWrapper>
+    </>
   );
 }
 

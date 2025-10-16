@@ -1,11 +1,12 @@
-import { NoCodeComponentEntry, Document } from "@redsun-vn/easyblocks-core";
 import { deepClone, deepCompare, sleep } from "@/utils";
+import { Document, NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
+import { useToaster } from "@redsun-vn/easyblocks-design-system";
 import { useEffect, useRef, useState } from "react";
 import { EditorContextType } from "./EditorContext";
+import { getTranslation } from "./useTranslation";
 import { getConfigSnapshot } from "./utils/config/getConfigSnapshot";
 import { addLocalizedFlag } from "./utils/locales/addLocalizedFlag";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
-import { useToaster, Toaster } from "@redsun-vn/easyblocks-design-system";
 
 /**
  * useDataSaver works in a realm of SINGLE CONFIG.
@@ -19,6 +20,7 @@ export function useDataSaver(
 ) {
   const remoteDocument = useRef<Document | null>(initialDocument);
   const toaster = useToaster();
+  const { t } = getTranslation(editorContext);
 
   /**
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
@@ -133,7 +135,7 @@ export function useDataSaver(
             console.debug("no local changes -> bye");
 
             if (mode === "force") {
-              toaster.success("No local changes.");
+              toaster.success(t("topBar.noLocalChange"));
             }
             // Let's do nothing, no remote and local change
           } else {
@@ -147,9 +149,9 @@ export function useDataSaver(
               });
 
             if (updatedDocument?.id) {
-              toaster.success("Saved.");
+              toaster.success(t("topBar.saved"));
             } else {
-              toaster.error("Error saving... Please try again.");
+              toaster.error(t("topBar.save.error"));
             }
 
             remoteDocument.current.entry = localConfigSnapshot;
@@ -159,7 +161,7 @@ export function useDataSaver(
           }
         }
       } catch (error) {
-        toaster.error("Error saving... Please try again!");
+        toaster.error(t("topBar.save.error"));
       }
     }
   };

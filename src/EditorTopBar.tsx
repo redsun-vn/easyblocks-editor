@@ -19,6 +19,7 @@ import {
 import debounce from "lodash/debounce";
 import React, { ReactNode, useRef } from "react";
 import { styled } from "styled-components";
+import { useTranslation } from "./useTranslation";
 
 export const TOP_BAR_HEIGHT = 40;
 
@@ -127,6 +128,7 @@ export const EditorTopBar: React.FC<{
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
+  const { t } = useTranslation();
 
   const onSaveDocument = () => {
     if (_onSaveDocument) {
@@ -174,7 +176,7 @@ export const EditorTopBar: React.FC<{
           component="label"
           onClick={onSaveDocument}
         >
-          Save
+          {t("topBar.save")}
         </ButtonDanger>
       </TopBarLeft>
 
@@ -219,7 +221,7 @@ export const EditorTopBar: React.FC<{
           </Select>
           <a href={`/?previewId=${themeId}&shopId=${shopId}`} target="_blank">
             <ButtonPrimary component="label" className="cursor-pointer">
-              Preview
+              {t("topBar.preview")}
             </ButtonPrimary>
           </a>
           <Typography
@@ -227,7 +229,7 @@ export const EditorTopBar: React.FC<{
             component="label"
             htmlFor="easyblocks-edit-mode-button"
           >
-            Edit mode
+            {t("topBar.editMode")}
           </Typography>{" "}
           <Toggle
             name="easyblocks-edit-mode-button"

@@ -15,6 +15,7 @@ import * as React from "react";
 import { styled } from "styled-components";
 import { useEditorContext } from "./EditorContext";
 import { pathToCompiledPath } from "./pathToCompiledPath";
+import { useTranslation } from "./useTranslation";
 import { copyToClipboard } from "./utils/copyToClipboard";
 
 const IdWrapper = styled.div`
@@ -27,6 +28,7 @@ const IdWrapper = styled.div`
 export function SidebarFooter(props: { paths: string[] }) {
   const editorContext = useEditorContext();
   const toaster = useToaster();
+  const { t } = useTranslation();
   const { form, isAdminMode } = editorContext;
 
   if (props.paths.length === 0) {
@@ -75,7 +77,7 @@ export function SidebarFooter(props: { paths: string[] }) {
               });
             }}
           >
-            Save as template
+            {t("template.save")}
           </ButtonSecondary>
         )}
 
@@ -86,13 +88,13 @@ export function SidebarFooter(props: { paths: string[] }) {
                 onClick={async () => {
                   try {
                     await copyToClipboard(JSON.stringify(value));
-                    toaster.success("Copied");
+                    toaster.success(t("template.entry.copy.success"));
                   } catch (error) {
-                    toaster.error("Copy Entry Error!");
+                    toaster.error(t("template.entry.copy.error"));
                   }
                 }}
               >
-                Copy entry
+                {t("template.entry.copy")}
               </ButtonPrimary>
             </div>
             {value._master && (

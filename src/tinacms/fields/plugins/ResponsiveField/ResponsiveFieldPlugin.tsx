@@ -180,11 +180,19 @@ function getAutoLabelButtonLabel(value: any): string {
       return `auto: ${refNameParts[refNameParts.length - 1]}`;
     } else if (value.value !== undefined && value.id === undefined) {
       // just value field -> token
-      return `auto: ${
-        typeof value.value === "number"
-          ? Math.round(value.value * 100) / 100
-          : value.value
-      }`;
+      switch (typeof value.value) {
+        case "number": {
+          return `auto: ${Math.round(value.value * 100) / 100}`;
+        }
+
+        case "object": {
+          return "auto: Custom";
+        }
+
+        default: {
+          return `auto: ${value.value}`;
+        }
+      }
     }
     return "auto";
   }

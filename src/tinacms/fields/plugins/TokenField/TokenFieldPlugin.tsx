@@ -30,6 +30,7 @@ import { FieldRenderProps } from "react-final-form";
 import { styled } from "styled-components";
 import { EditorContextType, useEditorContext } from "../../../../EditorContext";
 import { FieldMixedValue } from "../../../../types";
+import { useTokenTypes } from "../../../../utils/hooks/useTokenTypes";
 import { MIXED_VALUE } from "../../components/constants";
 import { isMixedFieldValue } from "../../components/isMixedFieldValue";
 import { wrapFieldsWithMeta } from "../wrapFieldWithMeta";
@@ -41,7 +42,7 @@ interface TokenField<TokenValue extends NonNullish = NonNullish> extends Field {
   extraValues?: Array<string | { value: string; label: string }>;
 }
 
-interface TokenFieldProps<TokenValue extends NonNullish>
+export interface TokenFieldProps<TokenValue extends NonNullish>
   extends FieldRenderProps<
     CoreTokenValue | FieldMixedValue,
     HTMLSelectElement
@@ -68,29 +69,6 @@ function extraValuesIncludes(
     }
   }
   return false;
-}
-
-type TokenTypesResult = Record<
-  string,
-  Extract<EditorContextType["types"][string], { type: "token" }>
->;
-
-function useTokenTypes(): TokenTypesResult {
-  const editorContext = useEditorContext();
-
-  const tokenTypes = Object.fromEntries(
-    Object.entries(editorContext.types).filter<
-      [string, TokenTypesResult[string]]
-    >(
-      (
-        typeDefinitionEntry
-      ): typeDefinitionEntry is [string, TokenTypesResult[string]] => {
-        return typeDefinitionEntry[1].type === "token";
-      }
-    )
-  );
-
-  return tokenTypes;
 }
 
 function TokenFieldComponent<TokenValue extends NonNullish>({
@@ -255,7 +233,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
             "params" in field.schemaProp ? field.schemaProp.params : undefined
           }
         />
-      ) : (
+      ) : tokenTypeDefinition.token === "fonts" ? null : (
         <Input
           value={inputValue}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {

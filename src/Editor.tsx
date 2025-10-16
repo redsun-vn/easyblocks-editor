@@ -48,7 +48,7 @@ import React, {
   useState,
 } from "react";
 import Modal from "react-modal";
-import {  styled } from "styled-components";
+import { styled } from "styled-components";
 import { ConfigAfterAutoContext } from "./ConfigAfterAutoContext";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
 import { EditorContext, EditorContextType } from "./EditorContext";
@@ -57,6 +57,7 @@ import { EditorIframe } from "./EditorIframe";
 import { EditorSidebar } from "./EditorSidebar";
 import { EditorTopBar, TOP_BAR_HEIGHT } from "./EditorTopBar";
 import { ModalPicker } from "./ModalPicker";
+import { SkeletonEditor } from "./SkeletonEditor";
 import { TemplateModal } from "./TemplateModal";
 import { TemplatePicker } from "./TemplatePicker";
 import {
@@ -83,7 +84,6 @@ import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShort
 import { useEditorHistory } from "./useEditorHistory";
 import { checkLocalesCorrectness } from "./utils/locales/checkLocalesCorrectness";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
-import { SkeletonEditor } from "./SkeletonEditor";
 
 declare global {
   interface Window {
@@ -934,6 +934,7 @@ const EditorContent = ({
     focussedField,
     form,
     setFocussedField: handleSetFocussedField,
+    translationFiles: props.config?.translationFiles ?? {},
     isEditing,
     actions,
     save: async (documentData) => {

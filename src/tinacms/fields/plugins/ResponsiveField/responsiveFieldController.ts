@@ -159,10 +159,10 @@ export function responsiveFieldController(config: {
       const nextFieldValue = areAllFieldValuesAuto
         ? dotNotationGet(valuesAfterAuto, normalizedFieldName[0])
         : isAnyFieldValueAuto
-          ? fieldValues.find(
+        ? fieldValues.find(
             (value) => value[editorContext.breakpointIndex] !== undefined
           )
-          : fieldValue;
+        : fieldValue;
 
       const newFieldValue = {
         ...fieldValue,

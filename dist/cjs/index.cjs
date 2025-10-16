@@ -55,15 +55,6 @@ var RadixRadioGroup__namespace = /*#__PURE__*/_interopNamespace(RadixRadioGroup)
 var debounce__default = /*#__PURE__*/_interopDefaultLegacy(debounce);
 var arrayMutators__default = /*#__PURE__*/_interopDefaultLegacy(arrayMutators);
 
-const EditorContext = /*#__PURE__*/React__default["default"].createContext(null);
-function useEditorContext() {
-  const context = React.useContext(EditorContext);
-  if (!context) {
-    throw new Error("EditorContext not defined");
-  }
-  return context;
-}
-
 function last(collection) {
   return collection[collection.length - 1];
 }
@@ -187,6 +178,15 @@ function useConfigAfterAuto() {
     throw new Error("CompiledConfigContext is required for Responsive field");
   }
   return configAfterAutoContext;
+}
+
+const EditorContext = /*#__PURE__*/React__default["default"].createContext(null);
+function useEditorContext() {
+  const context = React.useContext(EditorContext);
+  if (!context) {
+    throw new Error("EditorContext not defined");
+  }
+  return context;
 }
 
 const ExternalDataContext = /*#__PURE__*/React.createContext({});
@@ -379,6 +379,37 @@ function internalBuildTinaFields(path, editorContext, fieldsFilter) {
   return [...nonAnalyticsFields, ...analyticsFields];
 }
 
+const getTranslation = editorContext => {
+  const {
+    translationFiles = {},
+    contextParams
+  } = editorContext;
+  const {
+    locale
+  } = contextParams;
+  const t = key => {
+    return translationFiles[locale][key] ?? key;
+  };
+  return {
+    t
+  };
+};
+const useTranslation = () => {
+  const {
+    translationFiles = {},
+    contextParams
+  } = useEditorContext();
+  const {
+    locale
+  } = contextParams;
+  const t = key => {
+    return translationFiles[locale][key] ?? key;
+  };
+  return {
+    t
+  };
+};
+
 async function copyToClipboard(textToCopy) {
   // Navigator clipboard api needs a secure context (https)
   if (navigator.clipboard && window.isSecureContext) {
@@ -411,6 +442,9 @@ function SidebarFooter(props) {
   const editorContext = useEditorContext();
   const toaster = easyblocksDesignSystem.useToaster();
   const {
+    t
+  } = useTranslation();
+  const {
     form,
     isAdminMode
   } = editorContext;
@@ -439,7 +473,7 @@ function SidebarFooter(props) {
         widthAuto
       });
     }
-  }, "Save as template"), isAdminMode && /*#__PURE__*/React__namespace.createElement("div", {
+  }, t("template.save")), isAdminMode && /*#__PURE__*/React__namespace.createElement("div", {
     style: {
       paddingTop: 16
     }
@@ -447,12 +481,12 @@ function SidebarFooter(props) {
     onClick: async () => {
       try {
         await copyToClipboard(JSON.stringify(value));
-        toaster.success("Copied");
+        toaster.success(t("template.entry.copy.success"));
       } catch (error) {
-        toaster.error("Copy Entry Error!");
+        toaster.error(t("template.entry.copy.error"));
       }
     }
-  }, "Copy entry")), value._master && /*#__PURE__*/React__namespace.createElement("div", {
+  }, t("template.entry.copy"))), value._master && /*#__PURE__*/React__namespace.createElement("div", {
     style: {
       paddingTop: 16
     }
@@ -591,6 +625,24 @@ const NumberInput = ({
   max: max
 });
 
+const useTokenTypes = () => {
+  const editorContext = useEditorContext();
+  const tokenTypes = Object.fromEntries(Object.entries(editorContext.types).filter(typeDefinitionEntry => {
+    return typeDefinitionEntry[1].type === "token";
+  }));
+  return tokenTypes;
+};
+
+function getFonts() {
+  const selectedFamilies = ["Roboto, sans-serif", "Open Sans, sans-serif", "Lato, sans-serif", "Montserrat, sans-serif", "Poppins, sans-serif", "Inter, sans-serif", "Oswald, sans-serif", "Raleway, sans-serif", "Noto Sans, sans-serif", "Roboto Condensed, sans-serif", "Nunito, sans-serif", "Work Sans, sans-serif", "Rubik, sans-serif", "Mukta, sans-serif", "Ubuntu, sans-serif", "Quicksand, sans-serif", "Hind, sans-serif", "Fira Sans, sans-serif", "Barlow, sans-serif", "Cabin, sans-serif", "Prompt, sans-serif", "Heebo, sans-serif", "Source Sans 3, sans-serif", "Titillium Web, sans-serif", "Muli, sans-serif", "Manrope, sans-serif", "Josefin Sans, sans-serif", "Karla, sans-serif", "DM Sans, sans-serif", "PT Sans, sans-serif", "Tajawal, sans-serif", "Public Sans, sans-serif", "Catamaran, sans-serif", "Urbanist, sans-serif", "Outfit, sans-serif", "Lexend, sans-serif", "Signika, sans-serif", "Asap, sans-serif", "Sarabun, sans-serif", "Red Hat Display, sans-serif", "Exo 2, sans-serif", "Sen, sans-serif", "Epilogue, sans-serif", "Jost, sans-serif", "IBM Plex Sans, sans-serif", "Varela Round, sans-serif", "Mulish, sans-serif", "Spartan, sans-serif", "Krub, sans-serif", "Questrial, sans-serif", "Barlow Condensed, sans-serif", "Overpass, sans-serif", "Alata, sans-serif", "Kanit, sans-serif", "Noto Serif, serif", "Merriweather, serif", "Playfair Display, serif", "Lora, serif", "Cormorant Garamond, serif", "EB Garamond, serif", "PT Serif, serif", "Libre Baskerville, serif", "DM Serif Display, serif", "Crimson Text, serif", "Bitter, serif", "Spectral, serif", "Cormorant, serif", "Zilla Slab, serif", "Nanum Myeongjo, serif", "Tinos, serif", "Cardo, serif", "Domine, serif", "Arvo, serif", "Vollkorn, serif", "Bree Serif, serif", "Alegreya, serif", "Noticia Text, serif", "Libre Caslon Text, serif", "Faustina, serif", "Mate, serif", "Lusitana, serif", "Arapey, serif", "Fira Sans Condensed, sans-serif", "Assistant, sans-serif", "Space Grotesk, sans-serif", "Sofia Sans, sans-serif", "Niramit, sans-serif", "Be Vietnam Pro, sans-serif", "Eczar, serif", "Quattrocento, serif", "Rokkitt, serif", "Cormorant Infant, serif", "Slabo 27px, serif", "Ultra, serif", "Rozha One, serif", "Old Standard TT, serif", "Baskervville, serif", "Play, sans-serif", "Mada, sans-serif", "Rajdhani, sans-serif", "Cabinet Grotesk, sans-serif", "Archivo, sans-serif", "Anton, display", "Bebas Neue, display", "Abril Fatface, display", "Alfa Slab One, display", "Righteous, display", "Lobster, display", "Pacifico, handwriting", "Caveat, handwriting", "Dancing Script, handwriting", "Great Vibes, handwriting", "Satisfy, handwriting", "Shadows Into Light, handwriting", "Cookie, handwriting", "Gloria Hallelujah, handwriting", "Indie Flower, handwriting", "Courgette, handwriting", "Amatic SC, display", "Fredoka, sans-serif", "Baloo 2, display", "Chewy, display", "Luckiest Guy, display", "Permanent Marker, handwriting", "Architects Daughter, handwriting", "Rock Salt, handwriting", "Handlee, handwriting", "Kaushan Script, handwriting", "Patrick Hand, handwriting", "Carter One, display", "Sigmar, display", "Rye, display", "Black Ops One, display", "Bungee, display", "Press Start 2P, monospace", "Space Mono, monospace", "Fira Code, monospace", "Roboto Mono, monospace", "JetBrains Mono, monospace", "Inconsolata, monospace", "Share Tech Mono, monospace", "Cutive Mono, monospace", "Major Mono Display, monospace", "Source Code Pro, monospace", "Audiowide, display", "Syncopate, display", "Unica One, display", "Orbitron, display", "Chakra Petch, sans-serif", "Expletus Sans, display", "Staatliches, display", "Poiret One, display", "Aldrich, sans-serif", "Gruppo, display", "Viga, sans-serif", "Suez One, serif", "Frank Ruhl Libre, serif", "Cambo, serif", "Marcellus, serif", "Cinzel, serif", "Judson, serif", "Gelasio, serif", "Abhaya Libre, serif", "Cormorant SC, serif", "Crimson Pro, serif", "Noto Serif Display, serif", "Sanchez, serif", "DM Serif Text, serif", "Fjord One, serif", "Suranna, serif", "Cardo, serif", "Kreon, serif", "Cormorant Upright, serif", "Gloock, serif", "Julius Sans One, sans-serif", "Assistant, sans-serif", "Encode Sans, sans-serif", "Nanum Gothic, sans-serif", "Maven Pro, sans-serif", "Overpass Mono, monospace", "Noto Sans Display, sans-serif", "Albert Sans, sans-serif", "Palanquin, sans-serif", "Chivo, sans-serif", "Arimo, sans-serif", "Exo, sans-serif", "Molengo, sans-serif", "Abel, sans-serif", "Teko, sans-serif", "Saira, sans-serif", "Jura, sans-serif", "Kumbh Sans, sans-serif", "Hepta Slab, serif", "Azeret Mono, monospace", "League Spartan, sans-serif", "Rufina, serif", "Cinzel Decorative, display", "Crete Round, serif", "Amiri, serif", "Spectral SC, serif", "Petrona, serif", "Neuton, serif", "Coustard, serif", "Vidaloka, serif", "Bellefair, serif", "Antic Slab, serif", "Copse, serif", "DM Mono, monospace", "Anonymous Pro, monospace", "Oxygen Mono, monospace", "Courier Prime, monospace", "IBM Plex Mono, monospace", "Zilla Slab Highlight, display", "Shrikhand, display", "Bungee Shade, display", "Fugaz One, display", "Monoton, display", "Rammetto One, display", "Cinzel Decorative, display", "Fascinate Inline, display", "Racing Sans One, display", "Lilita One, display", "Potta One, display", "Tourney, display", "Cherry Swash, display", "Creepster, display", "Butcherman, display", "Ewert, display", "Bowlby One SC, display", "Galindo, display", "Knewave, display", "Fredoka One, display", "Ranchers, display", "Codystar, display", "Press Start 2P, monospace", "VT323, monospace", "Cutive Mono, monospace", "IBM Plex Serif, serif", "Philosopher, sans-serif", "Noto Sans JP, sans-serif", "Noto Sans KR, sans-serif", "Noto Sans Thai, sans-serif", "Noto Serif JP, serif", "Noto Serif KR, serif", "Noto Serif SC, serif", "Noto Serif TC, serif"];
+  return selectedFamilies.sort().map(font => {
+    return {
+      id: font,
+      label: font.split(",")[0]
+    };
+  });
+}
+
 const Tooltip = /*#__PURE__*/React.forwardRef(({
   children,
   style = {},
@@ -675,9 +727,199 @@ function useTooltip({
   };
 }
 
+const FieldLabel$1 = styled__default["default"].label.withConfig({
+  displayName: "FontCustomFields__FieldLabel",
+  componentId: "sc-oeie8e-0"
+})(["all:unset;", ";color:#000;text-overflow:ellipsis;overflow:hidden;cursor:default;"], easyblocksDesignSystem.Fonts.body);
+const FontCustomFieldInput = ({
+  inputType = "text",
+  options = [],
+  customField,
+  onChange
+}) => {
+  switch (inputType) {
+    case "text":
+      {
+        return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+          value: customField.value ?? customField.defaultValue,
+          onChange: e => {
+            onChange(customField.key, e.target.value, customField.type);
+          },
+          align: "right"
+        });
+      }
+    case "select":
+      {
+        return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
+          value: String(customField.value ?? customField.defaultValue),
+          onChange: selectedValue => {
+            onChange(customField.key, customField.type === "number" ? Number(selectedValue) : selectedValue, "select");
+          }
+        }, options.map(o => {
+          return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+            key: o.id,
+            value: o.id
+          }, /*#__PURE__*/React__default["default"].createElement("div", {
+            style: {
+              fontFamily: o.id
+            }
+          }, o.label));
+        }));
+      }
+  }
+};
+const FontCustomField = ({
+  customField,
+  onChange
+}) => {
+  const {
+    isOpen,
+    tooltipProps,
+    triggerProps,
+    arrowProps
+  } = useTooltip();
+  return /*#__PURE__*/React__default["default"].createElement("div", {
+    key: customField.key,
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React__default["default"].createElement(FieldLabel$1, triggerProps, /*#__PURE__*/React__default["default"].createElement("span", {
+    style: {
+      lineHeight: "100%",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, customField.label), isOpen && /*#__PURE__*/React__default["default"].createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default["default"].createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default["default"].createElement(TooltipBody, null, customField.label))), /*#__PURE__*/React__default["default"].createElement(FontCustomFieldInput, {
+    inputType: customField.inputType,
+    options: customField.options,
+    customField: customField,
+    onChange: onChange
+  }));
+};
+const FontCustomFields = ({
+  input
+}) => {
+  const {
+    t
+  } = useTranslation();
+  const editorContext = useEditorContext();
+  const customFields = React.useMemo(() => [{
+    key: "fontFamily",
+    label: t("definition.schema.label.fontFamily"),
+    options: getFonts(),
+    type: "string",
+    inputType: "select",
+    defaultValue: "Roboto"
+  }, {
+    key: "fontSize",
+    label: t("definition.schema.label.fontSize"),
+    type: "number",
+    inputType: "text",
+    defaultValue: 16
+  }, {
+    key: "fontWeight",
+    label: t("definition.schema.label.fontWeight"),
+    type: "number",
+    options: [{
+      id: "100",
+      label: "Thin (100)"
+    }, {
+      id: "200",
+      label: "Extra Light (200)"
+    }, {
+      id: "300",
+      label: "Light (300)"
+    }, {
+      id: "400",
+      label: "Normal (400)"
+    }, {
+      id: "500",
+      label: "Medium (500)"
+    }, {
+      id: "600",
+      label: "Semi Bold (600)"
+    }, {
+      id: "700",
+      label: "Bold (700)"
+    }, {
+      id: "800",
+      label: "Extra Bold (800)"
+    }, {
+      id: "900",
+      label: "Black (900)"
+    }],
+    inputType: "select",
+    defaultValue: 600
+  }, {
+    key: "lineHeight",
+    label: t("definition.schema.label.lineHeight"),
+    type: "number",
+    inputType: "text",
+    defaultValue: 1.4
+  }], []);
+  const defaultInputValue = customFields.reduce((prev, curr) => {
+    prev[curr.key] = curr.defaultValue ?? (curr.type === "number" ? 0 : "");
+    return prev;
+  }, {});
+  const [inputValue, setInputValue] = React.useState(input.value?.value || input.value?.[editorContext.breakpointIndex]?.value || defaultInputValue);
+  const onChange = (key, value, type) => {
+    const newInputValue = {
+      ...inputValue,
+      [key]: type === "number" ? Number(value) : value.toString()
+    };
+    setInputValue(newInputValue);
+  };
+  React.useEffect(() => {
+    input.onChange({
+      value: inputValue
+    });
+  }, [inputValue]);
+  return /*#__PURE__*/React__default["default"].createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, customFields.map(customField => {
+    const customFieldValue = inputValue[customField.key];
+    return /*#__PURE__*/React__default["default"].createElement(FontCustomField, {
+      key: customField.key,
+      customField: {
+        ...customField,
+        value: customFieldValue
+      },
+      onChange: onChange
+    });
+  }));
+};
+
+const CustomField = ({
+  field,
+  input
+}) => {
+  const tokenTypes = useTokenTypes();
+  const tokenTypeDefinition = tokenTypes[field.schemaProp.type];
+  switch (tokenTypeDefinition.token) {
+    case "fonts":
+      {
+        return /*#__PURE__*/React__default["default"].createElement(FontCustomFields, {
+          field: field,
+          input: input
+        });
+      }
+    default:
+      {
+        return null;
+      }
+  }
+};
+
 // Wraps the Field component in labels describing the field's meta state
 // Add any other fields that the Field component should expect onto the ExtraFieldProps generic type
 
+const CUSTOM_OPTION_VALUE$1 = "__custom__";
 function FieldMetaWrapper({
   children,
   field,
@@ -706,6 +948,7 @@ function FieldMetaWrapper({
   const isMixedValueSupported = isMixedValueSupportedByComponent(isResponsiveField(field) ? field.subComponent : field.component);
   const isMixedValue = isMixedFieldValue(input.value);
   const fieldNames = toArray(field.name);
+  const allowCustom = field.allowCustom ?? false;
   function handleButtonMixedClick() {
     runChange(() => {
       fieldNames.forEach((fieldName, _, names) => {
@@ -742,7 +985,9 @@ function FieldMetaWrapper({
   const externalValues = isExternalField ? configs.map(c => externalData[easyblocksCore.getExternalReferenceLocationKey(focussedField.length === 0 ? "$" : c._id, schemaProp.prop, easyblocksCore.isTrulyResponsiveValue(input.value) ? easyblocksCore.responsiveValueFindDeviceWithDefinedValue(input.value, editorContext.breakpointIndex, editorContext.devices)?.id : undefined)]) : undefined;
   const currentBreakpointFieldValues = fieldValues.map(v => easyblocksCore.responsiveValueForceGet(v, editorContext.breakpointIndex));
   const isLoadingExternalValue = isExternalField && externalValues?.length === 0 && currentBreakpointFieldValues.every(v => !easyblocksCore.isEmptyExternalReference(v) && !easyblocksCore.isIdReferenceToDocumentExternalValue(v.id));
-  return /*#__PURE__*/React__default["default"].createElement(FieldWrapper$1, {
+  const selectValue = isMixedFieldValue(input.value) ? MIXED_VALUE : input.value.tokenId ?? input.value[editorContext.breakpointIndex]?.tokenId ?? CUSTOM_OPTION_VALUE$1;
+  const isCustomField = selectValue === CUSTOM_OPTION_VALUE$1 && allowCustom;
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(FieldWrapper$1, {
     margin: false,
     layout: resolvedLayout
   }, !isLabelHidden && /*#__PURE__*/React__default["default"].createElement(FieldLabelWrapper, {
@@ -795,7 +1040,13 @@ function FieldMetaWrapper({
     isRootComponent: fieldNames.some(f => f.split(".").length === 1)
   })), /*#__PURE__*/React__default["default"].createElement(FieldInputWrapper, {
     layout: resolvedLayout
-  }, content), !isMixedFieldValue && isExternalField && externalValues.length > 0 && "error" in externalValues[0] && /*#__PURE__*/React__default["default"].createElement(FieldError, null, externalValues[0].error.message));
+  }, content), !isMixedFieldValue && isExternalField && externalValues.length > 0 && "error" in externalValues[0] && /*#__PURE__*/React__default["default"].createElement(FieldError, null, externalValues[0].error.message)), /*#__PURE__*/React__default["default"].createElement(FieldWrapper$1, {
+    margin: false,
+    layout: resolvedLayout
+  }, isCustomField ? /*#__PURE__*/React__default["default"].createElement(CustomField, {
+    input: input,
+    field: field
+  }) : null));
 }
 function WidgetsSelect({
   value,
@@ -861,7 +1112,9 @@ const FieldWrapper$1 = styled.styled.div.withConfig({
   layout
 }) => layout === "row" ? "10px" : "4px", ({
   layout
-}) => layout === "column" && styled.css(["flex-grow:1;"]));
+}) => layout === "column" && styled.css`
+      flex-grow: 1;
+    `);
 const FieldLabelWrapper = styled.styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelWrapper",
   componentId: "sc-1asy4oy-2"
@@ -889,7 +1142,11 @@ const FieldInputWrapper = styled.styled.div.withConfig({
   componentId: "sc-1asy4oy-6"
 })(["display:flex;justify-content:flex-end;align-items:center;", ";min-height:28px;"], ({
   layout
-}) => layout === "row" ? styled.css(["flex-grow:1;"]) : styled.css(["width:100%;"]));
+}) => layout === "row" ? styled.css`
+          flex-grow: 1;
+        ` : styled.css`
+          width: 100%;
+        `);
 
 const parse$1 = value => value && +value;
 
@@ -977,13 +1234,6 @@ function extraValuesIncludes(extraValues, value) {
     }
   }
   return false;
-}
-function useTokenTypes() {
-  const editorContext = useEditorContext();
-  const tokenTypes = Object.fromEntries(Object.entries(editorContext.types).filter(typeDefinitionEntry => {
-    return typeDefinitionEntry[1].type === "token";
-  }));
-  return tokenTypes;
 }
 function TokenFieldComponent({
   input,
@@ -1091,7 +1341,7 @@ function TokenFieldComponent({
       });
     },
     params: "params" in field.schemaProp ? field.schemaProp.params : undefined
-  }) : /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  }) : tokenTypeDefinition.token === "fonts" ? null : /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
     value: inputValue,
     onChange: e => {
       setInputValue(e.target.value);
@@ -1936,7 +2186,20 @@ function getAutoLabelButtonLabel(value) {
       return `auto: ${refNameParts[refNameParts.length - 1]}`;
     } else if (value.value !== undefined && value.id === undefined) {
       // just value field -> token
-      return `auto: ${typeof value.value === "number" ? Math.round(value.value * 100) / 100 : value.value}`;
+      switch (typeof value.value) {
+        case "number":
+          {
+            return `auto: ${Math.round(value.value * 100) / 100}`;
+          }
+        case "object":
+          {
+            return "auto: Custom";
+          }
+        default:
+          {
+            return `auto: ${value.value}`;
+          }
+      }
     }
     return "auto";
   }
@@ -2737,6 +3000,9 @@ const EditorTopBar = ({
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
+  const {
+    t
+  } = useTranslation();
   const onSaveDocument = () => {
     if (_onSaveDocument) {
       debouncedSave(_onSaveDocument);
@@ -2770,7 +3036,7 @@ const EditorTopBar = ({
     className: "cursor-pointer",
     component: "label",
     onClick: onSaveDocument
-  }, "Save")), /*#__PURE__*/React__default["default"].createElement(TopBarCenter, null, /*#__PURE__*/React__default["default"].createElement(DeviceSwitch, {
+  }, t("topBar.save"))), /*#__PURE__*/React__default["default"].createElement(TopBarCenter, null, /*#__PURE__*/React__default["default"].createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
     onDeviceChange: onViewportChange
@@ -2804,11 +3070,11 @@ const EditorTopBar = ({
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
     component: "label",
     className: "cursor-pointer"
-  }, "Preview")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, t("topBar.preview"))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
     variant: "body",
     component: "label",
     htmlFor: "easyblocks-edit-mode-button"
-  }, "Edit mode"), " ", /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toggle, {
+  }, t("topBar.editMode")), " ", /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toggle, {
     name: "easyblocks-edit-mode-button",
     checked: isEditing,
     onChange: () => {
@@ -3087,6 +3353,274 @@ const ModalPicker = ({
   }) : /*#__PURE__*/React__default["default"].createElement("div", null, "Unknown picker: ", picker);
 };
 
+const shimmer$1 = styled.keyframes(["0%{background-position:-800px 0;}100%{background-position:800px 0;}"]);
+const SkeletonBox$1 = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditorCanvasArea__SkeletonBox",
+  componentId: "sc-10zd21k-0"
+})(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || '100%', props => props.height || '20px', shimmer$1, props => props.borderRadius || '4px');
+const SkeletonCanvas = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditorCanvasArea__SkeletonCanvas",
+  componentId: "sc-10zd21k-1"
+})(["width:100%;max-width:1300px;background:white;padding:32px;display:flex;flex-direction:column;gap:24px;"]);
+const SkeletonItem = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditorCanvasArea__SkeletonItem",
+  componentId: "sc-10zd21k-2"
+})(["display:flex;gap:16px;padding:16px;border-radius:8px;"]);
+const SkeletonContent = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditorCanvasArea__SkeletonContent",
+  componentId: "sc-10zd21k-3"
+})(["flex:1;display:flex;flex-direction:column;gap:8px;"]);
+const SkeletonMeta = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditorCanvasArea__SkeletonMeta",
+  componentId: "sc-10zd21k-4"
+})(["display:flex;gap:12px;margin-top:4px;"]);
+const SkeletonEditorCanvasArea = () => {
+  return /*#__PURE__*/React__default["default"].createElement(SkeletonCanvas, null, /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "100%",
+    height: "24px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "85%",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "80px",
+    height: "16px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "60px",
+    height: "24px"
+  }))), /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "95%",
+    height: "24px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "70%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "80px",
+    height: "16px"
+  })))), /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "90%",
+    height: "24px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "80px",
+    height: "16px"
+  })))), /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "188px",
+    height: "138px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "90%",
+    height: "24px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "100px",
+    height: "16px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
+    width: "80px",
+    height: "16px"
+  })))));
+};
+var SkeletonEditorCanvasArea$1 = SkeletonEditorCanvasArea;
+
+const shimmer = styled.keyframes(["0%{background-position:-800px 0;}100%{background-position:800px 0;}"]);
+const SkeletonBox = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonBox",
+  componentId: "sc-133np0d-0"
+})(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || '100%', props => props.height || '20px', shimmer, props => props.borderRadius || '4px');
+
+// Mimic the actual editor structure
+const SkeletonEditorContainer = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonEditorContainer",
+  componentId: "sc-133np0d-1"
+})(["height:100vh;width:100%;display:flex;flex-direction:column;background:#fafafa;"]);
+const SkeletonTopBar = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBar",
+  componentId: "sc-133np0d-2"
+})(["height:40px;background:", ";border-bottom:1px solid ", ";display:flex;align-items:center;justify-content:space-between;padding:0 4px;gap:16px;"], easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100);
+const SkeletonTopBarLeft = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBarLeft",
+  componentId: "sc-133np0d-3"
+})(["display:flex;gap:8px;align-items:center;"]);
+const SkeletonTopBarCenter = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBarCenter",
+  componentId: "sc-133np0d-4"
+})(["display:flex;gap:8px;align-items:center;"]);
+const SkeletonTopBarRight = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonTopBarRight",
+  componentId: "sc-133np0d-5"
+})(["display:flex;gap:16px;align-items:center;"]);
+const SkeletonMainContent = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonMainContent",
+  componentId: "sc-133np0d-6"
+})(["flex:1;display:flex;overflow:hidden;"]);
+const SkeletonCanvasArea = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonCanvasArea",
+  componentId: "sc-133np0d-7"
+})(["flex:1;background:#e5e5e5;padding:32px;padding-top:64px;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;"]);
+const SkeletonSidebar = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonSidebar",
+  componentId: "sc-133np0d-8"
+})(["flex:0 0 240px;background:", ";border-left:1px solid ", ";padding:16px;display:flex;flex-direction:column;gap:24px;"], easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100);
+const SkeletonSection = styled__default["default"].div.withConfig({
+  displayName: "SkeletonEditor__SkeletonSection",
+  componentId: "sc-133np0d-9"
+})(["display:flex;flex-direction:column;gap:12px;"]);
+const SkeletonEditor = () => {
+  return /*#__PURE__*/React__default["default"].createElement(SkeletonEditorContainer, null, /*#__PURE__*/React__default["default"].createElement(SkeletonTopBar, null, /*#__PURE__*/React__default["default"].createElement(SkeletonTopBarLeft, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "60px",
+    height: "28px",
+    borderRadius: "6px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonTopBarCenter, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "28px",
+    height: "28px",
+    borderRadius: "4px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonTopBarRight, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "28px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "60px",
+    height: "28px",
+    borderRadius: "6px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "86px",
+    height: "28px",
+    borderRadius: "6px"
+  }))), /*#__PURE__*/React__default["default"].createElement(SkeletonMainContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonCanvasArea, null, /*#__PURE__*/React__default["default"].createElement(SkeletonEditorCanvasArea$1, null)), /*#__PURE__*/React__default["default"].createElement(SkeletonSidebar, null, /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "120px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "120px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "120px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "80px",
+    height: "20px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
+    width: "100%",
+    height: "18px"
+  })))));
+};
+
 const TemplateModal = props => {
   const [error, setError] = React.useState(null);
   const mode = props.action.mode;
@@ -3095,6 +3629,9 @@ const TemplateModal = props => {
   const [isLoadingEdit, setLoadingEdit] = React.useState(false);
   const [isLoadingDelete, setLoadingDelete] = React.useState(false);
   const toaster = easyblocksDesignSystem.useToaster();
+  const {
+    t
+  } = useTranslation();
   const [template, setTemplate] = React.useState(() => {
     if (props.action.mode === "edit") {
       return props.action.template;
@@ -3116,14 +3653,14 @@ const TemplateModal = props => {
   } = template;
   const open = props.action !== undefined;
   const canSend = label.trim() !== "";
-  const ctaLabel = "Save";
+  const ctaLabel = t("template.save.default");
   React.useEffect(() => {
     if (open) {
       setError(null);
     }
   }, [open]);
   return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
-    title: `Template details`,
+    title: t("template.save.title"),
     isOpen: true,
     onRequestClose: () => {
       props.onClose();
@@ -3156,10 +3693,10 @@ const TemplateModal = props => {
               ...template
             }
           });
-          toaster.success("Template created!");
+          toaster.success(t("template.save.success"));
           props.onClose();
         }).catch(() => {
-          toaster.error("Couldn't save template");
+          toaster.error(t("template.save.error"));
         }).finally(() => {
           setLoadingEdit(false);
         });
@@ -3175,10 +3712,10 @@ const TemplateModal = props => {
             mode: "edit",
             template: template
           });
-          toaster.success("Template updated!");
+          toaster.success(t("template.save.success"));
           props.onClose();
         }).catch(() => {
-          toaster.error("Couldn't update template");
+          toaster.error(t("template.save.error"));
         }).finally(() => {
           setLoadingEdit(false);
         });
@@ -3193,9 +3730,9 @@ const TemplateModal = props => {
     }
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
     name: "label",
-    label: "Name"
+    label: t("template.save.name")
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
-    placeholder: "My template name",
+    placeholder: t("template.save.name"),
     required: true,
     value: label,
     onChange: e => {
@@ -3208,9 +3745,9 @@ const TemplateModal = props => {
     autoFocus: true
   })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
     name: "group",
-    label: "Group"
+    label: t("template.save.group")
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
-    placeholder: "My template group",
+    placeholder: t("template.save.group"),
     value: group,
     onChange: e => {
       setTemplate({
@@ -3222,9 +3759,9 @@ const TemplateModal = props => {
     autoFocus: true
   })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
     name: "thumbnail",
-    label: "Thumbnail url"
+    label: t("template.save.thumbnailLink")
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
-    placeholder: "My template thumbnail url",
+    placeholder: t("template.save.thumbnailLink"),
     value: thumbnail,
     onChange: e => {
       setTemplate({
@@ -3236,9 +3773,9 @@ const TemplateModal = props => {
     autoFocus: true
   })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
     name: "thumbnailLabel",
-    label: "Thumbnail label"
+    label: t("template.save.thumbnailLabel")
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
-    placeholder: "My template thumbnail label",
+    placeholder: t("template.save.thumbnailLabel"),
     value: thumbnailLabel,
     onChange: e => {
       setTemplate({
@@ -3266,19 +3803,22 @@ const TemplateModal = props => {
           mode: "delete",
           template: template
         });
-        toaster.success("Template deleted");
+        toaster.success(t("template.delete.success"));
         props.onClose();
       }).catch(() => {
-        toaster.error("Couldn't delete template");
+        toaster.error(t("template.delete.error"));
       }).finally(() => {
         setLoadingDelete(false);
       });
     },
     isLoading: isLoadingDelete
-  }, "Delete")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+  }, t("template.delete.default"))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
     type: "submit",
     disabled: !canSend,
-    isLoading: isLoadingEdit
+    isLoading: isLoadingEdit,
+    style: {
+      opacity: !canSend ? 0.7 : 1
+    }
   }, ctaLabel)))));
 };
 
@@ -4584,6 +5124,9 @@ function removeLocalizedFlag(config, context) {
 function useDataSaver(initialDocument, editorContext) {
   const remoteDocument = React.useRef(initialDocument);
   const toaster = easyblocksDesignSystem.useToaster();
+  const {
+    t
+  } = getTranslation(editorContext);
 
   /**
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
@@ -4665,7 +5208,7 @@ function useDataSaver(initialDocument, editorContext) {
           if (isConfigTheSame) {
             console.debug("no local changes -> bye");
             if (mode === "force") {
-              toaster.success("No local changes.");
+              toaster.success(t("topBar.noLocalChange"));
             }
             // Let's do nothing, no remote and local change
           } else {
@@ -4676,9 +5219,9 @@ function useDataSaver(initialDocument, editorContext) {
               version: remoteDocument.current.version
             });
             if (updatedDocument?.id) {
-              toaster.success("Saved.");
+              toaster.success(t("topBar.saved"));
             } else {
-              toaster.error("Error saving... Please try again.");
+              toaster.error(t("topBar.save.error"));
             }
             remoteDocument.current.entry = localConfigSnapshot;
             remoteDocument.current.version = updatedDocument.version;
@@ -4686,7 +5229,7 @@ function useDataSaver(initialDocument, editorContext) {
           }
         }
       } catch (error) {
-        toaster.error("Error saving... Please try again!");
+        toaster.error(t("topBar.save.error"));
       }
     }
   };
@@ -5011,274 +5554,6 @@ function checkLocalesCorrectness(locales) {
   });
   return true;
 }
-
-const shimmer$1 = styled.keyframes(["0%{background-position:-800px 0;}100%{background-position:800px 0;}"]);
-const SkeletonBox$1 = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditorCanvasArea__SkeletonBox",
-  componentId: "sc-10zd21k-0"
-})(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || '100%', props => props.height || '20px', shimmer$1, props => props.borderRadius || '4px');
-const SkeletonCanvas = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditorCanvasArea__SkeletonCanvas",
-  componentId: "sc-10zd21k-1"
-})(["width:100%;max-width:1300px;background:white;padding:32px;display:flex;flex-direction:column;gap:24px;"]);
-const SkeletonItem = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditorCanvasArea__SkeletonItem",
-  componentId: "sc-10zd21k-2"
-})(["display:flex;gap:16px;padding:16px;border-radius:8px;"]);
-const SkeletonContent = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditorCanvasArea__SkeletonContent",
-  componentId: "sc-10zd21k-3"
-})(["flex:1;display:flex;flex-direction:column;gap:8px;"]);
-const SkeletonMeta = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditorCanvasArea__SkeletonMeta",
-  componentId: "sc-10zd21k-4"
-})(["display:flex;gap:12px;margin-top:4px;"]);
-const SkeletonEditorCanvasArea = () => {
-  return /*#__PURE__*/React__default["default"].createElement(SkeletonCanvas, null, /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "188px",
-    height: "138px",
-    borderRadius: "6px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "100%",
-    height: "24px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "85%",
-    height: "20px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "100px",
-    height: "16px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "80px",
-    height: "16px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "60px",
-    height: "24px"
-  }))), /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "188px",
-    height: "138px",
-    borderRadius: "6px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "95%",
-    height: "24px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "70%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "100px",
-    height: "16px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "80px",
-    height: "16px"
-  })))), /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "188px",
-    height: "138px",
-    borderRadius: "6px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "90%",
-    height: "24px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "100px",
-    height: "16px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "80px",
-    height: "16px"
-  })))), /*#__PURE__*/React__default["default"].createElement(SkeletonItem, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "188px",
-    height: "138px",
-    borderRadius: "6px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "90%",
-    height: "24px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonMeta, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "100px",
-    height: "16px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox$1, {
-    width: "80px",
-    height: "16px"
-  })))));
-};
-var SkeletonEditorCanvasArea$1 = SkeletonEditorCanvasArea;
-
-const shimmer = styled.keyframes(["0%{background-position:-800px 0;}100%{background-position:800px 0;}"]);
-const SkeletonBox = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonBox",
-  componentId: "sc-133np0d-0"
-})(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || '100%', props => props.height || '20px', shimmer, props => props.borderRadius || '4px');
-
-// Mimic the actual editor structure
-const SkeletonEditorContainer = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonEditorContainer",
-  componentId: "sc-133np0d-1"
-})(["height:100vh;width:100%;display:flex;flex-direction:column;background:#fafafa;"]);
-const SkeletonTopBar = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonTopBar",
-  componentId: "sc-133np0d-2"
-})(["height:40px;background:", ";border-bottom:1px solid ", ";display:flex;align-items:center;justify-content:space-between;padding:0 4px;gap:16px;"], easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100);
-const SkeletonTopBarLeft = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonTopBarLeft",
-  componentId: "sc-133np0d-3"
-})(["display:flex;gap:8px;align-items:center;"]);
-const SkeletonTopBarCenter = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonTopBarCenter",
-  componentId: "sc-133np0d-4"
-})(["display:flex;gap:8px;align-items:center;"]);
-const SkeletonTopBarRight = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonTopBarRight",
-  componentId: "sc-133np0d-5"
-})(["display:flex;gap:16px;align-items:center;"]);
-const SkeletonMainContent = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonMainContent",
-  componentId: "sc-133np0d-6"
-})(["flex:1;display:flex;overflow:hidden;"]);
-const SkeletonCanvasArea = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonCanvasArea",
-  componentId: "sc-133np0d-7"
-})(["flex:1;background:#e5e5e5;padding:32px;padding-top:64px;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;"]);
-const SkeletonSidebar = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonSidebar",
-  componentId: "sc-133np0d-8"
-})(["flex:0 0 240px;background:", ";border-left:1px solid ", ";padding:16px;display:flex;flex-direction:column;gap:24px;"], easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100);
-const SkeletonSection = styled__default["default"].div.withConfig({
-  displayName: "SkeletonEditor__SkeletonSection",
-  componentId: "sc-133np0d-9"
-})(["display:flex;flex-direction:column;gap:12px;"]);
-const SkeletonEditor = () => {
-  return /*#__PURE__*/React__default["default"].createElement(SkeletonEditorContainer, null, /*#__PURE__*/React__default["default"].createElement(SkeletonTopBar, null, /*#__PURE__*/React__default["default"].createElement(SkeletonTopBarLeft, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "60px",
-    height: "28px",
-    borderRadius: "6px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonTopBarCenter, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "28px",
-    height: "28px",
-    borderRadius: "4px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonTopBarRight, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100px",
-    height: "28px",
-    borderRadius: "6px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "60px",
-    height: "28px",
-    borderRadius: "6px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "86px",
-    height: "28px",
-    borderRadius: "6px"
-  }))), /*#__PURE__*/React__default["default"].createElement(SkeletonMainContent, null, /*#__PURE__*/React__default["default"].createElement(SkeletonCanvasArea, null, /*#__PURE__*/React__default["default"].createElement(SkeletonEditorCanvasArea$1, null)), /*#__PURE__*/React__default["default"].createElement(SkeletonSidebar, null, /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100px",
-    height: "20px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "120px",
-    height: "20px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "80px",
-    height: "20px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "80px",
-    height: "20px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100px",
-    height: "20px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "120px",
-    height: "20px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "120px",
-    height: "20px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  })), /*#__PURE__*/React__default["default"].createElement(SkeletonSection, null, /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "80px",
-    height: "20px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  }), /*#__PURE__*/React__default["default"].createElement(SkeletonBox, {
-    width: "100%",
-    height: "18px"
-  })))));
-};
 
 const ContentContainer = styled.styled.div.withConfig({
   displayName: "Editor__ContentContainer",
@@ -5838,6 +6113,7 @@ const EditorContent = ({
     focussedField,
     form,
     setFocussedField: handleSetFocussedField,
+    translationFiles: props.config?.translationFiles ?? {},
     isEditing,
     actions,
     save: async documentData => {
@@ -7932,5 +8208,6 @@ function EasyblocksEditor(props) {
 
 exports.EasyblocksEditor = EasyblocksEditor;
 exports.EditorContext = EditorContext;
+exports.getFonts = getFonts;
 exports.useEditorContext = useEditorContext;
 //# sourceMappingURL=index.cjs.map
