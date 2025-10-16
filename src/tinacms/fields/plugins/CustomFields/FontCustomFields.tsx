@@ -22,7 +22,7 @@ interface IFontCustomInputElement
 interface ICustomField {
   key: string;
   label: string;
-  options?: { id: string; label: string }[];
+  options?: { id: string; value: string; label: string }[];
   type: "string" | "number";
   inputType: "select" | "text";
   value?: string | number;
@@ -45,7 +45,7 @@ export const FontCustomFieldInput = ({
   onChange,
 }: {
   inputType?: "select" | "text";
-  options?: { id: string; label: string }[];
+  options?: { id: string; value: string; label: string }[];
   customField: ICustomField;
   onChange: (key: string, value: string | number, type: string) => void;
 }) => {
@@ -78,8 +78,8 @@ export const FontCustomFieldInput = ({
         >
           {options.map((o) => {
             return (
-              <SelectItem key={o.id} value={o.id}>
-                <div style={{ fontFamily: o.id }}>{o.label}</div>
+              <SelectItem key={o.id} value={o.value}>
+                <div style={{ fontFamily: o.value }}>{o.label}</div>
               </SelectItem>
             );
           })}
@@ -98,7 +98,7 @@ export const FontCustomField = ({
   onChange,
 }: {
   type?: "select" | "text";
-  options?: { id: string; label: string }[];
+  options?: { id: string; value: string; label: string }[];
   customField: ICustomField;
   onChange: (key: string, value: string | number, type: string) => void;
   [key: string]: any;
@@ -167,15 +167,15 @@ export const FontCustomFields = ({ input }: IFontCustomInputElement) => {
         label: t("definition.schema.label.fontWeight"),
         type: "number" as const,
         options: [
-          { id: "100", label: "Thin (100)" },
-          { id: "200", label: "Extra Light (200)" },
-          { id: "300", label: "Light (300)" },
-          { id: "400", label: "Normal (400)" },
-          { id: "500", label: "Medium (500)" },
-          { id: "600", label: "Semi Bold (600)" },
-          { id: "700", label: "Bold (700)" },
-          { id: "800", label: "Extra Bold (800)" },
-          { id: "900", label: "Black (900)" },
+          { id: "100", value: "100", label: "Thin (100)" },
+          { id: "200", value: "200", label: "Extra Light (200)" },
+          { id: "300", value: "300", label: "Light (300)" },
+          { id: "400", value: "400", label: "Normal (400)" },
+          { id: "500", value: "500", label: "Medium (500)" },
+          { id: "600", value: "600", label: "Semi Bold (600)" },
+          { id: "700", value: "700", label: "Bold (700)" },
+          { id: "800", value: "800", label: "Extra Bold (800)" },
+          { id: "900", value: "900", label: "Black (900)" },
         ],
         inputType: "select",
         defaultValue: 600,

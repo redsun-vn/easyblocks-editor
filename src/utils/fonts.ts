@@ -1,5 +1,6 @@
 interface IFont {
   id: string;
+  value: string;
   label: string;
 }
 
@@ -252,9 +253,10 @@ export function getFonts(): IFont[] {
     "Noto Serif SC, serif",
     "Noto Serif TC, serif",
   ];
-  return selectedFamilies.sort().map((font: any) => {
+  return selectedFamilies.sort().map((font: string) => {
     return {
       id: font,
+      value: font,
       label: font.split(",")[0],
     };
   });

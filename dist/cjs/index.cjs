@@ -638,6 +638,7 @@ function getFonts() {
   return selectedFamilies.sort().map(font => {
     return {
       id: font,
+      value: font,
       label: font.split(",")[0]
     };
   });
@@ -758,10 +759,10 @@ const FontCustomFieldInput = ({
         }, options.map(o => {
           return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
             key: o.id,
-            value: o.id
+            value: o.value
           }, /*#__PURE__*/React__default["default"].createElement("div", {
             style: {
-              fontFamily: o.id
+              fontFamily: o.value
             }
           }, o.label));
         }));
@@ -824,30 +825,39 @@ const FontCustomFields = ({
     type: "number",
     options: [{
       id: "100",
+      value: "100",
       label: "Thin (100)"
     }, {
       id: "200",
+      value: "200",
       label: "Extra Light (200)"
     }, {
       id: "300",
+      value: "300",
       label: "Light (300)"
     }, {
       id: "400",
+      value: "400",
       label: "Normal (400)"
     }, {
       id: "500",
+      value: "500",
       label: "Medium (500)"
     }, {
       id: "600",
+      value: "600",
       label: "Semi Bold (600)"
     }, {
       id: "700",
+      value: "700",
       label: "Bold (700)"
     }, {
       id: "800",
+      value: "800",
       label: "Extra Bold (800)"
     }, {
       id: "900",
+      value: "900",
       label: "Black (900)"
     }],
     inputType: "select",

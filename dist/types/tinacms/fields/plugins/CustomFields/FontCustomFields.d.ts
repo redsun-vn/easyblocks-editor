@@ -9,6 +9,7 @@ interface ICustomField {
     label: string;
     options?: {
         id: string;
+        value: string;
         label: string;
     }[];
     type: "string" | "number";
@@ -20,6 +21,7 @@ export declare const FontCustomFieldInput: ({ inputType, options, customField, o
     inputType?: "select" | "text";
     options?: {
         id: string;
+        value: string;
         label: string;
     }[];
     customField: ICustomField;
@@ -29,6 +31,7 @@ export declare const FontCustomField: ({ customField, onChange, }: {
     type?: "select" | "text";
     options?: {
         id: string;
+        value: string;
         label: string;
     }[];
     customField: ICustomField;
