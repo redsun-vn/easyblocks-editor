@@ -31,7 +31,7 @@ import { styled } from "styled-components";
 import { EditorContextType, useEditorContext } from "../../../../EditorContext";
 import { FieldMixedValue } from "../../../../types";
 import { useTokenTypes } from "../../../../utils/hooks/useTokenTypes";
-import { MIXED_VALUE } from "../../components/constants";
+import { CUSTOM_OPTION_VALUE, MIXED_VALUE } from "../../components/constants";
 import { isMixedFieldValue } from "../../components/isMixedFieldValue";
 import { wrapFieldsWithMeta } from "../wrapFieldWithMeta";
 
@@ -49,8 +49,6 @@ export interface TokenFieldProps<TokenValue extends NonNullish>
   > {
   field: TokenField<TokenValue>;
 }
-
-const CUSTOM_OPTION_VALUE = "__custom__";
 
 function extraValuesIncludes(
   extraValues: Array<string | { value: string; label: string }>,

@@ -4,15 +4,17 @@ import {
   Input,
   Select,
   SelectItem,
+  SelectSeparator,
 } from "@redsun-vn/easyblocks-design-system";
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
+import { useEditorContext } from "../../../../EditorContext";
 import { useTranslation } from "../../../../useTranslation";
 import { getFonts } from "../../../../utils/fonts";
+import { CUSTOM_OPTION_VALUE } from "../../components/constants";
 import { TokenFieldProps } from "../TokenField/TokenFieldPlugin";
 import { Tooltip, TooltipArrow, TooltipBody } from "../Tooltip";
 import { useTooltip } from "../useTooltip";
-import { useEditorContext } from "../../../../EditorContext";
 
 interface IFontCustomInputElement
   extends Omit<TokenFieldProps<TokenValue>, "meta"> {
@@ -67,13 +69,9 @@ export const FontCustomFieldInput = ({
         <Select
           value={String(customField.value ?? customField.defaultValue)}
           onChange={(selectedValue) => {
-            onChange(
-              customField.key,
-              customField.type === "number"
-                ? Number(selectedValue)
-                : selectedValue,
-              "select"
-            );
+            if (selectedValue !== CUSTOM_OPTION_VALUE) {
+              onChange(customField.key, selectedValue, customField.type);
+            }
           }}
         >
           {options.map((o) => {
@@ -83,6 +81,10 @@ export const FontCustomFieldInput = ({
               </SelectItem>
             );
           })}
+          {/* <>
+            <SelectSeparator />
+            <SelectItem value={CUSTOM_OPTION_VALUE}>Custom</SelectItem>
+          </> */}
         </Select>
       );
     }
@@ -151,21 +153,31 @@ export const FontCustomFields = ({ input }: IFontCustomInputElement) => {
         key: "fontFamily",
         label: t("definition.schema.label.fontFamily"),
         options: getFonts(),
-        type: "string" as const,
+        type: "string",
         inputType: "select",
         defaultValue: "Roboto",
       },
       {
         key: "fontSize",
         label: t("definition.schema.label.fontSize"),
-        type: "number" as const,
-        inputType: "text",
+        type: "number",
+        options: Object.values(editorContext.theme.space)
+          .filter(
+            (s) =>
+              typeof s.value === "string" && s.value.match(/\d+(\.\d+)?px\b/)
+          )
+          .map((s) => ({
+            id: parseFloat(s.value as string).toString(),
+            value: parseFloat(s.value as string).toString(),
+            label: s.label ?? "",
+          })),
+        inputType: "select",
         defaultValue: 16,
       },
       {
         key: "fontWeight",
         label: t("definition.schema.label.fontWeight"),
-        type: "number" as const,
+        type: "number",
         options: [
           { id: "100", value: "100", label: "Thin (100)" },
           { id: "200", value: "200", label: "Extra Light (200)" },
@@ -183,8 +195,20 @@ export const FontCustomFields = ({ input }: IFontCustomInputElement) => {
       {
         key: "lineHeight",
         label: t("definition.schema.label.lineHeight"),
-        type: "number" as const,
-        inputType: "text",
+        type: "number",
+        options: [
+          { id: "1", value: "1", label: "1" },
+          { id: "1.1", value: "1.1", label: "1.1" },
+          { id: "1.2", value: "1.2", label: "1.2" },
+          { id: "1.3", value: "1.3", label: "1.3" },
+          { id: "1.4", value: "1.4", label: "1.4" },
+          { id: "1.4258", value: "1.4258", label: "1.4258" },
+          { id: "1.5", value: "1.5", label: "1.5" },
+          { id: "1.7", value: "1.7", label: "1.7" },
+          { id: "1.8", value: "1.8", label: "1.8" },
+          { id: "2", value: "2", label: "2" },
+        ],
+        inputType: "select",
         defaultValue: 1.4,
       },
     ],
@@ -219,7 +243,14 @@ export const FontCustomFields = ({ input }: IFontCustomInputElement) => {
   }, [inputValue]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        width: "100%",
+      }}
+    >
       {customFields.map((customField) => {
         const customFieldValue = inputValue[customField.key];
 

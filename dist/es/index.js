@@ -480,6 +480,7 @@ const ToggleFieldWrapper = styled.div.withConfig({
 })(["display:flex;justify-content:flex-end;"]);
 
 const MIXED_VALUE = "__MIXED__";
+const CUSTOM_OPTION_VALUE = "__custom__";
 const COMPONENTS_SUPPORTING_MIXED_VALUES = ["block", "radio-group", "select", "token"];
 
 function isMixedFieldValue(value) {
@@ -599,7 +600,7 @@ const useTokenTypes = () => {
 };
 
 function getFonts() {
-  const selectedFamilies = ["Roboto, sans-serif", "Open Sans, sans-serif", "Lato, sans-serif", "Montserrat, sans-serif", "Poppins, sans-serif", "Inter, sans-serif", "Oswald, sans-serif", "Raleway, sans-serif", "Noto Sans, sans-serif", "Roboto Condensed, sans-serif", "Nunito, sans-serif", "Work Sans, sans-serif", "Rubik, sans-serif", "Mukta, sans-serif", "Ubuntu, sans-serif", "Quicksand, sans-serif", "Hind, sans-serif", "Fira Sans, sans-serif", "Barlow, sans-serif", "Cabin, sans-serif", "Prompt, sans-serif", "Heebo, sans-serif", "Source Sans 3, sans-serif", "Titillium Web, sans-serif", "Muli, sans-serif", "Manrope, sans-serif", "Josefin Sans, sans-serif", "Karla, sans-serif", "DM Sans, sans-serif", "PT Sans, sans-serif", "Tajawal, sans-serif", "Public Sans, sans-serif", "Catamaran, sans-serif", "Urbanist, sans-serif", "Outfit, sans-serif", "Lexend, sans-serif", "Signika, sans-serif", "Asap, sans-serif", "Sarabun, sans-serif", "Red Hat Display, sans-serif", "Exo 2, sans-serif", "Sen, sans-serif", "Epilogue, sans-serif", "Jost, sans-serif", "IBM Plex Sans, sans-serif", "Varela Round, sans-serif", "Mulish, sans-serif", "Spartan, sans-serif", "Krub, sans-serif", "Questrial, sans-serif", "Barlow Condensed, sans-serif", "Overpass, sans-serif", "Alata, sans-serif", "Kanit, sans-serif", "Noto Serif, serif", "Merriweather, serif", "Playfair Display, serif", "Lora, serif", "Cormorant Garamond, serif", "EB Garamond, serif", "PT Serif, serif", "Libre Baskerville, serif", "DM Serif Display, serif", "Crimson Text, serif", "Bitter, serif", "Spectral, serif", "Cormorant, serif", "Zilla Slab, serif", "Nanum Myeongjo, serif", "Tinos, serif", "Cardo, serif", "Domine, serif", "Arvo, serif", "Vollkorn, serif", "Bree Serif, serif", "Alegreya, serif", "Noticia Text, serif", "Libre Caslon Text, serif", "Faustina, serif", "Mate, serif", "Lusitana, serif", "Arapey, serif", "Fira Sans Condensed, sans-serif", "Assistant, sans-serif", "Space Grotesk, sans-serif", "Sofia Sans, sans-serif", "Niramit, sans-serif", "Be Vietnam Pro, sans-serif", "Eczar, serif", "Quattrocento, serif", "Rokkitt, serif", "Cormorant Infant, serif", "Slabo 27px, serif", "Ultra, serif", "Rozha One, serif", "Old Standard TT, serif", "Baskervville, serif", "Play, sans-serif", "Mada, sans-serif", "Rajdhani, sans-serif", "Cabinet Grotesk, sans-serif", "Archivo, sans-serif", "Anton, display", "Bebas Neue, display", "Abril Fatface, display", "Alfa Slab One, display", "Righteous, display", "Lobster, display", "Pacifico, handwriting", "Caveat, handwriting", "Dancing Script, handwriting", "Great Vibes, handwriting", "Satisfy, handwriting", "Shadows Into Light, handwriting", "Cookie, handwriting", "Gloria Hallelujah, handwriting", "Indie Flower, handwriting", "Courgette, handwriting", "Amatic SC, display", "Fredoka, sans-serif", "Baloo 2, display", "Chewy, display", "Luckiest Guy, display", "Permanent Marker, handwriting", "Architects Daughter, handwriting", "Rock Salt, handwriting", "Handlee, handwriting", "Kaushan Script, handwriting", "Patrick Hand, handwriting", "Carter One, display", "Sigmar, display", "Rye, display", "Black Ops One, display", "Bungee, display", "Press Start 2P, monospace", "Space Mono, monospace", "Fira Code, monospace", "Roboto Mono, monospace", "JetBrains Mono, monospace", "Inconsolata, monospace", "Share Tech Mono, monospace", "Cutive Mono, monospace", "Major Mono Display, monospace", "Source Code Pro, monospace", "Audiowide, display", "Syncopate, display", "Unica One, display", "Orbitron, display", "Chakra Petch, sans-serif", "Expletus Sans, display", "Staatliches, display", "Poiret One, display", "Aldrich, sans-serif", "Gruppo, display", "Viga, sans-serif", "Suez One, serif", "Frank Ruhl Libre, serif", "Cambo, serif", "Marcellus, serif", "Cinzel, serif", "Judson, serif", "Gelasio, serif", "Abhaya Libre, serif", "Cormorant SC, serif", "Crimson Pro, serif", "Noto Serif Display, serif", "Sanchez, serif", "DM Serif Text, serif", "Fjord One, serif", "Suranna, serif", "Cardo, serif", "Kreon, serif", "Cormorant Upright, serif", "Gloock, serif", "Julius Sans One, sans-serif", "Assistant, sans-serif", "Encode Sans, sans-serif", "Nanum Gothic, sans-serif", "Maven Pro, sans-serif", "Overpass Mono, monospace", "Noto Sans Display, sans-serif", "Albert Sans, sans-serif", "Palanquin, sans-serif", "Chivo, sans-serif", "Arimo, sans-serif", "Exo, sans-serif", "Molengo, sans-serif", "Abel, sans-serif", "Teko, sans-serif", "Saira, sans-serif", "Jura, sans-serif", "Kumbh Sans, sans-serif", "Hepta Slab, serif", "Azeret Mono, monospace", "League Spartan, sans-serif", "Rufina, serif", "Cinzel Decorative, display", "Crete Round, serif", "Amiri, serif", "Spectral SC, serif", "Petrona, serif", "Neuton, serif", "Coustard, serif", "Vidaloka, serif", "Bellefair, serif", "Antic Slab, serif", "Copse, serif", "DM Mono, monospace", "Anonymous Pro, monospace", "Oxygen Mono, monospace", "Courier Prime, monospace", "IBM Plex Mono, monospace", "Zilla Slab Highlight, display", "Shrikhand, display", "Bungee Shade, display", "Fugaz One, display", "Monoton, display", "Rammetto One, display", "Cinzel Decorative, display", "Fascinate Inline, display", "Racing Sans One, display", "Lilita One, display", "Potta One, display", "Tourney, display", "Cherry Swash, display", "Creepster, display", "Butcherman, display", "Ewert, display", "Bowlby One SC, display", "Galindo, display", "Knewave, display", "Fredoka One, display", "Ranchers, display", "Codystar, display", "Press Start 2P, monospace", "VT323, monospace", "Cutive Mono, monospace", "IBM Plex Serif, serif", "Philosopher, sans-serif", "Noto Sans JP, sans-serif", "Noto Sans KR, sans-serif", "Noto Sans Thai, sans-serif", "Noto Serif JP, serif", "Noto Serif KR, serif", "Noto Serif SC, serif", "Noto Serif TC, serif"];
+  const selectedFamilies = ["Roboto, sans-serif", "Open Sans, sans-serif", "Lato, sans-serif", "Montserrat, sans-serif", "Poppins, sans-serif", "Inter, sans-serif", "Oswald, sans-serif", "Raleway, sans-serif", "Noto Sans, sans-serif", "Roboto Condensed, sans-serif", "Nunito, sans-serif", "Work Sans, sans-serif", "Rubik, sans-serif", "Mukta, sans-serif", "Ubuntu, sans-serif", "Quicksand, sans-serif", "Hind, sans-serif", "Fira Sans, sans-serif", "Barlow, sans-serif", "Cabin, sans-serif", "Prompt, sans-serif", "Heebo, sans-serif", "Source Sans 3, sans-serif", "Titillium Web, sans-serif", "Muli, sans-serif", "Manrope, sans-serif", "Josefin Sans, sans-serif", "Karla, sans-serif", "DM Sans, sans-serif", "PT Sans, sans-serif", "Tajawal, sans-serif", "Public Sans, sans-serif", "Catamaran, sans-serif", "Urbanist, sans-serif", "Outfit, sans-serif", "Lexend, sans-serif", "Signika, sans-serif", "Asap, sans-serif", "Sarabun, sans-serif", "Red Hat Display, sans-serif", "Exo 2, sans-serif", "Sen, sans-serif", "Epilogue, sans-serif", "Jost, sans-serif", "IBM Plex Sans, sans-serif", "Varela Round, sans-serif", "Mulish, sans-serif", "Spartan, sans-serif", "Krub, sans-serif", "Questrial, sans-serif", "Barlow Condensed, sans-serif", "Overpass, sans-serif", "Alata, sans-serif", "Kanit, sans-serif", "Noto Serif, serif", "Merriweather, serif", "Playfair Display, serif", "Lora, serif", "Cormorant Garamond, serif", "EB Garamond, serif", "PT Serif, serif", "Libre Baskerville, serif", "DM Serif Display, serif", "Crimson Text, serif", "Bitter, serif", "Spectral, serif", "Cormorant, serif", "Zilla Slab, serif", "Nanum Myeongjo, serif", "Tinos, serif", "Cardo, serif", "Domine, serif", "Arvo, serif", "Vollkorn, serif", "Bree Serif, serif", "Alegreya, serif", "Noticia Text, serif", "Libre Caslon Text, serif", "Faustina, serif", "Mate, serif", "Lusitana, serif", "Arapey, serif", "Fira Sans Condensed, sans-serif", "Space Grotesk, sans-serif", "Sofia Sans, sans-serif", "Niramit, sans-serif", "Be Vietnam Pro, sans-serif", "Eczar, serif", "Quattrocento, serif", "Rokkitt, serif", "Cormorant Infant, serif", "Slabo 27px, serif", "Ultra, serif", "Rozha One, serif", "Old Standard TT, serif", "Baskervville, serif", "Play, sans-serif", "Mada, sans-serif", "Rajdhani, sans-serif", "Cabinet Grotesk, sans-serif", "Archivo, sans-serif", "Anton, display", "Bebas Neue, display", "Abril Fatface, display", "Alfa Slab One, display", "Righteous, display", "Lobster, display", "Pacifico, handwriting", "Caveat, handwriting", "Dancing Script, handwriting", "Great Vibes, handwriting", "Satisfy, handwriting", "Shadows Into Light, handwriting", "Cookie, handwriting", "Gloria Hallelujah, handwriting", "Indie Flower, handwriting", "Courgette, handwriting", "Amatic SC, display", "Fredoka, sans-serif", "Baloo 2, display", "Chewy, display", "Luckiest Guy, display", "Permanent Marker, handwriting", "Architects Daughter, handwriting", "Rock Salt, handwriting", "Handlee, handwriting", "Kaushan Script, handwriting", "Patrick Hand, handwriting", "Carter One, display", "Sigmar, display", "Rye, display", "Black Ops One, display", "Bungee, display", "Press Start 2P, monospace", "Space Mono, monospace", "Fira Code, monospace", "Roboto Mono, monospace", "JetBrains Mono, monospace", "Inconsolata, monospace", "Share Tech Mono, monospace", "Major Mono Display, monospace", "Source Code Pro, monospace", "Audiowide, display", "Syncopate, display", "Unica One, display", "Orbitron, display", "Chakra Petch, sans-serif", "Expletus Sans, display", "Staatliches, display", "Poiret One, display", "Aldrich, sans-serif", "Gruppo, display", "Viga, sans-serif", "Suez One, serif", "Frank Ruhl Libre, serif", "Cambo, serif", "Marcellus, serif", "Cinzel, serif", "Judson, serif", "Gelasio, serif", "Abhaya Libre, serif", "Cormorant SC, serif", "Crimson Pro, serif", "Noto Serif Display, serif", "Sanchez, serif", "DM Serif Text, serif", "Fjord One, serif", "Suranna, serif", "Kreon, serif", "Cormorant Upright, serif", "Gloock, serif", "Julius Sans One, sans-serif", "Assistant, sans-serif", "Encode Sans, sans-serif", "Nanum Gothic, sans-serif", "Maven Pro, sans-serif", "Overpass Mono, monospace", "Albert Sans, sans-serif", "Palanquin, sans-serif", "Chivo, sans-serif", "Arimo, sans-serif", "Exo, sans-serif", "Molengo, sans-serif", "Abel, sans-serif", "Teko, sans-serif", "Saira, sans-serif", "Jura, sans-serif", "Kumbh Sans, sans-serif", "Hepta Slab, serif", "Azeret Mono, monospace", "League Spartan, sans-serif", "Rufina, serif", "Crete Round, serif", "Amiri, serif", "Spectral SC, serif", "Petrona, serif", "Neuton, serif", "Coustard, serif", "Vidaloka, serif", "Bellefair, serif", "Antic Slab, serif", "Copse, serif", "DM Mono, monospace", "Anonymous Pro, monospace", "Oxygen Mono, monospace", "Courier Prime, monospace", "IBM Plex Mono, monospace", "Zilla Slab Highlight, display", "Shrikhand, display", "Bungee Shade, display", "Fugaz One, display", "Monoton, display", "Rammetto One, display", "Cinzel Decorative, display", "Fascinate Inline, display", "Racing Sans One, display", "Lilita One, display", "Potta One, display", "Tourney, display", "Cherry Swash, display", "Creepster, display", "Butcherman, display", "Ewert, display", "Bowlby One SC, display", "Galindo, display", "Knewave, display", "Fredoka One, display", "Ranchers, display", "Codystar, display", "VT323, monospace", "Cutive Mono, monospace", "IBM Plex Serif, serif", "Philosopher, sans-serif"];
   return selectedFamilies.sort().map(font => {
     return {
       id: font,
@@ -719,7 +720,9 @@ const FontCustomFieldInput = ({
         return /*#__PURE__*/React__default.createElement(Select, {
           value: String(customField.value ?? customField.defaultValue),
           onChange: selectedValue => {
-            onChange(customField.key, customField.type === "number" ? Number(selectedValue) : selectedValue, "select");
+            if (selectedValue !== CUSTOM_OPTION_VALUE) {
+              onChange(customField.key, selectedValue, customField.type);
+            }
           }
         }, options.map(o => {
           return /*#__PURE__*/React__default.createElement(SelectItem, {
@@ -782,7 +785,12 @@ const FontCustomFields = ({
     key: "fontSize",
     label: t("definition.schema.label.fontSize"),
     type: "number",
-    inputType: "text",
+    options: Object.values(editorContext.theme.space).filter(s => typeof s.value === "string" && s.value.match(/\d+(\.\d+)?px\b/)).map(s => ({
+      id: parseFloat(s.value).toString(),
+      value: parseFloat(s.value).toString(),
+      label: s.label ?? ""
+    })),
+    inputType: "select",
     defaultValue: 16
   }, {
     key: "fontWeight",
@@ -831,7 +839,48 @@ const FontCustomFields = ({
     key: "lineHeight",
     label: t("definition.schema.label.lineHeight"),
     type: "number",
-    inputType: "text",
+    options: [{
+      id: "1",
+      value: "1",
+      label: "1"
+    }, {
+      id: "1.1",
+      value: "1.1",
+      label: "1.1"
+    }, {
+      id: "1.2",
+      value: "1.2",
+      label: "1.2"
+    }, {
+      id: "1.3",
+      value: "1.3",
+      label: "1.3"
+    }, {
+      id: "1.4",
+      value: "1.4",
+      label: "1.4"
+    }, {
+      id: "1.4258",
+      value: "1.4258",
+      label: "1.4258"
+    }, {
+      id: "1.5",
+      value: "1.5",
+      label: "1.5"
+    }, {
+      id: "1.7",
+      value: "1.7",
+      label: "1.7"
+    }, {
+      id: "1.8",
+      value: "1.8",
+      label: "1.8"
+    }, {
+      id: "2",
+      value: "2",
+      label: "2"
+    }],
+    inputType: "select",
     defaultValue: 1.4
   }], []);
   const defaultInputValue = customFields.reduce((prev, curr) => {
@@ -855,7 +904,8 @@ const FontCustomFields = ({
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 10
+      gap: 10,
+      width: "100%"
     }
   }, customFields.map(customField => {
     const customFieldValue = inputValue[customField.key];
@@ -894,7 +944,6 @@ const CustomField = ({
 // Wraps the Field component in labels describing the field's meta state
 // Add any other fields that the Field component should expect onto the ExtraFieldProps generic type
 
-const CUSTOM_OPTION_VALUE$1 = "__custom__";
 function FieldMetaWrapper({
   children,
   field,
@@ -960,8 +1009,8 @@ function FieldMetaWrapper({
   const externalValues = isExternalField ? configs.map(c => externalData[getExternalReferenceLocationKey(focussedField.length === 0 ? "$" : c._id, schemaProp.prop, isTrulyResponsiveValue(input.value) ? responsiveValueFindDeviceWithDefinedValue(input.value, editorContext.breakpointIndex, editorContext.devices)?.id : undefined)]) : undefined;
   const currentBreakpointFieldValues = fieldValues.map(v => responsiveValueForceGet(v, editorContext.breakpointIndex));
   const isLoadingExternalValue = isExternalField && externalValues?.length === 0 && currentBreakpointFieldValues.every(v => !isEmptyExternalReference(v) && !isIdReferenceToDocumentExternalValue(v.id));
-  const selectValue = isMixedFieldValue(input.value) ? MIXED_VALUE : input.value.tokenId ?? input.value[editorContext.breakpointIndex]?.tokenId ?? CUSTOM_OPTION_VALUE$1;
-  const isCustomField = selectValue === CUSTOM_OPTION_VALUE$1 && allowCustom;
+  const selectValue = isMixedFieldValue(input.value) ? MIXED_VALUE : input.value.tokenId ?? input.value[editorContext.breakpointIndex]?.tokenId ?? CUSTOM_OPTION_VALUE;
+  const isCustomField = selectValue === CUSTOM_OPTION_VALUE && allowCustom;
   return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(FieldWrapper$1, {
     margin: false,
     layout: resolvedLayout
@@ -1194,7 +1243,6 @@ const ToggleFieldPlugin = {
   Component: ToggleField
 };
 
-const CUSTOM_OPTION_VALUE = "__custom__";
 function extraValuesIncludes(extraValues, value) {
   for (let i = 0; i < extraValues.length; i++) {
     const extraValue = extraValues[i];

@@ -35,6 +35,7 @@ import { Form } from "../../../form";
 import { FieldRenderProps } from "../../form-builder";
 import {
   COMPONENTS_SUPPORTING_MIXED_VALUES,
+  CUSTOM_OPTION_VALUE,
   MIXED_VALUE,
 } from "../components/constants";
 import { isMixedFieldValue } from "../components/isMixedFieldValue";
@@ -67,8 +68,6 @@ export type InputFieldType<
 
 // Wraps the Field component in labels describing the field's meta state
 // Add any other fields that the Field component should expect onto the ExtraFieldProps generic type
-
-const CUSTOM_OPTION_VALUE = "__custom__";
 
 export function FieldMetaWrapper<
   ExtraFieldProps extends Record<string, unknown> = Record<string, unknown>,
