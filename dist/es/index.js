@@ -834,7 +834,7 @@ const FontCustomFields = ({
       label: "Black (900)"
     }],
     inputType: "select",
-    defaultValue: 600
+    defaultValue: 400
   }, {
     key: "lineHeight",
     label: t("definition.schema.label.lineHeight"),

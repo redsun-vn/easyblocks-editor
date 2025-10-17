@@ -190,7 +190,7 @@ export const FontCustomFields = ({ input }: IFontCustomInputElement) => {
           { id: "900", value: "900", label: "Black (900)" },
         ],
         inputType: "select",
-        defaultValue: 600,
+        defaultValue: 400,
       },
       {
         key: "lineHeight",
