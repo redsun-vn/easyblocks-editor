@@ -1,7 +1,7 @@
 import React from "react";
 import { InputFieldType } from "../wrapFieldWithMeta";
 import { useTokenTypes } from "../../../../utils/hooks/useTokenTypes";
-import { FontCustomFields } from "./FontCustomFields";
+import { FontCustomFields } from "./font/FontCustomFields";
 
 export const CustomField = <
   ExtraFieldProps extends Record<string, unknown> = Record<string, unknown>,

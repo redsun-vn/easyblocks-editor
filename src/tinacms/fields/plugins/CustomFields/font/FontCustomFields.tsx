@@ -1,27 +1,21 @@
 import { TokenValue } from "@redsun-vn/easyblocks-core";
-import {
-  Fonts,
-  Input,
-  Select,
-  SelectItem,
-  SelectSeparator,
-} from "@redsun-vn/easyblocks-design-system";
+import { Fonts } from "@redsun-vn/easyblocks-design-system";
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
-import { useEditorContext } from "../../../../EditorContext";
-import { useTranslation } from "../../../../useTranslation";
-import { getFonts } from "../../../../utils/fonts";
-import { CUSTOM_OPTION_VALUE } from "../../components/constants";
-import { TokenFieldProps } from "../TokenField/TokenFieldPlugin";
-import { Tooltip, TooltipArrow, TooltipBody } from "../Tooltip";
-import { useTooltip } from "../useTooltip";
+import { useEditorContext } from "../../../../../EditorContext";
+import { useTranslation } from "../../../../../useTranslation";
+import { getFonts } from "../../../../../utils/fonts";
+import { TokenFieldProps } from "../../TokenField/TokenFieldPlugin";
+import { Tooltip, TooltipArrow, TooltipBody } from "../../Tooltip";
+import { useTooltip } from "../../useTooltip";
+import { FontCustomFieldInput } from "./FontCustomFieldInput";
 
 interface IFontCustomInputElement
   extends Omit<TokenFieldProps<TokenValue>, "meta"> {
   customValueTextFieldRef?: React.MutableRefObject<HTMLInputElement | null>;
 }
 
-interface ICustomField {
+export interface ICustomField {
   key: string;
   label: string;
   options?: { id: string; value: string; label: string }[];
@@ -39,61 +33,6 @@ const FieldLabel = styled.label`
   overflow: hidden;
   cursor: default;
 `;
-
-export const FontCustomFieldInput = ({
-  inputType = "text",
-  options = [],
-  customField,
-  onChange,
-}: {
-  inputType?: "select" | "text";
-  options?: { id: string; value: string; label: string }[];
-  customField: ICustomField;
-  onChange: (key: string, value: string | number, type: string) => void;
-}) => {
-  switch (inputType) {
-    case "text": {
-      return (
-        <Input
-          value={customField.value ?? customField.defaultValue}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            onChange(customField.key, e.target.value, customField.type);
-          }}
-          align={"right"}
-        />
-      );
-    }
-
-    case "select": {
-      return (
-        <Select
-          value={String(customField.value ?? customField.defaultValue)}
-          onChange={(selectedValue) => {
-            if (selectedValue !== CUSTOM_OPTION_VALUE) {
-              onChange(customField.key, selectedValue, customField.type);
-            }
-          }}
-        >
-          {options.map((o) => {
-            return (
-              <SelectItem key={o.id} value={o.value}>
-                <div style={{ fontFamily: o.value }}>{o.label}</div>
-              </SelectItem>
-            );
-          })}
-          {/* <>
-            <SelectSeparator />
-            <SelectItem value={CUSTOM_OPTION_VALUE}>Custom</SelectItem>
-          </> */}
-        </Select>
-      );
-    }
-
-    default: {
-      break;
-    }
-  }
-};
 
 export const FontCustomField = ({
   customField,
@@ -155,7 +94,7 @@ export const FontCustomFields = ({ input }: IFontCustomInputElement) => {
         options: getFonts(),
         type: "string",
         inputType: "select",
-        defaultValue: "Roboto",
+        defaultValue: "Roboto, sans-serif",
       },
       {
         key: "fontSize",

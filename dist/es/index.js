@@ -694,10 +694,6 @@ function useTooltip({
   };
 }
 
-const FieldLabel$1 = styled$1.label.withConfig({
-  displayName: "FontCustomFields__FieldLabel",
-  componentId: "sc-oeie8e-0"
-})(["all:unset;", ";color:#000;text-overflow:ellipsis;overflow:hidden;cursor:default;"], Fonts.body);
 const FontCustomFieldInput = ({
   inputType = "text",
   options = [],
@@ -737,6 +733,11 @@ const FontCustomFieldInput = ({
       }
   }
 };
+
+const FieldLabel$1 = styled$1.label.withConfig({
+  displayName: "FontCustomFields__FieldLabel",
+  componentId: "sc-opt9vi-0"
+})(["all:unset;", ";color:#000;text-overflow:ellipsis;overflow:hidden;cursor:default;"], Fonts.body);
 const FontCustomField = ({
   customField,
   onChange
@@ -780,7 +781,7 @@ const FontCustomFields = ({
     options: getFonts(),
     type: "string",
     inputType: "select",
-    defaultValue: "Roboto"
+    defaultValue: "Roboto, sans-serif"
   }, {
     key: "fontSize",
     label: t("definition.schema.label.fontSize"),
