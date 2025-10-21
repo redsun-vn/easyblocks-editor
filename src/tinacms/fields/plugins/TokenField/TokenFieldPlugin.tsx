@@ -34,6 +34,7 @@ import { useTokenTypes } from "../../../../utils/hooks/useTokenTypes";
 import { CUSTOM_OPTION_VALUE, MIXED_VALUE } from "../../components/constants";
 import { isMixedFieldValue } from "../../components/isMixedFieldValue";
 import { wrapFieldsWithMeta } from "../wrapFieldWithMeta";
+import { CustomField } from "../CustomFields";
 
 interface TokenField<TokenValue extends NonNullish = NonNullish> extends Field {
   tokens: { [key: string]: ThemeTokenValue<TokenValue> };
@@ -216,7 +217,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
     | undefined;
 
   const customInputElement = shouldShowCustomValueInput ? (
-    <div>
+    <div style={{ width: "100%" }}>
       <div style={{ height: 4 }} />
       {CustomInputWidgetComponent ? (
         <CustomInputWidgetComponent
@@ -231,7 +232,9 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
             "params" in field.schemaProp ? field.schemaProp.params : undefined
           }
         />
-      ) : tokenTypeDefinition.token === "fonts" ? null : (
+      ) : tokenTypeDefinition.token === "fonts" ? (
+        <CustomField input={input} field={field} />
+      ) : (
         <Input
           value={inputValue}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -310,7 +313,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
   }
 
   return (
-    <Root>
+    <Root isCustom={shouldShowCustomValueInput}>
       <Select value={selectValue} onChange={onSelectChange}>
         {isMixedFieldValue(input.value) && (
           <>
@@ -397,10 +400,15 @@ function isValidFontTokenValue(value: unknown): value is {
   );
 }
 
-const Root = styled.div`
+interface IRoot {
+  isCustom: boolean;
+}
+
+const Root = styled.div<IRoot>`
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  ${({ isCustom }) => isCustom && { width: "100%" }}
 `;
 
 export const TokenFieldPlugin = {

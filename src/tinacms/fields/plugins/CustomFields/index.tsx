@@ -13,7 +13,7 @@ export const CustomField = <
   const tokenTypes = useTokenTypes();
   const tokenTypeDefinition = tokenTypes[field.schemaProp.type];
 
-  switch (tokenTypeDefinition.token) {
+  switch (tokenTypeDefinition?.token) {
     case "fonts": {
       return <FontCustomFields field={field} input={input} />;
     }

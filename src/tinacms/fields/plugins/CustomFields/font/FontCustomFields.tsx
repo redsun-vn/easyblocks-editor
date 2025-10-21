@@ -1,6 +1,6 @@
 import { TokenValue } from "@redsun-vn/easyblocks-core";
 import { Fonts } from "@redsun-vn/easyblocks-design-system";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../../../../../EditorContext";
 import { useTranslation } from "../../../../../useTranslation";
@@ -32,6 +32,14 @@ const FieldLabel = styled.label`
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: default;
+`;
+
+const FontCustomFieldsStyle = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
 `;
 
 export const FontCustomField = ({
@@ -83,9 +91,10 @@ export const FontCustomField = ({
   );
 };
 
-export const FontCustomFields = ({ input }: IFontCustomInputElement) => {
+export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
   const { t } = useTranslation();
   const editorContext = useEditorContext();
+  const normalizeCustomValue = field.normalizeCustomValue || ((x: string) => x);
   const customFields: ICustomField[] = useMemo(
     () => [
       {
@@ -173,23 +182,17 @@ export const FontCustomFields = ({ input }: IFontCustomInputElement) => {
       [key]: type === "number" ? Number(value) : value.toString(),
     };
     setInputValue(newInputValue);
+
+    console.log(field);
+
+    input.onChange({
+      value: normalizeCustomValue(newInputValue),
+      widgetId: undefined,
+    });
   };
 
-  useEffect(() => {
-    input.onChange({
-      value: inputValue,
-    });
-  }, [inputValue]);
-
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-        width: "100%",
-      }}
-    >
+    <FontCustomFieldsStyle>
       {customFields.map((customField) => {
         const customFieldValue = inputValue[customField.key];
 
@@ -204,6 +207,6 @@ export const FontCustomFields = ({ input }: IFontCustomInputElement) => {
           />
         );
       })}
-    </div>
+    </FontCustomFieldsStyle>
   );
 };

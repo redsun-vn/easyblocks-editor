@@ -591,25 +591,6 @@ const NumberInput = ({
   max: max
 });
 
-const useTokenTypes = () => {
-  const editorContext = useEditorContext();
-  const tokenTypes = Object.fromEntries(Object.entries(editorContext.types).filter(typeDefinitionEntry => {
-    return typeDefinitionEntry[1].type === "token";
-  }));
-  return tokenTypes;
-};
-
-function getFonts() {
-  const selectedFamilies = ["Roboto, sans-serif", "Open Sans, sans-serif", "Lato, sans-serif", "Montserrat, sans-serif", "Poppins, sans-serif", "Inter, sans-serif", "Oswald, sans-serif", "Raleway, sans-serif", "Noto Sans, sans-serif", "Roboto Condensed, sans-serif", "Nunito, sans-serif", "Work Sans, sans-serif", "Rubik, sans-serif", "Mukta, sans-serif", "Ubuntu, sans-serif", "Quicksand, sans-serif", "Hind, sans-serif", "Fira Sans, sans-serif", "Barlow, sans-serif", "Cabin, sans-serif", "Prompt, sans-serif", "Heebo, sans-serif", "Source Sans 3, sans-serif", "Titillium Web, sans-serif", "Muli, sans-serif", "Manrope, sans-serif", "Josefin Sans, sans-serif", "Karla, sans-serif", "DM Sans, sans-serif", "PT Sans, sans-serif", "Tajawal, sans-serif", "Public Sans, sans-serif", "Catamaran, sans-serif", "Urbanist, sans-serif", "Outfit, sans-serif", "Lexend, sans-serif", "Signika, sans-serif", "Asap, sans-serif", "Sarabun, sans-serif", "Red Hat Display, sans-serif", "Exo 2, sans-serif", "Sen, sans-serif", "Epilogue, sans-serif", "Jost, sans-serif", "IBM Plex Sans, sans-serif", "Varela Round, sans-serif", "Mulish, sans-serif", "Spartan, sans-serif", "Krub, sans-serif", "Questrial, sans-serif", "Barlow Condensed, sans-serif", "Overpass, sans-serif", "Alata, sans-serif", "Kanit, sans-serif", "Noto Serif, serif", "Merriweather, serif", "Playfair Display, serif", "Lora, serif", "Cormorant Garamond, serif", "EB Garamond, serif", "PT Serif, serif", "Libre Baskerville, serif", "DM Serif Display, serif", "Crimson Text, serif", "Bitter, serif", "Spectral, serif", "Cormorant, serif", "Zilla Slab, serif", "Nanum Myeongjo, serif", "Tinos, serif", "Cardo, serif", "Domine, serif", "Arvo, serif", "Vollkorn, serif", "Bree Serif, serif", "Alegreya, serif", "Noticia Text, serif", "Libre Caslon Text, serif", "Faustina, serif", "Mate, serif", "Lusitana, serif", "Arapey, serif", "Fira Sans Condensed, sans-serif", "Space Grotesk, sans-serif", "Sofia Sans, sans-serif", "Niramit, sans-serif", "Be Vietnam Pro, sans-serif", "Eczar, serif", "Quattrocento, serif", "Rokkitt, serif", "Cormorant Infant, serif", "Slabo 27px, serif", "Ultra, serif", "Rozha One, serif", "Old Standard TT, serif", "Baskervville, serif", "Play, sans-serif", "Mada, sans-serif", "Rajdhani, sans-serif", "Cabinet Grotesk, sans-serif", "Archivo, sans-serif", "Anton, display", "Bebas Neue, display", "Abril Fatface, display", "Alfa Slab One, display", "Righteous, display", "Lobster, display", "Pacifico, handwriting", "Caveat, handwriting", "Dancing Script, handwriting", "Great Vibes, handwriting", "Satisfy, handwriting", "Shadows Into Light, handwriting", "Cookie, handwriting", "Gloria Hallelujah, handwriting", "Indie Flower, handwriting", "Courgette, handwriting", "Amatic SC, display", "Fredoka, sans-serif", "Baloo 2, display", "Chewy, display", "Luckiest Guy, display", "Permanent Marker, handwriting", "Architects Daughter, handwriting", "Rock Salt, handwriting", "Handlee, handwriting", "Kaushan Script, handwriting", "Patrick Hand, handwriting", "Carter One, display", "Sigmar, display", "Rye, display", "Black Ops One, display", "Bungee, display", "Press Start 2P, monospace", "Space Mono, monospace", "Fira Code, monospace", "Roboto Mono, monospace", "JetBrains Mono, monospace", "Inconsolata, monospace", "Share Tech Mono, monospace", "Major Mono Display, monospace", "Source Code Pro, monospace", "Audiowide, display", "Syncopate, display", "Unica One, display", "Orbitron, display", "Chakra Petch, sans-serif", "Expletus Sans, display", "Staatliches, display", "Poiret One, display", "Aldrich, sans-serif", "Gruppo, display", "Viga, sans-serif", "Suez One, serif", "Frank Ruhl Libre, serif", "Cambo, serif", "Marcellus, serif", "Cinzel, serif", "Judson, serif", "Gelasio, serif", "Abhaya Libre, serif", "Cormorant SC, serif", "Crimson Pro, serif", "Noto Serif Display, serif", "Sanchez, serif", "DM Serif Text, serif", "Fjord One, serif", "Suranna, serif", "Kreon, serif", "Cormorant Upright, serif", "Gloock, serif", "Julius Sans One, sans-serif", "Assistant, sans-serif", "Encode Sans, sans-serif", "Nanum Gothic, sans-serif", "Maven Pro, sans-serif", "Overpass Mono, monospace", "Albert Sans, sans-serif", "Palanquin, sans-serif", "Chivo, sans-serif", "Arimo, sans-serif", "Exo, sans-serif", "Molengo, sans-serif", "Abel, sans-serif", "Teko, sans-serif", "Saira, sans-serif", "Jura, sans-serif", "Kumbh Sans, sans-serif", "Hepta Slab, serif", "Azeret Mono, monospace", "League Spartan, sans-serif", "Rufina, serif", "Crete Round, serif", "Amiri, serif", "Spectral SC, serif", "Petrona, serif", "Neuton, serif", "Coustard, serif", "Vidaloka, serif", "Bellefair, serif", "Antic Slab, serif", "Copse, serif", "DM Mono, monospace", "Anonymous Pro, monospace", "Oxygen Mono, monospace", "Courier Prime, monospace", "IBM Plex Mono, monospace", "Zilla Slab Highlight, display", "Shrikhand, display", "Bungee Shade, display", "Fugaz One, display", "Monoton, display", "Rammetto One, display", "Cinzel Decorative, display", "Fascinate Inline, display", "Racing Sans One, display", "Lilita One, display", "Potta One, display", "Tourney, display", "Cherry Swash, display", "Creepster, display", "Butcherman, display", "Ewert, display", "Bowlby One SC, display", "Galindo, display", "Knewave, display", "Fredoka One, display", "Ranchers, display", "Codystar, display", "VT323, monospace", "Cutive Mono, monospace", "IBM Plex Serif, serif", "Philosopher, sans-serif"];
-  return selectedFamilies.sort().map(font => {
-    return {
-      id: font,
-      value: font,
-      label: font.split(",")[0]
-    };
-  });
-}
-
 const Tooltip = /*#__PURE__*/forwardRef(({
   children,
   style = {},
@@ -694,6 +675,346 @@ function useTooltip({
   };
 }
 
+// Wraps the Field component in labels describing the field's meta state
+// Add any other fields that the Field component should expect onto the ExtraFieldProps generic type
+
+function FieldMetaWrapper({
+  children,
+  field,
+  input,
+  noWrap,
+  layout = "row",
+  renderLabel,
+  isLabelHidden
+}) {
+  const editorContext = useEditorContext();
+  const configAfterAuto = useConfigAfterAuto();
+  const externalData = useEditorExternalData();
+  const {
+    isOpen,
+    tooltipProps,
+    triggerProps,
+    arrowProps
+  } = useTooltip();
+  const {
+    actions: {
+      runChange
+    },
+    form,
+    focussedField
+  } = editorContext;
+  const isMixedValueSupported = isMixedValueSupportedByComponent(isResponsiveField(field) ? field.subComponent : field.component);
+  const isMixedValue = isMixedFieldValue(input.value);
+  const fieldNames = toArray(field.name);
+  const allowCustom = field.allowCustom ?? false;
+  function handleButtonMixedClick() {
+    runChange(() => {
+      fieldNames.forEach((fieldName, _, names) => {
+        const firstFieldValue = dotNotationGet(form.values, names[0]);
+        form.change(fieldName, firstFieldValue);
+      });
+    });
+  }
+  const resolvedLayout = field.layout ?? layout;
+  const content = /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      width: "100%",
+      display: "flex",
+      alignItems: resolvedLayout === "row" ? "flex-end" : "flex-start",
+      flexDirection: "column"
+    }
+  }, !isMixedValue || isMixedValue && isMixedValueSupported ? children : /*#__PURE__*/React__default.createElement(TextButton, {
+    component: "button",
+    variant: "label",
+    color: "black40",
+    onClick: handleButtonMixedClick
+  }, "Mixed"));
+  if (noWrap) {
+    return content;
+  }
+  const label = field.label || input.name;
+  const {
+    schemaProp
+  } = field;
+  const isExternalField = isExternalSchemaProp(schemaProp, editorContext.types) || schemaProp.type === "text" && !input.value.id?.startsWith("local.");
+  const componentPaths = fieldNames.map(fieldName => fieldName[0].split(".").slice(0, -1).join("."));
+  const fieldValues = fieldNames.map(f => dotNotationGet(configAfterAuto, f));
+  const configs = componentPaths.map(c => dotNotationGet(configAfterAuto, c));
+  const externalValues = isExternalField ? configs.map(c => externalData[getExternalReferenceLocationKey(focussedField.length === 0 ? "$" : c._id, schemaProp.prop, isTrulyResponsiveValue(input.value) ? responsiveValueFindDeviceWithDefinedValue(input.value, editorContext.breakpointIndex, editorContext.devices)?.id : undefined)]) : undefined;
+  const currentBreakpointFieldValues = fieldValues.map(v => responsiveValueForceGet(v, editorContext.breakpointIndex));
+  const isLoadingExternalValue = isExternalField && externalValues?.length === 0 && currentBreakpointFieldValues.every(v => !isEmptyExternalReference(v) && !isIdReferenceToDocumentExternalValue(v.id));
+  const getSelectedValue = () => {
+    if (isMixedFieldValue(input.value)) {
+      return MIXED_VALUE;
+    }
+    const isResponsive = input.value?.$res;
+    if (!isResponsive && input.value.tokenId) {
+      return input.value.tokenId;
+    }
+    if (isResponsive) {
+      const hasBreakpointIndexValue = input.value[editorContext.breakpointIndex];
+      const hasBreakpointIndexValueTokenId = input.value[editorContext.breakpointIndex]?.tokenId;
+      if (!hasBreakpointIndexValue || hasBreakpointIndexValue && hasBreakpointIndexValueTokenId) {
+        return hasBreakpointIndexValueTokenId;
+      }
+    }
+    return CUSTOM_OPTION_VALUE;
+  };
+  const isCustomField = getSelectedValue() === CUSTOM_OPTION_VALUE && allowCustom;
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(FieldWrapper$1, {
+    margin: false,
+    layout: resolvedLayout,
+    isCustom: isCustomField
+  }, !isLabelHidden && /*#__PURE__*/React__default.createElement(FieldLabelWrapper, {
+    isFullWidth: resolvedLayout === "column",
+    isCustom: isCustomField
+  }, renderLabel?.({
+    label
+  }) ?? /*#__PURE__*/React__default.createElement(FieldLabel$1, _extends({
+    htmlFor: toArray(field.name).join(","),
+    isError: externalValues !== undefined && "error" in externalValues
+  }, triggerProps), /*#__PURE__*/React__default.createElement("span", {
+    style: {
+      lineHeight: "100%",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, label), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, field.description ?? field.label))), isLoadingExternalValue && /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      marginLeft: "6px"
+    }
+  }, /*#__PURE__*/React__default.createElement(Loader, null)), resolvedLayout === "column" && (isExternalSchemaProp(schemaProp, editorContext.types) || schemaProp.type === "text") && !isMixedValue && /*#__PURE__*/React__default.createElement(WidgetsSelect, {
+    schemaProp: schemaProp,
+    value: currentBreakpointFieldValues[0],
+    onChange: widgetId => {
+      if (widgetId === "@easyblocks/local-text") {
+        const newFieldValue = {
+          id: `local.${uniqueId()}`,
+          value: {},
+          widgetId
+        };
+        input.onChange(newFieldValue);
+        return;
+      }
+      if (isTrulyResponsiveValue(input.value)) {
+        const newFieldValue = {
+          ...input.value,
+          [editorContext.breakpointIndex]: {
+            id: null,
+            widgetId
+          }
+        };
+        input.onChange(newFieldValue);
+      } else {
+        const newFieldValue = {
+          id: null,
+          widgetId
+        };
+        input.onChange(newFieldValue);
+      }
+    },
+    isRootComponent: fieldNames.some(f => f.split(".").length === 1)
+  })), /*#__PURE__*/React__default.createElement(FieldInputWrapper, {
+    isCustom: isCustomField,
+    layout: resolvedLayout
+  }, content), !isMixedFieldValue && isExternalField && externalValues.length > 0 && "error" in externalValues[0] && /*#__PURE__*/React__default.createElement(FieldError, null, externalValues[0].error.message)));
+}
+function WidgetsSelect({
+  value,
+  onChange,
+  schemaProp,
+  isRootComponent
+}) {
+  const editorContext = useEditorContext();
+  const [selectedWidgetId, setSelectedWidgetId] = useState(value.widgetId);
+  const widgets = editorContext.types[schemaProp.type].widgets;
+  const availableWidgets = isRootComponent ? widgets.filter(w => {
+    return w.id !== "@easyblocks/document-data";
+  }) : [...widgets];
+  if (schemaProp.type === "text") {
+    availableWidgets.unshift({
+      id: "@easyblocks/local-text",
+      label: "Local text",
+      component: () => {
+        return null;
+      }
+    });
+  }
+  if (availableWidgets.length <= 1) {
+    return null;
+  }
+  return /*#__PURE__*/React__default.createElement(FieldLabelIconWrapper, null, /*#__PURE__*/React__default.createElement(Select, {
+    value: selectedWidgetId,
+    onChange: widgetId => {
+      setSelectedWidgetId(widgetId);
+      onChange(widgetId);
+    }
+  }, availableWidgets.map(widget => {
+    return /*#__PURE__*/React__default.createElement(SelectItem, {
+      value: widget.id,
+      key: widget.id
+    }, widget.label ?? widget.id);
+  })));
+}
+function isResponsiveField(field) {
+  return typeof field.component === "string" && field.component === "responsive2";
+}
+function isMixedValueSupportedByComponent(component) {
+  if (typeof component === "string") {
+    return COMPONENTS_SUPPORTING_MIXED_VALUES.includes(component);
+  }
+  return false;
+}
+const TextButton = styled(Typography).withConfig({
+  displayName: "wrapFieldWithMeta__TextButton",
+  componentId: "sc-1asy4oy-0"
+})(["padding:0;margin:0;background:transparent;border:0;font-weight:500;&:hover{color:black;cursor:pointer;text-decoration:underline;}"]);
+function wrapFieldsWithMeta(Field, extraProps) {
+  return props => {
+    return /*#__PURE__*/React__default.createElement(FieldMetaWrapper, _extends({}, props, extraProps), /*#__PURE__*/React__default.createElement(Field, props));
+  };
+}
+const FieldWrapper$1 = styled.div.withConfig({
+  displayName: "wrapFieldWithMeta__FieldWrapper",
+  componentId: "sc-1asy4oy-1"
+})(["display:flex;flex-direction:", ";gap:", ";justify-content:space-between;align-items:flex-start;", " position:relative;padding:4px 16px;"], ({
+  layout,
+  isCustom
+}) => isCustom ? "column" : layout, ({
+  layout
+}) => layout === "row" ? "10px" : "4px", ({
+  layout
+}) => layout === "column" && css`
+      flex-grow: 1;
+    `);
+const FieldLabelWrapper = styled.div.withConfig({
+  displayName: "wrapFieldWithMeta__FieldLabelWrapper",
+  componentId: "sc-1asy4oy-2"
+})(["all:unset;", ",position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], ({
+  isCustom
+}) => ({
+  position: isCustom ? "absolute" : "relative"
+}), ({
+  isFullWidth
+}) => isFullWidth && {
+  width: "100%"
+});
+const FieldLabel$1 = styled.label.withConfig({
+  displayName: "wrapFieldWithMeta__FieldLabel",
+  componentId: "sc-1asy4oy-3"
+})(["all:unset;", ";color:", ";text-overflow:ellipsis;overflow:hidden;cursor:default;"], Fonts.body, ({
+  isError
+}) => isError ? "red" : "#000");
+const FieldLabelIconWrapper = styled.span.withConfig({
+  displayName: "wrapFieldWithMeta__FieldLabelIconWrapper",
+  componentId: "sc-1asy4oy-4"
+})(["display:flex;font-size:14px;line-height:1;margin-left:auto;padding-left:8px;svg{width:14px;height:14px;flex-shrink:0;}"]);
+const FieldError = styled.span.withConfig({
+  displayName: "wrapFieldWithMeta__FieldError",
+  componentId: "sc-1asy4oy-5"
+})(["display:block;color:red;font-size:var(--tina-font-size-1);margin-top:8px;font-weight:var(--tina-font-weight-regular);"]);
+const FieldInputWrapper = styled.div.withConfig({
+  displayName: "wrapFieldWithMeta__FieldInputWrapper",
+  componentId: "sc-1asy4oy-6"
+})(["display:flex;justify-content:flex-end;align-items:center;", ";min-height:28px;"], ({
+  layout,
+  isCustom
+}) => layout === "row" && !isCustom ? css`
+          flex-grow: 1;
+        ` : css`
+          width: 100%;
+        `);
+
+const parse$1 = value => value && +value;
+
+const NumberField = wrapFieldsWithMeta(({
+  input,
+  field
+}) => {
+  return /*#__PURE__*/React__default.createElement(NumberInput, _extends({}, input, {
+    step: field.step,
+    min: field.min,
+    max: field.max
+  }));
+});
+const NumberFieldPlugin = {
+  name: "number",
+  Component: NumberField,
+  parse: parse$1
+};
+
+const parse = value => value || "";
+
+const SelectField = wrapFieldsWithMeta(SelectFieldComponent);
+const SelectFieldPlugin = {
+  name: "select",
+  type: "select",
+  Component: SelectField,
+  parse
+};
+
+const RadioGroupField = wrapFieldsWithMeta(RadioGroup);
+const RadioGroupFieldPlugin = {
+  name: "radio-group",
+  Component: RadioGroupField
+};
+
+function TextField({
+  input,
+  field,
+  noWrap
+}) {
+  const editorContext = useEditorContext();
+  const {
+    value,
+    onChange,
+    ...restInputProperties
+  } = input;
+  const inputProps = useTextValue(value, onChange, editorContext.contextParams.locale, editorContext.locales, field.placeholder, field.normalize);
+  const isTextSchemaProp = field.schemaProp.type === "text";
+  return /*#__PURE__*/React__default.createElement(FieldMetaWrapper, {
+    input: input,
+    field: field,
+    layout: isTextSchemaProp ? "column" : "row",
+    noWrap: noWrap
+  }, /*#__PURE__*/React__default.createElement(Input, _extends({}, restInputProperties, inputProps, {
+    controlSize: "full-width",
+    align: !isTextSchemaProp ? "right" : "left",
+    withBorder: isTextSchemaProp
+  })));
+}
+const TextFieldPlugin = {
+  name: "text",
+  Component: TextField,
+  parse
+};
+
+const ToggleField = wrapFieldsWithMeta(Toggle);
+const ToggleFieldPlugin = {
+  name: "toggle",
+  type: "checkbox",
+  Component: ToggleField
+};
+
+const useTokenTypes = () => {
+  const editorContext = useEditorContext();
+  const tokenTypes = Object.fromEntries(Object.entries(editorContext.types).filter(typeDefinitionEntry => {
+    return typeDefinitionEntry[1].type === "token";
+  }));
+  return tokenTypes;
+};
+
+function getFonts() {
+  const selectedFamilies = ["Roboto, sans-serif", "Open Sans, sans-serif", "Lato, sans-serif", "Montserrat, sans-serif", "Poppins, sans-serif", "Inter, sans-serif", "Oswald, sans-serif", "Raleway, sans-serif", "Noto Sans, sans-serif", "Roboto Condensed, sans-serif", "Nunito, sans-serif", "Work Sans, sans-serif", "Rubik, sans-serif", "Mukta, sans-serif", "Ubuntu, sans-serif", "Quicksand, sans-serif", "Hind, sans-serif", "Fira Sans, sans-serif", "Barlow, sans-serif", "Cabin, sans-serif", "Prompt, sans-serif", "Heebo, sans-serif", "Source Sans 3, sans-serif", "Titillium Web, sans-serif", "Muli, sans-serif", "Manrope, sans-serif", "Josefin Sans, sans-serif", "Karla, sans-serif", "DM Sans, sans-serif", "PT Sans, sans-serif", "Tajawal, sans-serif", "Public Sans, sans-serif", "Catamaran, sans-serif", "Urbanist, sans-serif", "Outfit, sans-serif", "Lexend, sans-serif", "Signika, sans-serif", "Asap, sans-serif", "Sarabun, sans-serif", "Red Hat Display, sans-serif", "Exo 2, sans-serif", "Sen, sans-serif", "Epilogue, sans-serif", "Jost, sans-serif", "IBM Plex Sans, sans-serif", "Varela Round, sans-serif", "Mulish, sans-serif", "Spartan, sans-serif", "Krub, sans-serif", "Questrial, sans-serif", "Barlow Condensed, sans-serif", "Overpass, sans-serif", "Alata, sans-serif", "Kanit, sans-serif", "Noto Serif, serif", "Merriweather, serif", "Playfair Display, serif", "Lora, serif", "Cormorant Garamond, serif", "EB Garamond, serif", "PT Serif, serif", "Libre Baskerville, serif", "DM Serif Display, serif", "Crimson Text, serif", "Bitter, serif", "Spectral, serif", "Cormorant, serif", "Zilla Slab, serif", "Nanum Myeongjo, serif", "Tinos, serif", "Cardo, serif", "Domine, serif", "Arvo, serif", "Vollkorn, serif", "Bree Serif, serif", "Alegreya, serif", "Noticia Text, serif", "Libre Caslon Text, serif", "Faustina, serif", "Mate, serif", "Lusitana, serif", "Arapey, serif", "Fira Sans Condensed, sans-serif", "Space Grotesk, sans-serif", "Sofia Sans, sans-serif", "Niramit, sans-serif", "Be Vietnam Pro, sans-serif", "Eczar, serif", "Quattrocento, serif", "Rokkitt, serif", "Cormorant Infant, serif", "Slabo 27px, serif", "Ultra, serif", "Rozha One, serif", "Old Standard TT, serif", "Baskervville, serif", "Play, sans-serif", "Mada, sans-serif", "Rajdhani, sans-serif", "Cabinet Grotesk, sans-serif", "Archivo, sans-serif", "Anton, display", "Bebas Neue, display", "Abril Fatface, display", "Alfa Slab One, display", "Righteous, display", "Lobster, display", "Pacifico, handwriting", "Caveat, handwriting", "Dancing Script, handwriting", "Great Vibes, handwriting", "Satisfy, handwriting", "Shadows Into Light, handwriting", "Cookie, handwriting", "Gloria Hallelujah, handwriting", "Indie Flower, handwriting", "Courgette, handwriting", "Amatic SC, display", "Fredoka, sans-serif", "Baloo 2, display", "Chewy, display", "Luckiest Guy, display", "Permanent Marker, handwriting", "Architects Daughter, handwriting", "Rock Salt, handwriting", "Handlee, handwriting", "Kaushan Script, handwriting", "Patrick Hand, handwriting", "Carter One, display", "Sigmar, display", "Rye, display", "Black Ops One, display", "Bungee, display", "Press Start 2P, monospace", "Space Mono, monospace", "Fira Code, monospace", "Roboto Mono, monospace", "JetBrains Mono, monospace", "Inconsolata, monospace", "Share Tech Mono, monospace", "Major Mono Display, monospace", "Source Code Pro, monospace", "Audiowide, display", "Syncopate, display", "Unica One, display", "Orbitron, display", "Chakra Petch, sans-serif", "Expletus Sans, display", "Staatliches, display", "Poiret One, display", "Aldrich, sans-serif", "Gruppo, display", "Viga, sans-serif", "Suez One, serif", "Frank Ruhl Libre, serif", "Cambo, serif", "Marcellus, serif", "Cinzel, serif", "Judson, serif", "Gelasio, serif", "Abhaya Libre, serif", "Cormorant SC, serif", "Crimson Pro, serif", "Noto Serif Display, serif", "Sanchez, serif", "DM Serif Text, serif", "Fjord One, serif", "Suranna, serif", "Kreon, serif", "Cormorant Upright, serif", "Gloock, serif", "Julius Sans One, sans-serif", "Assistant, sans-serif", "Encode Sans, sans-serif", "Nanum Gothic, sans-serif", "Maven Pro, sans-serif", "Overpass Mono, monospace", "Albert Sans, sans-serif", "Palanquin, sans-serif", "Chivo, sans-serif", "Arimo, sans-serif", "Exo, sans-serif", "Molengo, sans-serif", "Abel, sans-serif", "Teko, sans-serif", "Saira, sans-serif", "Jura, sans-serif", "Kumbh Sans, sans-serif", "Hepta Slab, serif", "Azeret Mono, monospace", "League Spartan, sans-serif", "Rufina, serif", "Crete Round, serif", "Amiri, serif", "Spectral SC, serif", "Petrona, serif", "Neuton, serif", "Coustard, serif", "Vidaloka, serif", "Bellefair, serif", "Antic Slab, serif", "Copse, serif", "DM Mono, monospace", "Anonymous Pro, monospace", "Oxygen Mono, monospace", "Courier Prime, monospace", "IBM Plex Mono, monospace", "Zilla Slab Highlight, display", "Shrikhand, display", "Bungee Shade, display", "Fugaz One, display", "Monoton, display", "Rammetto One, display", "Cinzel Decorative, display", "Fascinate Inline, display", "Racing Sans One, display", "Lilita One, display", "Potta One, display", "Tourney, display", "Cherry Swash, display", "Creepster, display", "Butcherman, display", "Ewert, display", "Bowlby One SC, display", "Galindo, display", "Knewave, display", "Fredoka One, display", "Ranchers, display", "Codystar, display", "VT323, monospace", "Cutive Mono, monospace", "IBM Plex Serif, serif", "Philosopher, sans-serif"];
+  return selectedFamilies.sort().map(font => {
+    return {
+      id: font,
+      value: font,
+      label: font.split(",")[0]
+    };
+  });
+}
+
 const FontCustomFieldInput = ({
   inputType = "text",
   options = [],
@@ -734,10 +1055,14 @@ const FontCustomFieldInput = ({
   }
 };
 
-const FieldLabel$1 = styled$1.label.withConfig({
+const FieldLabel = styled$1.label.withConfig({
   displayName: "FontCustomFields__FieldLabel",
   componentId: "sc-opt9vi-0"
 })(["all:unset;", ";color:#000;text-overflow:ellipsis;overflow:hidden;cursor:default;"], Fonts.body);
+const FontCustomFieldsStyle = styled$1.div.withConfig({
+  displayName: "FontCustomFields__FontCustomFieldsStyle",
+  componentId: "sc-opt9vi-1"
+})(["display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px;"]);
 const FontCustomField = ({
   customField,
   onChange
@@ -755,7 +1080,7 @@ const FontCustomField = ({
       justifyContent: "space-between",
       alignItems: "center"
     }
-  }, /*#__PURE__*/React__default.createElement(FieldLabel$1, triggerProps, /*#__PURE__*/React__default.createElement("span", {
+  }, /*#__PURE__*/React__default.createElement(FieldLabel, triggerProps, /*#__PURE__*/React__default.createElement("span", {
     style: {
       lineHeight: "100%",
       overflow: "hidden",
@@ -769,12 +1094,14 @@ const FontCustomField = ({
   }));
 };
 const FontCustomFields = ({
-  input
+  input,
+  field
 }) => {
   const {
     t
   } = useTranslation();
   const editorContext = useEditorContext();
+  const normalizeCustomValue = field.normalizeCustomValue || (x => x);
   const customFields = useMemo(() => [{
     key: "fontFamily",
     label: t("definition.schema.label.fontFamily"),
@@ -895,20 +1222,13 @@ const FontCustomFields = ({
       [key]: type === "number" ? Number(value) : value.toString()
     };
     setInputValue(newInputValue);
-  };
-  useEffect(() => {
+    console.log(field);
     input.onChange({
-      value: inputValue
+      value: normalizeCustomValue(newInputValue),
+      widgetId: undefined
     });
-  }, [inputValue]);
-  return /*#__PURE__*/React__default.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 10,
-      width: "100%"
-    }
-  }, customFields.map(customField => {
+  };
+  return /*#__PURE__*/React__default.createElement(FontCustomFieldsStyle, null, customFields.map(customField => {
     const customFieldValue = inputValue[customField.key];
     return /*#__PURE__*/React__default.createElement(FontCustomField, {
       key: customField.key,
@@ -927,7 +1247,7 @@ const CustomField = ({
 }) => {
   const tokenTypes = useTokenTypes();
   const tokenTypeDefinition = tokenTypes[field.schemaProp.type];
-  switch (tokenTypeDefinition.token) {
+  switch (tokenTypeDefinition?.token) {
     case "fonts":
       {
         return /*#__PURE__*/React__default.createElement(FontCustomFields, {
@@ -940,308 +1260,6 @@ const CustomField = ({
         return null;
       }
   }
-};
-
-// Wraps the Field component in labels describing the field's meta state
-// Add any other fields that the Field component should expect onto the ExtraFieldProps generic type
-
-function FieldMetaWrapper({
-  children,
-  field,
-  input,
-  noWrap,
-  layout = "row",
-  renderLabel,
-  isLabelHidden
-}) {
-  const editorContext = useEditorContext();
-  const configAfterAuto = useConfigAfterAuto();
-  const externalData = useEditorExternalData();
-  const {
-    isOpen,
-    tooltipProps,
-    triggerProps,
-    arrowProps
-  } = useTooltip();
-  const {
-    actions: {
-      runChange
-    },
-    form,
-    focussedField
-  } = editorContext;
-  const isMixedValueSupported = isMixedValueSupportedByComponent(isResponsiveField(field) ? field.subComponent : field.component);
-  const isMixedValue = isMixedFieldValue(input.value);
-  const fieldNames = toArray(field.name);
-  const allowCustom = field.allowCustom ?? false;
-  function handleButtonMixedClick() {
-    runChange(() => {
-      fieldNames.forEach((fieldName, _, names) => {
-        const firstFieldValue = dotNotationGet(form.values, names[0]);
-        form.change(fieldName, firstFieldValue);
-      });
-    });
-  }
-  const resolvedLayout = field.layout ?? layout;
-  const content = /*#__PURE__*/React__default.createElement("div", {
-    style: {
-      width: "100%",
-      display: "flex",
-      alignItems: resolvedLayout === "row" ? "flex-end" : "flex-start",
-      flexDirection: "column"
-    }
-  }, !isMixedValue || isMixedValue && isMixedValueSupported ? children : /*#__PURE__*/React__default.createElement(TextButton, {
-    component: "button",
-    variant: "label",
-    color: "black40",
-    onClick: handleButtonMixedClick
-  }, "Mixed"));
-  if (noWrap) {
-    return content;
-  }
-  const label = field.label || input.name;
-  const {
-    schemaProp
-  } = field;
-  const isExternalField = isExternalSchemaProp(schemaProp, editorContext.types) || schemaProp.type === "text" && !input.value.id?.startsWith("local.");
-  const componentPaths = fieldNames.map(fieldName => fieldName[0].split(".").slice(0, -1).join("."));
-  const fieldValues = fieldNames.map(f => dotNotationGet(configAfterAuto, f));
-  const configs = componentPaths.map(c => dotNotationGet(configAfterAuto, c));
-  const externalValues = isExternalField ? configs.map(c => externalData[getExternalReferenceLocationKey(focussedField.length === 0 ? "$" : c._id, schemaProp.prop, isTrulyResponsiveValue(input.value) ? responsiveValueFindDeviceWithDefinedValue(input.value, editorContext.breakpointIndex, editorContext.devices)?.id : undefined)]) : undefined;
-  const currentBreakpointFieldValues = fieldValues.map(v => responsiveValueForceGet(v, editorContext.breakpointIndex));
-  const isLoadingExternalValue = isExternalField && externalValues?.length === 0 && currentBreakpointFieldValues.every(v => !isEmptyExternalReference(v) && !isIdReferenceToDocumentExternalValue(v.id));
-  const selectValue = isMixedFieldValue(input.value) ? MIXED_VALUE : input.value.tokenId ?? input.value[editorContext.breakpointIndex]?.tokenId ?? CUSTOM_OPTION_VALUE;
-  const isCustomField = selectValue === CUSTOM_OPTION_VALUE && allowCustom;
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(FieldWrapper$1, {
-    margin: false,
-    layout: resolvedLayout
-  }, !isLabelHidden && /*#__PURE__*/React__default.createElement(FieldLabelWrapper, {
-    isFullWidth: resolvedLayout === "column"
-  }, renderLabel?.({
-    label
-  }) ?? /*#__PURE__*/React__default.createElement(FieldLabel, _extends({
-    htmlFor: toArray(field.name).join(","),
-    isError: externalValues !== undefined && "error" in externalValues
-  }, triggerProps), /*#__PURE__*/React__default.createElement("span", {
-    style: {
-      lineHeight: "100%",
-      overflow: "hidden",
-      textOverflow: "ellipsis"
-    }
-  }, label), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, field.description ?? field.label))), isLoadingExternalValue && /*#__PURE__*/React__default.createElement("div", {
-    style: {
-      marginLeft: "6px"
-    }
-  }, /*#__PURE__*/React__default.createElement(Loader, null)), resolvedLayout === "column" && (isExternalSchemaProp(schemaProp, editorContext.types) || schemaProp.type === "text") && !isMixedValue && /*#__PURE__*/React__default.createElement(WidgetsSelect, {
-    schemaProp: schemaProp,
-    value: currentBreakpointFieldValues[0],
-    onChange: widgetId => {
-      if (widgetId === "@easyblocks/local-text") {
-        const newFieldValue = {
-          id: `local.${uniqueId()}`,
-          value: {},
-          widgetId
-        };
-        input.onChange(newFieldValue);
-        return;
-      }
-      if (isTrulyResponsiveValue(input.value)) {
-        const newFieldValue = {
-          ...input.value,
-          [editorContext.breakpointIndex]: {
-            id: null,
-            widgetId
-          }
-        };
-        input.onChange(newFieldValue);
-      } else {
-        const newFieldValue = {
-          id: null,
-          widgetId
-        };
-        input.onChange(newFieldValue);
-      }
-    },
-    isRootComponent: fieldNames.some(f => f.split(".").length === 1)
-  })), /*#__PURE__*/React__default.createElement(FieldInputWrapper, {
-    layout: resolvedLayout
-  }, content), !isMixedFieldValue && isExternalField && externalValues.length > 0 && "error" in externalValues[0] && /*#__PURE__*/React__default.createElement(FieldError, null, externalValues[0].error.message)), /*#__PURE__*/React__default.createElement(FieldWrapper$1, {
-    margin: false,
-    layout: resolvedLayout
-  }, isCustomField ? /*#__PURE__*/React__default.createElement(CustomField, {
-    input: input,
-    field: field
-  }) : null));
-}
-function WidgetsSelect({
-  value,
-  onChange,
-  schemaProp,
-  isRootComponent
-}) {
-  const editorContext = useEditorContext();
-  const [selectedWidgetId, setSelectedWidgetId] = useState(value.widgetId);
-  const widgets = editorContext.types[schemaProp.type].widgets;
-  const availableWidgets = isRootComponent ? widgets.filter(w => {
-    return w.id !== "@easyblocks/document-data";
-  }) : [...widgets];
-  if (schemaProp.type === "text") {
-    availableWidgets.unshift({
-      id: "@easyblocks/local-text",
-      label: "Local text",
-      component: () => {
-        return null;
-      }
-    });
-  }
-  if (availableWidgets.length <= 1) {
-    return null;
-  }
-  return /*#__PURE__*/React__default.createElement(FieldLabelIconWrapper, null, /*#__PURE__*/React__default.createElement(Select, {
-    value: selectedWidgetId,
-    onChange: widgetId => {
-      setSelectedWidgetId(widgetId);
-      onChange(widgetId);
-    }
-  }, availableWidgets.map(widget => {
-    return /*#__PURE__*/React__default.createElement(SelectItem, {
-      value: widget.id,
-      key: widget.id
-    }, widget.label ?? widget.id);
-  })));
-}
-function isResponsiveField(field) {
-  return typeof field.component === "string" && field.component === "responsive2";
-}
-function isMixedValueSupportedByComponent(component) {
-  if (typeof component === "string") {
-    return COMPONENTS_SUPPORTING_MIXED_VALUES.includes(component);
-  }
-  return false;
-}
-const TextButton = styled(Typography).withConfig({
-  displayName: "wrapFieldWithMeta__TextButton",
-  componentId: "sc-1asy4oy-0"
-})(["padding:0;margin:0;background:transparent;border:0;font-weight:500;&:hover{color:black;cursor:pointer;text-decoration:underline;}"]);
-function wrapFieldsWithMeta(Field, extraProps) {
-  return props => {
-    return /*#__PURE__*/React__default.createElement(FieldMetaWrapper, _extends({}, props, extraProps), /*#__PURE__*/React__default.createElement(Field, props));
-  };
-}
-const FieldWrapper$1 = styled.div.withConfig({
-  displayName: "wrapFieldWithMeta__FieldWrapper",
-  componentId: "sc-1asy4oy-1"
-})(["display:flex;flex-direction:", ";gap:", ";justify-content:space-between;align-items:flex-start;", " position:relative;padding:4px 16px;"], ({
-  layout
-}) => layout, ({
-  layout
-}) => layout === "row" ? "10px" : "4px", ({
-  layout
-}) => layout === "column" && css`
-      flex-grow: 1;
-    `);
-const FieldLabelWrapper = styled.div.withConfig({
-  displayName: "wrapFieldWithMeta__FieldLabelWrapper",
-  componentId: "sc-1asy4oy-2"
-})(["all:unset;position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], ({
-  isFullWidth
-}) => isFullWidth && {
-  width: "100%"
-});
-const FieldLabel = styled.label.withConfig({
-  displayName: "wrapFieldWithMeta__FieldLabel",
-  componentId: "sc-1asy4oy-3"
-})(["all:unset;", ";color:", ";text-overflow:ellipsis;overflow:hidden;cursor:default;"], Fonts.body, ({
-  isError
-}) => isError ? "red" : "#000");
-const FieldLabelIconWrapper = styled.span.withConfig({
-  displayName: "wrapFieldWithMeta__FieldLabelIconWrapper",
-  componentId: "sc-1asy4oy-4"
-})(["display:flex;font-size:14px;line-height:1;margin-left:auto;padding-left:8px;svg{width:14px;height:14px;flex-shrink:0;}"]);
-const FieldError = styled.span.withConfig({
-  displayName: "wrapFieldWithMeta__FieldError",
-  componentId: "sc-1asy4oy-5"
-})(["display:block;color:red;font-size:var(--tina-font-size-1);margin-top:8px;font-weight:var(--tina-font-weight-regular);"]);
-const FieldInputWrapper = styled.div.withConfig({
-  displayName: "wrapFieldWithMeta__FieldInputWrapper",
-  componentId: "sc-1asy4oy-6"
-})(["display:flex;justify-content:flex-end;align-items:center;", ";min-height:28px;"], ({
-  layout
-}) => layout === "row" ? css`
-          flex-grow: 1;
-        ` : css`
-          width: 100%;
-        `);
-
-const parse$1 = value => value && +value;
-
-const NumberField = wrapFieldsWithMeta(({
-  input,
-  field
-}) => {
-  return /*#__PURE__*/React__default.createElement(NumberInput, _extends({}, input, {
-    step: field.step,
-    min: field.min,
-    max: field.max
-  }));
-});
-const NumberFieldPlugin = {
-  name: "number",
-  Component: NumberField,
-  parse: parse$1
-};
-
-const parse = value => value || "";
-
-const SelectField = wrapFieldsWithMeta(SelectFieldComponent);
-const SelectFieldPlugin = {
-  name: "select",
-  type: "select",
-  Component: SelectField,
-  parse
-};
-
-const RadioGroupField = wrapFieldsWithMeta(RadioGroup);
-const RadioGroupFieldPlugin = {
-  name: "radio-group",
-  Component: RadioGroupField
-};
-
-function TextField({
-  input,
-  field,
-  noWrap
-}) {
-  const editorContext = useEditorContext();
-  const {
-    value,
-    onChange,
-    ...restInputProperties
-  } = input;
-  const inputProps = useTextValue(value, onChange, editorContext.contextParams.locale, editorContext.locales, field.placeholder, field.normalize);
-  const isTextSchemaProp = field.schemaProp.type === "text";
-  return /*#__PURE__*/React__default.createElement(FieldMetaWrapper, {
-    input: input,
-    field: field,
-    layout: isTextSchemaProp ? "column" : "row",
-    noWrap: noWrap
-  }, /*#__PURE__*/React__default.createElement(Input, _extends({}, restInputProperties, inputProps, {
-    controlSize: "full-width",
-    align: !isTextSchemaProp ? "right" : "left",
-    withBorder: isTextSchemaProp
-  })));
-}
-const TextFieldPlugin = {
-  name: "text",
-  Component: TextField,
-  parse
-};
-
-const ToggleField = wrapFieldsWithMeta(Toggle);
-const ToggleFieldPlugin = {
-  name: "toggle",
-  type: "checkbox",
-  Component: ToggleField
 };
 
 function extraValuesIncludes(extraValues, value) {
@@ -1352,7 +1370,11 @@ function TokenFieldComponent({
     }
   };
   const CustomInputWidgetComponent = tokenTypeDefinition?.widget?.component;
-  const customInputElement = shouldShowCustomValueInput ? /*#__PURE__*/React__default.createElement("div", null, /*#__PURE__*/React__default.createElement("div", {
+  const customInputElement = shouldShowCustomValueInput ? /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      width: "100%"
+    }
+  }, /*#__PURE__*/React__default.createElement("div", {
     style: {
       height: 4
     }
@@ -1365,7 +1387,10 @@ function TokenFieldComponent({
       });
     },
     params: "params" in field.schemaProp ? field.schemaProp.params : undefined
-  }) : tokenTypeDefinition.token === "fonts" ? null : /*#__PURE__*/React__default.createElement(Input, {
+  }) : tokenTypeDefinition.token === "fonts" ? /*#__PURE__*/React__default.createElement(CustomField, {
+    input: input,
+    field: field
+  }) : /*#__PURE__*/React__default.createElement(Input, {
     value: inputValue,
     onChange: e => {
       setInputValue(e.target.value);
@@ -1400,7 +1425,9 @@ function TokenFieldComponent({
       previewColor: selectValue === CUSTOM_OPTION_VALUE ? input.value.value : undefined
     }, "Custom")))), customInputElement);
   }
-  return /*#__PURE__*/React__default.createElement(Root, null, /*#__PURE__*/React__default.createElement(Select, {
+  return /*#__PURE__*/React__default.createElement(Root, {
+    isCustom: shouldShowCustomValueInput
+  }, /*#__PURE__*/React__default.createElement(Select, {
     value: selectValue,
     onChange: onSelectChange
   }, isMixedFieldValue(input.value) && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(SelectItem, {
@@ -1438,7 +1465,11 @@ function isValidFontTokenValue(value) {
 const Root = styled.div.withConfig({
   displayName: "TokenFieldPlugin__Root",
   componentId: "sc-1hbwipe-0"
-})(["display:flex;flex-direction:column;align-items:flex-end;"]);
+})(["display:flex;flex-direction:column;align-items:flex-end;", ""], ({
+  isCustom
+}) => isCustom && {
+  width: "100%"
+});
 const TokenFieldPlugin = {
   name: "token",
   type: "token",
@@ -2048,11 +2079,14 @@ function responsiveFieldController(config) {
     return displayedValue;
   };
   const parse = (value, name) => {
+    console.log("value: ", value);
     if (value === null) {
       throw new Error("parse in ResponsiveController has null value which should be impossible (null values should disappear once other value is picked!");
     }
     const fieldValue = originalFormat(dotNotationGet(formValues, name), name);
+    console.log("fieldValue: ", fieldValue);
     const savedValue = getSavedValue(value, fieldValue, editorContext);
+    console.log("savedValue: ", savedValue);
     return originalParse(savedValue, name);
   };
   const reset = () => {
@@ -2142,6 +2176,7 @@ const ResponsiveField = props => {
     editorContext,
     valuesAfterAuto: configAfterAuto
   });
+  console.log("field: ", field, controller.field);
   const isValueDifferentFromMainBreakpoint = controller.isSet && editorContext.breakpointIndex !== editorContext.mainBreakpointIndex;
   const isFieldVisible = !controller.isResponsive || controller.isSet || editorContext.breakpointIndex === editorContext.mainBreakpointIndex;
   const uniqueFieldValues = getUniqueValues(scalarFieldValues);
@@ -2547,6 +2582,7 @@ function createFieldController({
           return;
         }
       }
+      console.log("newValue: ", newValue);
       actions.runChange(() => {
         normalizedFieldName.forEach((path, fieldIndex) => {
           const inputValue = Array.isArray(newValue) ? getValue(newValue[fieldIndex]) : getValue(newValue);
@@ -2558,9 +2594,11 @@ function createFieldController({
             }
           }
           let parsedValue = parse(inputValue, path, field);
+          console.log("parsedValue: ", parse, parsedValue);
 
           // If path has locale token [locale] (component-collection-localised) then we must first replace it with correct token
           if (hasLocaleToken(path)) {
+            console.log("hasLocaleToken");
             const currentLocaleFieldName = replaceLocaleToken(path, contextParams.locale);
             const currentLocaleValue = dotNotationGet(form.values, currentLocaleFieldName);
             parsedValue = parse(inputValue, currentLocaleFieldName, field);
@@ -2633,6 +2671,7 @@ function createFieldController({
               }
             });
           } else {
+            console.log(path, parsedValue);
             form.change(path, parsedValue);
           }
         });

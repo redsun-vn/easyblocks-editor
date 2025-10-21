@@ -39,7 +39,6 @@ import {
   MIXED_VALUE,
 } from "../components/constants";
 import { isMixedFieldValue } from "../components/isMixedFieldValue";
-import { CustomField } from "./CustomFields";
 import type { ResponsiveFieldDefinition } from "./ResponsiveField/responsiveFieldController";
 import { Tooltip, TooltipArrow, TooltipBody } from "./Tooltip";
 import { useTooltip } from "./useTooltip";
@@ -181,18 +180,48 @@ export function FieldMetaWrapper<
         !isIdReferenceToDocumentExternalValue(v.id)
     );
 
-  const selectValue = isMixedFieldValue(input.value)
-    ? MIXED_VALUE
-    : input.value.tokenId ??
-      input.value[editorContext.breakpointIndex]?.tokenId ??
-      CUSTOM_OPTION_VALUE;
-  const isCustomField = selectValue === CUSTOM_OPTION_VALUE && allowCustom;
+  const getSelectedValue = () => {
+    if (isMixedFieldValue(input.value)) {
+      return MIXED_VALUE;
+    }
+
+    const isResponsive = input.value?.$res;
+
+    if (!isResponsive && input.value.tokenId) {
+      return input.value.tokenId;
+    }
+
+    if (isResponsive) {
+      const hasBreakpointIndexValue =
+        input.value[editorContext.breakpointIndex];
+      const hasBreakpointIndexValueTokenId =
+        input.value[editorContext.breakpointIndex]?.tokenId;
+      if (
+        !hasBreakpointIndexValue ||
+        (hasBreakpointIndexValue && hasBreakpointIndexValueTokenId)
+      ) {
+        return hasBreakpointIndexValueTokenId;
+      }
+    }
+
+    return CUSTOM_OPTION_VALUE;
+  };
+
+  const isCustomField =
+    getSelectedValue() === CUSTOM_OPTION_VALUE && allowCustom;
 
   return (
     <>
-      <FieldWrapper margin={false} layout={resolvedLayout}>
+      <FieldWrapper
+        margin={false}
+        layout={resolvedLayout}
+        isCustom={isCustomField}
+      >
         {!isLabelHidden && (
-          <FieldLabelWrapper isFullWidth={resolvedLayout === "column"}>
+          <FieldLabelWrapper
+            isFullWidth={resolvedLayout === "column"}
+            isCustom={isCustomField}
+          >
             {renderLabel?.({ label }) ?? (
               <FieldLabel
                 htmlFor={toArray(field.name).join(",")}
@@ -278,7 +307,9 @@ export function FieldMetaWrapper<
           </FieldLabelWrapper>
         )}
 
-        <FieldInputWrapper layout={resolvedLayout}>{content}</FieldInputWrapper>
+        <FieldInputWrapper isCustom={isCustomField} layout={resolvedLayout}>
+          {content}
+        </FieldInputWrapper>
 
         {!isMixedFieldValue &&
           isExternalField &&
@@ -288,9 +319,9 @@ export function FieldMetaWrapper<
           )}
       </FieldWrapper>
 
-      <FieldWrapper margin={false} layout={resolvedLayout}>
+      {/* <FieldWrapper margin={false} layout={resolvedLayout}>
         {isCustomField ? <CustomField input={input} field={field} /> : null}
-      </FieldWrapper>
+      </FieldWrapper> */}
     </>
   );
 }
@@ -404,11 +435,12 @@ export function wrapFieldsWithMeta<
 interface FieldWrapperProps {
   margin: boolean;
   layout: "column" | "row";
+  isCustom: boolean;
 }
 
 const FieldWrapper = styled.div<FieldWrapperProps>`
   display: flex;
-  flex-direction: ${({ layout }) => layout};
+  flex-direction: ${({ layout, isCustom }) => (isCustom ? "column" : layout)};
   gap: ${({ layout }) => (layout === "row" ? "10px" : "4px")};
   justify-content: space-between;
   align-items: flex-start;
@@ -421,8 +453,12 @@ const FieldWrapper = styled.div<FieldWrapperProps>`
   padding: 4px 16px;
 `;
 
-const FieldLabelWrapper = styled.div<{ isFullWidth: boolean }>`
+const FieldLabelWrapper = styled.div<{
+  isFullWidth: boolean;
+  isCustom: boolean;
+}>`
   all: unset;
+  ${({ isCustom }) => ({ position: isCustom ? "absolute" : "relative" })},
   position: relative;
   display: flex;
   flex-direction: row;
@@ -469,6 +505,7 @@ const FieldError = styled.span`
 
 interface FieldInputWrapper {
   layout: "row" | "column";
+  isCustom: boolean;
 }
 
 const FieldInputWrapper = styled.div<FieldInputWrapper>`
@@ -476,8 +513,8 @@ const FieldInputWrapper = styled.div<FieldInputWrapper>`
   justify-content: flex-end;
   align-items: center;
 
-  ${({ layout }) =>
-    layout === "row"
+  ${({ layout, isCustom }) =>
+    layout === "row" && !isCustom
       ? css`
           flex-grow: 1;
         `

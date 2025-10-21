@@ -28,6 +28,6 @@ export declare const FontCustomField: ({ customField, onChange, }: {
     onChange: (key: string, value: string | number, type: string) => void;
     [key: string]: any;
 }) => React.JSX.Element;
-export declare const FontCustomFields: ({ input }: IFontCustomInputElement) => React.JSX.Element;
+export declare const FontCustomFields: ({ input, field }: IFontCustomInputElement) => React.JSX.Element;
 export {};
 //# sourceMappingURL=FontCustomFields.d.ts.map

@@ -121,6 +121,7 @@ function createFieldController({
         }
       }
 
+      console.log("newValue: ", newValue);
       actions.runChange(() => {
         normalizedFieldName.forEach((path, fieldIndex) => {
           const inputValue = Array.isArray(newValue)
@@ -149,9 +150,11 @@ function createFieldController({
           }
 
           let parsedValue = parse(inputValue, path, field);
+          console.log("parsedValue: ", parse, parsedValue);
 
           // If path has locale token [locale] (component-collection-localised) then we must first replace it with correct token
           if (hasLocaleToken(path)) {
+            console.log("hasLocaleToken");
             const currentLocaleFieldName = replaceLocaleToken(
               path,
               contextParams.locale
@@ -284,6 +287,7 @@ function createFieldController({
               }
             });
           } else {
+            console.log(path, parsedValue);
             form.change(path, parsedValue);
           }
         });
