@@ -102,7 +102,7 @@ export function EasyblocksParent(props: EasyblocksParentProps) {
             defaultLocale={props.defaultLocale}
           />
         </TooltipProvider>
-        <Toaster containerStyle={{ zIndex: 100100 }} />
+        <Toaster position="bottom-left" containerStyle={{ zIndex: 100100 }} />
       </ModalContext.Provider>
     </StyleSheetManager>
   );

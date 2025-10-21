@@ -23,6 +23,7 @@ import React, {
   Fragment,
   ReactNode,
   forwardRef,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -33,8 +34,8 @@ import { FieldMixedValue } from "../../../../types";
 import { useTokenTypes } from "../../../../utils/hooks/useTokenTypes";
 import { CUSTOM_OPTION_VALUE, MIXED_VALUE } from "../../components/constants";
 import { isMixedFieldValue } from "../../components/isMixedFieldValue";
-import { wrapFieldsWithMeta } from "../wrapFieldWithMeta";
 import { CustomField } from "../CustomFields";
+import { wrapFieldsWithMeta } from "../wrapFieldWithMeta";
 
 interface TokenField<TokenValue extends NonNullish = NonNullish> extends Field {
   tokens: { [key: string]: ThemeTokenValue<TokenValue> };
@@ -193,7 +194,6 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
         value,
         widgetId: input.value.widgetId,
       });
-      setInputValue(value);
 
       queueMicrotask(() => {
         customValueTextFieldRef.current?.focus();
@@ -248,11 +248,21 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
             });
           }}
           ref={customValueTextFieldRef}
+          style={{ width: "100%" }}
           align={"right"}
         />
       )}
     </div>
   ) : null;
+
+  useEffect(() => {
+    const value = (
+      input.value as Exclude<(typeof input)["value"], FieldMixedValue>
+    ).value;
+    if (value) {
+      setInputValue(value);
+    }
+  }, [input]);
 
   if (tokenTypeDefinition.token === "colors") {
     return (

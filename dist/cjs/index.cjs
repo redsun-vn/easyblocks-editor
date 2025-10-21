@@ -1390,7 +1390,6 @@ function TokenFieldComponent({
         value,
         widgetId: input.value.widgetId
       });
-      setInputValue(value);
       queueMicrotask(() => {
         customValueTextFieldRef.current?.focus();
       });
@@ -1441,8 +1440,17 @@ function TokenFieldComponent({
       });
     },
     ref: customValueTextFieldRef,
+    style: {
+      width: "100%"
+    },
     align: "right"
   })) : null;
+  React.useEffect(() => {
+    const value = input.value.value;
+    if (value) {
+      setInputValue(value);
+    }
+  }, [input]);
   if (tokenTypeDefinition.token === "colors") {
     return /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
       value: selectValue,
@@ -7075,6 +7083,7 @@ function EasyblocksParent(props) {
     isAdminMode: props.isAdminMode,
     defaultLocale: props.defaultLocale
   })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toaster, {
+    position: "bottom-left",
     containerStyle: {
       zIndex: 100100
     }
