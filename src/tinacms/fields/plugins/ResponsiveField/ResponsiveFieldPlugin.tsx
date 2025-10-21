@@ -61,7 +61,6 @@ const ResponsiveField = (props: ResponsivePluginProps) => {
     editorContext,
     valuesAfterAuto: configAfterAuto,
   });
-  console.log("field: ", field, controller.field);
 
   const isValueDifferentFromMainBreakpoint =
     controller.isSet &&

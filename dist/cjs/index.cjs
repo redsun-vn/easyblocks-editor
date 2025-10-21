@@ -1256,13 +1256,16 @@ const FontCustomFields = ({
       ...inputValue,
       [key]: type === "number" ? Number(value) : value.toString()
     };
-    setInputValue(newInputValue);
-    console.log(field);
     input.onChange({
       value: normalizeCustomValue(newInputValue),
       widgetId: undefined
     });
   };
+  React.useEffect(() => {
+    if (input.value?.value || input.value?.[editorContext.breakpointIndex]?.value) {
+      setInputValue(input.value?.value || input.value?.[editorContext.breakpointIndex]?.value);
+    }
+  }, [input]);
   return /*#__PURE__*/React__default["default"].createElement(FontCustomFieldsStyle, null, customFields.map(customField => {
     const customFieldValue = inputValue[customField.key];
     return /*#__PURE__*/React__default["default"].createElement(FontCustomField, {
@@ -2114,14 +2117,11 @@ function responsiveFieldController(config) {
     return displayedValue;
   };
   const parse = (value, name) => {
-    console.log("value: ", value);
     if (value === null) {
       throw new Error("parse in ResponsiveController has null value which should be impossible (null values should disappear once other value is picked!");
     }
     const fieldValue = originalFormat(dotNotationGet(formValues, name), name);
-    console.log("fieldValue: ", fieldValue);
     const savedValue = getSavedValue(value, fieldValue, editorContext);
-    console.log("savedValue: ", savedValue);
     return originalParse(savedValue, name);
   };
   const reset = () => {
@@ -2211,7 +2211,6 @@ const ResponsiveField = props => {
     editorContext,
     valuesAfterAuto: configAfterAuto
   });
-  console.log("field: ", field, controller.field);
   const isValueDifferentFromMainBreakpoint = controller.isSet && editorContext.breakpointIndex !== editorContext.mainBreakpointIndex;
   const isFieldVisible = !controller.isResponsive || controller.isSet || editorContext.breakpointIndex === editorContext.mainBreakpointIndex;
   const uniqueFieldValues = getUniqueValues(scalarFieldValues);
@@ -2617,7 +2616,6 @@ function createFieldController({
           return;
         }
       }
-      console.log("newValue: ", newValue);
       actions.runChange(() => {
         normalizedFieldName.forEach((path, fieldIndex) => {
           const inputValue = Array.isArray(newValue) ? getValue(newValue[fieldIndex]) : getValue(newValue);
@@ -2629,11 +2627,9 @@ function createFieldController({
             }
           }
           let parsedValue = parse(inputValue, path, field);
-          console.log("parsedValue: ", parse, parsedValue);
 
           // If path has locale token [locale] (component-collection-localised) then we must first replace it with correct token
           if (hasLocaleToken(path)) {
-            console.log("hasLocaleToken");
             const currentLocaleFieldName = replaceLocaleToken(path, contextParams.locale);
             const currentLocaleValue = dotNotationGet(form.values, currentLocaleFieldName);
             parsedValue = parse(inputValue, currentLocaleFieldName, field);
@@ -2706,7 +2702,6 @@ function createFieldController({
               }
             });
           } else {
-            console.log(path, parsedValue);
             form.change(path, parsedValue);
           }
         });

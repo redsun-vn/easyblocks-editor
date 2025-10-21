@@ -1,6 +1,6 @@
 import { TokenValue } from "@redsun-vn/easyblocks-core";
 import { Fonts } from "@redsun-vn/easyblocks-design-system";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../../../../../EditorContext";
 import { useTranslation } from "../../../../../useTranslation";
@@ -181,15 +181,24 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
       ...inputValue,
       [key]: type === "number" ? Number(value) : value.toString(),
     };
-    setInputValue(newInputValue);
-
-    console.log(field);
 
     input.onChange({
       value: normalizeCustomValue(newInputValue),
       widgetId: undefined,
     });
   };
+
+  useEffect(() => {
+    if (
+      input.value?.value ||
+      input.value?.[editorContext.breakpointIndex]?.value
+    ) {
+      setInputValue(
+        input.value?.value ||
+          input.value?.[editorContext.breakpointIndex]?.value
+      );
+    }
+  }, [input]);
 
   return (
     <FontCustomFieldsStyle>

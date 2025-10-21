@@ -95,7 +95,6 @@ export function responsiveFieldController(config: {
   };
 
   const parse = (value: any, name: string) => {
-    console.log("value: ", value);
     if (value === null) {
       throw new Error(
         "parse in ResponsiveController has null value which should be impossible (null values should disappear once other value is picked!"
@@ -103,9 +102,7 @@ export function responsiveFieldController(config: {
     }
 
     const fieldValue = originalFormat(dotNotationGet(formValues, name), name);
-    console.log("fieldValue: ", fieldValue);
     const savedValue = getSavedValue(value, fieldValue, editorContext);
-    console.log("savedValue: ", savedValue);
 
     return originalParse(savedValue, name);
   };
