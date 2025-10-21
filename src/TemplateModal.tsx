@@ -4,6 +4,7 @@ import {
   ButtonPrimary,
   FormElement,
   Input,
+  InputFile,
   Modal,
   useToaster,
 } from "@redsun-vn/easyblocks-design-system";
@@ -29,6 +30,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
   const editorContext = useEditorContext();
   const [isLoadingEdit, setLoadingEdit] = useState(false);
   const [isLoadingDelete, setLoadingDelete] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const toaster = useToaster();
   const { t } = useTranslation();
@@ -56,6 +58,70 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
   const canSend = label.trim() !== "";
   const ctaLabel = t("template.save.default");
 
+  const validateUploadImage = (file: File) => {
+    if (file.size > (backend.attachments?.maxSizeUpload.image ?? 0)) {
+      toaster.notify(t("error.file.max-size-upload"));
+      return false;
+    }
+
+    return true;
+  };
+
+  const onClearFile = () => {
+    const input =
+      document.querySelector<HTMLInputElement>('input[type="file"]');
+    if (input) {
+      input.value = "";
+    }
+
+    setTemplate((prev) => ({
+      ...prev,
+      thumbnail: "",
+    }));
+  };
+
+  const onUploadFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const targetFile = event.target.files?.[0];
+    const userId = backend.userId;
+
+    if (!targetFile) {
+      toaster.notify(t("error.file.notFound"));
+      return;
+    }
+
+    if (!userId) {
+      toaster.notify(t("error.userId.notFound"));
+      return;
+    }
+
+    const isValidUploadImage = validateUploadImage(targetFile);
+
+    setIsUploadingFile(true);
+
+    if (!isValidUploadImage) {
+      setIsUploadingFile(false);
+      return;
+    }
+
+    try {
+      const imageUploaded = (await backend.attachments?.create({
+        userId,
+        fileUpload: targetFile,
+      })) as any;
+      if (imageUploaded) {
+        const { url } = imageUploaded?.data ?? {};
+        setTemplate((prev) => ({
+          ...prev,
+          thumbnail: url,
+        }));
+      }
+    } catch (e) {
+      toaster.error(t("error.file.failedToUpload"));
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
   useEffect(() => {
     if (open) {
       setError(null);
@@ -71,6 +137,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
       }}
       mode={"center-small"}
       headerLine={true}
+      maxHeight="430px"
     >
       <form
         onSubmit={(e) => {
@@ -184,18 +251,14 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
           <FormElement
             name="thumbnail"
             label={t("template.save.thumbnailLink")}
+            position="start"
           >
-            <Input
-              placeholder={t("template.save.thumbnailLink")}
-              value={thumbnail}
-              onChange={(e) => {
-                setTemplate({
-                  ...template,
-                  thumbnail: e.target.value,
-                });
-              }}
-              withBorder={true}
-              autoFocus
+            <InputFile
+              src={thumbnail}
+              alt={t("template.save.thumbnailLink")}
+              onChange={onUploadFile}
+              onClearFile={onClearFile}
+              isLoading={isUploadingFile}
             />
           </FormElement>
 
@@ -223,9 +286,21 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
               flexDirection: "row",
               justifyContent: "space-between",
               marginTop: 8,
+              gap: 10,
             }}
           >
-            <div>
+            <div style={{ order: 2 }}>
+              <ButtonPrimary
+                type={"submit"}
+                disabled={!canSend}
+                isLoading={isLoadingEdit}
+                style={{ opacity: !canSend ? 0.7 : 1 }}
+              >
+                {ctaLabel}
+              </ButtonPrimary>
+            </div>
+
+            <div style={{ order: 1 }}>
               {mode === "edit" && (
                 <ButtonDanger
                   onClick={(e: MouseEvent) => {
@@ -256,15 +331,6 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                 </ButtonDanger>
               )}
             </div>
-
-            <ButtonPrimary
-              type={"submit"}
-              disabled={!canSend}
-              isLoading={isLoadingEdit}
-              style={{ opacity: !canSend ? 0.7 : 1 }}
-            >
-              {ctaLabel}
-            </ButtonPrimary>
           </div>
         </div>
       </form>

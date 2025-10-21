@@ -512,6 +512,7 @@ const FieldInputWrapper = styled.div<FieldInputWrapper>`
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  text-align: end;
 
   ${({ layout, isCustom }) =>
     layout === "row" && !isCustom

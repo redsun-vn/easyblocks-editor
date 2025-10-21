@@ -1,7 +1,7 @@
 "use client";
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, memo, useCallback } from 'react';
-import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ButtonDanger, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ButtonDanger, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, InputFile, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
@@ -916,7 +916,7 @@ const FieldError = styled.span.withConfig({
 const FieldInputWrapper = styled.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldInputWrapper",
   componentId: "sc-1asy4oy-6"
-})(["display:flex;justify-content:flex-end;align-items:center;", ";min-height:28px;"], ({
+})(["display:flex;justify-content:flex-end;align-items:center;text-align:end;", ";min-height:28px;"], ({
   layout,
   isCustom
 }) => layout === "row" && !isCustom ? css`
@@ -1374,7 +1374,8 @@ function TokenFieldComponent({
   const CustomInputWidgetComponent = tokenTypeDefinition?.widget?.component;
   const customInputElement = shouldShowCustomValueInput ? /*#__PURE__*/React__default.createElement("div", {
     style: {
-      width: "100%"
+      width: "100%",
+      textAlign: "end"
     }
   }, /*#__PURE__*/React__default.createElement("div", {
     style: {
@@ -3694,6 +3695,7 @@ const TemplateModal = props => {
   const editorContext = useEditorContext();
   const [isLoadingEdit, setLoadingEdit] = useState(false);
   const [isLoadingDelete, setLoadingDelete] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const toaster = useToaster();
   const {
     t
@@ -3720,6 +3722,60 @@ const TemplateModal = props => {
   const open = props.action !== undefined;
   const canSend = label.trim() !== "";
   const ctaLabel = t("template.save.default");
+  const validateUploadImage = file => {
+    if (file.size > (backend.attachments?.maxSizeUpload.image ?? 0)) {
+      toaster.notify(t("error.file.max-size-upload"));
+      return false;
+    }
+    return true;
+  };
+  const onClearFile = () => {
+    const input = document.querySelector('input[type="file"]');
+    if (input) {
+      input.value = "";
+    }
+    setTemplate(prev => ({
+      ...prev,
+      thumbnail: ""
+    }));
+  };
+  const onUploadFile = async event => {
+    const targetFile = event.target.files?.[0];
+    const userId = backend.userId;
+    if (!targetFile) {
+      toaster.notify(t("error.file.notFound"));
+      return;
+    }
+    if (!userId) {
+      toaster.notify(t("error.userId.notFound"));
+      return;
+    }
+    const isValidUploadImage = validateUploadImage(targetFile);
+    setIsUploadingFile(true);
+    if (!isValidUploadImage) {
+      setIsUploadingFile(false);
+      return;
+    }
+    try {
+      const imageUploaded = await backend.attachments?.create({
+        userId,
+        fileUpload: targetFile
+      });
+      if (imageUploaded) {
+        const {
+          url
+        } = imageUploaded?.data ?? {};
+        setTemplate(prev => ({
+          ...prev,
+          thumbnail: url
+        }));
+      }
+    } catch (e) {
+      toaster.error(t("error.file.failedToUpload"));
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
   useEffect(() => {
     if (open) {
       setError(null);
@@ -3732,7 +3788,8 @@ const TemplateModal = props => {
       props.onClose();
     },
     mode: "center-small",
-    headerLine: true
+    headerLine: true,
+    maxHeight: "430px"
   }, /*#__PURE__*/React__default.createElement("form", {
     onSubmit: e => {
       e.preventDefault();
@@ -3825,18 +3882,14 @@ const TemplateModal = props => {
     autoFocus: true
   })), /*#__PURE__*/React__default.createElement(FormElement, {
     name: "thumbnail",
-    label: t("template.save.thumbnailLink")
-  }, /*#__PURE__*/React__default.createElement(Input, {
-    placeholder: t("template.save.thumbnailLink"),
-    value: thumbnail,
-    onChange: e => {
-      setTemplate({
-        ...template,
-        thumbnail: e.target.value
-      });
-    },
-    withBorder: true,
-    autoFocus: true
+    label: t("template.save.thumbnailLink"),
+    position: "start"
+  }, /*#__PURE__*/React__default.createElement(InputFile, {
+    src: thumbnail,
+    alt: t("template.save.thumbnailLink"),
+    onChange: onUploadFile,
+    onClearFile: onClearFile,
+    isLoading: isUploadingFile
   })), /*#__PURE__*/React__default.createElement(FormElement, {
     name: "thumbnailLabel",
     label: t("template.save.thumbnailLabel")
@@ -3856,9 +3909,25 @@ const TemplateModal = props => {
       display: "flex",
       flexDirection: "row",
       justifyContent: "space-between",
-      marginTop: 8
+      marginTop: 8,
+      gap: 10
     }
-  }, /*#__PURE__*/React__default.createElement("div", null, mode === "edit" && /*#__PURE__*/React__default.createElement(ButtonDanger, {
+  }, /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      order: 2
+    }
+  }, /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+    type: "submit",
+    disabled: !canSend,
+    isLoading: isLoadingEdit,
+    style: {
+      opacity: !canSend ? 0.7 : 1
+    }
+  }, ctaLabel)), /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      order: 1
+    }
+  }, mode === "edit" && /*#__PURE__*/React__default.createElement(ButtonDanger, {
     onClick: e => {
       e.preventDefault();
       setLoadingDelete(true);
@@ -3878,14 +3947,7 @@ const TemplateModal = props => {
       });
     },
     isLoading: isLoadingDelete
-  }, t("template.delete.default"))), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
-    type: "submit",
-    disabled: !canSend,
-    isLoading: isLoadingEdit,
-    style: {
-      opacity: !canSend ? 0.7 : 1
-    }
-  }, ctaLabel)))));
+  }, t("template.delete.default")))))));
 };
 
 function duplicateItem(form, {

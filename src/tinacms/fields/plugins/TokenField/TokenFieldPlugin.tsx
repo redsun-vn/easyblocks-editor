@@ -217,7 +217,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
     | undefined;
 
   const customInputElement = shouldShowCustomValueInput ? (
-    <div style={{ width: "100%" }}>
+    <div style={{ width: "100%", textAlign: "end" }}>
       <div style={{ height: 4 }} />
       {CustomInputWidgetComponent ? (
         <CustomInputWidgetComponent
