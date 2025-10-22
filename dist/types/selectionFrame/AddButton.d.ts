@@ -10,5 +10,5 @@ interface AddButtonProps {
     onClick?: () => void;
 }
 declare function AddButton({ position, index, offset, onClick }: AddButtonProps): React.JSX.Element;
-export { AddButton, ICON_BUTTON_SIZE as ADD_BUTTON_SIZE };
+export { ICON_BUTTON_SIZE as ADD_BUTTON_SIZE, AddButton };
 //# sourceMappingURL=AddButton.d.ts.map

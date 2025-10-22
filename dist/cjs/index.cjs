@@ -634,7 +634,8 @@ const Tooltip = /*#__PURE__*/React.forwardRef(({
   return /*#__PURE__*/ReactDOM.createPortal(/*#__PURE__*/React__default["default"].createElement("div", _extends__default["default"]({
     style: {
       ...style,
-      zIndex: 100100
+      zIndex: 100100,
+      top: 5
     },
     ref: ref
   }, rest), children), document.body);
@@ -642,11 +643,11 @@ const Tooltip = /*#__PURE__*/React.forwardRef(({
 const TooltipBody = styled.styled.div.withConfig({
   displayName: "Tooltip__TooltipBody",
   componentId: "sc-tkogle-0"
-})(["position:relative;top:6px;display:flex;flex-direction:row;justify-content:center;align-items:center;padding:6px 4px;background:#333333;border-radius:2px;", " color:#fff;"], easyblocksDesignSystem.Fonts.body);
+})(["position:relative;top:6px;display:flex;flex-direction:row;justify-content:center;align-items:center;padding:6px 8px;background:", ";border-radius:2px;", " color:", ";"], easyblocksDesignSystem.Colors.black800, easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.white);
 const TooltipArrow = styled.styled.div.withConfig({
   displayName: "Tooltip__TooltipArrow",
   componentId: "sc-tkogle-1"
-})(["width:12px;height:6px;margin:0 auto;background:#333333;clip-path:polygon(50% 0%,0% 100%,100% 100%);"]);
+})(["width:12px;height:6px;margin:0 auto;background:", ";clip-path:polygon(50% 0%,0% 100%,100% 100%);"], easyblocksDesignSystem.Colors.black800);
 
 function useTooltip({
   isDisabled,
@@ -2973,7 +2974,7 @@ const ICON_SIZE = 18;
 const IconButton = styled.styled(Button).withConfig({
   displayName: "Button__IconButton",
   componentId: "sc-qplww2-1"
-})(["padding:0;width:", "px;height:", "px;margin:0;position:relative;transform-origin:50% 50%;transition:all 150ms ease-out;padding:0;display:flex;flex-shrink:0;justify-content:center;align-items:center;svg{width:", "px;height:", "px;transition:all 150ms ease-out;}", ";"], ICON_BUTTON_SIZE, ICON_BUTTON_SIZE, ICON_SIZE, ICON_SIZE, props => props.open && styled.css(["background-color:var(--tina-color-grey-0);border-color:var(--tina-color-grey-2);outline:none;fill:var(--tina-color-primary);svg{transform:rotate(45deg);}&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);}"]));
+})(["padding:0;width:", "px;height:", "px;margin:0;position:relative;transform-origin:50% 50%;transition:all 150ms ease-out;padding:2px;display:flex;flex-shrink:0;justify-content:center;align-items:center;svg{width:", "px;height:", "px;transition:all 150ms ease-out;}", ";"], ICON_BUTTON_SIZE, ICON_BUTTON_SIZE, ICON_SIZE, ICON_SIZE, props => props.open && styled.css(["background-color:var(--tina-color-grey-0);border-color:var(--tina-color-grey-2);outline:none;fill:var(--tina-color-primary);svg{transform:rotate(45deg);}&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);}"]));
 
 function InlineSettings({
   fields
@@ -4502,6 +4503,15 @@ function AddButton({
 }) {
   const [isOpen, setIsOpen] = React__default["default"].useState(false);
   const addBlockButtonRef = React__default["default"].useRef(null);
+  const {
+    isOpen: isOpenTooltip,
+    tooltipProps,
+    triggerProps,
+    arrowProps
+  } = useTooltip();
+  const {
+    t
+  } = useTranslation();
   const handleOpenBlockMenu = event => {
     event.stopPropagation();
     event.preventDefault();
@@ -4517,18 +4527,19 @@ function AddButton({
     document.addEventListener("mouseup", inactivateBlockMenu, false);
     return () => document.removeEventListener("mouseup", inactivateBlockMenu);
   }, []);
-  return /*#__PURE__*/React__default["default"].createElement(AddButtonWrapper, {
+  return /*#__PURE__*/React__default["default"].createElement(AddButtonWrapper, _extends__default["default"]({
     index: index,
     offset: offset,
     position: position,
     isOpen: isOpen
-  }, /*#__PURE__*/React__default["default"].createElement(AddIconButton, {
+  }, triggerProps), isOpenTooltip && /*#__PURE__*/React__default["default"].createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default["default"].createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default["default"].createElement(TooltipBody, null, t("tooltip.add.section.blocks"))), /*#__PURE__*/React__default["default"].createElement(AddIconButton, {
     ref: addBlockButtonRef,
     onClick: handleOpenBlockMenu,
     isOpen: isOpen,
     primary: true,
     small: true
   }, /*#__PURE__*/React__default["default"].createElement("svg", {
+    strokeWidth: "3",
     xmlns: "http://www.w3.org/2000/svg",
     width: "18",
     height: "18",
@@ -4551,11 +4562,13 @@ function AddButton({
 const AddIconButton = styled.styled(IconButton).withConfig({
   displayName: "AddButton__AddIconButton",
   componentId: "sc-79bcl2-0"
-})(["display:flex;align-items:center;&:focus{outline:none !important;}", ";"], props => props.isOpen && styled.css(["pointer-events:none;"]));
+})(["display:flex;align-items:center;&:focus{outline:none !important;}", ";"], props => props.isOpen && styled.css`
+      pointer-events: none;
+    `);
 const AddButtonWrapper = styled.styled.div.withConfig({
   displayName: "AddButton__AddButtonWrapper",
   componentId: "sc-79bcl2-1"
-})(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;"], ({
+})(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;&:hover{transform:scale(1.2);transition:transform 0.1s ease-in-out;}"], ({
   position
 }) => position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP, ({
   position

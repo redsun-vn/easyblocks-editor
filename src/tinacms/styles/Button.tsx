@@ -97,7 +97,7 @@ export const IconButton = styled(Button)`
   position: relative;
   transform-origin: 50% 50%;
   transition: all 150ms ease-out;
-  padding: 0;
+  padding: 2px;
   display: flex;
   flex-shrink: 0;
   justify-content: center;

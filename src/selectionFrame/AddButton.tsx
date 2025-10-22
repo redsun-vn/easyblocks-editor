@@ -1,6 +1,7 @@
 import React from "react";
-import { styled, css } from "styled-components";
-import { IconButton, ICON_BUTTON_SIZE } from "../tinacms/styles";
+import { css, styled } from "styled-components";
+import { useTooltip } from "../tinacms/fields/plugins/useTooltip";
+import { ICON_BUTTON_SIZE, IconButton } from "../tinacms/styles";
 import {
   AFTER_ADD_BUTTON_DISPLAY,
   AFTER_ADD_BUTTON_LEFT,
@@ -9,6 +10,12 @@ import {
   BEFORE_ADD_BUTTON_LEFT,
   BEFORE_ADD_BUTTON_TOP,
 } from "./cssVariables";
+import {
+  Tooltip,
+  TooltipArrow,
+  TooltipBody,
+} from "../tinacms/fields/plugins/Tooltip";
+import { useTranslation } from "../useTranslation";
 
 interface AddButtonProps {
   position: "before" | "after";
@@ -20,6 +27,13 @@ interface AddButtonProps {
 function AddButton({ position, index, offset, onClick }: AddButtonProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const addBlockButtonRef = React.useRef<HTMLButtonElement>(null);
+  const {
+    isOpen: isOpenTooltip,
+    tooltipProps,
+    triggerProps,
+    arrowProps,
+  } = useTooltip();
+  const { t } = useTranslation();
 
   const handleOpenBlockMenu = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -44,7 +58,14 @@ function AddButton({ position, index, offset, onClick }: AddButtonProps) {
       offset={offset}
       position={position}
       isOpen={isOpen}
+      {...triggerProps}
     >
+      {isOpenTooltip && (
+        <Tooltip {...tooltipProps}>
+          <TooltipArrow {...arrowProps} />
+          <TooltipBody>{t("tooltip.add.section.blocks")}</TooltipBody>
+        </Tooltip>
+      )}
       <AddIconButton
         ref={addBlockButtonRef}
         onClick={handleOpenBlockMenu}
@@ -53,6 +74,7 @@ function AddButton({ position, index, offset, onClick }: AddButtonProps) {
         small
       >
         <svg
+          strokeWidth="3"
           xmlns="http://www.w3.org/2000/svg"
           width="18"
           height="18"
@@ -67,7 +89,7 @@ function AddButton({ position, index, offset, onClick }: AddButtonProps) {
   );
 }
 
-export { AddButton, ICON_BUTTON_SIZE as ADD_BUTTON_SIZE };
+export { ICON_BUTTON_SIZE as ADD_BUTTON_SIZE, AddButton };
 
 interface AddMenuProps {
   isOpen?: boolean;
@@ -118,4 +140,9 @@ const AddButtonWrapper = styled.div<AddButtonWrapperProps>`
   );
 
   pointer-events: all;
+
+  &:hover {
+    transform: scale(1.2);
+    transition: transform 0.1s ease-in-out;
+  }
 `;
