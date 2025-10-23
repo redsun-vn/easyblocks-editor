@@ -1911,6 +1911,7 @@ function IdentityField({
       padding: "7px 6px"
     }
   }, titleContent), !isNonChangable && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    showTooltip: false,
     onClick: handleChangeComponentType
   }, titleContent), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     "aria-label": "Remove component",

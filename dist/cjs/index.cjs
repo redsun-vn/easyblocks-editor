@@ -1946,6 +1946,7 @@ function IdentityField({
       padding: "7px 6px"
     }
   }, titleContent), !isNonChangable && /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+    showTooltip: false,
     onClick: handleChangeComponentType
   }, titleContent), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
     "aria-label": "Remove component",

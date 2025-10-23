@@ -146,7 +146,7 @@ function IdentityField({ input, field }: IdentityFieldProps) {
           <div style={{ padding: "7px 6px" }}>{titleContent}</div>
         )}
         {!isNonChangable && (
-          <ButtonGhost onClick={handleChangeComponentType}>
+          <ButtonGhost showTooltip={false} onClick={handleChangeComponentType}>
             {titleContent}
           </ButtonGhost>
         )}
