@@ -5,6 +5,7 @@ export declare const EditorTopBar: React.FC<{
     saveLabel: string;
     onClose?: () => void;
     onSaveDocument?: () => void;
+    isSaving?: boolean;
     onIsEditingChange: () => void;
     viewport: string;
     onViewportChange: (viewport: string) => void;

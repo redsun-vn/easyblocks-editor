@@ -20,6 +20,7 @@ export function useDataSaver(
 ) {
   const remoteDocument = useRef<Document | null>(initialDocument);
   const toaster = useToaster();
+  const [isSaving, setIsSaving] = useState(false);
   const { t } = getTranslation(editorContext);
 
   /**
@@ -35,6 +36,10 @@ export function useDataSaver(
     // Playground mode is a special case, we don't want to save anything
     if (editorContext.readOnly) {
       return;
+    }
+
+    if (mode === "force") {
+      setIsSaving(true);
     }
 
     const localConfig = editorContext.form.values;
@@ -66,6 +71,7 @@ export function useDataSaver(
       // There must be at least one change in order to create a new document, we're not storing empty temporary documents
       if (isConfigTheSame) {
         console.debug("no change -> bye");
+        setIsSaving(false);
         return;
       }
 
@@ -84,6 +90,7 @@ export function useDataSaver(
       };
 
       await runSaveCallback();
+      setIsSaving(false);
     }
     // Document update
     else {
@@ -162,6 +169,8 @@ export function useDataSaver(
         }
       } catch (error) {
         toaster.error(t("topBar.save.error"));
+      } finally {
+        setIsSaving(false);
       }
     }
   };
@@ -191,6 +200,7 @@ export function useDataSaver(
   }, []);
 
   return {
+    isSaving,
     saveNow: async () => {
       wasSaveNowCalled.current = true;
 

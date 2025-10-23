@@ -11,6 +11,7 @@ export declare function FieldBuilder({ form, field, noWrap, isLabelHidden, }: Fi
 export interface FieldsBuilderProps {
     form: Form;
     fields: InternalField[];
+    isEmptyField?: boolean;
 }
-export declare function FieldsBuilder({ form, fields }: FieldsBuilderProps): React.JSX.Element;
+export declare function FieldsBuilder({ form, fields, isEmptyField, }: FieldsBuilderProps): React.JSX.Element;
 //# sourceMappingURL=fields-builder.d.ts.map

@@ -7,6 +7,7 @@ import { EditorContextType } from "./EditorContext";
  * Data saver will perform first save when any local change is detected.
  */
 export declare function useDataSaver(initialDocument: Document | null, editorContext: EditorContextType): {
+    isSaving: boolean;
     saveNow: () => Promise<void>;
 };
 //# sourceMappingURL=useDataSaver.d.ts.map

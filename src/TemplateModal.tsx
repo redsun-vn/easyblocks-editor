@@ -20,6 +20,7 @@ type TemplateModalProps = {
   action: OpenTemplateModalAction;
   onClose: () => void;
   backend: Backend;
+  isAdminMode?: boolean;
 };
 
 export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
@@ -89,7 +90,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
       return;
     }
 
-    if (!userId) {
+    if (props.isAdminMode && !userId) {
       toaster.notify(t("error.userId.notFound"));
       return;
     }
@@ -105,7 +106,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
 
     try {
       const imageUploaded = (await backend.attachments?.create({
-        userId,
+        userId: String(userId),
         fileUpload: targetFile,
       })) as any;
       if (imageUploaded) {

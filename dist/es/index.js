@@ -1,7 +1,7 @@
 "use client";
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, memo, useCallback } from 'react';
-import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ButtonDanger, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, InputFile, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, InputFile, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
@@ -2771,6 +2771,38 @@ function invalidateCache(changedPath, context) {
   });
 }
 
+const SelectFrameIcon = () => {
+  return /*#__PURE__*/React__default.createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: "120",
+    height: "60"
+  }, /*#__PURE__*/React__default.createElement("path", {
+    fill: "#000624",
+    fillRule: "evenodd",
+    d: "M89.5 50a2.503 2.503 0 0 1-2.5-2.5c0-1.379 1.122-2.5 2.5-2.5s2.5 1.121 2.5 2.5-1.122 2.5-2.5 2.5Zm-30.25-9.87a.501.501 0 0 0-.836.388l.23 6.482H33.95A3.486 3.486 0 0 0 31 44.051V25.949A3.486 3.486 0 0 0 33.95 23h52.1A3.486 3.486 0 0 0 89 25.949v18.102A3.486 3.486 0 0 0 86.05 47H66.798l-7.549-6.87ZM30.5 50a2.503 2.503 0 0 1-2.5-2.5c0-1.379 1.122-2.5 2.5-2.5s2.5 1.121 2.5 2.5-1.122 2.5-2.5 2.5ZM28 22.5c0-1.379 1.122-2.5 2.5-2.5s2.5 1.121 2.5 2.5-1.122 2.5-2.5 2.5a2.503 2.503 0 0 1-2.5-2.5ZM89.5 20c1.378 0 2.5 1.121 2.5 2.5S90.878 25 89.5 25a2.503 2.503 0 0 1-2.5-2.5c0-1.379 1.122-2.5 2.5-2.5Zm.5 24.051V25.949c1.692-.245 3-1.691 3-3.449 0-1.93-1.57-3.5-3.5-3.5-1.759 0-3.204 1.309-3.45 3h-52.1c-.246-1.691-1.69-3-3.45-3-1.93 0-3.5 1.57-3.5 3.5 0 1.758 1.308 3.204 3 3.449v18.102c-1.692.245-3 1.691-3 3.449 0 1.93 1.57 3.5 3.5 3.5 1.76 0 3.204-1.309 3.45-3h24.728l.364 10.209a.499.499 0 0 0 .888.297l3.446-4.264 2.531 5.468a.505.505 0 0 0 .454.29.513.513 0 0 0 .21-.046l2.22-1.027a.5.5 0 0 0 .242-.664L66.5 52.791l5.49.119c.213-.014.397-.121.474-.314a.499.499 0 0 0-.128-.556L67.897 48H86.05c.246 1.691 1.691 3 3.45 3 1.93 0 3.5-1.57 3.5-3.5 0-1.758-1.308-3.204-3-3.449Z"
+  }));
+};
+const EmptyField = () => {
+  const {
+    t
+  } = useTranslation();
+  return /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      padding: 16,
+      paddingTop: 100,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 14
+    }
+  }, /*#__PURE__*/React__default.createElement(SelectFrameIcon, null), /*#__PURE__*/React__default.createElement(Typography, {
+    style: {
+      whiteSpace: "initial",
+      textAlign: "center"
+    }
+  }, t("editor.sidebar.emptyField")));
+};
 function shouldFieldBeDisplayed(field) {
   if (field.component === null) return false;
   if (Array.isArray(field.name)) {
@@ -2832,7 +2864,6 @@ function FieldBuilder({
     });
   }
   if (typeof field.component !== "string" && field.component !== null) {
-    console.log("not a string");
     return /*#__PURE__*/React__default.createElement(field.component, {
       input: {
         value: getValue(),
@@ -2861,7 +2892,8 @@ const HorizontalLine = styled.div.withConfig({
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
 function FieldsBuilder({
   form,
-  fields
+  fields,
+  isEmptyField = false
 }) {
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
@@ -2887,7 +2919,7 @@ function FieldsBuilder({
   return /*#__PURE__*/React__default.createElement(FieldsGroup, null, identityField !== undefined && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(FieldBuilder, {
     field: identityField,
     form: form
-  }), horizontalLine), Object.keys(grouped).map(groupName => /*#__PURE__*/React__default.createElement("div", {
+  }), horizontalLine), isEmptyField ? /*#__PURE__*/React__default.createElement(EmptyField, null) : null, Object.keys(grouped).map(groupName => /*#__PURE__*/React__default.createElement("div", {
     key: groupName
   }, /*#__PURE__*/React__default.createElement(FieldsGroupLabel, null, groupName), grouped[groupName].map((field, index, fields) => /*#__PURE__*/React__default.createElement(FieldWrapper, {
     key: generateFieldKey(field, breakpointIndex),
@@ -2903,7 +2935,7 @@ function FieldsBuilder({
     field: field,
     form: form,
     isLabelHidden: field.schemaProp.isLabelHidden
-  }))), horizontalLine);
+  }))), !isEmptyField ? horizontalLine : null);
 }
 function generateFieldKey(field, breakpointIndex) {
   const key = `${toArray(field.name).join("_")}_${field.schemaProp.type}${breakpointIndex ? `_${breakpointIndex}` : ""}`;
@@ -2970,7 +3002,8 @@ function SettingsContent({
     id: "sidebar-panels-root"
   }, /*#__PURE__*/React__default.createElement(Wrapper$1, null, /*#__PURE__*/React__default.createElement(FieldsBuilder, {
     form: form,
-    fields: fields
+    fields: fields,
+    isEmptyField: !focussedField.length
   }), /*#__PURE__*/React__default.createElement(SidebarFooter, {
     paths: focussedField
   })));
@@ -3047,10 +3080,15 @@ const Image = styled.img.withConfig({
   displayName: "EditorTopBar__Image",
   componentId: "sc-726nw9-6"
 })(["width:100%;height:100%;object-fit:contain;"]);
+const VerticalLine = styled.div.withConfig({
+  displayName: "EditorTopBar__VerticalLine",
+  componentId: "sc-726nw9-7"
+})(["width:1px;height:20px;margin-right:6px;background-color:", ";"], Colors.black10);
 const debouncedSave = debounce(fn => fn(), 200);
 const EditorTopBar = ({
   onClose,
   onSaveDocument: _onSaveDocument,
+  isSaving,
   onViewportChange,
   devices,
   viewport,
@@ -3072,7 +3110,7 @@ const EditorTopBar = ({
     t
   } = useTranslation();
   const onSaveDocument = () => {
-    if (_onSaveDocument) {
+    if (_onSaveDocument && !isSaving) {
       debouncedSave(_onSaveDocument);
     }
   };
@@ -3094,17 +3132,13 @@ const EditorTopBar = ({
     onClick: () => {
       onUndo();
     }
-  }, "Undo"), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.undo")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Redo,
     hideLabel: true,
     onClick: () => {
       onRedo();
     }
-  }, "Redo"), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only"), /*#__PURE__*/React__default.createElement(ButtonDanger, {
-    className: "cursor-pointer",
-    component: "label",
-    onClick: onSaveDocument
-  }, t("topBar.save"))), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
+  }, t("editor.sidebar.redo")), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only")), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
     onDeviceChange: onViewportChange
@@ -3132,13 +3166,19 @@ const EditorTopBar = ({
   }, l.icon ? /*#__PURE__*/React__default.createElement(ImageContainer$1, null, /*#__PURE__*/React__default.createElement(Image, {
     src: l.icon,
     alt: l.name
-  })) : null, l.name)))), /*#__PURE__*/React__default.createElement("a", {
+  })) : null, l.name)))), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    hideLabel: true,
+    icon: Icons.Save,
+    onClick: onSaveDocument,
+    disabled: isSaving,
+    isLoading: isSaving
+  }, t("topBar.save")), /*#__PURE__*/React__default.createElement("a", {
     href: `/?previewId=${themeId}&shopId=${shopId}`,
     target: "_blank"
-  }, /*#__PURE__*/React__default.createElement(ButtonPrimary, {
-    component: "label",
-    className: "cursor-pointer"
-  }, t("topBar.preview"))), /*#__PURE__*/React__default.createElement(Typography, {
+  }, /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    hideLabel: true,
+    icon: Icons.Preview
+  }, t("topBar.preview"))), /*#__PURE__*/React__default.createElement(VerticalLine, null), /*#__PURE__*/React__default.createElement(Typography, {
     variant: "body",
     component: "label",
     htmlFor: "easyblocks-edit-mode-button"
@@ -3747,7 +3787,7 @@ const TemplateModal = props => {
       toaster.notify(t("error.file.notFound"));
       return;
     }
-    if (!userId) {
+    if (props.isAdminMode && !userId) {
       toaster.notify(t("error.userId.notFound"));
       return;
     }
@@ -3759,7 +3799,7 @@ const TemplateModal = props => {
     }
     try {
       const imageUploaded = await backend.attachments?.create({
-        userId,
+        userId: String(userId),
         fileUpload: targetFile
       });
       if (imageUploaded) {
@@ -5265,6 +5305,7 @@ function removeLocalizedFlag(config, context) {
 function useDataSaver(initialDocument, editorContext) {
   const remoteDocument = useRef(initialDocument);
   const toaster = useToaster();
+  const [isSaving, setIsSaving] = useState(false);
   const {
     t
   } = getTranslation(editorContext);
@@ -5281,6 +5322,9 @@ function useDataSaver(initialDocument, editorContext) {
     // Playground mode is a special case, we don't want to save anything
     if (editorContext.readOnly) {
       return;
+    }
+    if (mode === "force") {
+      setIsSaving(true);
     }
     const localConfig = editorContext.form.values;
     const localConfigSnapshot = getConfigSnapshot(localConfig);
@@ -5299,6 +5343,7 @@ function useDataSaver(initialDocument, editorContext) {
       // There must be at least one change in order to create a new document, we're not storing empty temporary documents
       if (isConfigTheSame) {
         console.debug("no change -> bye");
+        setIsSaving(false);
         return;
       }
       console.debug("change detected! -> create");
@@ -5313,6 +5358,7 @@ function useDataSaver(initialDocument, editorContext) {
         }
       };
       await runSaveCallback();
+      setIsSaving(false);
     }
     // Document update
     else {
@@ -5371,6 +5417,8 @@ function useDataSaver(initialDocument, editorContext) {
         }
       } catch (error) {
         toaster.error(t("topBar.save.error"));
+      } finally {
+        setIsSaving(false);
       }
     }
   };
@@ -5397,6 +5445,7 @@ function useDataSaver(initialDocument, editorContext) {
     };
   }, []);
   return {
+    isSaving,
     saveNow: async () => {
       wasSaveNowCalled.current = true;
 
@@ -6360,7 +6409,8 @@ const EditorContent = ({
   const [isDataSaverOverlayOpen, setDataSaverOverlayOpen] = useState(false);
   useEditorGlobalKeyboardShortcuts(editorContext);
   const {
-    saveNow
+    saveNow,
+    isSaving
   } = useDataSaver(initialDocument, editorContext);
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
   useEffect(() => {
@@ -6384,6 +6434,7 @@ const EditorContent = ({
     onUndo: undo,
     onRedo: redo,
     onSaveDocument: saveNow,
+    isSaving: isSaving,
     onClose: () => {
       setDataSaverOverlayOpen(true);
       saveNow().finally(() => {
@@ -6434,6 +6485,7 @@ const EditorContent = ({
     config: componentPickerData.config,
     pickers: props.pickers
   })), openTemplateModalAction && /*#__PURE__*/React__default.createElement(TemplateModal, {
+    isAdminMode: isAdminMode,
     action: openTemplateModalAction,
     onClose: () => {
       setOpenTemplateModalAction(undefined);

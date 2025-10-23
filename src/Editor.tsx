@@ -1115,7 +1115,7 @@ const EditorContent = ({
 
   useEditorGlobalKeyboardShortcuts(editorContext);
 
-  const { saveNow } = useDataSaver(initialDocument, editorContext);
+  const { saveNow, isSaving } = useDataSaver(initialDocument, editorContext);
 
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
 
@@ -1142,6 +1142,7 @@ const EditorContent = ({
               onUndo={undo}
               onRedo={redo}
               onSaveDocument={saveNow}
+              isSaving={isSaving}
               onClose={() => {
                 setDataSaverOverlayOpen(true);
                 saveNow().finally(() => {
@@ -1209,6 +1210,7 @@ const EditorContent = ({
 
             {openTemplateModalAction && (
               <TemplateModal
+                isAdminMode={isAdminMode}
                 action={openTemplateModalAction}
                 onClose={() => {
                   setOpenTemplateModalAction(undefined);

@@ -5,6 +5,7 @@ type TemplateModalProps = {
     action: OpenTemplateModalAction;
     onClose: () => void;
     backend: Backend;
+    isAdminMode?: boolean;
 };
 export declare const TemplateModal: React.FC<TemplateModalProps>;
 export {};

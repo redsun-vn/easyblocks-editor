@@ -40,7 +40,11 @@ function SettingsContent({ fields }: SettingsContentProps) {
   return (
     <FormBody id={"sidebar-panels-root"}>
       <Wrapper>
-        <FieldsBuilder form={form} fields={fields} />
+        <FieldsBuilder
+          form={form}
+          fields={fields}
+          isEmptyField={!focussedField.length}
+        />
         <SidebarFooter paths={focussedField} />
       </Wrapper>
     </FormBody>

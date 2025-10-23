@@ -1,8 +1,6 @@
 import { Devices, Locale } from "@redsun-vn/easyblocks-core";
 import {
-  ButtonDanger,
   ButtonGhost,
-  ButtonPrimary,
   Colors,
   Fonts,
   Icons,
@@ -90,12 +88,20 @@ const Image = styled.img`
   object-fit: contain;
 `;
 
+const VerticalLine = styled.div`
+  width: 1px;
+  height: 20px;
+  margin-right: 6px;
+  background-color: ${Colors.black10};
+`;
+
 const debouncedSave = debounce((fn: () => void) => fn(), 200);
 
 export const EditorTopBar: React.FC<{
   saveLabel: string;
   onClose?: () => void;
   onSaveDocument?: () => void;
+  isSaving?: boolean;
   onIsEditingChange: () => void;
   viewport: string;
   onViewportChange: (viewport: string) => void;
@@ -111,6 +117,7 @@ export const EditorTopBar: React.FC<{
 }> = ({
   onClose,
   onSaveDocument: _onSaveDocument,
+  isSaving,
   onViewportChange,
   devices,
   viewport,
@@ -131,7 +138,7 @@ export const EditorTopBar: React.FC<{
   const { t } = useTranslation();
 
   const onSaveDocument = () => {
-    if (_onSaveDocument) {
+    if (_onSaveDocument && !isSaving) {
       debouncedSave(_onSaveDocument);
     }
   };
@@ -157,7 +164,7 @@ export const EditorTopBar: React.FC<{
             onUndo();
           }}
         >
-          Undo
+          {t("editor.sidebar.undo")}
         </ButtonGhost>
         <ButtonGhost
           icon={Icons.Redo}
@@ -166,18 +173,10 @@ export const EditorTopBar: React.FC<{
             onRedo();
           }}
         >
-          Redo
+          {t("editor.sidebar.redo")}
         </ButtonGhost>
 
         {readOnly && <Label>Read-Only</Label>}
-
-        <ButtonDanger
-          className="cursor-pointer"
-          component="label"
-          onClick={onSaveDocument}
-        >
-          {t("topBar.save")}
-        </ButtonDanger>
       </TopBarLeft>
 
       <TopBarCenter>
@@ -219,11 +218,21 @@ export const EditorTopBar: React.FC<{
               </SelectItem>
             ))}
           </Select>
+          <ButtonGhost
+            hideLabel
+            icon={Icons.Save}
+            onClick={onSaveDocument}
+            disabled={isSaving}
+            isLoading={isSaving}
+          >
+            {t("topBar.save")}
+          </ButtonGhost>
           <a href={`/?previewId=${themeId}&shopId=${shopId}`} target="_blank">
-            <ButtonPrimary component="label" className="cursor-pointer">
+            <ButtonGhost hideLabel icon={Icons.Preview}>
               {t("topBar.preview")}
-            </ButtonPrimary>
+            </ButtonGhost>
           </a>
+          <VerticalLine />
           <Typography
             variant={"body"}
             component="label"
