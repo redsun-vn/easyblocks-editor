@@ -55,34 +55,44 @@ export const SelectionFrameActions = ({
       positionY: "top",
     });
   const triggerRef = useRef<HTMLDivElement>(null);
+  const placementRef = useRef(currentPlacement);
 
-  useEffect(() => {
-    function calculatePosition() {
-      if (!triggerRef.current) return;
-      const rect = triggerRef.current.getBoundingClientRect();
+  function calculatePosition() {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
 
-      // Calculate position top bottom
-      if (rect.top < 0 && currentPlacement.positionY === "top") {
-        setCurrentPlacement((prev) => ({ ...prev, positionY: "bottom" }));
-      } else if (
-        rect.bottom > window.innerHeight &&
-        currentPlacement.positionY === "bottom"
-      ) {
-        setCurrentPlacement((prev) => ({ ...prev, positionY: "top" }));
-      }
+    let next = { ...placementRef.current };
+    let changed = false;
 
-      // Calculate position left right
-      if (rect.left < 0 && currentPlacement.positionX === "right") {
-        setCurrentPlacement((prev) => ({ ...prev, positionX: "left" }));
-      } else if (
-        rect.right > window.innerWidth &&
-        currentPlacement.positionX === "left"
-      ) {
-        setCurrentPlacement((prev) => ({ ...prev, positionX: "right" }));
-      }
+    // TOP / BOTTOM toggle
+    if (rect.top < 0 && next.positionY === "top") {
+      next.positionY = "bottom";
+      changed = true;
+    } else if (
+      rect.bottom > window.innerHeight &&
+      next.positionY === "bottom"
+    ) {
+      next.positionY = "top";
+      changed = true;
     }
 
-    const throttled = throttle(calculatePosition, 100);
+    // LEFT / RIGHT toggle
+    if (rect.left < 0 && next.positionX === "right") {
+      next.positionX = "left";
+      changed = true;
+    } else if (rect.right > window.innerWidth && next.positionX === "left") {
+      next.positionX = "right";
+      changed = true;
+    }
+
+    if (changed) {
+      placementRef.current = next;
+      setCurrentPlacement(next);
+    }
+  }
+
+  useEffect(() => {
+    const throttled = throttle(calculatePosition, 200);
 
     calculatePosition();
 

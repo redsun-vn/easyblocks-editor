@@ -1,6 +1,5 @@
 import React, { ReactNode } from "react";
 import { useEditorGlobalKeyboardShortcuts } from "../useEditorGlobalKeyboardShortcuts";
-import { useDataSaver } from "../useDataSaver";
 
 type CanvasRootProps = {
   children: ReactNode;
@@ -8,14 +7,12 @@ type CanvasRootProps = {
 
 function CanvasRoot(props: CanvasRootProps) {
   const editorContext = window.parent.editorWindowAPI?.editorContext;
-  const document = window.parent.editorWindowAPI?.currentDocument ?? null;
 
   if (!editorContext) {
     throw new Error("editorContext is not available.");
   }
 
-  const { saveNow } = useDataSaver(document, editorContext);
-  useEditorGlobalKeyboardShortcuts(editorContext, saveNow);
+  useEditorGlobalKeyboardShortcuts(editorContext);
 
   return (
     <div

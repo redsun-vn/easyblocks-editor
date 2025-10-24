@@ -3,8 +3,8 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
 var React = require('react');
+var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
 var isPropValid = require('@emotion/is-prop-valid');
 var styled = require('styled-components');
 var _extends = require('@babel/runtime/helpers/extends');
@@ -5510,9 +5510,12 @@ function useDataSaver(initialDocument, editorContext) {
   };
 }
 
-const GLOBAL_SHORTCUTS_KEYS = ["Delete", "Backspace", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "l", "L", "s", "S"];
+const GLOBAL_SHORTCUTS_KEYS = ["Delete", "Backspace", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "l", "L"
+// "s",
+// "S",
+];
 const DATA_TRANSFER_FORMAT = "text/x-shopstory";
-function useEditorGlobalKeyboardShortcuts(editorContext, saveNow) {
+function useEditorGlobalKeyboardShortcuts(editorContext) {
   let isDeleting = false;
   React.useEffect(() => {
     const {
@@ -5541,10 +5544,11 @@ function useEditorGlobalKeyboardShortcuts(editorContext, saveNow) {
           actions.logSelectedItems();
         }
       }
-      if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
-        event.preventDefault();
-        saveNow?.();
-      }
+
+      // if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
+      //   event.preventDefault();
+      //   saveNow?.();
+      // }
     }
     function handleCopy(event) {
       if (!canHandleCopyPaste(focusedFields, event)) {
@@ -6465,11 +6469,11 @@ const EditorContent = ({
     return () => window.removeEventListener("message", handleEditorEvents);
   }, []);
   const [isDataSaverOverlayOpen, setDataSaverOverlayOpen] = React.useState(false);
+  useEditorGlobalKeyboardShortcuts(editorContext);
   const {
     saveNow,
     isSaving
   } = useDataSaver(initialDocument, editorContext);
-  useEditorGlobalKeyboardShortcuts(editorContext, saveNow);
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
   React.useEffect(() => {
     Modal__default["default"].setAppElement("#shopstory-app");
@@ -6636,6 +6640,177 @@ function getMatchingDevice(devices, width) {
   return null;
 }
 
+/**
+ * This is a copy of validate-color function from validate-color npm package. This package has problem with bundling, so I copied it here. It was modified 100 years ago anyway and had 32 stars, so nothing fancy really.
+ */
+
+// Good article on HTML Colors:
+// https://dev.to/alvaromontoro/the-ultimate-guide-to-css-colors-2020-edition-1bh1#hsl
+
+// Check if parameter is defined and a string
+const isString = color => color && typeof color === "string";
+// All existing HTML color names
+const htmlColorNames = ["AliceBlue", "AntiqueWhite", "Aqua", "Aquamarine", "Azure", "Beige", "Bisque", "Black", "BlanchedAlmond", "Blue", "BlueViolet", "Brown", "BurlyWood", "CadetBlue", "Chartreuse", "Chocolate", "Coral", "CornflowerBlue", "Cornsilk", "Crimson", "Cyan", "DarkBlue", "DarkCyan", "DarkGoldenrod", "DarkGray", "DarkGreen", "DarkKhaki", "DarkMagenta", "DarkOliveGreen", "DarkOrange", "DarkOrchid", "DarkRed", "DarkSalmon", "DarkSeaGreen", "DarkSlateBlue", "DarkSlateGray", "DarkTurquoise", "DarkViolet", "DeepPink", "DeepSkyBlue", "DimGray", "DodgerBlue", "FireBrick", "FloralWhite", "ForestGreen", "Fuchsia", "Gainsboro", "GhostWhite", "Gold", "Goldenrod", "Gray", "Green", "GreenYellow", "HoneyDew", "HotPink", "IndianRed", "Indigo", "Ivory", "Khaki", "Lavender", "LavenderBlush", "LawnGreen", "LemonChiffon", "LightBlue", "LightCoral", "LightCyan", "LightGoldenrodYellow", "LightGray", "LightGreen", "LightPink", "LightSalmon", "LightSalmon", "LightSeaGreen", "LightSkyBlue", "LightSlateGray", "LightSteelBlue", "LightYellow", "Lime", "LimeGreen", "Linen", "Magenta", "Maroon", "MediumAquamarine", "MediumBlue", "MediumOrchid", "MediumPurple", "MediumSeaGreen", "MediumSlateBlue", "MediumSlateBlue", "MediumSpringGreen", "MediumTurquoise", "MediumVioletRed", "MidnightBlue", "MintCream", "MistyRose", "Moccasin", "NavajoWhite", "Navy", "OldLace", "Olive", "OliveDrab", "Orange", "OrangeRed", "Orchid", "PaleGoldenrod", "PaleGreen", "PaleTurquoise", "PaleVioletRed", "PapayaWhip", "PeachPuff", "Peru", "Pink", "Plum", "PowderBlue", "Purple", "RebeccaPurple", "Red", "RosyBrown", "RoyalBlue", "SaddleBrown", "Salmon", "SandyBrown", "SeaGreen", "SeaShell", "Sienna", "Silver", "SkyBlue", "SlateBlue", "SlateGray", "Snow", "SpringGreen", "SteelBlue", "Tan", "Teal", "Thistle", "Tomato", "Turquoise", "Violet", "Wheat", "White", "WhiteSmoke", "Yellow", "YellowGreen"];
+// These 3 values are valid, usable color names, which are special in their own way
+const htmlColorNamesSpecial = ["currentColor", "inherit", "transparent"];
+
+// Validate HTML color name (red, yellow, etc)
+const validateHTMLColorName = color => {
+  let status = false;
+  if (isString(color)) {
+    htmlColorNames.map(c => {
+      if (color.toLowerCase() === c.toLowerCase()) {
+        status = true;
+      }
+      return null;
+    });
+  }
+  return status;
+};
+
+// Validate HTML color special name (currentColor, inherit, etc)
+const validateHTMLColorSpecialName = color => {
+  let status = false;
+  if (isString(color)) {
+    htmlColorNamesSpecial.map(c => {
+      if (color.toLowerCase() === c.toLowerCase()) {
+        status = true;
+      }
+      return null;
+    });
+  }
+  return status;
+};
+
+// Validate HTML color 'hex'
+const validateHTMLColorHex = color => {
+  if (isString(color)) {
+    const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$/i;
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+
+// Validate HTML color 'rgb'
+// -- legacy notation
+// color: rgb(255, 255, 255);
+// color: rgba(255, 255, 255, 1);
+// -- new notation
+// color: rgb(255 255 255);
+// color: rgb(255 255 255 / 1);
+// Note that 'rgba()' is now merged into 'rgb()'
+const validateHTMLColorRgb = color => {
+  if (isString(color)) {
+    const regex = /(rgb)a?\((\s*\d+%?\s*?,?\s*){2}(\s*\d+%?\s*?,?\s*\)?)(\s*,?\s*\/?\s*(0?\.?\d+%?\s*)?|1|0)?\)$/i;
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+const optionalCommaOrRequiredSpace = `((\\s*,\\s*)|(\\s+))`;
+const optionalDecimals = `(\\.\\d+)?`;
+const anyPercentage = `((\\d*${optionalDecimals})%)`;
+const hundredPercent = `(([0-9]|[1-9][0-9]|100)%)`;
+const alphaPercentage = `(((${hundredPercent}))|(0?${optionalDecimals})|1))?`;
+const endingWithAlphaPercentage = `\\s*?\\)?)(\\s*?(\\/?)\\s+${alphaPercentage}\\s*?\\)$`;
+
+// Validate HTML color 'hsl'
+// -- These units are valid for the first parameter
+// 'deg': degrees | full circle = 360
+// 'gra': gradians | full circle = 400
+// 'radians': radians | full circle = 2π (approx. 6.28)
+// 'turn': turns | full circle = 1
+const validateHTMLColorHsl = color => {
+  if (isString(color)) {
+    // Validate each possible unit value separately, as their values differ
+    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
+    const graRegex = `(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-9][0-9]|400)gra)`;
+    const radRegex = `((([0-5])?\\.\\d+|6\\.([0-9]|1[0-9]|2[0-8])|[0-6])rad)`;
+    const turnRegex = `((0?${optionalDecimals}|1)turn)`;
+    const regexLogic = `(hsl)a?\\((\\s*?(${degRegex}|${graRegex}|${radRegex}|${turnRegex})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})\\s*?\\)?)(\\s*?(\\/?|,?)\\s*?(((${hundredPercent}))|(0?${optionalDecimals})|1))?\\)$`;
+    const regex = new RegExp(regexLogic);
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+
+// Validate HTML color 'hwb'
+// -- 'hwb' accepts 'deg' as unit in its 1st property, which stands for 'hue'
+// 'deg': degrees | full circle = 360
+const validateHTMLColorHwb = color => {
+  if (isString(color)) {
+    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
+    const regexLogic = `(hwb\\(\\s*?${degRegex}\\s+)((0|${hundredPercent})\\s+)((0|${hundredPercent})${endingWithAlphaPercentage}`;
+    const regex = new RegExp(regexLogic);
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+
+// Validate HTML color 'lab'
+// -- 'lab' 2nd & 3rd parameters are any number between -160 & 160
+const validateHTMLColorLab = color => {
+  if (isString(color)) {
+    const labParam = `(-?(([0-9]|[1-9][0-9]|1[0-5][0-9])${optionalDecimals}?|160))`;
+    const regexLogic = `(lab\\(\\s*?${anyPercentage}\\s+${labParam}\\s+${labParam}${endingWithAlphaPercentage}`;
+    const regex = new RegExp(regexLogic);
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+const validateColor = color => {
+  // Former validation - source: https://www.regextester.com/103656
+  // if (isString(color)) {
+  //   const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$|(rgb|hsl)a?\((\s*-?\d+%?\s*,){2}(\s*-?\d+%?\s*,?\s*\)?)(,\s*(0?\.\d+)?|1|0)?\)$/i;
+  //   return color && regex.test(color);
+  // }
+  // New validation
+  if (color && validateHTMLColorHex(color) || validateHTMLColorName(color) || validateHTMLColorSpecialName(color) || validateHTMLColorRgb(color) || validateHTMLColorHsl(color) || validateHTMLColorHwb(color) || validateHTMLColorLab(color)) {
+    return true;
+  }
+  return false;
+};
+
+function ColorTokenWidget(props) {
+  const [inputValue, setInputValue] = React.useState(props.value);
+  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    value: inputValue,
+    onChange: e => {
+      setInputValue(e.target.value);
+    },
+    onBlur: () => {
+      if (validateColor(inputValue)) {
+        props.onChange(inputValue);
+        return;
+      }
+      if (validateColor("#" + inputValue)) {
+        props.onChange("#" + inputValue);
+        return;
+      }
+      props.onChange(props.value);
+    },
+    align: "right"
+  });
+}
+
+function SpaceTokenWidget(props) {
+  const [inputValue, setInputValue] = React.useState(props.value);
+  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    value: inputValue,
+    onChange: e => {
+      setInputValue(e.target.value);
+    },
+    onBlur: () => {
+      const int = Math.round(parseInt(inputValue));
+      if (isNaN(int) || int < 0) {
+        props.onChange("0px");
+        return;
+      }
+      props.onChange(`${int}px`);
+    },
+    align: "right"
+  });
+}
+
 function parseQueryParams() {
   const searchParams = new URLSearchParams(window.location.search);
   const readOnly = searchParams.get("readOnly") === "true" ? true : searchParams.get("readOnly") === "false" ? false : null;
@@ -6659,88 +6834,69 @@ function parseQueryParams() {
   return editorSearchParams;
 }
 
-function checkQueryForTemplate(query, template, component) {
-  return `${template.label ?? ""}${component.label ?? component.id}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
-}
-const SearchableSmallPickerModal = ({
-  onClose,
-  templates,
-  isOpen
-}) => {
-  const editorContext = useEditorContext();
-  const templatesDict = templates;
-  const [query, setQuery] = React.useState("");
-  const trimmedQuery = query.trim().toLocaleLowerCase();
-  const filteredTemplatesDict = {};
-  if (templatesDict) {
-    Object.values(templatesDict).forEach(({
-      templates,
-      component
-    }) => {
-      const filteredTemplates = trimmedQuery === "" ? templates : templates.filter(template => checkQueryForTemplate(trimmedQuery, template, component));
-      if (filteredTemplates.length > 0) {
-        filteredTemplatesDict[component.id] = {
-          component,
-          templates: filteredTemplates
-        };
+function DocumentDataWidgetComponent({
+  id,
+  onChange,
+  resourceKey,
+  path
+}) {
+  if (id !== null && typeof id !== "string") {
+    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+      style: {
+        whiteSpace: "normal"
       }
+    }, "Unsupported type of identifier for document data widget. Expected \"string\", but got \"", typeof id, "\".");
+  }
+  const {
+    editorContext,
+    externalData
+  } = window.editorWindowAPI ?? {};
+  const schema = editorContext.rootComponent.rootParams;
+  const documentExternalLocationKeys = assertDefined(schema).map(s => easyblocksCore.getExternalReferenceLocationKey("$", s.prop));
+  const documentCompoundResources = Object.entries(externalData).filter(r => {
+    const [externalId, externalDataValue] = r;
+    return documentExternalLocationKeys.includes(externalId) && easyblocksCore.isResolvedCompoundExternalDataValue(externalDataValue);
+  });
+  const entry = dotNotationGet(editorContext.form.values, path.slice(0, path.lastIndexOf(".")));
+  const definition = _internals.findComponentDefinitionById(entry._component, editorContext);
+  const schemaProp = definition.schema.find(s => s.prop === path.split(".").pop());
+  const options = documentCompoundResources.flatMap(([externalId, externalDataValue]) => getBasicResourcesOfType(externalDataValue.value, schemaProp.type).map(r => {
+    const resourceSchemaProp = assertDefined(schema?.find(s => s.prop === externalId.split(".")[1]));
+    return {
+      id: externalId,
+      key: r.key,
+      label: `${resourceSchemaProp.label ?? resourceSchemaProp.prop} > ${r.label ?? r.key}`
+    };
+  }));
+  if (options.length === 1 && !id && path) {
+    // We perform form change manually to avoid storing this change in editor's history
+    editorContext.form.change(path, {
+      id: options[0].id,
+      key: options[0].key,
+      widgetId: "@easyblocks/document-data"
     });
   }
-  const close = template => {
-    setQuery("");
-    if (!template) {
-      onClose();
-    } else {
-      // @ts-expect-error
-      onClose(template);
-    }
-  };
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
-    mode: "center-small",
-    isOpen: isOpen,
-    onRequestClose: () => {
-      close(undefined);
-    },
-    noPadding: true,
-    headerLine: true,
-    searchProps: {
-      value: query,
-      placeholder: "Search...",
-      onChange: e => {
-        setQuery(e.target.value);
+  if (!documentCompoundResources.length) {
+    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+      style: {
+        whiteSpace: "normal"
       }
+    }, "Please select at least one non optional external data for document.");
+  }
+  return /*#__PURE__*/React__default["default"].createElement(CompoundResourceValueSelect, {
+    options: options,
+    resource: id === null ? {
+      id,
+      key: undefined
+    } : {
+      id,
+      key: resourceKey
     },
-    headerSymbol: "S"
-  }, templatesDict === undefined && "Loading...", templatesDict !== undefined && Object.entries(filteredTemplatesDict).map(([, {
-    templates,
-    component
-  }]) => {
-    const isOnlyOne = templates.length === 1;
-    const componentLabel = component.label ?? component.id;
-    return templates.map(template => {
-      const templateLabel = template.label ?? template.id;
-      const title = isOnlyOne ? componentLabel : templateLabel;
-      const thumbnail = template.thumbnail ?? component.thumbnail;
-      const description = isOnlyOne ? undefined : componentLabel;
-      return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.BasicRow, {
-        key: template.id,
-        title: title,
-        description: description,
-        onClick: () => {
-          close(template);
-        },
-        image: thumbnail,
-        tinyDescription: true,
-        onEdit: template.isUserDefined ? () => {
-          editorContext.actions.openTemplateModal({
-            mode: "edit",
-            template: template
-          });
-        } : undefined
-      });
-    });
-  }));
-};
+    onResourceKeyChange: (newId, newKey) => {
+      onChange(newId, newKey);
+    }
+  });
+}
 
 /**
  * CARD
@@ -6943,240 +7099,88 @@ const SectionPickerModal = ({
   }))))))));
 };
 
-/**
- * This is a copy of validate-color function from validate-color npm package. This package has problem with bundling, so I copied it here. It was modified 100 years ago anyway and had 32 stars, so nothing fancy really.
- */
-
-// Good article on HTML Colors:
-// https://dev.to/alvaromontoro/the-ultimate-guide-to-css-colors-2020-edition-1bh1#hsl
-
-// Check if parameter is defined and a string
-const isString = color => color && typeof color === "string";
-// All existing HTML color names
-const htmlColorNames = ["AliceBlue", "AntiqueWhite", "Aqua", "Aquamarine", "Azure", "Beige", "Bisque", "Black", "BlanchedAlmond", "Blue", "BlueViolet", "Brown", "BurlyWood", "CadetBlue", "Chartreuse", "Chocolate", "Coral", "CornflowerBlue", "Cornsilk", "Crimson", "Cyan", "DarkBlue", "DarkCyan", "DarkGoldenrod", "DarkGray", "DarkGreen", "DarkKhaki", "DarkMagenta", "DarkOliveGreen", "DarkOrange", "DarkOrchid", "DarkRed", "DarkSalmon", "DarkSeaGreen", "DarkSlateBlue", "DarkSlateGray", "DarkTurquoise", "DarkViolet", "DeepPink", "DeepSkyBlue", "DimGray", "DodgerBlue", "FireBrick", "FloralWhite", "ForestGreen", "Fuchsia", "Gainsboro", "GhostWhite", "Gold", "Goldenrod", "Gray", "Green", "GreenYellow", "HoneyDew", "HotPink", "IndianRed", "Indigo", "Ivory", "Khaki", "Lavender", "LavenderBlush", "LawnGreen", "LemonChiffon", "LightBlue", "LightCoral", "LightCyan", "LightGoldenrodYellow", "LightGray", "LightGreen", "LightPink", "LightSalmon", "LightSalmon", "LightSeaGreen", "LightSkyBlue", "LightSlateGray", "LightSteelBlue", "LightYellow", "Lime", "LimeGreen", "Linen", "Magenta", "Maroon", "MediumAquamarine", "MediumBlue", "MediumOrchid", "MediumPurple", "MediumSeaGreen", "MediumSlateBlue", "MediumSlateBlue", "MediumSpringGreen", "MediumTurquoise", "MediumVioletRed", "MidnightBlue", "MintCream", "MistyRose", "Moccasin", "NavajoWhite", "Navy", "OldLace", "Olive", "OliveDrab", "Orange", "OrangeRed", "Orchid", "PaleGoldenrod", "PaleGreen", "PaleTurquoise", "PaleVioletRed", "PapayaWhip", "PeachPuff", "Peru", "Pink", "Plum", "PowderBlue", "Purple", "RebeccaPurple", "Red", "RosyBrown", "RoyalBlue", "SaddleBrown", "Salmon", "SandyBrown", "SeaGreen", "SeaShell", "Sienna", "Silver", "SkyBlue", "SlateBlue", "SlateGray", "Snow", "SpringGreen", "SteelBlue", "Tan", "Teal", "Thistle", "Tomato", "Turquoise", "Violet", "Wheat", "White", "WhiteSmoke", "Yellow", "YellowGreen"];
-// These 3 values are valid, usable color names, which are special in their own way
-const htmlColorNamesSpecial = ["currentColor", "inherit", "transparent"];
-
-// Validate HTML color name (red, yellow, etc)
-const validateHTMLColorName = color => {
-  let status = false;
-  if (isString(color)) {
-    htmlColorNames.map(c => {
-      if (color.toLowerCase() === c.toLowerCase()) {
-        status = true;
-      }
-      return null;
-    });
-  }
-  return status;
-};
-
-// Validate HTML color special name (currentColor, inherit, etc)
-const validateHTMLColorSpecialName = color => {
-  let status = false;
-  if (isString(color)) {
-    htmlColorNamesSpecial.map(c => {
-      if (color.toLowerCase() === c.toLowerCase()) {
-        status = true;
-      }
-      return null;
-    });
-  }
-  return status;
-};
-
-// Validate HTML color 'hex'
-const validateHTMLColorHex = color => {
-  if (isString(color)) {
-    const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$/i;
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-
-// Validate HTML color 'rgb'
-// -- legacy notation
-// color: rgb(255, 255, 255);
-// color: rgba(255, 255, 255, 1);
-// -- new notation
-// color: rgb(255 255 255);
-// color: rgb(255 255 255 / 1);
-// Note that 'rgba()' is now merged into 'rgb()'
-const validateHTMLColorRgb = color => {
-  if (isString(color)) {
-    const regex = /(rgb)a?\((\s*\d+%?\s*?,?\s*){2}(\s*\d+%?\s*?,?\s*\)?)(\s*,?\s*\/?\s*(0?\.?\d+%?\s*)?|1|0)?\)$/i;
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-const optionalCommaOrRequiredSpace = `((\\s*,\\s*)|(\\s+))`;
-const optionalDecimals = `(\\.\\d+)?`;
-const anyPercentage = `((\\d*${optionalDecimals})%)`;
-const hundredPercent = `(([0-9]|[1-9][0-9]|100)%)`;
-const alphaPercentage = `(((${hundredPercent}))|(0?${optionalDecimals})|1))?`;
-const endingWithAlphaPercentage = `\\s*?\\)?)(\\s*?(\\/?)\\s+${alphaPercentage}\\s*?\\)$`;
-
-// Validate HTML color 'hsl'
-// -- These units are valid for the first parameter
-// 'deg': degrees | full circle = 360
-// 'gra': gradians | full circle = 400
-// 'radians': radians | full circle = 2π (approx. 6.28)
-// 'turn': turns | full circle = 1
-const validateHTMLColorHsl = color => {
-  if (isString(color)) {
-    // Validate each possible unit value separately, as their values differ
-    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
-    const graRegex = `(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-9][0-9]|400)gra)`;
-    const radRegex = `((([0-5])?\\.\\d+|6\\.([0-9]|1[0-9]|2[0-8])|[0-6])rad)`;
-    const turnRegex = `((0?${optionalDecimals}|1)turn)`;
-    const regexLogic = `(hsl)a?\\((\\s*?(${degRegex}|${graRegex}|${radRegex}|${turnRegex})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})\\s*?\\)?)(\\s*?(\\/?|,?)\\s*?(((${hundredPercent}))|(0?${optionalDecimals})|1))?\\)$`;
-    const regex = new RegExp(regexLogic);
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-
-// Validate HTML color 'hwb'
-// -- 'hwb' accepts 'deg' as unit in its 1st property, which stands for 'hue'
-// 'deg': degrees | full circle = 360
-const validateHTMLColorHwb = color => {
-  if (isString(color)) {
-    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
-    const regexLogic = `(hwb\\(\\s*?${degRegex}\\s+)((0|${hundredPercent})\\s+)((0|${hundredPercent})${endingWithAlphaPercentage}`;
-    const regex = new RegExp(regexLogic);
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-
-// Validate HTML color 'lab'
-// -- 'lab' 2nd & 3rd parameters are any number between -160 & 160
-const validateHTMLColorLab = color => {
-  if (isString(color)) {
-    const labParam = `(-?(([0-9]|[1-9][0-9]|1[0-5][0-9])${optionalDecimals}?|160))`;
-    const regexLogic = `(lab\\(\\s*?${anyPercentage}\\s+${labParam}\\s+${labParam}${endingWithAlphaPercentage}`;
-    const regex = new RegExp(regexLogic);
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-const validateColor = color => {
-  // Former validation - source: https://www.regextester.com/103656
-  // if (isString(color)) {
-  //   const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$|(rgb|hsl)a?\((\s*-?\d+%?\s*,){2}(\s*-?\d+%?\s*,?\s*\)?)(,\s*(0?\.\d+)?|1|0)?\)$/i;
-  //   return color && regex.test(color);
-  // }
-  // New validation
-  if (color && validateHTMLColorHex(color) || validateHTMLColorName(color) || validateHTMLColorSpecialName(color) || validateHTMLColorRgb(color) || validateHTMLColorHsl(color) || validateHTMLColorHwb(color) || validateHTMLColorLab(color)) {
-    return true;
-  }
-  return false;
-};
-
-function ColorTokenWidget(props) {
-  const [inputValue, setInputValue] = React.useState(props.value);
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
-    value: inputValue,
-    onChange: e => {
-      setInputValue(e.target.value);
-    },
-    onBlur: () => {
-      if (validateColor(inputValue)) {
-        props.onChange(inputValue);
-        return;
-      }
-      if (validateColor("#" + inputValue)) {
-        props.onChange("#" + inputValue);
-        return;
-      }
-      props.onChange(props.value);
-    },
-    align: "right"
-  });
+function checkQueryForTemplate(query, template, component) {
+  return `${template.label ?? ""}${component.label ?? component.id}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
 }
-
-function DocumentDataWidgetComponent({
-  id,
-  onChange,
-  resourceKey,
-  path
-}) {
-  if (id !== null && typeof id !== "string") {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
-      style: {
-        whiteSpace: "normal"
+const SearchableSmallPickerModal = ({
+  onClose,
+  templates,
+  isOpen
+}) => {
+  const editorContext = useEditorContext();
+  const templatesDict = templates;
+  const [query, setQuery] = React.useState("");
+  const trimmedQuery = query.trim().toLocaleLowerCase();
+  const filteredTemplatesDict = {};
+  if (templatesDict) {
+    Object.values(templatesDict).forEach(({
+      templates,
+      component
+    }) => {
+      const filteredTemplates = trimmedQuery === "" ? templates : templates.filter(template => checkQueryForTemplate(trimmedQuery, template, component));
+      if (filteredTemplates.length > 0) {
+        filteredTemplatesDict[component.id] = {
+          component,
+          templates: filteredTemplates
+        };
       }
-    }, "Unsupported type of identifier for document data widget. Expected \"string\", but got \"", typeof id, "\".");
-  }
-  const {
-    editorContext,
-    externalData
-  } = window.editorWindowAPI ?? {};
-  const schema = editorContext.rootComponent.rootParams;
-  const documentExternalLocationKeys = assertDefined(schema).map(s => easyblocksCore.getExternalReferenceLocationKey("$", s.prop));
-  const documentCompoundResources = Object.entries(externalData).filter(r => {
-    const [externalId, externalDataValue] = r;
-    return documentExternalLocationKeys.includes(externalId) && easyblocksCore.isResolvedCompoundExternalDataValue(externalDataValue);
-  });
-  const entry = dotNotationGet(editorContext.form.values, path.slice(0, path.lastIndexOf(".")));
-  const definition = _internals.findComponentDefinitionById(entry._component, editorContext);
-  const schemaProp = definition.schema.find(s => s.prop === path.split(".").pop());
-  const options = documentCompoundResources.flatMap(([externalId, externalDataValue]) => getBasicResourcesOfType(externalDataValue.value, schemaProp.type).map(r => {
-    const resourceSchemaProp = assertDefined(schema?.find(s => s.prop === externalId.split(".")[1]));
-    return {
-      id: externalId,
-      key: r.key,
-      label: `${resourceSchemaProp.label ?? resourceSchemaProp.prop} > ${r.label ?? r.key}`
-    };
-  }));
-  if (options.length === 1 && !id && path) {
-    // We perform form change manually to avoid storing this change in editor's history
-    editorContext.form.change(path, {
-      id: options[0].id,
-      key: options[0].key,
-      widgetId: "@easyblocks/document-data"
     });
   }
-  if (!documentCompoundResources.length) {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
-      style: {
-        whiteSpace: "normal"
-      }
-    }, "Please select at least one non optional external data for document.");
-  }
-  return /*#__PURE__*/React__default["default"].createElement(CompoundResourceValueSelect, {
-    options: options,
-    resource: id === null ? {
-      id,
-      key: undefined
-    } : {
-      id,
-      key: resourceKey
-    },
-    onResourceKeyChange: (newId, newKey) => {
-      onChange(newId, newKey);
+  const close = template => {
+    setQuery("");
+    if (!template) {
+      onClose();
+    } else {
+      // @ts-expect-error
+      onClose(template);
     }
-  });
-}
-
-function SpaceTokenWidget(props) {
-  const [inputValue, setInputValue] = React.useState(props.value);
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
-    value: inputValue,
-    onChange: e => {
-      setInputValue(e.target.value);
+  };
+  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+    mode: "center-small",
+    isOpen: isOpen,
+    onRequestClose: () => {
+      close(undefined);
     },
-    onBlur: () => {
-      const int = Math.round(parseInt(inputValue));
-      if (isNaN(int) || int < 0) {
-        props.onChange("0px");
-        return;
+    noPadding: true,
+    headerLine: true,
+    searchProps: {
+      value: query,
+      placeholder: "Search...",
+      onChange: e => {
+        setQuery(e.target.value);
       }
-      props.onChange(`${int}px`);
     },
-    align: "right"
-  });
-}
+    headerSymbol: "S"
+  }, templatesDict === undefined && "Loading...", templatesDict !== undefined && Object.entries(filteredTemplatesDict).map(([, {
+    templates,
+    component
+  }]) => {
+    const isOnlyOne = templates.length === 1;
+    const componentLabel = component.label ?? component.id;
+    return templates.map(template => {
+      const templateLabel = template.label ?? template.id;
+      const title = isOnlyOne ? componentLabel : templateLabel;
+      const thumbnail = template.thumbnail ?? component.thumbnail;
+      const description = isOnlyOne ? undefined : componentLabel;
+      return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.BasicRow, {
+        key: template.id,
+        title: title,
+        description: description,
+        onClick: () => {
+          close(template);
+        },
+        image: thumbnail,
+        tinyDescription: true,
+        onEdit: template.isUserDefined ? () => {
+          editorContext.actions.openTemplateModal({
+            mode: "edit",
+            template: template
+          });
+        } : undefined
+      });
+    });
+  }));
+};
 
 const shouldForwardProp = (propName, target) => {
   if (typeof target === "string") {
@@ -7233,19 +7237,20 @@ function EasyblocksParent(props) {
     },
     isAdminMode: props.isAdminMode,
     defaultLocale: props.defaultLocale
-  }))));
+  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toaster, {
+    position: "bottom-left",
+    containerStyle: {
+      zIndex: 100100
+    }
+  })));
 }
 
 function CanvasRoot(props) {
   const editorContext = window.parent.editorWindowAPI?.editorContext;
-  const document = window.parent.editorWindowAPI?.currentDocument ?? null;
   if (!editorContext) {
     throw new Error("editorContext is not available.");
   }
-  const {
-    saveNow
-  } = useDataSaver(document, editorContext);
-  useEditorGlobalKeyboardShortcuts(editorContext, saveNow);
+  useEditorGlobalKeyboardShortcuts(editorContext);
   return /*#__PURE__*/React__default["default"].createElement("div", {
     onClick: () => {
       if (editorContext.isEditing) {
@@ -7418,38 +7423,39 @@ const SelectionFrameActions = ({
     positionY: "top"
   });
   const triggerRef = React.useRef(null);
-  React.useEffect(() => {
-    function calculatePosition() {
-      if (!triggerRef.current) return;
-      const rect = triggerRef.current.getBoundingClientRect();
+  const placementRef = React.useRef(currentPlacement);
+  function calculatePosition() {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    let next = {
+      ...placementRef.current
+    };
+    let changed = false;
 
-      // Calculate position top bottom
-      if (rect.top < 0 && currentPlacement.positionY === "top") {
-        setCurrentPlacement(prev => ({
-          ...prev,
-          positionY: "bottom"
-        }));
-      } else if (rect.bottom > window.innerHeight && currentPlacement.positionY === "bottom") {
-        setCurrentPlacement(prev => ({
-          ...prev,
-          positionY: "top"
-        }));
-      }
-
-      // Calculate position left right
-      if (rect.left < 0 && currentPlacement.positionX === "right") {
-        setCurrentPlacement(prev => ({
-          ...prev,
-          positionX: "left"
-        }));
-      } else if (rect.right > window.innerWidth && currentPlacement.positionX === "left") {
-        setCurrentPlacement(prev => ({
-          ...prev,
-          positionX: "right"
-        }));
-      }
+    // TOP / BOTTOM toggle
+    if (rect.top < 0 && next.positionY === "top") {
+      next.positionY = "bottom";
+      changed = true;
+    } else if (rect.bottom > window.innerHeight && next.positionY === "bottom") {
+      next.positionY = "top";
+      changed = true;
     }
-    const throttled = throttle__default$1["default"](calculatePosition, 100);
+
+    // LEFT / RIGHT toggle
+    if (rect.left < 0 && next.positionX === "right") {
+      next.positionX = "left";
+      changed = true;
+    } else if (rect.right > window.innerWidth && next.positionX === "left") {
+      next.positionX = "right";
+      changed = true;
+    }
+    if (changed) {
+      placementRef.current = next;
+      setCurrentPlacement(next);
+    }
+  }
+  React.useEffect(() => {
+    const throttled = throttle__default$1["default"](calculatePosition, 200);
     calculatePosition();
     window.addEventListener("scroll", throttled);
     window.addEventListener("resize", throttled);
@@ -8561,12 +8567,7 @@ function EasyblocksEditor(props) {
     defaultLocale: props.defaultLocale
   }), selectedWindow === "child" && /*#__PURE__*/React__default["default"].createElement(EasyblocksCanvas, {
     components: props.components
-  }), selectedWindow === "preview" && /*#__PURE__*/React__default["default"].createElement(PreviewRenderer, props), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toaster, {
-    position: "bottom-left",
-    containerStyle: {
-      zIndex: 100100
-    }
-  }));
+  }), selectedWindow === "preview" && /*#__PURE__*/React__default["default"].createElement(PreviewRenderer, props));
 }
 
 exports.EasyblocksEditor = EasyblocksEditor;

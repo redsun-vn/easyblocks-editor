@@ -2,7 +2,6 @@ import { dotNotationGet, preOrderPathComparator } from "@/utils";
 import { duplicateConfig } from "@redsun-vn/easyblocks-core/_internals";
 import { useEffect } from "react";
 import type { EditorContextType } from "./EditorContext";
-import debounce from "lodash/debounce";
 
 const GLOBAL_SHORTCUTS_KEYS = [
   "Delete",
@@ -13,16 +12,13 @@ const GLOBAL_SHORTCUTS_KEYS = [
   "ArrowRight",
   "l",
   "L",
-  "s",
-  "S",
+  // "s",
+  // "S",
 ];
 
 const DATA_TRANSFER_FORMAT = "text/x-shopstory";
 
-function useEditorGlobalKeyboardShortcuts(
-  editorContext: EditorContextType,
-  saveNow?: () => void
-) {
+function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
   let isDeleting = false;
   useEffect(() => {
     const { focussedField: focusedFields, actions } = editorContext;
@@ -56,10 +52,10 @@ function useEditorGlobalKeyboardShortcuts(
         }
       }
 
-      if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
-        event.preventDefault();
-        saveNow?.();
-      }
+      // if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
+      //   event.preventDefault();
+      //   saveNow?.();
+      // }
     }
 
     function handleCopy(event: ClipboardEvent): void {

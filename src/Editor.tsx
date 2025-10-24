@@ -1115,8 +1115,9 @@ const EditorContent = ({
 
   const [isDataSaverOverlayOpen, setDataSaverOverlayOpen] = useState(false);
 
+  useEditorGlobalKeyboardShortcuts(editorContext);
+
   const { saveNow, isSaving } = useDataSaver(initialDocument, editorContext);
-  useEditorGlobalKeyboardShortcuts(editorContext, saveNow);
 
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
 
