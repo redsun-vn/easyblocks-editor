@@ -93,7 +93,7 @@ export const SelectionFrameActions = ({
       window.removeEventListener("scroll", throttled);
       window.removeEventListener("resize", throttled);
     };
-  }, [currentPlacement, focussedField]);
+  }, [focussedField]);
 
   return (
     <SelectionFrameActionsContainer {...currentPlacement} ref={triggerRef}>

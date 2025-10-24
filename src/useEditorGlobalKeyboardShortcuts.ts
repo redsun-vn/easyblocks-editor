@@ -1,9 +1,8 @@
-import {
-  EditorContextType,
-  duplicateConfig,
-} from "@redsun-vn/easyblocks-core/_internals";
 import { dotNotationGet, preOrderPathComparator } from "@/utils";
+import { duplicateConfig } from "@redsun-vn/easyblocks-core/_internals";
 import { useEffect } from "react";
+import type { EditorContextType } from "./EditorContext";
+import debounce from "lodash/debounce";
 
 const GLOBAL_SHORTCUTS_KEYS = [
   "Delete",
@@ -14,11 +13,16 @@ const GLOBAL_SHORTCUTS_KEYS = [
   "ArrowRight",
   "l",
   "L",
+  "s",
+  "S",
 ];
 
 const DATA_TRANSFER_FORMAT = "text/x-shopstory";
 
-function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
+function useEditorGlobalKeyboardShortcuts(
+  editorContext: EditorContextType,
+  saveNow?: () => void
+) {
   let isDeleting = false;
   useEffect(() => {
     const { focussedField: focusedFields, actions } = editorContext;
@@ -27,28 +31,34 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
       if (isTargetInputElement(event.target)) {
         return;
       }
-
-      if (!isGlobalShortcut(event) || !isAnyFieldSelected(focusedFields)) {
+      if (!isGlobalShortcut(event)) {
         return;
       }
 
-      if (
-        (event.key === "Delete" || event.key === "Backspace") &&
-        !isDeleting
-      ) {
-        isDeleting = true;
+      if (isAnyFieldSelected(focusedFields)) {
+        if (
+          (event.key === "Delete" || event.key === "Backspace") &&
+          !isDeleting
+        ) {
+          isDeleting = true;
 
-        actions.removeItems(focusedFields);
+          actions.removeItems(focusedFields);
 
-        setTimeout(() => {
-          isDeleting = false;
-        }, 2000);
-      } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-        actions.moveItems(focusedFields, "top");
-      } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-        actions.moveItems(focusedFields, "bottom");
-      } else if (event.key.toUpperCase() === "L") {
-        actions.logSelectedItems();
+          setTimeout(() => {
+            isDeleting = false;
+          }, 2000);
+        } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+          actions.moveItems(focusedFields, "top");
+        } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+          actions.moveItems(focusedFields, "bottom");
+        } else if (event.key.toUpperCase() === "L") {
+          actions.logSelectedItems();
+        }
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
+        event.preventDefault();
+        saveNow?.();
       }
     }
 

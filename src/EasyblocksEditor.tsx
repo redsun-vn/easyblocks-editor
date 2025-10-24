@@ -1,3 +1,4 @@
+import { Toaster } from "@redsun-vn/easyblocks-design-system";
 import React, { useEffect, useState } from "react";
 import { EasyblocksEditorProps } from "./EasyblocksEditorProps";
 import { EasyblocksParent } from "./EasyblocksParent";
@@ -80,6 +81,8 @@ export function EasyblocksEditor(props: EasyblocksEditorProps) {
       )}
 
       {selectedWindow === "preview" && <PreviewRenderer {...props} />}
+
+      <Toaster position="bottom-left" containerStyle={{ zIndex: 100100 }} />
     </>
   );
 }

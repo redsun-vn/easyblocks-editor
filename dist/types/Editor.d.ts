@@ -7,6 +7,7 @@ declare global {
     interface Window {
         editorWindowAPI?: {
             editorContext?: EditorContextType;
+            currentDocument?: Document | null;
             meta?: CompilationMetadata;
             compiled?: NonEmptyRenderableContent;
             externalData?: ExternalData;

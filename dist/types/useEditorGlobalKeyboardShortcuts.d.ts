@@ -1,4 +1,4 @@
-import { EditorContextType } from "@redsun-vn/easyblocks-core/_internals";
-declare function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType): void;
+import type { EditorContextType } from "./EditorContext";
+declare function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType, saveNow?: () => void): void;
 export { useEditorGlobalKeyboardShortcuts };
 //# sourceMappingURL=useEditorGlobalKeyboardShortcuts.d.ts.map

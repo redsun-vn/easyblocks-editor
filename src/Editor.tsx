@@ -89,6 +89,7 @@ declare global {
   interface Window {
     editorWindowAPI?: {
       editorContext?: EditorContextType;
+      currentDocument?: Document | null;
       meta?: CompilationMetadata;
       compiled?: NonEmptyRenderableContent;
       externalData?: ExternalData;
@@ -975,6 +976,7 @@ const EditorContent = ({
 
   window.editorWindowAPI = window.editorWindowAPI || {};
   window.editorWindowAPI.editorContext = editorContext;
+  window.editorWindowAPI.currentDocument = initialDocument;
   window.editorWindowAPI.meta = meta;
   window.editorWindowAPI.compiled =
     renderableContent as unknown as NonEmptyRenderableContent;
@@ -1113,9 +1115,8 @@ const EditorContent = ({
 
   const [isDataSaverOverlayOpen, setDataSaverOverlayOpen] = useState(false);
 
-  useEditorGlobalKeyboardShortcuts(editorContext);
-
   const { saveNow, isSaving } = useDataSaver(initialDocument, editorContext);
+  useEditorGlobalKeyboardShortcuts(editorContext, saveNow);
 
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
 
