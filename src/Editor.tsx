@@ -690,7 +690,7 @@ const EditorContent = ({
     onSubmit: async () => {},
   });
 
-  const { undo, redo, push } = useEditorHistory({
+  const { undo, redo, push, editorHistoryInstance } = useEditorHistory({
     onChange: ({ config, focusedField }) => {
       setFocussedField(focusedField);
       form.finalForm.change("", config);
@@ -1141,6 +1141,7 @@ const EditorContent = ({
             <EditorTopBar
               onUndo={undo}
               onRedo={redo}
+              editorHistoryInstance={editorHistoryInstance}
               onSaveDocument={saveNow}
               isSaving={isSaving}
               onClose={() => {

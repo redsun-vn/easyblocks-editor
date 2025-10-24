@@ -1,3 +1,4 @@
+import { useForceRerender } from "@/utils";
 import {
   CollisionDetection,
   DndContext,
@@ -7,7 +8,7 @@ import {
   useSensor,
 } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
-import { NoCodeComponentEntry, Easyblocks } from "@redsun-vn/easyblocks-core";
+import { Easyblocks, NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import {
   EasyblocksMetadataProvider,
   EditorContextType,
@@ -16,7 +17,7 @@ import {
   configTraverse,
   itemMoved,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { useForceRerender } from "@/utils";
+import { TooltipProvider } from "@redsun-vn/easyblocks-design-system";
 import React, { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { CanvasRoot } from "./CanvasRoot/CanvasRoot";
@@ -81,7 +82,11 @@ export function EasyblocksCanvas({
   const shouldNotRender = !enabled || !meta || !compiled || !externalData;
 
   if (shouldNotRender) {
-    return <div><SkeletonEditorCanvasArea /></div>;
+    return (
+      <div>
+        <SkeletonEditorCanvasArea />
+      </div>
+    );
   }
 
   const sortableItems = getSortableItems(
@@ -92,75 +97,81 @@ export function EasyblocksCanvas({
   return (
     /* EasyblocksMetadataProvider must be defined in case of nested <Easyblocks /> components are used! */
     <EasyblocksMetadataProvider meta={meta}>
-      <CanvasRoot>
-        <DndContext
-          sensors={[mouseSensor]}
-          collisionDetection={customCollisionDetection}
-          onDragStart={(event) => {
-            document.documentElement.style.cursor = "grabbing";
-            activeDraggedEntryPath.current = dragDataSchema.parse(
-              event.active.data.current
-            ).path;
-            window.parent.editorWindowAPI?.editorContext?.setFocussedField([]);
-          }}
-          onDragEnd={(event) => {
-            document.documentElement.style.cursor = "";
-            const activeData = dragDataSchema.parse(event.active.data.current);
+      <TooltipProvider>
+        <CanvasRoot>
+          <DndContext
+            sensors={[mouseSensor]}
+            collisionDetection={customCollisionDetection}
+            onDragStart={(event) => {
+              document.documentElement.style.cursor = "grabbing";
+              activeDraggedEntryPath.current = dragDataSchema.parse(
+                event.active.data.current
+              ).path;
+              window.parent.editorWindowAPI?.editorContext?.setFocussedField(
+                []
+              );
+            }}
+            onDragEnd={(event) => {
+              document.documentElement.style.cursor = "";
+              const activeData = dragDataSchema.parse(
+                event.active.data.current
+              );
 
-            if (event.over) {
-              const overData = dragDataSchema.parse(event.over.data.current);
+              if (event.over) {
+                const overData = dragDataSchema.parse(event.over.data.current);
 
-              if (event.over.id === event.active.id) {
-                // If the dragged item is dropped on itself, we want to refocus the dragged item.
+                if (event.over.id === event.active.id) {
+                  // If the dragged item is dropped on itself, we want to refocus the dragged item.
+                  window.parent.editorWindowAPI?.editorContext?.setFocussedField(
+                    activeData.path
+                  );
+                } else {
+                  const itemMovedEvent = itemMoved({
+                    fromPath: activeData.path,
+                    toPath: overData.path,
+                    placement: ifValidPlacement(
+                      event.over.id.toString().split(".")[1]
+                    ),
+                  });
+
+                  requestAnimationFrame(() => {
+                    window.parent.postMessage(itemMovedEvent);
+                  });
+                }
+              } else {
+                // If there was no drop target, we want to refocus the dragged item.
                 window.parent.editorWindowAPI?.editorContext?.setFocussedField(
                   activeData.path
                 );
-              } else {
-                const itemMovedEvent = itemMoved({
-                  fromPath: activeData.path,
-                  toPath: overData.path,
-                  placement: ifValidPlacement(
-                    event.over.id.toString().split(".")[1]
-                  ),
-                });
-
-                requestAnimationFrame(() => {
-                  window.parent.postMessage(itemMovedEvent);
-                });
               }
-            } else {
-              // If there was no drop target, we want to refocus the dragged item.
+            }}
+            onDragCancel={(event) => {
+              document.documentElement.style.cursor = "";
+              // If the drag was canceled, we want to refocus dragged item.
               window.parent.editorWindowAPI?.editorContext?.setFocussedField(
-                activeData.path
+                dragDataSchema.parse(event.active.data.current).path
               );
-            }
-          }}
-          onDragCancel={(event) => {
-            document.documentElement.style.cursor = "";
-            // If the drag was canceled, we want to refocus dragged item.
-            window.parent.editorWindowAPI?.editorContext?.setFocussedField(
-              dragDataSchema.parse(event.active.data.current).path
-            );
-          }}
-        >
-          <SortableContext items={sortableItems}>
-            <Easyblocks
-              renderableDocument={{
-                renderableContent: compiled,
-                meta,
-              }}
-              externalData={externalData}
-              components={{
-                ...components,
-                "@easyblocks/rich-text.editor": RichTextEditor,
-                "@easyblocks/text.editor": TextEditor,
-                "EditableComponentBuilder.editor": EditableComponentBuilder,
-                Placeholder: TypePlaceholder,
-              }}
-            />
-          </SortableContext>
-        </DndContext>
-      </CanvasRoot>
+            }}
+          >
+            <SortableContext items={sortableItems}>
+              <Easyblocks
+                renderableDocument={{
+                  renderableContent: compiled,
+                  meta,
+                }}
+                externalData={externalData}
+                components={{
+                  ...components,
+                  "@easyblocks/rich-text.editor": RichTextEditor,
+                  "@easyblocks/text.editor": TextEditor,
+                  "EditableComponentBuilder.editor": EditableComponentBuilder,
+                  Placeholder: TypePlaceholder,
+                }}
+              />
+            </SortableContext>
+          </DndContext>
+        </CanvasRoot>
+      </TooltipProvider>
     </EasyblocksMetadataProvider>
   );
 }

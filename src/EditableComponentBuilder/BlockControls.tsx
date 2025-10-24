@@ -1,3 +1,4 @@
+import { toArray } from "@/utils";
 import { useDndContext } from "@dnd-kit/core";
 import {
   horizontalListSortingStrategy,
@@ -15,13 +16,13 @@ import {
   useEasyblocksMetadata,
 } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors } from "@redsun-vn/easyblocks-design-system";
-import { toArray } from "@/utils";
 import React, { Fragment } from "react";
-import { SelectionFrameController } from "./SelectionFrameController";
+import { EditorContextType } from "../EditorContext";
 import {
   RICH_TEXT_PART_CONFIG_PATH_REGEXP,
   isConfigPathRichTextPart,
 } from "../utils/isConfigPathRichTextPart";
+import { SelectionFrameController } from "./SelectionFrameController";
 
 interface BlocksControlsProps {
   children: React.ReactNode;
@@ -43,8 +44,15 @@ export function BlocksControls({
   index,
   length,
 }: BlocksControlsProps) {
-  const { focussedField, setFocussedField, form }: any =
-    window.parent.editorWindowAPI?.editorContext;
+  const {
+    focussedField = [],
+    setFocussedField,
+    form,
+    actions,
+    translationFiles = {},
+    contextParams,
+  }: EditorContextType = window.parent.editorWindowAPI?.editorContext ??
+  ({} as EditorContextType);
 
   const meta = useEasyblocksMetadata();
   const dndContext = useDndContext();
@@ -222,6 +230,10 @@ export function BlocksControls({
         id={id}
         direction={direction}
         path={path}
+        focussedField={focussedField}
+        actions={actions}
+        translationFiles={translationFiles}
+        contextParams={contextParams}
       >
         {children}
       </SelectionFrameController>

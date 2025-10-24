@@ -1,5 +1,5 @@
-import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import { deepCompare } from "@/utils";
+import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 
 const HISTORY_SIZE = 50;
 
@@ -106,6 +106,13 @@ class EditorHistory {
 
   private canGoBack() {
     return this.currentIndex > 0;
+  }
+
+  isNewest() {
+    return this.values.length === this.currentIndex + 1;
+  }
+  isOldest() {
+    return this.currentIndex === 0;
   }
 }
 

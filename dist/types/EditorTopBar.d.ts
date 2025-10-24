@@ -1,10 +1,12 @@
 import { Devices, Locale } from "@redsun-vn/easyblocks-core";
 import React from "react";
+import { EditorHistory } from "./EditorHistory";
 export declare const TOP_BAR_HEIGHT = 40;
 export declare const EditorTopBar: React.FC<{
     saveLabel: string;
     onClose?: () => void;
     onSaveDocument?: () => void;
+    editorHistoryInstance: EditorHistory;
     isSaving?: boolean;
     onIsEditingChange: () => void;
     viewport: string;

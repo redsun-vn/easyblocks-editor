@@ -15,6 +15,8 @@ declare class EditorHistory {
     getEntries(): Array<HistoryEntry>;
     private canGoForward;
     private canGoBack;
+    isNewest(): boolean;
+    isOldest(): boolean;
 }
 export { EditorHistory };
 //# sourceMappingURL=EditorHistory.d.ts.map

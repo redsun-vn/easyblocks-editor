@@ -19,6 +19,7 @@ import arrayMutators from 'final-form-arrays';
 import { useDndContext, useSensor, MouseSensor, DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
 import { useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { z } from 'zod';
+import throttle$1 from 'lodash/throttle';
 
 function last(collection) {
   return collection[collection.length - 1];
@@ -3084,12 +3085,13 @@ const Image = styled.img.withConfig({
 const VerticalLine = styled.div.withConfig({
   displayName: "EditorTopBar__VerticalLine",
   componentId: "sc-726nw9-7"
-})(["width:1px;height:20px;margin-right:6px;background-color:", ";"], Colors.black10);
+})(["width:1px;height:20px;background-color:", ";"], Colors.black10);
 const debouncedSave = debounce(fn => fn(), 200);
 const EditorTopBar = ({
   onClose,
   onSaveDocument: _onSaveDocument,
   isSaving,
+  editorHistoryInstance,
   onViewportChange,
   devices,
   viewport,
@@ -3130,12 +3132,14 @@ const EditorTopBar = ({
   })), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Undo,
     hideLabel: true,
+    disabled: editorHistoryInstance.isOldest(),
     onClick: () => {
       onUndo();
     }
   }, t("editor.sidebar.undo")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Redo,
     hideLabel: true,
+    disabled: editorHistoryInstance.isNewest(),
     onClick: () => {
       onRedo();
     }
@@ -3182,7 +3186,10 @@ const EditorTopBar = ({
   }, t("topBar.preview"))), /*#__PURE__*/React__default.createElement(VerticalLine, null), /*#__PURE__*/React__default.createElement(Typography, {
     variant: "body",
     component: "label",
-    htmlFor: "easyblocks-edit-mode-button"
+    htmlFor: "easyblocks-edit-mode-button",
+    style: {
+      marginLeft: 6
+    }
   }, t("topBar.editMode")), " ", /*#__PURE__*/React__default.createElement(Toggle$1, {
     name: "easyblocks-edit-mode-button",
     checked: isEditing,
@@ -5645,6 +5652,12 @@ class EditorHistory {
   canGoBack() {
     return this.currentIndex > 0;
   }
+  isNewest() {
+    return this.values.length === this.currentIndex + 1;
+  }
+  isOldest() {
+    return this.currentIndex === 0;
+  }
 }
 
 function useEditorHistory({
@@ -6096,7 +6109,8 @@ const EditorContent = ({
   const {
     undo,
     redo,
-    push
+    push,
+    editorHistoryInstance
   } = useEditorHistory({
     onChange: ({
       config,
@@ -6434,6 +6448,7 @@ const EditorContent = ({
   }), /*#__PURE__*/React__default.createElement(EditorTopBar, {
     onUndo: undo,
     onRedo: redo,
+    editorHistoryInstance: editorHistoryInstance,
     onSaveDocument: saveNow,
     isSaving: isSaving,
     onClose: () => {
@@ -7332,6 +7347,96 @@ const globalEditorRendererStyles = `
   }
 `;
 
+const SelectionFrameActionsContainer = styled$1.div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
+  componentId: "sc-1fta8jo-0"
+})(["position:absolute;top:", ";bottom:", ";right:", ";left:", ";gap:2px;border-radius:4px;box-shadow:var(--tina-shadow-big);display:flex;padding:6px 12px;width:max-content;background:", ";z-index:1;"], ({
+  positionY
+}) => positionY === "top" ? "-44px" : "unset", ({
+  positionY
+}) => positionY === "bottom" ? "-44px" : "unset", ({
+  positionX
+}) => positionX === "right" ? "0px" : "unset", ({
+  positionX
+}) => positionX === "left" ? "0px" : "unset", Colors.white);
+const SelectionFrameActions = ({
+  focussedField,
+  actions,
+  translationFiles,
+  contextParams
+}) => {
+  const {
+    t
+  } = getTranslation({
+    translationFiles,
+    contextParams
+  });
+  const [currentPlacement, setCurrentPlacement] = useState({
+    positionX: "right",
+    positionY: "top"
+  });
+  const triggerRef = useRef(null);
+  useEffect(() => {
+    function calculatePosition() {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+
+      // Calculate position top bottom
+      if (rect.top < 0 && currentPlacement.positionY === "top") {
+        setCurrentPlacement(prev => ({
+          ...prev,
+          positionY: "bottom"
+        }));
+      } else if (rect.bottom > window.innerHeight && currentPlacement.positionY === "bottom") {
+        setCurrentPlacement(prev => ({
+          ...prev,
+          positionY: "top"
+        }));
+      }
+
+      // Calculate position left right
+      if (rect.left < 0 && currentPlacement.positionX === "right") {
+        setCurrentPlacement(prev => ({
+          ...prev,
+          positionX: "left"
+        }));
+      } else if (rect.right > window.innerWidth && currentPlacement.positionX === "left") {
+        setCurrentPlacement(prev => ({
+          ...prev,
+          positionX: "right"
+        }));
+      }
+    }
+    const throttled = throttle$1(calculatePosition, 100);
+    calculatePosition();
+    window.addEventListener("scroll", throttled);
+    window.addEventListener("resize", throttled);
+    return () => {
+      window.removeEventListener("scroll", throttled);
+      window.removeEventListener("resize", throttled);
+    };
+  }, [currentPlacement, focussedField]);
+  return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, _extends({}, currentPlacement, {
+    ref: triggerRef
+  }), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Duplicate,
+    hideLabel: true,
+    onClick: () => actions.duplicateItems(focussedField)
+  }, t("duplicate")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Trash,
+    hideLabel: true,
+    onClick: () => actions.removeItems(focussedField)
+  }, t("delete")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ArrowUp,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "top")
+  }, t("up")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ArrowDown,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "bottom")
+  }, t("down")));
+};
+
 function SelectionFrameController({
   isActive,
   isChildrenSelectionDisabled,
@@ -7341,7 +7446,11 @@ function SelectionFrameController({
   sortable,
   id,
   direction,
-  path
+  path,
+  focussedField,
+  actions,
+  translationFiles,
+  contextParams
 }) {
   const [node, setNode] = useState(null);
   useUpdateFramePosition({
@@ -7430,7 +7539,12 @@ function SelectionFrameController({
       sortable.setNodeRef(node);
     },
     onClick: onSelect
-  }, sortable.attributes, sortable.listeners), children);
+  }, sortable.attributes, sortable.listeners), isActive ? /*#__PURE__*/React__default.createElement(SelectionFrameActions, {
+    actions: actions,
+    focussedField: focussedField,
+    translationFiles: translationFiles,
+    contextParams: contextParams
+  }) : null, children);
 }
 function useUpdateFramePosition({
   node,
@@ -7500,10 +7614,13 @@ function BlocksControls({
   length
 }) {
   const {
-    focussedField,
+    focussedField = [],
     setFocussedField,
-    form
-  } = window.parent.editorWindowAPI?.editorContext;
+    form,
+    actions,
+    translationFiles = {},
+    contextParams
+  } = window.parent.editorWindowAPI?.editorContext ?? {};
   const meta = useEasyblocksMetadata();
   const dndContext = useDndContext();
   const isActive = focussedField.map(focusedField => {
@@ -7597,7 +7714,11 @@ function BlocksControls({
     sortable: sortable,
     id: id,
     direction: direction,
-    path: path
+    path: path,
+    focussedField: focussedField,
+    actions: actions,
+    translationFiles: translationFiles,
+    contextParams: contextParams
   }, children), !isDroppableDisabled && isActivePathInDifferentCollection && sortable.activeIndex > sortable.index && index === length - 1 && /*#__PURE__*/React__default.createElement(DroppablePlaceholder, {
     id: id,
     direction: direction,
@@ -7912,7 +8033,7 @@ function EasyblocksCanvas({
   const sortableItems = getSortableItems(editorContext.form.values, editorContext);
   return /*#__PURE__*/ /* EasyblocksMetadataProvider must be defined in case of nested <Easyblocks /> components are used! */React__default.createElement(EasyblocksMetadataProvider, {
     meta: meta
-  }, /*#__PURE__*/React__default.createElement(CanvasRoot, null, /*#__PURE__*/React__default.createElement(DndContext, {
+  }, /*#__PURE__*/React__default.createElement(TooltipProvider, null, /*#__PURE__*/React__default.createElement(CanvasRoot, null, /*#__PURE__*/React__default.createElement(DndContext, {
     sensors: [mouseSensor],
     collisionDetection: customCollisionDetection,
     onDragStart: event => {
@@ -7963,7 +8084,7 @@ function EasyblocksCanvas({
       "EditableComponentBuilder.editor": EditableComponentBuilder,
       Placeholder: TypePlaceholder
     }
-  })))));
+  }))))));
 }
 function getSortableItems(rootNoCodeEntry, editorContext) {
   const sortableItems = [];

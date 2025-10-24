@@ -17,6 +17,7 @@ import {
 import debounce from "lodash/debounce";
 import React, { ReactNode, useRef } from "react";
 import { styled } from "styled-components";
+import { EditorHistory } from "./EditorHistory";
 import { useTranslation } from "./useTranslation";
 
 export const TOP_BAR_HEIGHT = 40;
@@ -91,7 +92,6 @@ const Image = styled.img`
 const VerticalLine = styled.div`
   width: 1px;
   height: 20px;
-  margin-right: 6px;
   background-color: ${Colors.black10};
 `;
 
@@ -101,6 +101,7 @@ export const EditorTopBar: React.FC<{
   saveLabel: string;
   onClose?: () => void;
   onSaveDocument?: () => void;
+  editorHistoryInstance: EditorHistory;
   isSaving?: boolean;
   onIsEditingChange: () => void;
   viewport: string;
@@ -118,6 +119,7 @@ export const EditorTopBar: React.FC<{
   onClose,
   onSaveDocument: _onSaveDocument,
   isSaving,
+  editorHistoryInstance,
   onViewportChange,
   devices,
   viewport,
@@ -160,6 +162,7 @@ export const EditorTopBar: React.FC<{
         <ButtonGhost
           icon={Icons.Undo}
           hideLabel
+          disabled={editorHistoryInstance.isOldest()}
           onClick={() => {
             onUndo();
           }}
@@ -169,6 +172,7 @@ export const EditorTopBar: React.FC<{
         <ButtonGhost
           icon={Icons.Redo}
           hideLabel
+          disabled={editorHistoryInstance.isNewest()}
           onClick={() => {
             onRedo();
           }}
@@ -237,6 +241,7 @@ export const EditorTopBar: React.FC<{
             variant={"body"}
             component="label"
             htmlFor="easyblocks-edit-mode-button"
+            style={{ marginLeft: 6 }}
           >
             {t("topBar.editMode")}
           </Typography>{" "}

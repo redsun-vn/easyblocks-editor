@@ -1,7 +1,10 @@
 import type { useSortable } from "@dnd-kit/sortable";
+import { ContextParams } from "@redsun-vn/easyblocks-core";
 import { selectionFramePositionChanged } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React, { MouseEvent, ReactNode, useEffect, useState } from "react";
+import { ActionsType } from "../types";
+import { SelectionFrameActions } from "./SelectionFrameActions";
 
 type SelectionFrameControllerProps = {
   isActive: boolean;
@@ -13,6 +16,10 @@ type SelectionFrameControllerProps = {
   id: string;
   direction: "horizontal" | "vertical";
   path: string;
+  focussedField: string[];
+  actions: ActionsType;
+  translationFiles: { [key: string]: any };
+  contextParams: ContextParams;
 };
 
 function SelectionFrameController({
@@ -25,6 +32,10 @@ function SelectionFrameController({
   id,
   direction,
   path,
+  focussedField,
+  actions,
+  translationFiles,
+  contextParams,
 }: SelectionFrameControllerProps) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
 
@@ -140,6 +151,14 @@ function SelectionFrameController({
       {...sortable.attributes}
       {...sortable.listeners}
     >
+      {isActive ? (
+        <SelectionFrameActions
+          actions={actions}
+          focussedField={focussedField}
+          translationFiles={translationFiles}
+          contextParams={contextParams}
+        />
+      ) : null}
       {children}
     </div>
   );
