@@ -289,7 +289,7 @@ function internalBuildTinaFields(path, editorContext, fieldsFilter) {
   const compiledPath = pathToCompiledPath(stripRichTextPartSelection(path), editorContext);
   const compiledComponent = dotNotationGet(editorContext.compiledComponentConfig, compiledPath);
   let allFields = [];
-  (compiledComponent.__editing?.fields ?? []).filter(field => fieldsFilter ? fieldsFilter(field) : true).forEach(item => {
+  (compiledComponent?.__editing?.fields ?? []).filter(field => fieldsFilter ? fieldsFilter(field) : true).forEach(item => {
     if (isFieldPortal(item)) {
       let fields = [];
       if (item.portal === "component") {

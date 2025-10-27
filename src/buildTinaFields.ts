@@ -41,7 +41,7 @@ function internalBuildTinaFields(
 
   let allFields: InternalAnyTinaField[] = [];
 
-  (compiledComponent.__editing?.fields ?? [])
+  (compiledComponent?.__editing?.fields ?? [])
     .filter((field) =>
       fieldsFilter ? fieldsFilter(field as InternalAnyTinaField) : true
     )
