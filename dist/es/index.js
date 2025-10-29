@@ -19,7 +19,6 @@ import arrayMutators from 'final-form-arrays';
 import { useDndContext, useSensor, MouseSensor, DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
 import { useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { z } from 'zod';
-import throttle$1 from 'lodash/throttle';
 
 function last(collection) {
   return collection[collection.length - 1];
@@ -4696,6 +4695,47 @@ function isButtonWithinViewport(target, viewport) {
   return target.top >= 0 && target.top <= viewport.height && target.left >= 0 && target.left <= viewport.width;
 }
 
+const SelectionFrameActionsContainer = styled$1.div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
+  componentId: "sc-1fta8jo-0"
+})(["position:absolute;top:calc(var(", ") - 50px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, Colors.white);
+const SelectionFrameActionsGroupButtons = styled$1.div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
+  componentId: "sc-1fta8jo-1"
+})(["display:flex;gap:2px;"]);
+const SelectionFrameActions = ({
+  focussedField,
+  actions,
+  translationFiles,
+  contextParams
+}) => {
+  const {
+    t
+  } = getTranslation({
+    translationFiles,
+    contextParams
+  });
+  return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Duplicate,
+    hideLabel: true,
+    onClick: () => actions.duplicateItems(focussedField)
+  }, t("duplicate")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Trash,
+    hideLabel: true,
+    onClick: () => actions.removeItems(focussedField)
+  }, t("delete")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ArrowUp,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "top")
+  }, t("up")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ArrowDown,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "bottom")
+  }, t("down"))));
+};
+
 function SelectionFrame({
   width,
   height,
@@ -4705,7 +4745,9 @@ function SelectionFrame({
   const {
     focussedField,
     form,
-    actions
+    actions,
+    translationFiles = {},
+    contextParams
   } = editorContext;
   const compiledFocusedField = focussedField.length === 1 ? pathToCompiledPath(focussedField[0], editorContext) : undefined;
   const compiledComponentConfig = compiledFocusedField ? dotNotationGet(editorContext.compiledComponentConfig, compiledFocusedField) : undefined;
@@ -4778,7 +4820,12 @@ function SelectionFrame({
   }), /*#__PURE__*/React__default.createElement(AddButton, {
     position: "after",
     onClick: () => handleAddButtonClick("after")
-  })));
+  }), isAddingEnabled ? /*#__PURE__*/React__default.createElement(SelectionFrameActions, {
+    actions: actions,
+    focussedField: focussedField,
+    translationFiles: translationFiles,
+    contextParams: contextParams
+  }) : null));
 }
 function updateAddButtons(direction, targetElementRect, viewport, containerElementRect) {
   const {
@@ -7358,97 +7405,6 @@ const globalEditorRendererStyles = `
   }
 `;
 
-const SelectionFrameActionsContainer = styled$1.div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
-  componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:", ";bottom:", ";right:", ";left:", ";gap:2px;border-radius:4px;box-shadow:var(--tina-shadow-big);display:flex;padding:6px 12px;width:max-content;background:", ";z-index:1;"], ({
-  positionY
-}) => positionY === "top" ? "-44px" : "unset", ({
-  positionY
-}) => positionY === "bottom" ? "-44px" : "unset", ({
-  positionX
-}) => positionX === "right" ? "0px" : "unset", ({
-  positionX
-}) => positionX === "left" ? "0px" : "unset", Colors.white);
-const SelectionFrameActions = ({
-  focussedField,
-  actions,
-  translationFiles,
-  contextParams
-}) => {
-  const {
-    t
-  } = getTranslation({
-    translationFiles,
-    contextParams
-  });
-  const [currentPlacement, setCurrentPlacement] = useState({
-    positionX: "right",
-    positionY: "top"
-  });
-  const triggerRef = useRef(null);
-  const placementRef = useRef(currentPlacement);
-  function calculatePosition() {
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    let next = {
-      ...placementRef.current
-    };
-    let changed = false;
-
-    // TOP / BOTTOM toggle
-    if (rect.top < 0 && next.positionY === "top") {
-      next.positionY = "bottom";
-      changed = true;
-    } else if (rect.bottom > window.innerHeight && next.positionY === "bottom") {
-      next.positionY = "top";
-      changed = true;
-    }
-
-    // LEFT / RIGHT toggle
-    if (rect.left < 0 && next.positionX === "right") {
-      next.positionX = "left";
-      changed = true;
-    } else if (rect.right > window.innerWidth && next.positionX === "left") {
-      next.positionX = "right";
-      changed = true;
-    }
-    if (changed) {
-      placementRef.current = next;
-      setCurrentPlacement(next);
-    }
-  }
-  useEffect(() => {
-    const throttled = throttle$1(calculatePosition, 200);
-    calculatePosition();
-    window.addEventListener("scroll", throttled);
-    window.addEventListener("resize", throttled);
-    return () => {
-      window.removeEventListener("scroll", throttled);
-      window.removeEventListener("resize", throttled);
-    };
-  }, [focussedField]);
-  return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, _extends({}, currentPlacement, {
-    ref: triggerRef
-  }), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.Duplicate,
-    hideLabel: true,
-    onClick: () => actions.duplicateItems(focussedField)
-  }, t("duplicate")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.Trash,
-    hideLabel: true,
-    onClick: () => actions.removeItems(focussedField)
-  }, t("delete")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.ArrowUp,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "top")
-  }, t("up")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.ArrowDown,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("down")));
-};
-
 function SelectionFrameController({
   isActive,
   isChildrenSelectionDisabled,
@@ -7458,11 +7414,7 @@ function SelectionFrameController({
   sortable,
   id,
   direction,
-  path,
-  focussedField,
-  actions,
-  translationFiles,
-  contextParams
+  path
 }) {
   const [node, setNode] = useState(null);
   useUpdateFramePosition({
@@ -7551,12 +7503,7 @@ function SelectionFrameController({
       sortable.setNodeRef(node);
     },
     onClick: onSelect
-  }, sortable.attributes, sortable.listeners), isActive ? /*#__PURE__*/React__default.createElement(SelectionFrameActions, {
-    actions: actions,
-    focussedField: focussedField,
-    translationFiles: translationFiles,
-    contextParams: contextParams
-  }) : null, children);
+  }, sortable.attributes, sortable.listeners), children);
 }
 function useUpdateFramePosition({
   node,
@@ -7628,10 +7575,7 @@ function BlocksControls({
   const {
     focussedField = [],
     setFocussedField,
-    form,
-    actions,
-    translationFiles = {},
-    contextParams
+    form
   } = window.parent.editorWindowAPI?.editorContext ?? {};
   const meta = useEasyblocksMetadata();
   const dndContext = useDndContext();
@@ -7726,11 +7670,7 @@ function BlocksControls({
     sortable: sortable,
     id: id,
     direction: direction,
-    path: path,
-    focussedField: focussedField,
-    actions: actions,
-    translationFiles: translationFiles,
-    contextParams: contextParams
+    path: path
   }, children), !isDroppableDisabled && isActivePathInDifferentCollection && sortable.activeIndex > sortable.index && index === length - 1 && /*#__PURE__*/React__default.createElement(DroppablePlaceholder, {
     id: id,
     direction: direction,

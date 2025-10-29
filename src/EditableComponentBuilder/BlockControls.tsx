@@ -48,9 +48,6 @@ export function BlocksControls({
     focussedField = [],
     setFocussedField,
     form,
-    actions,
-    translationFiles = {},
-    contextParams,
   }: EditorContextType = window.parent.editorWindowAPI?.editorContext ??
   ({} as EditorContextType);
 
@@ -230,10 +227,6 @@ export function BlocksControls({
         id={id}
         direction={direction}
         path={path}
-        focussedField={focussedField}
-        actions={actions}
-        translationFiles={translationFiles}
-        contextParams={contextParams}
       >
         {children}
       </SelectionFrameController>

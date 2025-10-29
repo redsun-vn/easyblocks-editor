@@ -27,6 +27,7 @@ import {
   isConfigPathRichTextPart,
   RICH_TEXT_PART_CONFIG_PATH_REGEXP,
 } from "../utils/isConfigPathRichTextPart";
+import { SelectionFrameActions } from "../EditableComponentBuilder/SelectionFrameActions";
 
 type SelectionFrameProps = {
   width: number;
@@ -36,7 +37,13 @@ type SelectionFrameProps = {
 
 function SelectionFrame({ width, height, transform }: SelectionFrameProps) {
   const editorContext = useEditorContext();
-  const { focussedField, form, actions } = editorContext;
+  const {
+    focussedField,
+    form,
+    actions,
+    translationFiles = {},
+    contextParams,
+  } = editorContext;
 
   const compiledFocusedField =
     focussedField.length === 1
@@ -154,6 +161,14 @@ function SelectionFrame({ width, height, transform }: SelectionFrameProps) {
           position="after"
           onClick={() => handleAddButtonClick("after")}
         />
+        {isAddingEnabled ? (
+          <SelectionFrameActions
+            actions={actions}
+            focussedField={focussedField}
+            translationFiles={translationFiles}
+            contextParams={contextParams}
+          />
+        ) : null}
       </FrameWrapper>
     </Wrapper>
   );
