@@ -41,11 +41,7 @@ const IdentityFieldWrapper = styled.div`
   background: ${Colors.white};
 `;
 
-const IdentityFieldContainer = styled.div`
-  position: sticky;
-  top: 0px;
-  z-index: 1;
-`;
+const IdentityFieldContainer = styled.div``;
 
 function IdentityField({ input, field }: IdentityFieldProps) {
   const editorContext = useEditorContext();

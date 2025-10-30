@@ -1920,7 +1920,7 @@ const IdentityFieldWrapper = styled__default["default"].div.withConfig({
 const IdentityFieldContainer = styled__default["default"].div.withConfig({
   displayName: "IdentityFieldPlugin__IdentityFieldContainer",
   componentId: "sc-ayv92b-2"
-})(["position:sticky;top:0px;z-index:1;"]);
+})([""]);
 function IdentityField({
   input,
   field

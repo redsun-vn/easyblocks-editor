@@ -1885,7 +1885,7 @@ const IdentityFieldWrapper = styled$1.div.withConfig({
 const IdentityFieldContainer = styled$1.div.withConfig({
   displayName: "IdentityFieldPlugin__IdentityFieldContainer",
   componentId: "sc-ayv92b-2"
-})(["position:sticky;top:0px;z-index:1;"]);
+})([""]);
 function IdentityField({
   input,
   field
