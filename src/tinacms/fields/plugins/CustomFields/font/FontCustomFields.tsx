@@ -1,6 +1,6 @@
 import { TokenValue } from "@redsun-vn/easyblocks-core";
 import { Fonts } from "@redsun-vn/easyblocks-design-system";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../../../../../EditorContext";
 import { useTranslation } from "../../../../../useTranslation";
@@ -170,10 +170,12 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
     return prev;
   }, {});
 
-  const [inputValue, setInputValue] = useState<Record<string, string | number>>(
-    input.value?.value ||
+  const inputValue = useMemo(
+    () =>
+      input.value?.value ||
       input.value?.[editorContext.breakpointIndex]?.value ||
-      defaultInputValue
+      defaultInputValue,
+    [input]
   );
 
   const onChange = (key: string, value: string | number, type: string) => {
@@ -187,18 +189,6 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
       widgetId: undefined,
     });
   };
-
-  useEffect(() => {
-    if (
-      input.value?.value ||
-      input.value?.[editorContext.breakpointIndex]?.value
-    ) {
-      setInputValue(
-        input.value?.value ||
-          input.value?.[editorContext.breakpointIndex]?.value
-      );
-    }
-  }, [input]);
 
   return (
     <FontCustomFieldsStyle>

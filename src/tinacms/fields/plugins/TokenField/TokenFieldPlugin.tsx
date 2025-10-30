@@ -232,7 +232,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
             "params" in field.schemaProp ? field.schemaProp.params : undefined
           }
         />
-      ) : tokenTypeDefinition.token === "fonts" ? (
+      ) : ["fonts", "colors"].includes(tokenTypeDefinition.token) ? (
         <CustomField input={input} field={field} />
       ) : (
         <Input

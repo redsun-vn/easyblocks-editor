@@ -312,6 +312,5 @@ const FieldsGroup = styled.div`
   width: 100%;
   padding: 0;
   white-space: nowrap;
-  overflow-x: hidden;
-  overflow-y: auto !important;
+  overflow: unset;
 `;

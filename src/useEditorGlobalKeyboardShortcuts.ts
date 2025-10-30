@@ -20,6 +20,8 @@ const DATA_TRANSFER_FORMAT = "text/x-shopstory";
 
 function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
   let isDeleting = false;
+  let pasteId: string | number | NodeJS.Timeout;
+
   useEffect(() => {
     const { focussedField: focusedFields, actions } = editorContext;
 
@@ -89,27 +91,30 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
     }
 
     function handlePaste(event: ClipboardEvent): void {
-      if (!canHandleCopyPaste(focusedFields, event)) {
-        return;
-      }
-
       const rawData = event.clipboardData?.getData(DATA_TRANSFER_FORMAT);
+      clearTimeout(pasteId);
 
-      if (!rawData || rawData === "") {
-        return;
-      }
+      pasteId = setTimeout(() => {
+        if (!canHandleCopyPaste(focusedFields, event)) {
+          return;
+        }
 
-      try {
-        const parsedData = JSON.parse(rawData);
+        if (!rawData || rawData === "") {
+          return;
+        }
 
-        const data = Array.isArray(parsedData) ? parsedData : [parsedData];
+        try {
+          const parsedData = JSON.parse(rawData);
 
-        actions.pasteItems(data);
-        event.preventDefault();
-      } catch (e) {
-        console.error(e);
-        return;
-      }
+          const data = Array.isArray(parsedData) ? parsedData : [parsedData];
+
+          actions.pasteItems(data);
+          event.preventDefault();
+        } catch (e) {
+          console.error(e);
+          return;
+        }
+      }, 200);
     }
 
     window.document.addEventListener("keydown", handleKeydown);

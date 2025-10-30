@@ -434,10 +434,18 @@ async function copyToClipboard(textToCopy) {
   }
 }
 
+const SidebarFooterContainer = styled.styled.div.withConfig({
+  displayName: "SidebarFooter__SidebarFooterContainer",
+  componentId: "sc-17xf0ak-0"
+})(["position:sticky;bottom:0;background:", ";"], easyblocksDesignSystem.Colors.white);
+const HorizontalLine$2 = styled.styled.div.withConfig({
+  displayName: "SidebarFooter__HorizontalLine",
+  componentId: "sc-17xf0ak-1"
+})(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
 const IdWrapper = styled.styled.div.withConfig({
   displayName: "SidebarFooter__IdWrapper",
-  componentId: "sc-17xf0ak-0"
-})(["display:block;padding:16px;", " color:", ";"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black40);
+  componentId: "sc-17xf0ak-2"
+})(["display:flex;padding:12px 16px;gap:16px;", " color:", ";"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black40);
 function SidebarFooter(props) {
   const editorContext = useEditorContext();
   const toaster = easyblocksDesignSystem.useToaster();
@@ -464,7 +472,7 @@ function SidebarFooter(props) {
   const definition = _internals.findComponentDefinition(value, editorContext);
   const isSaveable = !!definition?.allowSave;
   const showSaveAsTemplate = isSaveable && !editorContext.readOnly && !editorContext.disableCustomTemplates;
-  return /*#__PURE__*/React__namespace.createElement("div", null, /*#__PURE__*/React__namespace.createElement(IdWrapper, null, /*#__PURE__*/React__namespace.createElement("div", null, "Id: ", value._id), /*#__PURE__*/React__namespace.createElement("br", null), showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
+  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$2, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
     onClick: () => {
       editorContext.actions.openTemplateModal({
         mode: "create",
@@ -473,11 +481,7 @@ function SidebarFooter(props) {
         widthAuto
       });
     }
-  }, t("template.save")), isAdminMode && /*#__PURE__*/React__namespace.createElement("div", {
-    style: {
-      paddingTop: 16
-    }
-  }, /*#__PURE__*/React__namespace.createElement("div", null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonPrimary, {
+  }, t("template.save")), isAdminMode && /*#__PURE__*/React__namespace.createElement("div", null, /*#__PURE__*/React__namespace.createElement("div", null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonPrimary, {
     onClick: async () => {
       try {
         await copyToClipboard(JSON.stringify(value));
@@ -1040,6 +1044,47 @@ const useTokenTypes = () => {
   return tokenTypes;
 };
 
+const ColorCustomFieldsStyle = styled__default["default"].div.withConfig({
+  displayName: "ColorCustomFields__ColorCustomFieldsStyle",
+  componentId: "sc-83vwfl-0"
+})(["display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px;"]);
+const ColorCustomFieldsWrapper = styled__default["default"].div.withConfig({
+  displayName: "ColorCustomFields__ColorCustomFieldsWrapper",
+  componentId: "sc-83vwfl-1"
+})(["display:flex;justify-content:flex-end;align-items:center;"]);
+const InputStyle = styled__default["default"](easyblocksDesignSystem.Input).withConfig({
+  displayName: "ColorCustomFields__InputStyle",
+  componentId: "sc-83vwfl-2"
+})(["width:100px;box-shadow:0 0 0 1px ", ";&:hover{box-shadow:0 0 0 1px ", ";}border-radius:2px;cursor:pointer;outline:none;"], easyblocksDesignSystem.Colors.black10, easyblocksDesignSystem.Colors.black20);
+const ColorCustomFields = ({
+  input
+}) => {
+  const editorContext = useEditorContext();
+  const {
+    isOpen,
+    tooltipProps,
+    triggerProps,
+    arrowProps
+  } = useTooltip();
+  const currentValue = React.useMemo(() => input.value?.value || input.value?.[editorContext.breakpointIndex]?.value, [input]);
+  let changeColorId;
+  const onChange = event => {
+    clearTimeout(changeColorId);
+    const color = event.target.value;
+    changeColorId = setTimeout(() => {
+      input.onChange({
+        value: color,
+        widgetId: undefined
+      });
+    }, 300);
+  };
+  return /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsStyle, null, /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsWrapper, null, /*#__PURE__*/React__default["default"].createElement(InputStyle, _extends__default["default"]({
+    type: "color",
+    defaultValue: currentValue,
+    onChange: onChange
+  }, triggerProps)), isOpen && /*#__PURE__*/React__default["default"].createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default["default"].createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default["default"].createElement(TooltipBody, null, currentValue))));
+};
+
 function getFonts() {
   const selectedFamilies = ["Roboto, sans-serif", "Open Sans, sans-serif", "Lato, sans-serif", "Montserrat, sans-serif", "Poppins, sans-serif", "Inter, sans-serif", "Oswald, sans-serif", "Raleway, sans-serif", "Noto Sans, sans-serif", "Roboto Condensed, sans-serif", "Nunito, sans-serif", "Work Sans, sans-serif", "Rubik, sans-serif", "Mukta, sans-serif", "Ubuntu, sans-serif", "Quicksand, sans-serif", "Hind, sans-serif", "Fira Sans, sans-serif", "Barlow, sans-serif", "Cabin, sans-serif", "Prompt, sans-serif", "Heebo, sans-serif", "Source Sans 3, sans-serif", "Titillium Web, sans-serif", "Muli, sans-serif", "Manrope, sans-serif", "Josefin Sans, sans-serif", "Karla, sans-serif", "DM Sans, sans-serif", "PT Sans, sans-serif", "Tajawal, sans-serif", "Public Sans, sans-serif", "Catamaran, sans-serif", "Urbanist, sans-serif", "Outfit, sans-serif", "Lexend, sans-serif", "Signika, sans-serif", "Asap, sans-serif", "Sarabun, sans-serif", "Red Hat Display, sans-serif", "Exo 2, sans-serif", "Sen, sans-serif", "Epilogue, sans-serif", "Jost, sans-serif", "IBM Plex Sans, sans-serif", "Varela Round, sans-serif", "Mulish, sans-serif", "Spartan, sans-serif", "Krub, sans-serif", "Questrial, sans-serif", "Barlow Condensed, sans-serif", "Overpass, sans-serif", "Alata, sans-serif", "Kanit, sans-serif", "Noto Serif, serif", "Merriweather, serif", "Playfair Display, serif", "Lora, serif", "Cormorant Garamond, serif", "EB Garamond, serif", "PT Serif, serif", "Libre Baskerville, serif", "DM Serif Display, serif", "Crimson Text, serif", "Bitter, serif", "Spectral, serif", "Cormorant, serif", "Zilla Slab, serif", "Nanum Myeongjo, serif", "Tinos, serif", "Cardo, serif", "Domine, serif", "Arvo, serif", "Vollkorn, serif", "Bree Serif, serif", "Alegreya, serif", "Noticia Text, serif", "Libre Caslon Text, serif", "Faustina, serif", "Mate, serif", "Lusitana, serif", "Arapey, serif", "Fira Sans Condensed, sans-serif", "Space Grotesk, sans-serif", "Sofia Sans, sans-serif", "Niramit, sans-serif", "Be Vietnam Pro, sans-serif", "Eczar, serif", "Quattrocento, serif", "Rokkitt, serif", "Cormorant Infant, serif", "Slabo 27px, serif", "Ultra, serif", "Rozha One, serif", "Old Standard TT, serif", "Baskervville, serif", "Play, sans-serif", "Mada, sans-serif", "Rajdhani, sans-serif", "Cabinet Grotesk, sans-serif", "Archivo, sans-serif", "Anton, display", "Bebas Neue, display", "Abril Fatface, display", "Alfa Slab One, display", "Righteous, display", "Lobster, display", "Pacifico, handwriting", "Caveat, handwriting", "Dancing Script, handwriting", "Great Vibes, handwriting", "Satisfy, handwriting", "Shadows Into Light, handwriting", "Cookie, handwriting", "Gloria Hallelujah, handwriting", "Indie Flower, handwriting", "Courgette, handwriting", "Amatic SC, display", "Fredoka, sans-serif", "Baloo 2, display", "Chewy, display", "Luckiest Guy, display", "Permanent Marker, handwriting", "Architects Daughter, handwriting", "Rock Salt, handwriting", "Handlee, handwriting", "Kaushan Script, handwriting", "Patrick Hand, handwriting", "Carter One, display", "Sigmar, display", "Rye, display", "Black Ops One, display", "Bungee, display", "Press Start 2P, monospace", "Space Mono, monospace", "Fira Code, monospace", "Roboto Mono, monospace", "JetBrains Mono, monospace", "Inconsolata, monospace", "Share Tech Mono, monospace", "Major Mono Display, monospace", "Source Code Pro, monospace", "Audiowide, display", "Syncopate, display", "Unica One, display", "Orbitron, display", "Chakra Petch, sans-serif", "Expletus Sans, display", "Staatliches, display", "Poiret One, display", "Aldrich, sans-serif", "Gruppo, display", "Viga, sans-serif", "Suez One, serif", "Frank Ruhl Libre, serif", "Cambo, serif", "Marcellus, serif", "Cinzel, serif", "Judson, serif", "Gelasio, serif", "Abhaya Libre, serif", "Cormorant SC, serif", "Crimson Pro, serif", "Noto Serif Display, serif", "Sanchez, serif", "DM Serif Text, serif", "Fjord One, serif", "Suranna, serif", "Kreon, serif", "Cormorant Upright, serif", "Gloock, serif", "Julius Sans One, sans-serif", "Assistant, sans-serif", "Encode Sans, sans-serif", "Nanum Gothic, sans-serif", "Maven Pro, sans-serif", "Overpass Mono, monospace", "Albert Sans, sans-serif", "Palanquin, sans-serif", "Chivo, sans-serif", "Arimo, sans-serif", "Exo, sans-serif", "Molengo, sans-serif", "Abel, sans-serif", "Teko, sans-serif", "Saira, sans-serif", "Jura, sans-serif", "Kumbh Sans, sans-serif", "Hepta Slab, serif", "Azeret Mono, monospace", "League Spartan, sans-serif", "Rufina, serif", "Crete Round, serif", "Amiri, serif", "Spectral SC, serif", "Petrona, serif", "Neuton, serif", "Coustard, serif", "Vidaloka, serif", "Bellefair, serif", "Antic Slab, serif", "Copse, serif", "DM Mono, monospace", "Anonymous Pro, monospace", "Oxygen Mono, monospace", "Courier Prime, monospace", "IBM Plex Mono, monospace", "Zilla Slab Highlight, display", "Shrikhand, display", "Bungee Shade, display", "Fugaz One, display", "Monoton, display", "Rammetto One, display", "Cinzel Decorative, display", "Fascinate Inline, display", "Racing Sans One, display", "Lilita One, display", "Potta One, display", "Tourney, display", "Cherry Swash, display", "Creepster, display", "Butcherman, display", "Ewert, display", "Bowlby One SC, display", "Galindo, display", "Knewave, display", "Fredoka One, display", "Ranchers, display", "Codystar, display", "VT323, monospace", "Cutive Mono, monospace", "IBM Plex Serif, serif", "Philosopher, sans-serif"];
   return selectedFamilies.sort().map(font => {
@@ -1251,7 +1296,7 @@ const FontCustomFields = ({
     prev[curr.key] = curr.defaultValue ?? (curr.type === "number" ? 0 : "");
     return prev;
   }, {});
-  const [inputValue, setInputValue] = React.useState(input.value?.value || input.value?.[editorContext.breakpointIndex]?.value || defaultInputValue);
+  const inputValue = React.useMemo(() => input.value?.value || input.value?.[editorContext.breakpointIndex]?.value || defaultInputValue, [input]);
   const onChange = (key, value, type) => {
     const newInputValue = {
       ...inputValue,
@@ -1262,11 +1307,6 @@ const FontCustomFields = ({
       widgetId: undefined
     });
   };
-  React.useEffect(() => {
-    if (input.value?.value || input.value?.[editorContext.breakpointIndex]?.value) {
-      setInputValue(input.value?.value || input.value?.[editorContext.breakpointIndex]?.value);
-    }
-  }, [input]);
   return /*#__PURE__*/React__default["default"].createElement(FontCustomFieldsStyle, null, customFields.map(customField => {
     const customFieldValue = inputValue[customField.key];
     return /*#__PURE__*/React__default["default"].createElement(FontCustomField, {
@@ -1290,6 +1330,13 @@ const CustomField = ({
     case "fonts":
       {
         return /*#__PURE__*/React__default["default"].createElement(FontCustomFields, {
+          field: field,
+          input: input
+        });
+      }
+    case "colors":
+      {
+        return /*#__PURE__*/React__default["default"].createElement(ColorCustomFields, {
           field: field,
           input: input
         });
@@ -1426,7 +1473,7 @@ function TokenFieldComponent({
       });
     },
     params: "params" in field.schemaProp ? field.schemaProp.params : undefined
-  }) : tokenTypeDefinition.token === "fonts" ? /*#__PURE__*/React__default["default"].createElement(CustomField, {
+  }) : ["fonts", "colors"].includes(tokenTypeDefinition.token) ? /*#__PURE__*/React__default["default"].createElement(CustomField, {
     input: input,
     field: field
   }) : /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
@@ -1862,12 +1909,27 @@ const GroupPanel = styled.styled.div.withConfig({
   componentId: "sc-5mryxt-2"
 })(["position:absolute;width:100%;top:0;bottom:0;left:0;overflow:hidden;pointer-events:", ";> *{", ";", ";}"], p => p.isExpanded ? "all" : "none", p => p.isExpanded && styled.css(["animation-name:", ";animation-duration:150ms;animation-delay:0ms;animation-iteration-count:1;animation-timing-function:ease-out;animation-fill-mode:backwards;"], GroupPanelKeyframes), p => !p.isExpanded && styled.css(["transition:transform 150ms ease-out;transform:translate3d(100%,0,0);"]));
 
+const HorizontalLine$1 = styled__default["default"].div.withConfig({
+  displayName: "IdentityFieldPlugin__HorizontalLine",
+  componentId: "sc-ayv92b-0"
+})(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
+const IdentityFieldWrapper = styled__default["default"].div.withConfig({
+  displayName: "IdentityFieldPlugin__IdentityFieldWrapper",
+  componentId: "sc-ayv92b-1"
+})(["display:flex;gap:8px;min-height:28px;padding:10px;background:", ";"], easyblocksDesignSystem.Colors.white);
+const IdentityFieldContainer = styled__default["default"].div.withConfig({
+  displayName: "IdentityFieldPlugin__IdentityFieldContainer",
+  componentId: "sc-ayv92b-2"
+})(["position:sticky;top:0px;z-index:1;"]);
 function IdentityField({
   input,
   field
 }) {
   const editorContext = useEditorContext();
   const panelContext = React.useContext(PanelContext);
+  const {
+    t
+  } = useTranslation();
   const isMixed = isMixedFieldValue(input.value);
   const config = isMixed ? null : input.value;
   if (config == null) {
@@ -1920,14 +1982,7 @@ function IdentityField({
   }, componentDefinition?.label ?? componentDefinition?.id), !isNonChangable && /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ChevronDown, {
     size: 16
   }));
-  return /*#__PURE__*/React__default["default"].createElement("div", {
-    style: {
-      display: "flex",
-      gap: "8px",
-      minHeight: "28px",
-      padding: "10px"
-    }
-  }, /*#__PURE__*/React__default["default"].createElement("div", {
+  return /*#__PURE__*/React__default["default"].createElement(IdentityFieldContainer, null, /*#__PURE__*/React__default["default"].createElement(IdentityFieldWrapper, null, /*#__PURE__*/React__default["default"].createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -1949,15 +2004,17 @@ function IdentityField({
     showTooltip: false,
     onClick: handleChangeComponentType
   }, titleContent), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    "aria-label": "Remove component",
+    "aria-label": t("delete"),
     icon: easyblocksDesignSystem.Icons.Remove,
+    hideLabel: true,
+    showTooltip: false,
     onClick: handleRemove,
     style: {
       marginLeft: "auto",
       opacity: isNonRemovable ? 0 : 1,
       pointerEvents: isNonRemovable ? "none" : "auto"
     }
-  })));
+  }, t("delete")))), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$1, null));
 }
 const IdentityFieldPlugin = {
   name: "identity",
@@ -2988,7 +3045,7 @@ const FieldsGroupLabel = styled.styled.div.withConfig({
 const FieldsGroup = styled.styled.div.withConfig({
   displayName: "fields-builder__FieldsGroup",
   componentId: "sc-ignixa-3"
-})(["position:relative;display:block;width:100%;padding:0;white-space:nowrap;overflow-x:hidden;overflow-y:auto !important;"]);
+})(["position:relative;display:block;width:100%;padding:0;white-space:nowrap;overflow:unset;"]);
 
 const theme = styled.css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Inter\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
 const GlobalStyles = styled.createGlobalStyle(["", ";"], theme);
@@ -3597,7 +3654,7 @@ const shimmer = styled.keyframes(["0%{background-position:-800px 0;}100%{backgro
 const SkeletonBox = styled__default["default"].div.withConfig({
   displayName: "SkeletonEditor__SkeletonBox",
   componentId: "sc-133np0d-0"
-})(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || '100%', props => props.height || '20px', shimmer, props => props.borderRadius || '4px');
+})(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || "100%", props => props.height || "20px", shimmer, props => props.borderRadius || "4px");
 
 // Mimic the actual editor structure
 const SkeletonEditorContainer = styled__default["default"].div.withConfig({
@@ -3627,7 +3684,7 @@ const SkeletonMainContent = styled__default["default"].div.withConfig({
 const SkeletonCanvasArea = styled__default["default"].div.withConfig({
   displayName: "SkeletonEditor__SkeletonCanvasArea",
   componentId: "sc-133np0d-7"
-})(["flex:1;background:#e5e5e5;padding:32px;padding-top:64px;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;"]);
+})(["flex:1;background:", ";padding:32px;padding-top:64px;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;"], easyblocksDesignSystem.Colors.black10);
 const SkeletonSidebar = styled__default["default"].div.withConfig({
   displayName: "SkeletonEditor__SkeletonSidebar",
   componentId: "sc-133np0d-8"
@@ -5563,6 +5620,7 @@ const GLOBAL_SHORTCUTS_KEYS = ["Delete", "Backspace", "ArrowUp", "ArrowDown", "A
 const DATA_TRANSFER_FORMAT = "text/x-shopstory";
 function useEditorGlobalKeyboardShortcuts(editorContext) {
   let isDeleting = false;
+  let pasteId;
   React.useEffect(() => {
     const {
       focussedField: focusedFields,
@@ -5614,22 +5672,25 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
       actions.removeItems(focusedFields);
     }
     function handlePaste(event) {
-      if (!canHandleCopyPaste(focusedFields, event)) {
-        return;
-      }
       const rawData = event.clipboardData?.getData(DATA_TRANSFER_FORMAT);
-      if (!rawData || rawData === "") {
-        return;
-      }
-      try {
-        const parsedData = JSON.parse(rawData);
-        const data = Array.isArray(parsedData) ? parsedData : [parsedData];
-        actions.pasteItems(data);
-        event.preventDefault();
-      } catch (e) {
-        console.error(e);
-        return;
-      }
+      clearTimeout(pasteId);
+      pasteId = setTimeout(() => {
+        if (!canHandleCopyPaste(focusedFields, event)) {
+          return;
+        }
+        if (!rawData || rawData === "") {
+          return;
+        }
+        try {
+          const parsedData = JSON.parse(rawData);
+          const data = Array.isArray(parsedData) ? parsedData : [parsedData];
+          actions.pasteItems(data);
+          event.preventDefault();
+        } catch (e) {
+          console.error(e);
+          return;
+        }
+      }, 200);
     }
     window.document.addEventListener("keydown", handleKeydown);
     window.document.addEventListener("copy", handleCopy);

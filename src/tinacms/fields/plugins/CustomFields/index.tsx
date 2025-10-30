@@ -1,6 +1,7 @@
 import React from "react";
-import { InputFieldType } from "../wrapFieldWithMeta";
 import { useTokenTypes } from "../../../../utils/hooks/useTokenTypes";
+import { InputFieldType } from "../wrapFieldWithMeta";
+import { ColorCustomFields } from "./colors/ColorCustomFields";
 import { FontCustomFields } from "./font/FontCustomFields";
 
 export const CustomField = <
@@ -16,6 +17,10 @@ export const CustomField = <
   switch (tokenTypeDefinition?.token) {
     case "fonts": {
       return <FontCustomFields field={field} input={input} />;
+    }
+
+    case "colors": {
+      return <ColorCustomFields field={field} input={input} />;
     }
 
     default: {

@@ -12,9 +12,13 @@ const shimmer = keyframes`
   }
 `;
 
-const SkeletonBox = styled.div<{ width?: string; height?: string; borderRadius?: string }>`
-  width: ${props => props.width || '100%'};
-  height: ${props => props.height || '20px'};
+const SkeletonBox = styled.div<{
+  width?: string;
+  height?: string;
+  borderRadius?: string;
+}>`
+  width: ${(props) => props.width || "100%"};
+  height: ${(props) => props.height || "20px"};
   background: linear-gradient(
     to right,
     #f0f0f0 0%,
@@ -24,7 +28,7 @@ const SkeletonBox = styled.div<{ width?: string; height?: string; borderRadius?:
   );
   background-size: 800px 100px;
   animation: ${shimmer} 3s infinite linear;
-  border-radius: ${props => props.borderRadius || '4px'};
+  border-radius: ${(props) => props.borderRadius || "4px"};
 `;
 
 // Mimic the actual editor structure
@@ -73,7 +77,7 @@ const SkeletonMainContent = styled.div`
 
 const SkeletonCanvasArea = styled.div`
   flex: 1;
-  background: #e5e5e5;
+  background: ${Colors.black10};
   padding: 32px;
   padding-top: 64px;
   display: flex;
@@ -101,91 +105,91 @@ const SkeletonSection = styled.div`
 export const SkeletonEditor = () => {
   return (
     <SkeletonEditorContainer>
-        {/* Top Bar Skeleton */}
-        <SkeletonTopBar>
-          <SkeletonTopBarLeft>
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-            <SkeletonBox width="60px" height="28px" borderRadius="6px" />
-          </SkeletonTopBarLeft>
-          
-          <SkeletonTopBarCenter>
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-            <SkeletonBox width="28px" height="28px" borderRadius="4px" />
-          </SkeletonTopBarCenter>
-          
-          <SkeletonTopBarRight>
-            <SkeletonBox width="100px" height="28px" borderRadius="6px" />
-            <SkeletonBox width="60px" height="28px" borderRadius="6px" />
-            <SkeletonBox width="86px" height="28px" borderRadius="6px" />
-          </SkeletonTopBarRight>
-        </SkeletonTopBar>
+      {/* Top Bar Skeleton */}
+      <SkeletonTopBar>
+        <SkeletonTopBarLeft>
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+          <SkeletonBox width="60px" height="28px" borderRadius="6px" />
+        </SkeletonTopBarLeft>
 
-        {/* Main Content Area */}
-        <SkeletonMainContent>
-          {/* Canvas Area */}
-          <SkeletonCanvasArea>
-            <SkeletonEditorCanvasArea />
-          </SkeletonCanvasArea>
+        <SkeletonTopBarCenter>
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+          <SkeletonBox width="28px" height="28px" borderRadius="4px" />
+        </SkeletonTopBarCenter>
 
-          {/* Sidebar Skeleton */}
-          <SkeletonSidebar>
-            <SkeletonSection>
-              <SkeletonBox width="100px" height="20px" />
-              <SkeletonBox width="100%" height="18px" />
-            </SkeletonSection>
+        <SkeletonTopBarRight>
+          <SkeletonBox width="100px" height="28px" borderRadius="6px" />
+          <SkeletonBox width="60px" height="28px" borderRadius="6px" />
+          <SkeletonBox width="86px" height="28px" borderRadius="6px" />
+        </SkeletonTopBarRight>
+      </SkeletonTopBar>
 
-            <SkeletonSection>
-              <SkeletonBox width="120px" height="20px" />
-              <SkeletonBox width="100%" height="18px" />
-              <SkeletonBox width="100%" height="18px" />
-            </SkeletonSection>
+      {/* Main Content Area */}
+      <SkeletonMainContent>
+        {/* Canvas Area */}
+        <SkeletonCanvasArea>
+          <SkeletonEditorCanvasArea />
+        </SkeletonCanvasArea>
 
-            <SkeletonSection>
-              <SkeletonBox width="80px" height="20px" />
-              <SkeletonBox width="100%" height="18px" />
-              <SkeletonBox width="100%" height="18px" />
-              <SkeletonBox width="100%" height="18px" />
-            </SkeletonSection>
+        {/* Sidebar Skeleton */}
+        <SkeletonSidebar>
+          <SkeletonSection>
+            <SkeletonBox width="100px" height="20px" />
+            <SkeletonBox width="100%" height="18px" />
+          </SkeletonSection>
 
-            <SkeletonSection>
-              <SkeletonBox width="80px" height="20px" />
-              <SkeletonBox width="100%" height="18px" />
-              <SkeletonBox width="100%" height="18px" />
-              <SkeletonBox width="100%" height="18px" />
-            </SkeletonSection>
+          <SkeletonSection>
+            <SkeletonBox width="120px" height="20px" />
+            <SkeletonBox width="100%" height="18px" />
+            <SkeletonBox width="100%" height="18px" />
+          </SkeletonSection>
 
-            <SkeletonSection>
-              <SkeletonBox width="100px" height="20px" />
-              <SkeletonBox width="100%" height="18px" />
-            </SkeletonSection>
+          <SkeletonSection>
+            <SkeletonBox width="80px" height="20px" />
+            <SkeletonBox width="100%" height="18px" />
+            <SkeletonBox width="100%" height="18px" />
+            <SkeletonBox width="100%" height="18px" />
+          </SkeletonSection>
 
-            <SkeletonSection>
-              <SkeletonBox width="120px" height="20px" />
-              <SkeletonBox width="100%" height="18px" />
-              <SkeletonBox width="100%" height="18px" />
-            </SkeletonSection>
+          <SkeletonSection>
+            <SkeletonBox width="80px" height="20px" />
+            <SkeletonBox width="100%" height="18px" />
+            <SkeletonBox width="100%" height="18px" />
+            <SkeletonBox width="100%" height="18px" />
+          </SkeletonSection>
 
-            <SkeletonSection>
-              <SkeletonBox width="120px" height="20px" />
-              <SkeletonBox width="100%" height="18px" />
-              <SkeletonBox width="100%" height="18px" />
-            </SkeletonSection>
+          <SkeletonSection>
+            <SkeletonBox width="100px" height="20px" />
+            <SkeletonBox width="100%" height="18px" />
+          </SkeletonSection>
 
-            <SkeletonSection>
-              <SkeletonBox width="80px" height="20px" />
-              <SkeletonBox width="100%" height="18px" />
-              <SkeletonBox width="100%" height="18px" />
-              <SkeletonBox width="100%" height="18px" />
-            </SkeletonSection>
-          </SkeletonSidebar>
-        </SkeletonMainContent>
-      </SkeletonEditorContainer>
-  )
-}
+          <SkeletonSection>
+            <SkeletonBox width="120px" height="20px" />
+            <SkeletonBox width="100%" height="18px" />
+            <SkeletonBox width="100%" height="18px" />
+          </SkeletonSection>
+
+          <SkeletonSection>
+            <SkeletonBox width="120px" height="20px" />
+            <SkeletonBox width="100%" height="18px" />
+            <SkeletonBox width="100%" height="18px" />
+          </SkeletonSection>
+
+          <SkeletonSection>
+            <SkeletonBox width="80px" height="20px" />
+            <SkeletonBox width="100%" height="18px" />
+            <SkeletonBox width="100%" height="18px" />
+            <SkeletonBox width="100%" height="18px" />
+          </SkeletonSection>
+        </SkeletonSidebar>
+      </SkeletonMainContent>
+    </SkeletonEditorContainer>
+  );
+};

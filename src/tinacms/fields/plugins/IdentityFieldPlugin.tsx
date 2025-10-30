@@ -1,3 +1,4 @@
+import { toArray } from "@/utils";
 import {
   ComponentSchemaProp,
   Field,
@@ -9,25 +10,47 @@ import {
 } from "@redsun-vn/easyblocks-core/_internals";
 import {
   ButtonGhost,
+  Colors,
   Icons,
   Typography,
 } from "@redsun-vn/easyblocks-design-system";
-import { toArray } from "@/utils";
 import React, { useContext } from "react";
 import type { FieldRenderProps } from "react-final-form";
-import { css } from "styled-components";
+import styled from "styled-components";
 import { useEditorContext } from "../../../EditorContext";
 import { isMixedFieldValue } from "../components/isMixedFieldValue";
 import { PanelContext } from "./BlockFieldPlugin";
+import { useTranslation } from "../../../useTranslation";
 
 interface IdentityFieldProps
   extends FieldRenderProps<NoCodeComponentEntry, HTMLElement> {
   field: Field;
 }
 
+const HorizontalLine = styled.div`
+  height: 1px;
+  margin-top: -1px;
+  background-color: ${Colors.black10};
+`;
+
+const IdentityFieldWrapper = styled.div`
+  display: flex;
+  gap: 8px;
+  min-height: 28px;
+  padding: 10px;
+  background: ${Colors.white};
+`;
+
+const IdentityFieldContainer = styled.div`
+  position: sticky;
+  top: 0px;
+  z-index: 1;
+`;
+
 function IdentityField({ input, field }: IdentityFieldProps) {
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
+  const { t } = useTranslation();
 
   const isMixed = isMixedFieldValue(input.value);
   const config = isMixed ? null : input.value;
@@ -115,54 +138,57 @@ function IdentityField({ input, field }: IdentityFieldProps) {
   );
 
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: "8px",
-        minHeight: "28px",
-        padding: "10px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flex: "1 0",
-        }}
-      >
-        {isWithinNestedPanel && (
-          <ButtonGhost
-            icon={Icons.ChevronLeft}
-            onClick={() => {
-              panelContext.onClose();
-            }}
-            style={{
-              marginRight: "auto",
-            }}
-          />
-        )}
-
-        {isNonChangable && (
-          <div style={{ padding: "7px 6px" }}>{titleContent}</div>
-        )}
-        {!isNonChangable && (
-          <ButtonGhost showTooltip={false} onClick={handleChangeComponentType}>
-            {titleContent}
-          </ButtonGhost>
-        )}
-
-        <ButtonGhost
-          aria-label="Remove component"
-          icon={Icons.Remove}
-          onClick={handleRemove}
+    <IdentityFieldContainer>
+      <IdentityFieldWrapper>
+        <div
           style={{
-            marginLeft: "auto",
-            opacity: isNonRemovable ? 0 : 1,
-            pointerEvents: isNonRemovable ? "none" : "auto",
+            display: "flex",
+            alignItems: "center",
+            flex: "1 0",
           }}
-        />
-      </div>
-    </div>
+        >
+          {isWithinNestedPanel && (
+            <ButtonGhost
+              icon={Icons.ChevronLeft}
+              onClick={() => {
+                panelContext.onClose();
+              }}
+              style={{
+                marginRight: "auto",
+              }}
+            />
+          )}
+
+          {isNonChangable && (
+            <div style={{ padding: "7px 6px" }}>{titleContent}</div>
+          )}
+          {!isNonChangable && (
+            <ButtonGhost
+              showTooltip={false}
+              onClick={handleChangeComponentType}
+            >
+              {titleContent}
+            </ButtonGhost>
+          )}
+
+          <ButtonGhost
+            aria-label={t("delete")}
+            icon={Icons.Remove}
+            hideLabel
+            showTooltip={false}
+            onClick={handleRemove}
+            style={{
+              marginLeft: "auto",
+              opacity: isNonRemovable ? 0 : 1,
+              pointerEvents: isNonRemovable ? "none" : "auto",
+            }}
+          >
+            {t("delete")}
+          </ButtonGhost>
+        </div>
+      </IdentityFieldWrapper>
+      <HorizontalLine />
+    </IdentityFieldContainer>
   );
 }
 

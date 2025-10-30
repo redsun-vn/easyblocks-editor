@@ -18,9 +18,22 @@ import { pathToCompiledPath } from "./pathToCompiledPath";
 import { useTranslation } from "./useTranslation";
 import { copyToClipboard } from "./utils/copyToClipboard";
 
+const SidebarFooterContainer = styled.div`
+  position: sticky;
+  bottom: 0;
+  background: ${Colors.white};
+`;
+
+const HorizontalLine = styled.div`
+  height: 1px;
+  margin-top: -1px;
+  background-color: ${Colors.black10};
+`;
+
 const IdWrapper = styled.div`
-  display: block;
-  padding: 16px;
+  display: flex;
+  padding: 12px 16px;
+  gap: 16px;
   ${Fonts.body}
   color: ${Colors.black40};
 `;
@@ -61,10 +74,11 @@ export function SidebarFooter(props: { paths: string[] }) {
     !editorContext.disableCustomTemplates;
 
   return (
-    <div>
+    <SidebarFooterContainer>
+      <HorizontalLine />
       <IdWrapper>
-        <div>Id: {value._id}</div>
-        <br />
+        {/* <div>Id: {value._id}</div> */}
+        {/* <br /> */}
 
         {showSaveAsTemplate && (
           <ButtonSecondary
@@ -82,7 +96,7 @@ export function SidebarFooter(props: { paths: string[] }) {
         )}
 
         {isAdminMode && (
-          <div style={{ paddingTop: 16 }}>
+          <div>
             <div>
               <ButtonPrimary
                 onClick={async () => {
@@ -103,6 +117,6 @@ export function SidebarFooter(props: { paths: string[] }) {
           </div>
         )}
       </IdWrapper>
-    </div>
+    </SidebarFooterContainer>
   );
 }
