@@ -472,6 +472,9 @@ function SidebarFooter(props) {
   const definition = _internals.findComponentDefinition(value, editorContext);
   const isSaveable = !!definition?.allowSave;
   const showSaveAsTemplate = isSaveable && !editorContext.readOnly && !editorContext.disableCustomTemplates;
+  if (!showSaveAsTemplate || !isAdminMode) {
+    return null;
+  }
   return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$2, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
     onClick: () => {
       editorContext.actions.openTemplateModal({
@@ -1051,26 +1054,24 @@ const ColorCustomFieldsStyle = styled__default["default"].div.withConfig({
 const ColorCustomFieldsWrapper = styled__default["default"].div.withConfig({
   displayName: "ColorCustomFields__ColorCustomFieldsWrapper",
   componentId: "sc-83vwfl-1"
-})(["display:flex;justify-content:flex-end;align-items:center;"]);
-const InputStyle = styled__default["default"](easyblocksDesignSystem.Input).withConfig({
+})(["display:flex;justify-content:flex-end;align-items:center;gap:10px;"]);
+const InputStyle = styled__default["default"](easyblocksDesignSystem.InputColor).withConfig({
   displayName: "ColorCustomFields__InputStyle",
   componentId: "sc-83vwfl-2"
-})(["width:100px;box-shadow:0 0 0 1px ", ";&:hover{box-shadow:0 0 0 1px ", ";}border-radius:2px;cursor:pointer;outline:none;"], easyblocksDesignSystem.Colors.black10, easyblocksDesignSystem.Colors.black20);
+})(["width:100%;height:100%;"]);
+const InputStyleWrapper = styled__default["default"].div.withConfig({
+  displayName: "ColorCustomFields__InputStyleWrapper",
+  componentId: "sc-83vwfl-3"
+})(["width:100px;height:20px;"]);
 const ColorCustomFields = ({
   input
 }) => {
   const editorContext = useEditorContext();
-  const {
-    isOpen,
-    tooltipProps,
-    triggerProps,
-    arrowProps
-  } = useTooltip();
+  const inputColorRef = React.useRef(null);
   const currentValue = React.useMemo(() => input.value?.value || input.value?.[editorContext.breakpointIndex]?.value, [input]);
   let changeColorId;
-  const onChange = event => {
+  const onChange = color => {
     clearTimeout(changeColorId);
-    const color = event.target.value;
     changeColorId = setTimeout(() => {
       input.onChange({
         value: color,
@@ -1078,11 +1079,19 @@ const ColorCustomFields = ({
       });
     }, 300);
   };
-  return /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsStyle, null, /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsWrapper, null, /*#__PURE__*/React__default["default"].createElement(InputStyle, _extends__default["default"]({
-    type: "color",
+  React.useEffect(() => {
+    if (inputColorRef.current && inputColorRef.current.value) {
+      inputColorRef.current.value = currentValue;
+    }
+  }, [currentValue]);
+  return /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsStyle, null, /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsWrapper, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    ref: inputColorRef,
     defaultValue: currentValue,
+    onChange: event => onChange(event.target.value)
+  }), /*#__PURE__*/React__default["default"].createElement(InputStyleWrapper, null, /*#__PURE__*/React__default["default"].createElement(InputStyle, {
+    value: currentValue,
     onChange: onChange
-  }, triggerProps)), isOpen && /*#__PURE__*/React__default["default"].createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default["default"].createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default["default"].createElement(TooltipBody, null, currentValue))));
+  }))));
 };
 
 function getFonts() {

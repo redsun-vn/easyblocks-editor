@@ -1,7 +1,7 @@
 "use client";
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, memo, useCallback } from 'react';
-import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, InputFile, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, InputColor, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, InputFile, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
@@ -437,6 +437,9 @@ function SidebarFooter(props) {
   const definition = findComponentDefinition(value, editorContext);
   const isSaveable = !!definition?.allowSave;
   const showSaveAsTemplate = isSaveable && !editorContext.readOnly && !editorContext.disableCustomTemplates;
+  if (!showSaveAsTemplate || !isAdminMode) {
+    return null;
+  }
   return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$2, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate && /*#__PURE__*/React.createElement(ButtonSecondary, {
     onClick: () => {
       editorContext.actions.openTemplateModal({
@@ -1016,26 +1019,24 @@ const ColorCustomFieldsStyle = styled$1.div.withConfig({
 const ColorCustomFieldsWrapper = styled$1.div.withConfig({
   displayName: "ColorCustomFields__ColorCustomFieldsWrapper",
   componentId: "sc-83vwfl-1"
-})(["display:flex;justify-content:flex-end;align-items:center;"]);
-const InputStyle = styled$1(Input).withConfig({
+})(["display:flex;justify-content:flex-end;align-items:center;gap:10px;"]);
+const InputStyle = styled$1(InputColor).withConfig({
   displayName: "ColorCustomFields__InputStyle",
   componentId: "sc-83vwfl-2"
-})(["width:100px;box-shadow:0 0 0 1px ", ";&:hover{box-shadow:0 0 0 1px ", ";}border-radius:2px;cursor:pointer;outline:none;"], Colors.black10, Colors.black20);
+})(["width:100%;height:100%;"]);
+const InputStyleWrapper = styled$1.div.withConfig({
+  displayName: "ColorCustomFields__InputStyleWrapper",
+  componentId: "sc-83vwfl-3"
+})(["width:100px;height:20px;"]);
 const ColorCustomFields = ({
   input
 }) => {
   const editorContext = useEditorContext();
-  const {
-    isOpen,
-    tooltipProps,
-    triggerProps,
-    arrowProps
-  } = useTooltip();
+  const inputColorRef = useRef(null);
   const currentValue = useMemo(() => input.value?.value || input.value?.[editorContext.breakpointIndex]?.value, [input]);
   let changeColorId;
-  const onChange = event => {
+  const onChange = color => {
     clearTimeout(changeColorId);
-    const color = event.target.value;
     changeColorId = setTimeout(() => {
       input.onChange({
         value: color,
@@ -1043,11 +1044,19 @@ const ColorCustomFields = ({
       });
     }, 300);
   };
-  return /*#__PURE__*/React__default.createElement(ColorCustomFieldsStyle, null, /*#__PURE__*/React__default.createElement(ColorCustomFieldsWrapper, null, /*#__PURE__*/React__default.createElement(InputStyle, _extends({
-    type: "color",
+  useEffect(() => {
+    if (inputColorRef.current && inputColorRef.current.value) {
+      inputColorRef.current.value = currentValue;
+    }
+  }, [currentValue]);
+  return /*#__PURE__*/React__default.createElement(ColorCustomFieldsStyle, null, /*#__PURE__*/React__default.createElement(ColorCustomFieldsWrapper, null, /*#__PURE__*/React__default.createElement(Input, {
+    ref: inputColorRef,
     defaultValue: currentValue,
+    onChange: event => onChange(event.target.value)
+  }), /*#__PURE__*/React__default.createElement(InputStyleWrapper, null, /*#__PURE__*/React__default.createElement(InputStyle, {
+    value: currentValue,
     onChange: onChange
-  }, triggerProps)), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, currentValue))));
+  }))));
 };
 
 function getFonts() {

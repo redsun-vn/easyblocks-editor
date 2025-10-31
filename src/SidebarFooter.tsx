@@ -73,6 +73,10 @@ export function SidebarFooter(props: { paths: string[] }) {
     !editorContext.readOnly &&
     !editorContext.disableCustomTemplates;
 
+  if (!showSaveAsTemplate || !isAdminMode) {
+    return null;
+  }
+
   return (
     <SidebarFooterContainer>
       <HorizontalLine />

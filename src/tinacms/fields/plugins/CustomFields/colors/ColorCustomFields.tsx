@@ -1,11 +1,9 @@
 import { TokenValue } from "@redsun-vn/easyblocks-core";
-import { Colors, Input } from "@redsun-vn/easyblocks-design-system";
-import React, { useMemo } from "react";
+import { Colors, Input, InputColor } from "@redsun-vn/easyblocks-design-system";
+import React, { useEffect, useMemo, useRef } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../../../../../EditorContext";
 import { TokenFieldProps } from "../../TokenField/TokenFieldPlugin";
-import { Tooltip, TooltipArrow, TooltipBody } from "../../Tooltip";
-import { useTooltip } from "../../useTooltip";
 
 interface IFontCustomInputElement
   extends Omit<TokenFieldProps<TokenValue>, "meta"> {
@@ -34,22 +32,22 @@ const ColorCustomFieldsWrapper = styled.div`
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 10px;
 `;
 
-const InputStyle = styled(Input)`
+const InputStyle = styled(InputColor)`
+  width: 100%;
+  height: 100%;
+`;
+
+const InputStyleWrapper = styled.div`
   width: 100px;
-  box-shadow: 0 0 0 1px ${Colors.black10};
-  &:hover {
-    box-shadow: 0 0 0 1px ${Colors.black20};
-  }
-  border-radius: 2px;
-  cursor: pointer;
-  outline: none;
+  height: 20px;
 `;
 
 export const ColorCustomFields = ({ input }: IFontCustomInputElement) => {
   const editorContext = useEditorContext();
-  const { isOpen, tooltipProps, triggerProps, arrowProps } = useTooltip();
+  const inputColorRef = useRef<HTMLInputElement | null>(null);
 
   const currentValue = useMemo(
     () =>
@@ -58,9 +56,8 @@ export const ColorCustomFields = ({ input }: IFontCustomInputElement) => {
   );
   let changeColorId: NodeJS.Timeout;
 
-  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (color: string) => {
     clearTimeout(changeColorId);
-    const color = event.target.value;
 
     changeColorId = setTimeout(() => {
       input.onChange({
@@ -70,22 +67,24 @@ export const ColorCustomFields = ({ input }: IFontCustomInputElement) => {
     }, 300);
   };
 
+  useEffect(() => {
+    if (inputColorRef.current && inputColorRef.current.value) {
+      inputColorRef.current.value = currentValue;
+    }
+  }, [currentValue]);
+
   return (
     <ColorCustomFieldsStyle>
       <ColorCustomFieldsWrapper>
-        <InputStyle
-          type="color"
+        <Input
+          ref={inputColorRef}
           defaultValue={currentValue}
-          onChange={onChange}
-          {...triggerProps}
+          onChange={(event) => onChange(event.target.value)}
         />
 
-        {isOpen && (
-          <Tooltip {...tooltipProps}>
-            <TooltipArrow {...arrowProps} />
-            <TooltipBody>{currentValue}</TooltipBody>
-          </Tooltip>
-        )}
+        <InputStyleWrapper>
+          <InputStyle value={currentValue} onChange={onChange} />
+        </InputStyleWrapper>
       </ColorCustomFieldsWrapper>
     </ColorCustomFieldsStyle>
   );
