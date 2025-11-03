@@ -183,6 +183,7 @@ type EditorProps = {
   onClose?: () => void;
   externalData: FetchOutputResources;
   onExternalDataChange: ExternalDataChangeHandler;
+  onConfigChange?: () => Promise<void>;
   widgets?: Record<
     string,
     | ComponentType<WidgetComponentProps<any>>
@@ -619,6 +620,7 @@ const EditorContent = ({
   externalData,
   isAdminMode = false,
   defaultLocale,
+  onConfigChange,
   ...props
 }: EditorContentProps) => {
   const [currentViewport, setCurrentViewport] = useState<string>(
@@ -1167,6 +1169,7 @@ const EditorContent = ({
               viewport={currentViewport}
               onViewportChange={setCurrentViewport}
               onIsEditingChange={handleSetEditing}
+              onConfigChange={onConfigChange}
               isEditing={isEditMode}
               saveLabel="Save"
               locale={currentLocale}

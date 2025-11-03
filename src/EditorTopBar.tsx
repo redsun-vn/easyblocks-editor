@@ -102,6 +102,7 @@ export const EditorTopBar: React.FC<{
   saveLabel: string;
   onClose?: () => void;
   onSaveDocument?: () => void;
+  onConfigChange?: () => Promise<void>;
   editorHistoryInstance: EditorHistory;
   isSaving?: boolean;
   onIsEditingChange: () => void;
@@ -119,6 +120,7 @@ export const EditorTopBar: React.FC<{
 }> = ({
   onClose,
   onSaveDocument: _onSaveDocument,
+  onConfigChange,
   isSaving,
   editorHistoryInstance,
   onViewportChange,
@@ -197,6 +199,7 @@ export const EditorTopBar: React.FC<{
 
         <FontColorConfigsModal
           isOpen={isOpenConfigs}
+          onConfigChange={onConfigChange}
           onClose={() => setIsOpenConfigs(false)}
         /> */}
       </TopBarLeft>

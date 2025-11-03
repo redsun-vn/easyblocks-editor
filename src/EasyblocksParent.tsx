@@ -28,6 +28,7 @@ type EasyblocksParentProps = {
   config: Config;
   externalData: FetchOutputResources;
   onExternalDataChange: ExternalDataChangeHandler;
+  onConfigChange?: () => Promise<void>;
   widgets?: Record<
     string,
     | ComponentType<WidgetComponentProps<any>>
@@ -89,6 +90,7 @@ export function EasyblocksParent(props: EasyblocksParentProps) {
             rootTemplateId={editorSearchParams.rootTemplateId}
             externalData={props.externalData}
             onExternalDataChange={props.onExternalDataChange}
+            onConfigChange={props.onConfigChange}
             widgets={{
               ...builtinWidgets,
               ...props.widgets,

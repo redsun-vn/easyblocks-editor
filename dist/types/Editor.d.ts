@@ -28,6 +28,7 @@ type EditorProps = {
     onClose?: () => void;
     externalData: FetchOutputResources;
     onExternalDataChange: ExternalDataChangeHandler;
+    onConfigChange?: () => Promise<void>;
     widgets?: Record<string, ComponentType<WidgetComponentProps<any>> | ComponentType<InlineTypeWidgetComponentProps<any>> | ComponentType<TokenTypeWidgetComponentProps<any>>>;
     components?: Record<string, ComponentType<any>>;
     pickers?: Record<string, TemplatePicker>;

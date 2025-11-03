@@ -3,6 +3,7 @@ import { EditorContextType } from "../EditorContext";
 import { useTranslation } from "../useTranslation";
 
 interface IFontConfiguration {
+  onConfigChange?: () => Promise<void>;
   editorContext: EditorContextType;
 }
 

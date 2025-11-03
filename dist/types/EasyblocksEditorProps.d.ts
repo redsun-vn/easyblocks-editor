@@ -6,6 +6,7 @@ export type EasyblocksEditorProps = {
     config: Config;
     externalData?: ExternalData;
     onExternalDataChange?: ExternalDataChangeHandler;
+    onConfigChange?: () => Promise<void>;
     components?: Record<string, React.ComponentType<any>>;
     widgets?: Record<string, ComponentType<WidgetComponentProps<any>> | ComponentType<InlineTypeWidgetComponentProps<any>>>;
     pickers?: Record<string, TemplatePicker>;

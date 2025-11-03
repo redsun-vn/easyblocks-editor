@@ -6,9 +6,10 @@ import { FontConfigurations } from "./FontConfigurations";
 import { ColorConfigurations } from "./ColorConfigurations";
 import { useEditorContext } from "../EditorContext";
 
-type FontColorConfigsModalProps = {
+type IFontColorConfigsModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  onConfigChange?: () => Promise<void>;
 };
 
 const ModalRoot = styled.div`
@@ -51,8 +52,9 @@ const SidebarButton = styled.button<{ isActive: boolean }>`
   cursor: pointer;
 `;
 
-export const FontColorConfigsModal: React.FC<FontColorConfigsModalProps> = ({
+export const FontColorConfigsModal: React.FC<IFontColorConfigsModalProps> = ({
   isOpen,
+  onConfigChange,
   onClose,
 }) => {
   const { t } = useTranslation();
@@ -107,7 +109,10 @@ export const FontColorConfigsModal: React.FC<FontColorConfigsModalProps> = ({
 
         <Content>
           {ActiveContent ? (
-            <ActiveContent editorContext={editorContext} />
+            <ActiveContent
+              editorContext={editorContext}
+              onConfigChange={onConfigChange}
+            />
           ) : null}
         </Content>
       </ModalRoot>

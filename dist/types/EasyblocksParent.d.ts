@@ -6,6 +6,7 @@ type EasyblocksParentProps = {
     config: Config;
     externalData: FetchOutputResources;
     onExternalDataChange: ExternalDataChangeHandler;
+    onConfigChange?: () => Promise<void>;
     widgets?: Record<string, ComponentType<WidgetComponentProps<any>> | ComponentType<InlineTypeWidgetComponentProps<any>>>;
     components?: Record<string, ComponentType<any>>;
     pickers?: Record<string, TemplatePicker>;

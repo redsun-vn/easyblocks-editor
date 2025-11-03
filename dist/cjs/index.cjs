@@ -3199,6 +3199,7 @@ const debouncedSave = debounce__default["default"](fn => fn(), 200);
 const EditorTopBar = ({
   onClose,
   onSaveDocument: _onSaveDocument,
+  onConfigChange,
   isSaving,
   editorHistoryInstance,
   onViewportChange,
@@ -6231,6 +6232,7 @@ const EditorContent = ({
   externalData,
   isAdminMode = false,
   defaultLocale,
+  onConfigChange,
   ...props
 }) => {
   const [currentViewport, setCurrentViewport] = React.useState(compilationContext.mainBreakpointIndex); // "{ breakpoint }" or "fit-screen"
@@ -6640,6 +6642,7 @@ const EditorContent = ({
     viewport: currentViewport,
     onViewportChange: setCurrentViewport,
     onIsEditingChange: handleSetEditing,
+    onConfigChange: onConfigChange,
     isEditing: isEditMode,
     saveLabel: "Save",
     locale: currentLocale,
@@ -7352,6 +7355,7 @@ function EasyblocksParent(props) {
     rootTemplateId: editorSearchParams.rootTemplateId,
     externalData: props.externalData,
     onExternalDataChange: props.onExternalDataChange,
+    onConfigChange: props.onConfigChange,
     widgets: {
       ...builtinWidgets,
       ...props.widgets
@@ -8579,6 +8583,7 @@ function EasyblocksEditor(props) {
     config: props.config,
     externalData: props.externalData ?? {},
     onExternalDataChange: props.onExternalDataChange ?? (() => ({})),
+    onConfigChange: props.onConfigChange,
     widgets: props.widgets,
     components: props.components,
     pickers: props.pickers,
