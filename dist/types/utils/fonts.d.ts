@@ -4,7 +4,7 @@ interface IFont {
     value: string;
     label: string;
 }
-export declare function getFonts(): IFont[];
+export declare function getFontFamilies(): IFont[];
 export declare function getFontWeights(): IFont[];
 export declare function getLineHeights(): IFont[];
 export declare function getFontSizes(editorContext: EditorContextType): IFont[];

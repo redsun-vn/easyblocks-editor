@@ -1094,7 +1094,7 @@ const ColorCustomFields = ({
   }))));
 };
 
-function getFonts() {
+function getFontFamilies() {
   const selectedFamilies = ["Roboto, sans-serif", "Open Sans, sans-serif", "Lato, sans-serif", "Montserrat, sans-serif", "Poppins, sans-serif", "Inter, sans-serif", "Oswald, sans-serif", "Raleway, sans-serif", "Noto Sans, sans-serif", "Roboto Condensed, sans-serif", "Nunito, sans-serif", "Work Sans, sans-serif", "Rubik, sans-serif", "Mukta, sans-serif", "Ubuntu, sans-serif", "Quicksand, sans-serif", "Hind, sans-serif", "Fira Sans, sans-serif", "Barlow, sans-serif", "Cabin, sans-serif", "Prompt, sans-serif", "Heebo, sans-serif", "Source Sans 3, sans-serif", "Titillium Web, sans-serif", "Muli, sans-serif", "Manrope, sans-serif", "Josefin Sans, sans-serif", "Karla, sans-serif", "DM Sans, sans-serif", "PT Sans, sans-serif", "Tajawal, sans-serif", "Public Sans, sans-serif", "Catamaran, sans-serif", "Urbanist, sans-serif", "Outfit, sans-serif", "Lexend, sans-serif", "Signika, sans-serif", "Asap, sans-serif", "Sarabun, sans-serif", "Red Hat Display, sans-serif", "Exo 2, sans-serif", "Sen, sans-serif", "Epilogue, sans-serif", "Jost, sans-serif", "IBM Plex Sans, sans-serif", "Varela Round, sans-serif", "Mulish, sans-serif", "Spartan, sans-serif", "Krub, sans-serif", "Questrial, sans-serif", "Barlow Condensed, sans-serif", "Overpass, sans-serif", "Alata, sans-serif", "Kanit, sans-serif", "Noto Serif, serif", "Merriweather, serif", "Playfair Display, serif", "Lora, serif", "Cormorant Garamond, serif", "EB Garamond, serif", "PT Serif, serif", "Libre Baskerville, serif", "DM Serif Display, serif", "Crimson Text, serif", "Bitter, serif", "Spectral, serif", "Cormorant, serif", "Zilla Slab, serif", "Nanum Myeongjo, serif", "Tinos, serif", "Cardo, serif", "Domine, serif", "Arvo, serif", "Vollkorn, serif", "Bree Serif, serif", "Alegreya, serif", "Noticia Text, serif", "Libre Caslon Text, serif", "Faustina, serif", "Mate, serif", "Lusitana, serif", "Arapey, serif", "Fira Sans Condensed, sans-serif", "Space Grotesk, sans-serif", "Sofia Sans, sans-serif", "Niramit, sans-serif", "Be Vietnam Pro, sans-serif", "Eczar, serif", "Quattrocento, serif", "Rokkitt, serif", "Cormorant Infant, serif", "Slabo 27px, serif", "Ultra, serif", "Rozha One, serif", "Old Standard TT, serif", "Baskervville, serif", "Play, sans-serif", "Mada, sans-serif", "Rajdhani, sans-serif", "Cabinet Grotesk, sans-serif", "Archivo, sans-serif", "Anton, display", "Bebas Neue, display", "Abril Fatface, display", "Alfa Slab One, display", "Righteous, display", "Lobster, display", "Pacifico, handwriting", "Caveat, handwriting", "Dancing Script, handwriting", "Great Vibes, handwriting", "Satisfy, handwriting", "Shadows Into Light, handwriting", "Cookie, handwriting", "Gloria Hallelujah, handwriting", "Indie Flower, handwriting", "Courgette, handwriting", "Amatic SC, display", "Fredoka, sans-serif", "Baloo 2, display", "Chewy, display", "Luckiest Guy, display", "Permanent Marker, handwriting", "Architects Daughter, handwriting", "Rock Salt, handwriting", "Handlee, handwriting", "Kaushan Script, handwriting", "Patrick Hand, handwriting", "Carter One, display", "Sigmar, display", "Rye, display", "Black Ops One, display", "Bungee, display", "Press Start 2P, monospace", "Space Mono, monospace", "Fira Code, monospace", "Roboto Mono, monospace", "JetBrains Mono, monospace", "Inconsolata, monospace", "Share Tech Mono, monospace", "Major Mono Display, monospace", "Source Code Pro, monospace", "Audiowide, display", "Syncopate, display", "Unica One, display", "Orbitron, display", "Chakra Petch, sans-serif", "Expletus Sans, display", "Staatliches, display", "Poiret One, display", "Aldrich, sans-serif", "Gruppo, display", "Viga, sans-serif", "Suez One, serif", "Frank Ruhl Libre, serif", "Cambo, serif", "Marcellus, serif", "Cinzel, serif", "Judson, serif", "Gelasio, serif", "Abhaya Libre, serif", "Cormorant SC, serif", "Crimson Pro, serif", "Noto Serif Display, serif", "Sanchez, serif", "DM Serif Text, serif", "Fjord One, serif", "Suranna, serif", "Kreon, serif", "Cormorant Upright, serif", "Gloock, serif", "Julius Sans One, sans-serif", "Assistant, sans-serif", "Encode Sans, sans-serif", "Nanum Gothic, sans-serif", "Maven Pro, sans-serif", "Overpass Mono, monospace", "Albert Sans, sans-serif", "Palanquin, sans-serif", "Chivo, sans-serif", "Arimo, sans-serif", "Exo, sans-serif", "Molengo, sans-serif", "Abel, sans-serif", "Teko, sans-serif", "Saira, sans-serif", "Jura, sans-serif", "Kumbh Sans, sans-serif", "Hepta Slab, serif", "Azeret Mono, monospace", "League Spartan, sans-serif", "Rufina, serif", "Crete Round, serif", "Amiri, serif", "Spectral SC, serif", "Petrona, serif", "Neuton, serif", "Coustard, serif", "Vidaloka, serif", "Bellefair, serif", "Antic Slab, serif", "Copse, serif", "DM Mono, monospace", "Anonymous Pro, monospace", "Oxygen Mono, monospace", "Courier Prime, monospace", "IBM Plex Mono, monospace", "Zilla Slab Highlight, display", "Shrikhand, display", "Bungee Shade, display", "Fugaz One, display", "Monoton, display", "Rammetto One, display", "Cinzel Decorative, display", "Fascinate Inline, display", "Racing Sans One, display", "Lilita One, display", "Potta One, display", "Tourney, display", "Cherry Swash, display", "Creepster, display", "Butcherman, display", "Ewert, display", "Bowlby One SC, display", "Galindo, display", "Knewave, display", "Fredoka One, display", "Ranchers, display", "Codystar, display", "VT323, monospace", "Cutive Mono, monospace", "IBM Plex Serif, serif", "Philosopher, sans-serif"];
   return selectedFamilies.sort().map(font => {
     return {
@@ -1284,7 +1284,7 @@ const FontCustomFields = ({
   const customFields = React.useMemo(() => [{
     key: "fontFamily",
     label: t("definition.schema.label.fontFamily"),
-    options: getFonts(),
+    options: getFontFamilies(),
     type: "string",
     inputType: "select",
     defaultValue: "Roboto, sans-serif"
@@ -3167,7 +3167,7 @@ const TopBar = styled.styled.div.withConfig({
   displayName: "EditorTopBar__TopBar",
   componentId: "sc-726nw9-0"
 })(["position:relative;box-sizing:border-box;background-color:white;border-bottom:1px solid #eaeaea;padding:0 64px;min-height:", "px;display:flex;flex-direction:row;justify-content:center;align-items:center;"], TOP_BAR_HEIGHT);
-const Label = styled.styled.div.withConfig({
+styled.styled.div.withConfig({
   displayName: "EditorTopBar__Label",
   componentId: "sc-726nw9-1"
 })(["background:", ";height:24px;", " display:flex;justify-content:center;align-items:center;padding-left:12px;padding-right:12px;border-radius:12px;color:white;"], easyblocksDesignSystem.Colors.purple, easyblocksDesignSystem.Fonts.label);
@@ -3221,6 +3221,7 @@ const EditorTopBar = ({
   const {
     t
   } = useTranslation();
+  React.useState(false);
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
       debouncedSave(_onSaveDocument);
@@ -3252,7 +3253,7 @@ const EditorTopBar = ({
     onClick: () => {
       onRedo();
     }
-  }, t("editor.sidebar.redo")), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "Read-Only")), /*#__PURE__*/React__default["default"].createElement(TopBarCenter, null, /*#__PURE__*/React__default["default"].createElement(DeviceSwitch, {
+  }, t("editor.sidebar.redo"))), /*#__PURE__*/React__default["default"].createElement(TopBarCenter, null, /*#__PURE__*/React__default["default"].createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
     onDeviceChange: onViewportChange
@@ -4808,7 +4809,7 @@ function isButtonWithinViewport(target, viewport) {
 const SelectionFrameActionsContainer = styled__default["default"].div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
   componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:calc(var(", ") - 50px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, easyblocksDesignSystem.Colors.white);
+})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, easyblocksDesignSystem.Colors.white);
 const SelectionFrameActionsGroupButtons = styled__default["default"].div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
   componentId: "sc-1fta8jo-1"
@@ -8590,6 +8591,9 @@ function EasyblocksEditor(props) {
 
 exports.EasyblocksEditor = EasyblocksEditor;
 exports.EditorContext = EditorContext;
-exports.getFonts = getFonts;
+exports.getFontFamilies = getFontFamilies;
+exports.getFontSizes = getFontSizes;
+exports.getFontWeights = getFontWeights;
+exports.getLineHeights = getLineHeights;
 exports.useEditorContext = useEditorContext;
 //# sourceMappingURL=index.cjs.map

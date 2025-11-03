@@ -24,7 +24,7 @@ interface ISelectionFrameActionsProps {
 
 const SelectionFrameActionsContainer = styled.div`
   position: absolute;
-  top: calc(var(${BEFORE_ADD_BUTTON_TOP}) - 50px);
+  top: calc(var(${BEFORE_ADD_BUTTON_TOP}) - 42px);
   left: var(${BEFORE_ADD_BUTTON_LEFT});
   border-radius: 4px;
   box-shadow: var(--tina-shadow-big);

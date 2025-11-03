@@ -15,9 +15,10 @@ import {
   Typography,
 } from "@redsun-vn/easyblocks-design-system";
 import debounce from "lodash/debounce";
-import React, { ReactNode, useRef } from "react";
+import React, { ReactNode, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { EditorHistory } from "./EditorHistory";
+import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
 import { useTranslation } from "./useTranslation";
 
 export const TOP_BAR_HEIGHT = 40;
@@ -138,6 +139,7 @@ export const EditorTopBar: React.FC<{
   const themeId = router.get("themeId");
   const shopId = router.get("shopId");
   const { t } = useTranslation();
+  const [isOpenConfigs, setIsOpenConfigs] = useState(false);
 
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
@@ -180,7 +182,23 @@ export const EditorTopBar: React.FC<{
           {t("editor.sidebar.redo")}
         </ButtonGhost>
 
+        {/* <VerticalLine />
+
         {readOnly && <Label>Read-Only</Label>}
+
+        <ButtonGhost
+          icon={Icons.ColorAndFonts}
+          hideLabel
+          hidden
+          onClick={() => setIsOpenConfigs((prev) => !prev)}
+        >
+          {t("editor.sidebar.configurations")}
+        </ButtonGhost>
+
+        <FontColorConfigsModal
+          isOpen={isOpenConfigs}
+          onClose={() => setIsOpenConfigs(false)}
+        /> */}
       </TopBarLeft>
 
       <TopBarCenter>

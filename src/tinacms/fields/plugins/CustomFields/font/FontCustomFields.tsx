@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { useEditorContext } from "../../../../../EditorContext";
 import { useTranslation } from "../../../../../useTranslation";
 import {
-  getFonts,
+  getFontFamilies,
   getFontSizes,
   getFontWeights,
   getLineHeights,
@@ -105,7 +105,7 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
       {
         key: "fontFamily",
         label: t("definition.schema.label.fontFamily"),
-        options: getFonts(),
+        options: getFontFamilies(),
         type: "string",
         inputType: "select",
         defaultValue: "Roboto, sans-serif",

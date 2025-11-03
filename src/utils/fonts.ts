@@ -6,7 +6,7 @@ interface IFont {
   label: string;
 }
 
-export function getFonts(): IFont[] {
+export function getFontFamilies(): IFont[] {
   const selectedFamilies = [
     "Roboto, sans-serif",
     "Open Sans, sans-serif",
