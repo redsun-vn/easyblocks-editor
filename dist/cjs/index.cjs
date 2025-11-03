@@ -1104,6 +1104,95 @@ function getFonts() {
     };
   });
 }
+function getFontWeights() {
+  return [{
+    id: "100",
+    value: "100",
+    label: "Thin (100)"
+  }, {
+    id: "200",
+    value: "200",
+    label: "Extra Light (200)"
+  }, {
+    id: "300",
+    value: "300",
+    label: "Light (300)"
+  }, {
+    id: "400",
+    value: "400",
+    label: "Normal (400)"
+  }, {
+    id: "500",
+    value: "500",
+    label: "Medium (500)"
+  }, {
+    id: "600",
+    value: "600",
+    label: "Semi Bold (600)"
+  }, {
+    id: "700",
+    value: "700",
+    label: "Bold (700)"
+  }, {
+    id: "800",
+    value: "800",
+    label: "Extra Bold (800)"
+  }, {
+    id: "900",
+    value: "900",
+    label: "Black (900)"
+  }];
+}
+function getLineHeights() {
+  return [{
+    id: "1",
+    value: "1",
+    label: "1"
+  }, {
+    id: "1.1",
+    value: "1.1",
+    label: "1.1"
+  }, {
+    id: "1.2",
+    value: "1.2",
+    label: "1.2"
+  }, {
+    id: "1.3",
+    value: "1.3",
+    label: "1.3"
+  }, {
+    id: "1.4",
+    value: "1.4",
+    label: "1.4"
+  }, {
+    id: "1.4258",
+    value: "1.4258",
+    label: "1.4258"
+  }, {
+    id: "1.5",
+    value: "1.5",
+    label: "1.5"
+  }, {
+    id: "1.7",
+    value: "1.7",
+    label: "1.7"
+  }, {
+    id: "1.8",
+    value: "1.8",
+    label: "1.8"
+  }, {
+    id: "2",
+    value: "2",
+    label: "2"
+  }];
+}
+function getFontSizes(editorContext) {
+  return Object.values(editorContext.theme.space).filter(s => typeof s.value === "string" && s.value.match(/\d+(\.\d+)?px\b/)).map(s => ({
+    id: parseFloat(s.value).toString(),
+    value: parseFloat(s.value).toString(),
+    label: s.label ?? ""
+  }));
+}
 
 const FontCustomFieldInput = ({
   inputType = "text",
@@ -1203,101 +1292,21 @@ const FontCustomFields = ({
     key: "fontSize",
     label: t("definition.schema.label.fontSize"),
     type: "number",
-    options: Object.values(editorContext.theme.space).filter(s => typeof s.value === "string" && s.value.match(/\d+(\.\d+)?px\b/)).map(s => ({
-      id: parseFloat(s.value).toString(),
-      value: parseFloat(s.value).toString(),
-      label: s.label ?? ""
-    })),
+    options: getFontSizes(editorContext),
     inputType: "select",
     defaultValue: 16
   }, {
     key: "fontWeight",
     label: t("definition.schema.label.fontWeight"),
     type: "number",
-    options: [{
-      id: "100",
-      value: "100",
-      label: "Thin (100)"
-    }, {
-      id: "200",
-      value: "200",
-      label: "Extra Light (200)"
-    }, {
-      id: "300",
-      value: "300",
-      label: "Light (300)"
-    }, {
-      id: "400",
-      value: "400",
-      label: "Normal (400)"
-    }, {
-      id: "500",
-      value: "500",
-      label: "Medium (500)"
-    }, {
-      id: "600",
-      value: "600",
-      label: "Semi Bold (600)"
-    }, {
-      id: "700",
-      value: "700",
-      label: "Bold (700)"
-    }, {
-      id: "800",
-      value: "800",
-      label: "Extra Bold (800)"
-    }, {
-      id: "900",
-      value: "900",
-      label: "Black (900)"
-    }],
+    options: getFontWeights(),
     inputType: "select",
     defaultValue: 400
   }, {
     key: "lineHeight",
     label: t("definition.schema.label.lineHeight"),
     type: "number",
-    options: [{
-      id: "1",
-      value: "1",
-      label: "1"
-    }, {
-      id: "1.1",
-      value: "1.1",
-      label: "1.1"
-    }, {
-      id: "1.2",
-      value: "1.2",
-      label: "1.2"
-    }, {
-      id: "1.3",
-      value: "1.3",
-      label: "1.3"
-    }, {
-      id: "1.4",
-      value: "1.4",
-      label: "1.4"
-    }, {
-      id: "1.4258",
-      value: "1.4258",
-      label: "1.4258"
-    }, {
-      id: "1.5",
-      value: "1.5",
-      label: "1.5"
-    }, {
-      id: "1.7",
-      value: "1.7",
-      label: "1.7"
-    }, {
-      id: "1.8",
-      value: "1.8",
-      label: "1.8"
-    }, {
-      id: "2",
-      value: "2",
-      label: "2"
-    }],
+    options: getLineHeights(),
     inputType: "select",
     defaultValue: 1.4
   }], []);
