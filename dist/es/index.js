@@ -1,7 +1,7 @@
 "use client";
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, memo, useCallback } from 'react';
-import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, InputColor, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, Tooltip as Tooltip$1, TooltipTrigger, ToggleGroupItem, TooltipContent, Modal, FormElement, InputFile, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, InputColor, RadixSelectTrigger, RadixSelectContent, RadixSelectViewport, RadixSelectItem, RadixSelectItemText, RadixSelectRoot, RadixSelectValue, ChevronDownIcon, RadixSelectPortal, Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, ToggleGroupItem, Modal, FormElement, InputFile, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
@@ -1331,6 +1331,175 @@ const CustomField = ({
   }
 };
 
+const Trigger = styled$1(RadixSelectTrigger).withConfig({
+  displayName: "ColorFieldPlugin__Trigger",
+  componentId: "sc-19dwflf-0"
+})(["all:unset;display:flex;align-items:center;", ";display:flex;gap:4px;max-width:100%;box-sizing:border-box;height:28px;padding:0 2px 0 6px;border-radius:2px;@media (hover:hover){&:hover{box-shadow:0 0 0 1px ", ";}}"], Fonts.body, Colors.black10);
+const Content = styled$1(RadixSelectContent).withConfig({
+  displayName: "ColorFieldPlugin__Content",
+  componentId: "sc-19dwflf-1"
+})(["overflow:hidden;background-color:white;border-radius:2px;border:1px solid #ddd;box-shadow:0px 4px 12px #0000001a;padding:4px 0;"]);
+const Viewport = styled$1(RadixSelectViewport).withConfig({
+  displayName: "ColorFieldPlugin__Viewport",
+  componentId: "sc-19dwflf-2"
+})(["display:grid;grid-template-columns:repeat(5,30px);padding:", ";max-height:200px;overflow:auto;justify-items:center;justify-content:center;"], ({
+  shape
+}) => shape === "circle" ? "2px" : "2px 8px");
+const Item = styled$1(RadixSelectItem).withConfig({
+  displayName: "ColorFieldPlugin__Item",
+  componentId: "sc-19dwflf-3"
+})(["position:relative;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transform:scale(1.2);width:8px;height:8px;outline:none;margin:10px;&[data-highlighted]{background-color:#f2f2f2;}&[data-state=\"checked\"]{cursor:pointer;transform:scale(1.4);", ";", ";z-index:1;}@media (hover:hover){&:hover{background-color:transparent;border:none;cursor:pointer;transform:scale(1.4);z-index:2;}}"], ({
+  shape
+}) => shape === "circle" ? "box-shadow: inset 0 0 0 1px #c8c8c880, 0 0 1px 2px #fff, 0 0 0 4px #7e8796;" : "", ({
+  shape
+}) => shape === "circle" ? "border-radius: 100%" : "");
+const ItemText = styled$1(RadixSelectItemText).withConfig({
+  displayName: "ColorFieldPlugin__ItemText",
+  componentId: "sc-19dwflf-4"
+})(["@media (hover:hover){&:hover{border:none;background-color:transparent;}}"]);
+const SelectTitle = styled$1.div.withConfig({
+  displayName: "ColorFieldPlugin__SelectTitle",
+  componentId: "sc-19dwflf-5"
+})(["padding:8px 8px 2px 8px;", ";font-size:14px;"], Fonts.body);
+const ColorOptions = ({
+  field,
+  options,
+  shape = "circle"
+}) => {
+  return options.map(option => {
+    const color = field.tokens[option.id]?.value ?? option.id;
+    return /*#__PURE__*/React__default.createElement(Item, {
+      key: option.id,
+      value: option.id,
+      shape: shape
+    }, /*#__PURE__*/React__default.createElement(ItemText, null, /*#__PURE__*/React__default.createElement(Tooltip$1, null, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement("span", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: shape === "circle" ? 6 : 0
+      }
+    }, shape === "circle" ? /*#__PURE__*/React__default.createElement("svg", {
+      xmlns: "http://www.w3.org/2000/svg",
+      width: "15",
+      height: "16",
+      viewBox: "0 0 15 16",
+      fill: "none"
+    }, /*#__PURE__*/React__default.createElement("circle", {
+      cx: "7.5",
+      cy: "8",
+      r: "6.5",
+      fill: color,
+      stroke: Colors.black100
+    })) : /*#__PURE__*/React__default.createElement("svg", {
+      xmlns: "http://www.w3.org/2000/svg",
+      width: "28",
+      height: "16",
+      viewBox: "0 0 30 18",
+      fill: "none"
+    }, /*#__PURE__*/React__default.createElement("rect", {
+      x: "1",
+      y: "4",
+      width: "28",
+      height: "13",
+      fill: color,
+      stroke: Colors.black100
+    })))), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
+      color: "white"
+    }, color)))));
+  });
+};
+const ColorFieldPlugin = ({
+  type = "list",
+  tokenTypeDefinition,
+  shouldShowCustomValueInput,
+  inputValue,
+  setInputValue,
+  input,
+  selectValue,
+  onSelectChange,
+  field,
+  SelectColorTokenItem,
+  options
+}) => {
+  const {
+    t
+  } = useTranslation();
+  const CustomInputWidgetComponent = tokenTypeDefinition?.widget?.component;
+  const previewColor = selectValue === CUSTOM_OPTION_VALUE ? input.value.value : undefined;
+  const customInputElement = shouldShowCustomValueInput ? /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      width: "100%",
+      textAlign: "end"
+    }
+  }, /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      height: 4
+    }
+  }), CustomInputWidgetComponent ? /*#__PURE__*/React__default.createElement(CustomInputWidgetComponent, {
+    value: inputValue,
+    onChange: value => {
+      input.onChange({
+        value,
+        widgetId: tokenTypeDefinition.widget?.id
+      });
+    },
+    params: "params" in field.schemaProp ? field.schemaProp.params : undefined
+  }) : /*#__PURE__*/React__default.createElement(CustomField, {
+    input: input,
+    field: field
+  })) : null;
+  const themeOptions = options.filter(o => o.id.startsWith("theme_"));
+  const myColorOptions = options.filter(o => !o.id.startsWith("theme_"));
+  useEffect(() => {
+    const value = input.value.value;
+    if (value) {
+      setInputValue(value);
+    }
+  }, [input]);
+  if (type === "grid") {
+    return /*#__PURE__*/React__default.createElement(Fragment, null, /*#__PURE__*/React__default.createElement(RadixSelectRoot, {
+      value: selectValue,
+      onValueChange: onSelectChange
+    }, /*#__PURE__*/React__default.createElement(Trigger, null, /*#__PURE__*/React__default.createElement(RadixSelectValue, {
+      placeholder: "Select item"
+    }), /*#__PURE__*/React__default.createElement(ChevronDownIcon, {
+      color: Colors.black40
+    })), /*#__PURE__*/React__default.createElement(RadixSelectPortal, null, /*#__PURE__*/React__default.createElement(Content, null, /*#__PURE__*/React__default.createElement(SelectTitle, null, t("theme.colors")), /*#__PURE__*/React__default.createElement(Viewport, {
+      shape: "rectangle"
+    }, /*#__PURE__*/React__default.createElement(ColorOptions, {
+      options: themeOptions,
+      field: field,
+      shape: "rectangle"
+    })), /*#__PURE__*/React__default.createElement(SelectTitle, null, t("theme.myColors")), /*#__PURE__*/React__default.createElement(Viewport, {
+      shape: "circle"
+    }, /*#__PURE__*/React__default.createElement(ColorOptions, {
+      options: myColorOptions,
+      field: field
+    })), field?.allowCustom && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(SelectSeparator, null), /*#__PURE__*/React__default.createElement(SelectColorTokenItem, {
+      value: CUSTOM_OPTION_VALUE,
+      previewColor: previewColor
+    }, "Custom"))))), customInputElement);
+  }
+  return /*#__PURE__*/React__default.createElement(Fragment, null, /*#__PURE__*/React__default.createElement(Select, {
+    value: selectValue,
+    onChange: onSelectChange
+  }, isMixedFieldValue(input.value) && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(SelectColorTokenItem, {
+    value: MIXED_VALUE,
+    isDisabled: true
+  }, "Mixed"), /*#__PURE__*/React__default.createElement(SelectSeparator, null)), /*#__PURE__*/React__default.createElement(Fragment, null, options.map(o => {
+    return /*#__PURE__*/React__default.createElement(SelectColorTokenItem, {
+      key: o.id,
+      value: o.id
+      // Color tokens are always strings
+      ,
+      previewColor: field.tokens[o.id]?.value ?? o.id
+    }, o.label);
+  }), field?.allowCustom && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(SelectSeparator, null), /*#__PURE__*/React__default.createElement(SelectColorTokenItem, {
+    value: CUSTOM_OPTION_VALUE,
+    previewColor: selectValue === CUSTOM_OPTION_VALUE ? input.value.value : undefined
+  }, "Custom")))), customInputElement);
+};
+
 function extraValuesIncludes(extraValues, value) {
   for (let i = 0; i < extraValues.length; i++) {
     const extraValue = extraValues[i];
@@ -1484,24 +1653,19 @@ function TokenFieldComponent({
     }
   }, [input]);
   if (tokenTypeDefinition.token === "colors") {
-    return /*#__PURE__*/React__default.createElement(Fragment, null, /*#__PURE__*/React__default.createElement(Select, {
-      value: selectValue,
-      onChange: onSelectChange
-    }, isMixedFieldValue(input.value) && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(SelectColorTokenItem, {
-      value: MIXED_VALUE,
-      isDisabled: true
-    }, "Mixed"), /*#__PURE__*/React__default.createElement(SelectSeparator, null)), /*#__PURE__*/React__default.createElement(Fragment, null, options.map(o => {
-      return /*#__PURE__*/React__default.createElement(SelectColorTokenItem, {
-        key: o.id,
-        value: o.id
-        // Color tokens are always strings
-        ,
-        previewColor: field.tokens[o.id]?.value ?? o.id
-      }, o.label);
-    }), allowCustom && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(SelectSeparator, null), /*#__PURE__*/React__default.createElement(SelectColorTokenItem, {
-      value: CUSTOM_OPTION_VALUE,
-      previewColor: selectValue === CUSTOM_OPTION_VALUE ? input.value.value : undefined
-    }, "Custom")))), customInputElement);
+    return /*#__PURE__*/React__default.createElement(ColorFieldPlugin, {
+      type: "grid",
+      field: field,
+      input: input,
+      options: options,
+      inputValue: inputValue,
+      setInputValue: setInputValue,
+      tokenTypeDefinition: tokenTypeDefinition,
+      shouldShowCustomValueInput: shouldShowCustomValueInput,
+      selectValue: selectValue,
+      onSelectChange: onSelectChange,
+      SelectColorTokenItem: SelectColorTokenItem
+    });
   }
   return /*#__PURE__*/React__default.createElement(Root, {
     isCustom: shouldShowCustomValueInput

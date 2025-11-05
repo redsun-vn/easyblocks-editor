@@ -2,7 +2,7 @@ import { TokenValue as CoreTokenValue, Field, NonNullish, ThemeTokenValue } from
 import React from "react";
 import { FieldRenderProps } from "react-final-form";
 import { FieldMixedValue } from "../../../../types";
-interface TokenField<TokenValue extends NonNullish = NonNullish> extends Field {
+export interface TokenField<TokenValue extends NonNullish = NonNullish> extends Field {
     tokens: {
         [key: string]: ThemeTokenValue<TokenValue>;
     };
@@ -21,5 +21,4 @@ export declare const TokenFieldPlugin: {
     type: string;
     Component: (props: import("../wrapFieldWithMeta").InputFieldType<TokenFieldProps<NonNullish>, Record<string, any>>) => React.JSX.Element;
 };
-export {};
 //# sourceMappingURL=TokenFieldPlugin.d.ts.map

@@ -13,7 +13,7 @@ type EditorInlineTypeDefinition = Omit<InlineTypeDefinition, "widgets"> & {
         component?: ComponentType<InlineTypeWidgetComponentProps<any>>;
     };
 };
-type EditorTokenTypeDefinition = Omit<TokenTypeDefinition, "widgets"> & {
+export type EditorTokenTypeDefinition = Omit<TokenTypeDefinition, "widgets"> & {
     widget?: Widget & {
         component?: ComponentType<TokenTypeWidgetComponentProps<any>>;
     };

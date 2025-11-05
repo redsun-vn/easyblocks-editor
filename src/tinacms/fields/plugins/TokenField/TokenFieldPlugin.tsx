@@ -36,8 +36,10 @@ import { CUSTOM_OPTION_VALUE, MIXED_VALUE } from "../../components/constants";
 import { isMixedFieldValue } from "../../components/isMixedFieldValue";
 import { CustomField } from "../CustomFields";
 import { wrapFieldsWithMeta } from "../wrapFieldWithMeta";
+import { ColorFieldPlugin } from "./ColorFieldPlugin";
 
-interface TokenField<TokenValue extends NonNullish = NonNullish> extends Field {
+export interface TokenField<TokenValue extends NonNullish = NonNullish>
+  extends Field {
   tokens: { [key: string]: ThemeTokenValue<TokenValue> };
   normalizeCustomValue?: (value: string) => any;
   allowCustom?: boolean;
@@ -266,59 +268,19 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
 
   if (tokenTypeDefinition.token === "colors") {
     return (
-      <Fragment>
-        <Select value={selectValue} onChange={onSelectChange}>
-          {isMixedFieldValue(input.value) && (
-            <>
-              <SelectColorTokenItem value={MIXED_VALUE} isDisabled>
-                Mixed
-              </SelectColorTokenItem>
-              <SelectSeparator />
-            </>
-          )}
-          {
-            <Fragment>
-              {options.map((o) => {
-                return (
-                  <SelectColorTokenItem
-                    key={o.id}
-                    value={o.id}
-                    // Color tokens are always strings
-                    previewColor={
-                      (field.tokens[o.id]?.value as unknown as
-                        | string
-                        | undefined) ?? o.id
-                    }
-                  >
-                    {o.label}
-                  </SelectColorTokenItem>
-                );
-              })}
-              {allowCustom && (
-                <>
-                  <SelectSeparator />
-                  <SelectColorTokenItem
-                    value={CUSTOM_OPTION_VALUE}
-                    previewColor={
-                      selectValue === CUSTOM_OPTION_VALUE
-                        ? ((
-                            input.value as Exclude<
-                              (typeof input)["value"],
-                              FieldMixedValue
-                            >
-                          ).value as string)
-                        : undefined
-                    }
-                  >
-                    Custom
-                  </SelectColorTokenItem>
-                </>
-              )}
-            </Fragment>
-          }
-        </Select>
-        {customInputElement}
-      </Fragment>
+      <ColorFieldPlugin
+        type="grid"
+        field={field}
+        input={input}
+        options={options}
+        inputValue={inputValue}
+        setInputValue={setInputValue}
+        tokenTypeDefinition={tokenTypeDefinition}
+        shouldShowCustomValueInput={shouldShowCustomValueInput}
+        selectValue={selectValue}
+        onSelectChange={onSelectChange}
+        SelectColorTokenItem={SelectColorTokenItem}
+      />
     );
   }
 
