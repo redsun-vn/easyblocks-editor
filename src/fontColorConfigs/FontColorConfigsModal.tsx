@@ -20,16 +20,21 @@ const ModalRoot = styled.div`
   height: 100%;
   display: grid;
   grid-template-columns: 200px 1fr;
+  overflow: hidden;
 `;
 
 const Sidebar = styled.div`
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   border-right: 1px solid ${Colors.black5};
   height: 100%;
 `;
 
 const Content = styled.div`
   padding: 2rem 1rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: 100%;
 `;
 
 const SidebarContent = styled.div`
