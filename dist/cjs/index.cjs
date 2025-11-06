@@ -3327,12 +3327,284 @@ const EditorSidebar = props => {
 };
 
 const FontConfigurations = ({
-  editorContext
+  editorContext,
+  onConfigChange
 }) => {
   const fontTokens = editorContext.theme.fonts;
-  editorContext.backend;
-  useTranslation();
-  return /*#__PURE__*/React__default["default"].createElement("div", null, Object.values(fontTokens).map(f => f.label));
+  const backend = editorContext.backend;
+  const {
+    t
+  } = useTranslation();
+  const toaster = easyblocksDesignSystem.useToaster();
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId");
+  const [isLoadingReset, setIsLoadingReset] = React.useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = React.useState(false);
+  const [openEditFont, setOpenEditFont] = React.useState(false);
+  const [font, setFont] = React.useState({
+    id: "",
+    label: "",
+    value: {
+      fontFamily: "",
+      fontSize: "",
+      fontWeight: "",
+      lineHeight: ""
+    }
+  });
+  const {
+    id,
+    label,
+    value
+  } = font;
+  const canSend = label.trim() !== "";
+  const handleOpenEditFont = (id, f) => {
+    setFont({
+      id,
+      label: f.label || "",
+      value: {
+        fontFamily: f.value?.fontFamily || "",
+        fontSize: String(f.value.fontSize ?? ""),
+        fontWeight: String(f.value.fontWeight ?? ""),
+        lineHeight: String(f.value.lineHeight ?? "")
+      }
+    });
+    setOpenEditFont(true);
+  };
+  const handleFontClose = () => {
+    setOpenEditFont(false);
+    setFont({
+      id: "",
+      label: "",
+      value: {
+        fontFamily: "",
+        fontSize: "",
+        fontWeight: "",
+        lineHeight: ""
+      }
+    });
+  };
+  const onReset = async () => {
+    if (themeId) {
+      setIsLoadingReset(true);
+      try {
+        await backend.themes?.reset({
+          id: themeId,
+          configs: ["fonts"]
+        });
+        toaster.success(t("theme.font.reset.success"));
+      } catch (error) {
+        toaster.error(t("theme.font.reset.error"));
+      } finally {
+        setIsLoadingReset(false);
+        onConfigChange?.();
+      }
+    }
+  };
+  const onSubmit = async () => {
+    if (!canSend) return;
+    if (themeId) {
+      setIsLoadingEdit(true);
+      const existingFonts = Object.entries(fontTokens).map(([key, f]) => ({
+        id: key,
+        label: f.label,
+        value: f.value,
+        isDefault: f.isDefault
+      }));
+      const updatedFonts = existingFonts.map(f => f.id === id ? {
+        id,
+        label,
+        value: {
+          ...value,
+          fontSize: value.fontSize ?? Number(value.fontSize),
+          fontWeight: value.fontWeight ?? Number(value.fontWeight),
+          lineHeight: value.lineHeight ?? Number(value.lineHeight)
+        },
+        isDefault: f.isDefault
+      } : f);
+      try {
+        await backend.themes?.update({
+          id: themeId,
+          config: {
+            fonts: updatedFonts
+          }
+        });
+        toaster.success(t("theme.font.save.success"));
+      } catch (error) {
+        toaster.error(t("theme.font.save.error"));
+      } finally {
+        setIsLoadingEdit(false);
+        onConfigChange?.();
+        handleFontClose();
+      }
+    }
+  };
+  const Container = styled__default["default"].div.withConfig({
+    displayName: "FontConfigurations__Container",
+    componentId: "sc-1rpaqke-0"
+  })(["padding:6px;background-color:#ffffff;max-height:100vh;font-family:system-ui,-apple-system,sans-serif;"]);
+  const FontGrid = styled__default["default"].div.withConfig({
+    displayName: "FontConfigurations__FontGrid",
+    componentId: "sc-1rpaqke-1"
+  })(["display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px;"]);
+  const FontCard = styled__default["default"].div.withConfig({
+    displayName: "FontConfigurations__FontCard",
+    componentId: "sc-1rpaqke-2"
+  })(["border:1px solid transparent;padding:4px;cursor:pointer;transition:border-color 0.2s ease;&:hover{border-color:#e5e5e5;}"]);
+  const FontPreviewBox = styled__default["default"].div.withConfig({
+    displayName: "FontConfigurations__FontPreviewBox",
+    componentId: "sc-1rpaqke-3"
+  })(["height:120px;display:flex;align-items:center;justify-content:center;background-color:#e5e5e5;padding:32px;overflow:hidden;"]);
+  const FontPreviewText = styled__default["default"].div.withConfig({
+    displayName: "FontConfigurations__FontPreviewText",
+    componentId: "sc-1rpaqke-4"
+  })(["font-size:", "px;font-family:", ";font-weight:", ";line-height:", ";color:#000;text-align:center;user-select:none;max-width:100%;word-break:break-word;overflow-wrap:break-word;overflow:hidden;"], f => f.fontSize, f => f.fontFamily, f => f.fontWeight, f => f.lineHeight);
+  const FontDetails = styled__default["default"].div.withConfig({
+    displayName: "FontConfigurations__FontDetails",
+    componentId: "sc-1rpaqke-5"
+  })(["margin-top:8px;background-color:white;font-size:12px;line-height:16px;color:#000;text-align:center;"]);
+  const Content = styled__default["default"].div.withConfig({
+    displayName: "FontConfigurations__Content",
+    componentId: "sc-1rpaqke-6"
+  })(["padding:1rem 0.5rem;::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:#e5e5e5;border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#9ca3af;}scrollbar-width:thin;scrollbar-color:#e5e5e5 #f1f1f1;"]);
+  const Form = styled__default["default"].form.withConfig({
+    displayName: "FontConfigurations__Form",
+    componentId: "sc-1rpaqke-7"
+  })(["display:flex;flex-direction:column;gap:12px;margin-top:2px;"]);
+  const Row = styled__default["default"].div.withConfig({
+    displayName: "FontConfigurations__Row",
+    componentId: "sc-1rpaqke-8"
+  })(["display:grid;grid-template-columns:repeat(4,1fr);gap:12px;"]);
+  const PreviewTextarea = styled__default["default"].textarea.withConfig({
+    displayName: "FontConfigurations__PreviewTextarea",
+    componentId: "sc-1rpaqke-9"
+  })(["border-radius:0.5rem;width:100%;height:17vh;background-color:#e5e5e5;resize:none;outline:none;padding:1rem;font-family:", ";font-size:", "px;font-weight:", ";line-height:", ";"], f => f.fontFamily, f => f.fontSize, f => f.fontWeight, f => f.lineHeight);
+  const StyledLabel = styled__default["default"].label.withConfig({
+    displayName: "FontConfigurations__StyledLabel",
+    componentId: "sc-1rpaqke-10"
+  })(["display:block;margin-bottom:0.5rem;font-size:0.75rem;font-weight:400;color:#000;"]);
+  const StyledSelect = styled__default["default"].select.withConfig({
+    displayName: "FontConfigurations__StyledSelect",
+    componentId: "sc-1rpaqke-11"
+  })(["background-color:#ffffff;border:1px solid #d1d5db;color:#111827;font-size:0.875rem;border-radius:0.375rem;display:block;width:100%;padding:0.5rem 0.75rem;cursor:pointer;&:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.1);}&:hover{border-color:#9ca3af;}"]);
+  const FormField = styled__default["default"].div.withConfig({
+    displayName: "FontConfigurations__FormField",
+    componentId: "sc-1rpaqke-12"
+  })(["display:flex;flex-direction:column;min-width:0;"]);
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(Container, null, /*#__PURE__*/React__default["default"].createElement(FontGrid, null, Object.entries(fontTokens).map(([key, f]) => /*#__PURE__*/React__default["default"].createElement(FontCard, {
+    key: key,
+    onClick: () => handleOpenEditFont(key, f)
+  }, /*#__PURE__*/React__default["default"].createElement(FontPreviewBox, null, /*#__PURE__*/React__default["default"].createElement(FontPreviewText, {
+    fontSize: f.value.fontSize,
+    fontFamily: f.value.fontFamily,
+    fontWeight: f.value.fontWeight,
+    lineHeight: f.value.lineHeight
+  }, f.label)), /*#__PURE__*/React__default["default"].createElement(FontDetails, null, [f.value.fontFamily?.split(",")[0], f.value.fontWeight ? `Font Weight: ${f.value.fontWeight}` : null, f.value.fontSize ? `${f.value.fontSize}` : null, f.value.lineHeight ? `${f.value.lineHeight}` : null].filter(Boolean).join(", "))))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
+    isLoading: isLoadingReset,
+    disabled: isLoadingReset,
+    onClick: onReset
+  }, t("theme.font.reset"))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+    width: "40vw",
+    title: `${t("theme.font.edit")} ${label ?? "Font"}`,
+    isOpen: openEditFont,
+    onRequestClose: () => handleFontClose(),
+    mode: "center-small",
+    headerLine: true
+  }, /*#__PURE__*/React__default["default"].createElement(Content, null, /*#__PURE__*/React__default["default"].createElement(Form, {
+    onSubmit: onSubmit
+  }, /*#__PURE__*/React__default["default"].createElement(Row, null, /*#__PURE__*/React__default["default"].createElement(FormField, null, /*#__PURE__*/React__default["default"].createElement(StyledLabel, {
+    htmlFor: "fontFamily"
+  }, t("theme.font.family")), /*#__PURE__*/React__default["default"].createElement(StyledSelect, {
+    id: "fontFamily",
+    name: "fontFamily",
+    value: value.fontFamily,
+    onChange: e => {
+      setFont({
+        ...font,
+        value: {
+          ...value,
+          fontFamily: e.target.value
+        }
+      });
+    }
+  }, getFontFamilies().map(f => /*#__PURE__*/React__default["default"].createElement("option", {
+    key: f.id,
+    value: f.value
+  }, f.label)))), /*#__PURE__*/React__default["default"].createElement(FormField, null, /*#__PURE__*/React__default["default"].createElement(StyledLabel, {
+    htmlFor: "fontSize"
+  }, t("theme.font.size")), /*#__PURE__*/React__default["default"].createElement(StyledSelect, {
+    id: "fontSize",
+    name: "fontSize",
+    value: value.fontSize,
+    onChange: e => {
+      setFont({
+        ...font,
+        value: {
+          ...value,
+          fontSize: e.target.value
+        }
+      });
+    }
+  }, getFontSizes(editorContext).map(f => /*#__PURE__*/React__default["default"].createElement("option", {
+    key: f.id,
+    value: f.value
+  }, f.label)))), /*#__PURE__*/React__default["default"].createElement(FormField, null, /*#__PURE__*/React__default["default"].createElement(StyledLabel, {
+    htmlFor: "fontWeight"
+  }, t("theme.font.weight")), /*#__PURE__*/React__default["default"].createElement(StyledSelect, {
+    id: "fontWeight",
+    name: "fontWeight",
+    value: value.fontWeight,
+    onChange: e => {
+      setFont({
+        ...font,
+        value: {
+          ...value,
+          fontWeight: e.target.value
+        }
+      });
+    }
+  }, getFontWeights().map(f => /*#__PURE__*/React__default["default"].createElement("option", {
+    key: f.id,
+    value: f.value
+  }, f.label)))), /*#__PURE__*/React__default["default"].createElement(FormField, null, /*#__PURE__*/React__default["default"].createElement(StyledLabel, {
+    htmlFor: "lineHeight"
+  }, t("theme.font.lineHeight")), /*#__PURE__*/React__default["default"].createElement(StyledSelect, {
+    id: "lineHeight",
+    name: "lineHeight",
+    value: value.lineHeight,
+    onChange: e => {
+      setFont({
+        ...font,
+        value: {
+          ...value,
+          lineHeight: e.target.value
+        }
+      });
+    }
+  }, getLineHeights().map(f => /*#__PURE__*/React__default["default"].createElement("option", {
+    key: f.id,
+    value: f.value
+  }, f.label))))), /*#__PURE__*/React__default["default"].createElement(PreviewTextarea, {
+    id: "textPreview",
+    fontFamily: value.fontFamily,
+    fontSize: value.fontSize,
+    fontWeight: value.fontWeight,
+    lineHeight: value.lineHeight,
+    defaultValue: "Text preview"
+  }), /*#__PURE__*/React__default["default"].createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginTop: 8,
+      gap: 8
+    }
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+    onClick: () => handleFontClose()
+  }, t("theme.font.cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+    isLoading: isLoadingEdit,
+    disabled: isLoadingEdit,
+    type: "submit"
+  }, t("theme.font.save")))))));
 };
 
 const getIconColor = hex => {
@@ -3538,15 +3810,15 @@ const ColorConfigurations = ({
 const ModalRoot$1 = styled__default["default"].div.withConfig({
   displayName: "FontColorConfigsModal__ModalRoot",
   componentId: "sc-1xvfmbx-0"
-})(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;grid-template-columns:200px 1fr;"]);
+})(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;grid-template-columns:200px 1fr;overflow:hidden;"]);
 const Sidebar$1 = styled__default["default"].div.withConfig({
   displayName: "FontColorConfigsModal__Sidebar",
   componentId: "sc-1xvfmbx-1"
-})(["overflow:hidden;border-right:1px solid ", ";height:100%;"], easyblocksDesignSystem.Colors.black5);
+})(["overflow-x:hidden;overflow-y:auto;border-right:1px solid ", ";height:100%;"], easyblocksDesignSystem.Colors.black5);
 const Content = styled__default["default"].div.withConfig({
   displayName: "FontColorConfigsModal__Content",
   componentId: "sc-1xvfmbx-2"
-})(["padding:2rem 1rem;"]);
+})(["padding:2rem 1rem;overflow-x:hidden;overflow-y:auto;height:100%;"]);
 const SidebarContent$1 = styled__default["default"].div.withConfig({
   displayName: "FontColorConfigsModal__SidebarContent",
   componentId: "sc-1xvfmbx-3"
