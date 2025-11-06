@@ -1,8 +1,15 @@
-import { dotNotationGet, sleep, uniqueId, useForceRerender } from "@/utils";
+import {
+  deepCompare,
+  dotNotationGet,
+  sleep,
+  uniqueId,
+  useForceRerender,
+} from "@/utils";
 import {
   CompilationCache,
   CompilationMetadata,
   Config,
+  ConfigTokenValue,
   DeviceRange,
   Document,
   ExternalData,
@@ -11,6 +18,8 @@ import {
   NoCodeComponentEntry,
   NonEmptyRenderableContent,
   Template,
+  ThemeColor,
+  ThemeFont,
   TokenTypeWidgetComponentProps,
   UserDefinedTemplate,
   WidgetComponentProps,
@@ -371,13 +380,34 @@ function useBuiltContent(
   const inputRawContent = useRef<NoCodeComponentEntry>();
   const inputIsEditing = useRef<boolean>();
   const inputBreakpointIndex = useRef<string>();
+  const inputConfigTokenFonts = useRef<
+    ConfigTokenValue<ThemeFont>[] | undefined
+  >(config.tokens?.fonts);
+
+  const inputConfigTokenColors = useRef<
+    ConfigTokenValue<ThemeColor>[] | undefined
+  >(config.tokens?.colors);
 
   const inputChanged =
     inputRawContent.current !== rawContent ||
     inputIsEditing.current !== editorContext.isEditing ||
     inputBreakpointIndex.current !== editorContext.breakpointIndex;
 
-  if (!buildEntryResult.current || inputChanged) {
+  const configFontsChanged = !deepCompare(
+    inputConfigTokenFonts.current ?? {},
+    config.tokens?.fonts ?? {}
+  );
+  const configColorsChanged = !deepCompare(
+    inputConfigTokenColors.current ?? {},
+    config.tokens?.colors ?? {}
+  );
+
+  if (
+    !buildEntryResult.current ||
+    inputChanged ||
+    configFontsChanged ||
+    configColorsChanged
+  ) {
     /*
      * Why do we merge meta instead of overriding?
      * It might seem redundant. We could only take the newest meta and re-render, right?
@@ -481,6 +511,9 @@ function useBuiltContent(
         return defaultIsExternalDataChanged(externalDataValue);
       },
     });
+
+    inputConfigTokenFonts.current = config.tokens?.fonts;
+    inputConfigTokenColors.current = config.tokens?.colors;
 
     if (Object.keys(buildEntryResult.current.externalData).length > 0) {
       onExternalDataChange(

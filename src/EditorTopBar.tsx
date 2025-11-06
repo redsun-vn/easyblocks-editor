@@ -184,7 +184,7 @@ export const EditorTopBar: React.FC<{
           {t("editor.sidebar.redo")}
         </ButtonGhost>
 
-        {/* <VerticalLine />
+        <VerticalLine />
 
         {readOnly && <Label>Read-Only</Label>}
 
@@ -201,7 +201,7 @@ export const EditorTopBar: React.FC<{
           isOpen={isOpenConfigs}
           onConfigChange={onConfigChange}
           onClose={() => setIsOpenConfigs(false)}
-        /> */}
+        />
       </TopBarLeft>
 
       <TopBarCenter>

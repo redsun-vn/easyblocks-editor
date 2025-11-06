@@ -1,7 +1,7 @@
 "use client";
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, memo, useCallback } from 'react';
-import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, InputColor, RadixSelectTrigger, RadixSelectContent, RadixSelectViewport, RadixSelectItem, RadixSelectItemText, RadixSelectRoot, RadixSelectValue, ChevronDownIcon, RadixSelectPortal, Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, ButtonGhost, ThumbnailButton, RangeSlider, ToggleGroup, ToggleGroupItem, Modal, FormElement, InputFile, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, InputColor, RadixSelectTrigger, RadixSelectContent, RadixSelectViewport, RadixSelectItem, RadixSelectItemText, RadixSelectRoot, RadixSelectValue, ChevronDownIcon, RadixSelectPortal, Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, ButtonGhost, ThumbnailButton, RangeSlider, Modal, HexAlphaColorPicker, ToggleGroup, ToggleGroupItem, FormElement, InputFile, ButtonDanger, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
@@ -1335,7 +1335,7 @@ const Trigger = styled$1(RadixSelectTrigger).withConfig({
   displayName: "ColorFieldPlugin__Trigger",
   componentId: "sc-19dwflf-0"
 })(["all:unset;display:flex;align-items:center;", ";display:flex;gap:4px;max-width:100%;box-sizing:border-box;height:28px;padding:0 2px 0 6px;border-radius:2px;@media (hover:hover){&:hover{box-shadow:0 0 0 1px ", ";}}"], Fonts.body, Colors.black10);
-const Content = styled$1(RadixSelectContent).withConfig({
+const Content$1 = styled$1(RadixSelectContent).withConfig({
   displayName: "ColorFieldPlugin__Content",
   componentId: "sc-19dwflf-1"
 })(["overflow:hidden;background-color:white;border-radius:2px;border:1px solid #ddd;box-shadow:0px 4px 12px #0000001a;padding:4px 0;"]);
@@ -1464,7 +1464,7 @@ const ColorFieldPlugin = ({
       placeholder: "Select item"
     }), /*#__PURE__*/React__default.createElement(ChevronDownIcon, {
       color: Colors.black40
-    })), /*#__PURE__*/React__default.createElement(RadixSelectPortal, null, /*#__PURE__*/React__default.createElement(Content, null, /*#__PURE__*/React__default.createElement(SelectTitle, null, t("theme.colors")), /*#__PURE__*/React__default.createElement(Viewport, {
+    })), /*#__PURE__*/React__default.createElement(RadixSelectPortal, null, /*#__PURE__*/React__default.createElement(Content$1, null, /*#__PURE__*/React__default.createElement(SelectTitle, null, t("theme.colors")), /*#__PURE__*/React__default.createElement(Viewport, {
       shape: "rectangle"
     }, /*#__PURE__*/React__default.createElement(ColorOptions, {
       options: themeOptions,
@@ -3291,12 +3291,280 @@ const EditorSidebar = props => {
   }));
 };
 
+const FontConfigurations = ({
+  editorContext
+}) => {
+  const fontTokens = editorContext.theme.fonts;
+  editorContext.backend;
+  useTranslation();
+  return /*#__PURE__*/React__default.createElement("div", null, Object.values(fontTokens).map(f => f.label));
+};
+
+const getIconColor = hex => {
+  // remove "#"
+  hex = hex.replace("#", "");
+
+  // convert hex to r g b
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness < 128 ? "#ffffff" : "#000000";
+};
+
+const ColorConfigurationsContainer = styled$1.div.withConfig({
+  displayName: "ColorConfigurations__ColorConfigurationsContainer",
+  componentId: "sc-qln4q1-0"
+})(["width:100%;display:flex;flex-direction:column;gap:10px;"]);
+const StyledColorCardWrapper = styled$1.div.withConfig({
+  displayName: "ColorConfigurations__StyledColorCardWrapper",
+  componentId: "sc-qln4q1-1"
+})(["max-width:250px;width:100%;display:flex;overflow:hidden;border:1px solid ", ";border-radius:4px;"], Colors.black100);
+const StyledColorCard = styled$1.div.withConfig({
+  displayName: "ColorConfigurations__StyledColorCard",
+  componentId: "sc-qln4q1-2"
+})(["display:flex;justify-content:center;align-items:center;max-width:50px;width:100%;height:50px;background:", ";& > div{display:none;color:", ";}&:hover{cursor:pointer;& > div{display:block;}}"], ({
+  background
+}) => background, ({
+  background
+}) => getIconColor(background));
+const StyledInputWrapper = styled$1.div.withConfig({
+  displayName: "ColorConfigurations__StyledInputWrapper",
+  componentId: "sc-qln4q1-3"
+})(["margin-top:10px;"]);
+const StyledInputColor = styled$1(Input).withConfig({
+  displayName: "ColorConfigurations__StyledInputColor",
+  componentId: "sc-qln4q1-4"
+})(["box-shadow:0 0 0 1px ", ";width:100%;border-radius:2px;&:focus{outline:none;}"], Colors.black10);
+const StyledButtonGroup = styled$1.div.withConfig({
+  displayName: "ColorConfigurations__StyledButtonGroup",
+  componentId: "sc-qln4q1-5"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const ColorCard = ({
+  themeOption,
+  openModal
+}) => {
+  const backgroundColor = Object.keys(themeOption)[0];
+  return /*#__PURE__*/React__default.createElement(StyledColorCard, {
+    background: themeOption[backgroundColor].value,
+    onClick: openModal
+  }, /*#__PURE__*/React__default.createElement(Icons.Pencil, {
+    size: 18
+  }));
+};
+const ColorConfigurations = ({
+  editorContext,
+  onConfigChange
+}) => {
+  const colorTokens = editorContext.theme.colors;
+  const fontTokens = editorContext.theme.fonts;
+  const backend = editorContext.backend;
+  let changeColorDetail;
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId");
+  const {
+    t
+  } = useTranslation();
+  const toaster = useToaster();
+  const [openEditColor, setOpenEditColor] = useState(null);
+  const [isLoadingReset, setIsLoadingReset] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const themeOptions1 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_1"));
+  const themeOptions2 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_2"));
+  const themeOptions3 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_3"));
+  const themeOptions4 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_4"));
+  const themeOptions5 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_5"));
+  const themeOptions = [themeOptions1, themeOptions2, themeOptions3, themeOptions4, themeOptions5];
+  const closeEditColor = () => {
+    setOpenEditColor(null);
+  };
+  const onReset = async () => {
+    if (themeId) {
+      setIsLoadingReset(true);
+      try {
+        await backend.themes?.reset({
+          id: themeId,
+          configs: ["colors"]
+        });
+        toaster.success(t("theme.colors.reset.success"));
+      } catch (error) {
+        toaster.error(t("theme.colors.reset.fail"));
+      } finally {
+        setIsLoadingReset(false);
+        onConfigChange?.();
+      }
+    }
+  };
+  const setColor = newColor => {
+    setOpenEditColor(prev => {
+      if (!prev) return prev;
+      return {
+        id: prev.id,
+        value: newColor,
+        isDefault: prev.isDefault,
+        label: prev.label
+      };
+    });
+  };
+  const onChangeColor = newColor => {
+    clearTimeout(changeColorDetail);
+    changeColorDetail = setTimeout(() => {
+      setColor(newColor);
+    }, 300);
+  };
+  const onSaveEditColor = async () => {
+    if (themeId && openEditColor) {
+      setIsLoadingEdit(true);
+      const newColorTokens = {
+        ...colorTokens,
+        [openEditColor?.id]: {
+          value: openEditColor.value,
+          isDefault: openEditColor.isDefault,
+          label: openEditColor.label
+        }
+      };
+      const fontTokenPayloads = Object.entries(fontTokens).map(([id, value]) => ({
+        id,
+        ...value
+      }));
+      const colorTokenPayloads = Object.entries(newColorTokens).map(([id, value]) => ({
+        id,
+        ...value
+      }));
+      try {
+        await backend.themes?.update({
+          id: themeId,
+          config: {
+            fonts: fontTokenPayloads,
+            colors: colorTokenPayloads
+          }
+        });
+        toaster.success(t("topBar.saved"));
+      } catch (error) {
+        toaster.error(t("topBar.save.error"));
+      } finally {
+        setIsLoadingEdit(false);
+        closeEditColor();
+        onConfigChange?.();
+      }
+    }
+  };
+  const onEnterChangeColor = event => {
+    if (event.code === "Enter" || event.code === "NumpadEnter") {
+      onSaveEditColor();
+    }
+  };
+  return /*#__PURE__*/React__default.createElement(ColorConfigurationsContainer, null, themeOptions.map(themeOption => {
+    return /*#__PURE__*/React__default.createElement(StyledColorCardWrapper, null, themeOption.map(([colorId, colorDetail]) => /*#__PURE__*/React__default.createElement(ColorCard, {
+      key: colorId,
+      themeOption: {
+        [colorId]: colorDetail
+      },
+      openModal: () => setOpenEditColor({
+        id: colorId,
+        ...colorDetail
+      })
+    })));
+  }), openEditColor ? /*#__PURE__*/React__default.createElement(Modal, {
+    title: t("theme.colors.edit"),
+    isOpen: !!openEditColor,
+    mode: "center-small",
+    onRequestClose: closeEditColor,
+    maxHeight: "400px"
+  }, /*#__PURE__*/React__default.createElement(HexAlphaColorPicker, {
+    style: {
+      width: "100%",
+      padding: 4
+    },
+    color: openEditColor?.value,
+    onChange: onChangeColor,
+    onKeyDown: onEnterChangeColor
+  }), /*#__PURE__*/React__default.createElement(StyledInputWrapper, null, /*#__PURE__*/React__default.createElement(StyledInputColor, {
+    defaultValue: openEditColor?.value,
+    value: openEditColor?.value,
+    onChange: e => setColor(e.target.value),
+    onKeyDown: onEnterChangeColor
+  })), /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+    onClick: closeEditColor
+  }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+    isLoading: isLoadingEdit,
+    disabled: isLoadingEdit,
+    onClick: onSaveEditColor
+  }, t("template.save.default")))) : null, /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+    isLoading: isLoadingReset,
+    disabled: isLoadingReset,
+    style: {
+      width: "fit-content"
+    },
+    onClick: onReset
+  }, t("theme.colors.reset")));
+};
+
+const ModalRoot$1 = styled$1.div.withConfig({
+  displayName: "FontColorConfigsModal__ModalRoot",
+  componentId: "sc-1xvfmbx-0"
+})(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;grid-template-columns:200px 1fr;"]);
+const Sidebar$1 = styled$1.div.withConfig({
+  displayName: "FontColorConfigsModal__Sidebar",
+  componentId: "sc-1xvfmbx-1"
+})(["overflow:hidden;border-right:1px solid ", ";height:100%;"], Colors.black5);
+const Content = styled$1.div.withConfig({
+  displayName: "FontColorConfigsModal__Content",
+  componentId: "sc-1xvfmbx-2"
+})(["padding:2rem 1rem;"]);
+const SidebarContent$1 = styled$1.div.withConfig({
+  displayName: "FontColorConfigsModal__SidebarContent",
+  componentId: "sc-1xvfmbx-3"
+})(["padding:24px 4px;display:flex;flex-direction:column;"]);
+const SidebarButton$1 = styled$1.button.withConfig({
+  displayName: "FontColorConfigsModal__SidebarButton",
+  componentId: "sc-1xvfmbx-4"
+})(["all:unset;height:38px;", " display:flex;padding-left:16px;align-items:center;&:hover{background:", ";}background:", ";cursor:pointer;"], Fonts.body, Colors.black5, ({
+  isActive
+}) => isActive ? `${Colors.black5}` : "");
+const FontColorConfigsModal = ({
+  isOpen,
+  onConfigChange,
+  onClose
+}) => {
+  const {
+    t
+  } = useTranslation();
+  const sidebarContents = [{
+    id: "typography",
+    title: t("editor.sidebar.typography"),
+    content: FontConfigurations
+  }, {
+    id: "color",
+    title: t("editor.sidebar.color"),
+    content: ColorConfigurations
+  }];
+  const editorContext = useEditorContext();
+  const [activeSidebar, setActiveSidebar] = useState(sidebarContents[0].id);
+  const activeTitle = sidebarContents.find(sidebarContent => sidebarContent.id === activeSidebar)?.title;
+  const ActiveContent = sidebarContents.find(sidebarContent => sidebarContent.id === activeSidebar)?.content;
+  return /*#__PURE__*/React__default.createElement(Modal, {
+    title: activeTitle,
+    isOpen: isOpen,
+    onRequestClose: onClose,
+    mode: "center-huge",
+    headerLine: true
+  }, /*#__PURE__*/React__default.createElement(ModalRoot$1, null, /*#__PURE__*/React__default.createElement(Sidebar$1, null, /*#__PURE__*/React__default.createElement(SidebarContent$1, null, sidebarContents.map(sidebarContent => /*#__PURE__*/React__default.createElement(SidebarButton$1, {
+    key: sidebarContent.id,
+    onClick: () => setActiveSidebar(sidebarContent.id),
+    isActive: activeSidebar === sidebarContent.id
+  }, sidebarContent.title)))), /*#__PURE__*/React__default.createElement(Content, null, ActiveContent ? /*#__PURE__*/React__default.createElement(ActiveContent, {
+    editorContext: editorContext,
+    onConfigChange: onConfigChange
+  }) : null)));
+};
+
 const TOP_BAR_HEIGHT = 40;
 const TopBar = styled.div.withConfig({
   displayName: "EditorTopBar__TopBar",
   componentId: "sc-726nw9-0"
 })(["position:relative;box-sizing:border-box;background-color:white;border-bottom:1px solid #eaeaea;padding:0 64px;min-height:", "px;display:flex;flex-direction:row;justify-content:center;align-items:center;"], TOP_BAR_HEIGHT);
-styled.div.withConfig({
+const Label = styled.div.withConfig({
   displayName: "EditorTopBar__Label",
   componentId: "sc-726nw9-1"
 })(["background:", ";height:24px;", " display:flex;justify-content:center;align-items:center;padding-left:12px;padding-right:12px;border-radius:12px;color:white;"], Colors.purple, Fonts.label);
@@ -3351,7 +3619,7 @@ const EditorTopBar = ({
   const {
     t
   } = useTranslation();
-  useState(false);
+  const [isOpenConfigs, setIsOpenConfigs] = useState(false);
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
       debouncedSave(_onSaveDocument);
@@ -3383,7 +3651,16 @@ const EditorTopBar = ({
     onClick: () => {
       onRedo();
     }
-  }, t("editor.sidebar.redo"))), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
+  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default.createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only"), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ColorAndFonts,
+    hideLabel: true,
+    hidden: true,
+    onClick: () => setIsOpenConfigs(prev => !prev)
+  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default.createElement(FontColorConfigsModal, {
+    isOpen: isOpenConfigs,
+    onConfigChange: onConfigChange,
+    onClose: () => setIsOpenConfigs(false)
+  })), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
     onDeviceChange: onViewportChange
@@ -6181,8 +6458,12 @@ function useBuiltContent(editorContext, config, rawContent, externalData, onExte
   const inputRawContent = useRef();
   const inputIsEditing = useRef();
   const inputBreakpointIndex = useRef();
+  const inputConfigTokenFonts = useRef(config.tokens?.fonts);
+  const inputConfigTokenColors = useRef(config.tokens?.colors);
   const inputChanged = inputRawContent.current !== rawContent || inputIsEditing.current !== editorContext.isEditing || inputBreakpointIndex.current !== editorContext.breakpointIndex;
-  if (!buildEntryResult.current || inputChanged) {
+  const configFontsChanged = !deepCompare(inputConfigTokenFonts.current ?? {}, config.tokens?.fonts ?? {});
+  const configColorsChanged = !deepCompare(inputConfigTokenColors.current ?? {}, config.tokens?.colors ?? {});
+  if (!buildEntryResult.current || inputChanged || configFontsChanged || configColorsChanged) {
     /*
      * Why do we merge meta instead of overriding?
      * It might seem redundant. We could only take the newest meta and re-render, right?
@@ -6266,6 +6547,8 @@ function useBuiltContent(editorContext, config, rawContent, externalData, onExte
         return defaultIsExternalDataChanged(externalDataValue);
       }
     });
+    inputConfigTokenFonts.current = config.tokens?.fonts;
+    inputConfigTokenColors.current = config.tokens?.colors;
     if (Object.keys(buildEntryResult.current.externalData).length > 0) {
       onExternalDataChange(buildEntryResult.current.externalData, editorContext.contextParams);
     }

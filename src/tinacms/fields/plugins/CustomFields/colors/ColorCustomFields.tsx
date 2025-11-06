@@ -1,5 +1,5 @@
 import { TokenValue } from "@redsun-vn/easyblocks-core";
-import { Colors, Input, InputColor } from "@redsun-vn/easyblocks-design-system";
+import { Input, InputColor } from "@redsun-vn/easyblocks-design-system";
 import React, { useEffect, useMemo, useRef } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../../../../../EditorContext";
