@@ -353,6 +353,7 @@ export const FontConfigurations = ({
 
       <Modal
         width="30vw"
+        maxHeight="400px"
         title={`${t("theme.font.edit")} ${openEditFont?.label ?? "Font"}`}
         isOpen={!!openEditFont}
         onRequestClose={() => handleFontClose()}

@@ -3684,6 +3684,7 @@ const FontConfigurations = ({
     onClick: onReset
   }, t("theme.font.reset"))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
     width: "30vw",
+    maxHeight: "400px",
     title: `${t("theme.font.edit")} ${openEditFont?.label ?? "Font"}`,
     isOpen: !!openEditFont,
     onRequestClose: () => handleFontClose(),
