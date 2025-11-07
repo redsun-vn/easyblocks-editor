@@ -261,7 +261,7 @@ export const ColorConfigurations = ({
           isOpen={!!openEditColor}
           mode="center-small"
           onRequestClose={closeEditColor}
-          maxHeight="400px"
+          maxHeight="auto"
         >
           <HexAlphaColorPicker
             style={{ width: "100%", padding: 4 }}
