@@ -30,8 +30,14 @@ const Sidebar = styled.div`
   height: 100%;
 `;
 
-const Content = styled.div`
+const ContentWrapper = styled.div`
   padding: 1rem;
+  padding-right: 0;
+  overflow: hidden;
+  height: 100%;
+`;
+
+const Content = styled.div`
   overflow-x: hidden;
   overflow-y: auto;
   height: 100%;
@@ -112,14 +118,16 @@ export const FontColorConfigsModal: React.FC<IFontColorConfigsModalProps> = ({
           </SidebarContent>
         </Sidebar>
 
-        <Content>
-          {ActiveContent ? (
-            <ActiveContent
-              editorContext={editorContext}
-              onConfigChange={onConfigChange}
-            />
-          ) : null}
-        </Content>
+        <ContentWrapper>
+          <Content>
+            {ActiveContent ? (
+              <ActiveContent
+                editorContext={editorContext}
+                onConfigChange={onConfigChange}
+              />
+            ) : null}
+          </Content>
+        </ContentWrapper>
       </ModalRoot>
     </Modal>
   );

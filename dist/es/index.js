@@ -3310,14 +3310,22 @@ const getIconColor = hex => {
 const ColorConfigurationsContainer = styled$1.div.withConfig({
   displayName: "ColorConfigurations__ColorConfigurationsContainer",
   componentId: "sc-qln4q1-0"
-})(["width:100%;display:flex;flex-direction:column;gap:10px;"]);
+})(["width:100%;display:flex;flex-direction:column;gap:20px;"]);
+const StyledColorWrapper = styled$1.div.withConfig({
+  displayName: "ColorConfigurations__StyledColorWrapper",
+  componentId: "sc-qln4q1-1"
+})([""]);
 const StyledColorCardWrapper = styled$1.div.withConfig({
   displayName: "ColorConfigurations__StyledColorCardWrapper",
-  componentId: "sc-qln4q1-1"
+  componentId: "sc-qln4q1-2"
 })(["max-width:500px;width:100%;display:flex;overflow:hidden;border:1px solid ", ";border-radius:4px;"], Colors.black100);
+const StyledColorContentWrapper = styled$1.div.withConfig({
+  displayName: "ColorConfigurations__StyledColorContentWrapper",
+  componentId: "sc-qln4q1-3"
+})(["display:flex;flex-direction:column;gap:10px;"]);
 const StyledColorCard = styled$1.div.withConfig({
   displayName: "ColorConfigurations__StyledColorCard",
-  componentId: "sc-qln4q1-2"
+  componentId: "sc-qln4q1-4"
 })(["display:flex;justify-content:center;align-items:center;width:100%;height:40px;background:", ";& > div{display:none;color:", ";}&:hover{cursor:pointer;& > div{display:block;}}"], ({
   background
 }) => background, ({
@@ -3325,16 +3333,20 @@ const StyledColorCard = styled$1.div.withConfig({
 }) => getIconColor(background));
 const StyledInputWrapper = styled$1.div.withConfig({
   displayName: "ColorConfigurations__StyledInputWrapper",
-  componentId: "sc-qln4q1-3"
+  componentId: "sc-qln4q1-5"
 })(["margin-top:10px;"]);
 const StyledInputColor = styled$1(Input).withConfig({
   displayName: "ColorConfigurations__StyledInputColor",
-  componentId: "sc-qln4q1-4"
+  componentId: "sc-qln4q1-6"
 })(["box-shadow:0 0 0 1px ", ";width:100%;border-radius:2px;&:focus{outline:none;}"], Colors.black10);
 const StyledButtonGroup = styled$1.div.withConfig({
   displayName: "ColorConfigurations__StyledButtonGroup",
-  componentId: "sc-qln4q1-5"
+  componentId: "sc-qln4q1-7"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const StyleColorTitle = styled$1.div.withConfig({
+  displayName: "ColorConfigurations__StyleColorTitle",
+  componentId: "sc-qln4q1-8"
+})(["color:", ";text-transform:uppercase;margin-bottom:10px;", " font-size:14px;font-weight:500;"], Colors.black40, Fonts.bodyLarge);
 const ColorCard = ({
   themeOption,
   openModal
@@ -3369,7 +3381,22 @@ const ColorConfigurations = ({
   const themeOptions3 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_3"));
   const themeOptions4 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_4"));
   const themeOptions5 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_5"));
-  const themeOptions = [themeOptions1, themeOptions2, themeOptions3, themeOptions4, themeOptions5];
+  const themeBackgroundAndTextOptions = {
+    id: "theme-background-and-text",
+    title: t("theme.background-and-text"),
+    options: [themeOptions1]
+  };
+  const themeActionColorsOptions = {
+    id: "theme-action-colors",
+    title: t("theme.action-colors"),
+    options: [themeOptions2]
+  };
+  const themeMoreColorsOptions = {
+    id: "theme-more-colors",
+    title: t("theme.more-colors"),
+    options: [themeOptions3, themeOptions4, themeOptions5]
+  };
+  const themeOptions = [themeBackgroundAndTextOptions, themeActionColorsOptions, themeMoreColorsOptions];
   const closeEditColor = () => {
     setOpenEditColor(null);
   };
@@ -3447,8 +3474,10 @@ const ColorConfigurations = ({
       onSaveEditColor();
     }
   };
-  return /*#__PURE__*/React__default.createElement(ColorConfigurationsContainer, null, themeOptions.map(themeOption => {
-    return /*#__PURE__*/React__default.createElement(StyledColorCardWrapper, null, themeOption.map(([colorId, colorDetail]) => /*#__PURE__*/React__default.createElement(ColorCard, {
+  return /*#__PURE__*/React__default.createElement(ColorConfigurationsContainer, null, themeOptions.map(themeOption => /*#__PURE__*/React__default.createElement(StyledColorWrapper, {
+    key: themeOption.id
+  }, /*#__PURE__*/React__default.createElement(StyleColorTitle, null, themeOption.title), /*#__PURE__*/React__default.createElement(StyledColorContentWrapper, null, themeOption.options.map(themeOptionItems => {
+    return /*#__PURE__*/React__default.createElement(StyledColorCardWrapper, null, themeOptionItems.map(([colorId, colorDetail]) => /*#__PURE__*/React__default.createElement(ColorCard, {
       key: colorId,
       themeOption: {
         [colorId]: colorDetail
@@ -3458,7 +3487,7 @@ const ColorConfigurations = ({
         ...colorDetail
       })
     })));
-  }), openEditColor ? /*#__PURE__*/React__default.createElement(Modal, {
+  })))), openEditColor ? /*#__PURE__*/React__default.createElement(Modal, {
     title: t("theme.colors.edit"),
     isOpen: !!openEditColor,
     mode: "center-small",
@@ -3538,6 +3567,14 @@ const StyledSelect = styled$1(Select).withConfig({
   displayName: "FontConfigurations__StyledSelect",
   componentId: "sc-1rpaqke-10"
 })(["display:flex;flex-direction:column;align-items:flex-end;min-width:0;cursor:pointer;border:1px solid ", ";border-radius:4px;"], Colors.black10);
+const StyledFontWrapper = styled$1.div.withConfig({
+  displayName: "FontConfigurations__StyledFontWrapper",
+  componentId: "sc-1rpaqke-11"
+})([""]);
+const StyleFontTitle = styled$1.div.withConfig({
+  displayName: "FontConfigurations__StyleFontTitle",
+  componentId: "sc-1rpaqke-12"
+})(["color:", ";text-transform:uppercase;margin-bottom:10px;", " font-size:14px;font-weight:500;"], Colors.black40, Fonts.bodyLarge);
 const FontConfigurations = ({
   editorContext,
   onConfigChange
@@ -3554,6 +3591,27 @@ const FontConfigurations = ({
   const [isLoadingReset, setIsLoadingReset] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [openEditFont, setOpenEditFont] = useState(null);
+  const themeHeadingOptions = {
+    id: "theme-heading",
+    title: t("theme.heading"),
+    options: Object.entries(fontTokens).filter(([id]) => id.startsWith("heading"))
+  };
+  const themeBodyOptions = {
+    id: "theme-body",
+    title: t("theme.body"),
+    options: Object.entries(fontTokens).filter(([id]) => id.startsWith("body"))
+  };
+  const themeTitleOptions = {
+    id: "theme-title",
+    title: t("theme.title"),
+    options: Object.entries(fontTokens).filter(([id]) => id.startsWith("title"))
+  };
+  const themeTextOptions = {
+    id: "theme-text",
+    title: t("theme.text"),
+    options: Object.entries(fontTokens).filter(([id]) => id.startsWith("text"))
+  };
+  const themeOptions = [themeHeadingOptions, themeBodyOptions, themeTitleOptions, themeTextOptions];
   const handleOpenEditFont = (id, fontDetail) => {
     setOpenEditFont({
       id,
@@ -3635,7 +3693,9 @@ const FontConfigurations = ({
       };
     });
   };
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(Container, null, /*#__PURE__*/React__default.createElement(FontGrid, null, Object.entries(fontTokens).map(([key, fontDetail]) => /*#__PURE__*/React__default.createElement(FontCard, {
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(Container, null, themeOptions.map(themeOption => /*#__PURE__*/React__default.createElement(StyledFontWrapper, {
+    key: themeOption.id
+  }, /*#__PURE__*/React__default.createElement(StyleFontTitle, null, themeOption.title), /*#__PURE__*/React__default.createElement(FontGrid, null, themeOption.options.map(([key, fontDetail]) => /*#__PURE__*/React__default.createElement(FontCard, {
     key: key,
     onClick: () => handleOpenEditFont(key, fontDetail)
   }, /*#__PURE__*/React__default.createElement(FontPreviewBox, null, /*#__PURE__*/React__default.createElement(FontPreviewText, {
@@ -3643,11 +3703,11 @@ const FontConfigurations = ({
     fontFamily: fontDetail.value?.fontFamily,
     fontWeight: fontDetail.value?.fontWeight,
     lineHeight: fontDetail.value?.lineHeight
-  }, fontDetail.label)), /*#__PURE__*/React__default.createElement(FontDetails, null, [fontDetail.value?.fontFamily?.split(",")[0], fontDetail.value?.fontWeight ? `Font Weight: ${fontDetail.value?.fontWeight}` : null, fontDetail.value?.fontSize ? `${fontDetail.value?.fontSize}` : null, fontDetail.value?.lineHeight ? `${fontDetail.value?.lineHeight}` : null].filter(Boolean).join(", "))))), /*#__PURE__*/React__default.createElement(ButtonDanger, {
+  }, fontDetail.label)), /*#__PURE__*/React__default.createElement(FontDetails, null, [fontDetail.value?.fontFamily?.split(",")[0], fontDetail.value?.fontWeight ? `Font Weight: ${fontDetail.value?.fontWeight}` : null, fontDetail.value?.fontSize ? `${fontDetail.value?.fontSize}` : null, fontDetail.value?.lineHeight ? `${fontDetail.value?.lineHeight}` : null].filter(Boolean).join(", "))))))), /*#__PURE__*/React__default.createElement(ButtonDanger, {
     isLoading: isLoadingReset,
     disabled: isLoadingReset,
     onClick: onReset
-  }, t("theme.font.reset"))), /*#__PURE__*/React__default.createElement(Modal, {
+  }, t("theme.font.reset"))), openEditFont ? /*#__PURE__*/React__default.createElement(Modal, {
     width: "30vw",
     maxHeight: "auto",
     title: `${t("theme.font.edit")} ${openEditFont?.label ?? "Font"}`,
@@ -3714,7 +3774,7 @@ const FontConfigurations = ({
     isLoading: isLoadingEdit,
     disabled: isLoadingEdit,
     type: "submit"
-  }, t("theme.font.save")))))));
+  }, t("theme.font.save")))))) : null);
 };
 
 const ModalRoot$1 = styled$1.div.withConfig({
@@ -3725,17 +3785,21 @@ const Sidebar$1 = styled$1.div.withConfig({
   displayName: "FontColorConfigsModal__Sidebar",
   componentId: "sc-1xvfmbx-1"
 })(["overflow-x:hidden;overflow-y:auto;border-right:1px solid ", ";height:100%;"], Colors.black5);
+const ContentWrapper = styled$1.div.withConfig({
+  displayName: "FontColorConfigsModal__ContentWrapper",
+  componentId: "sc-1xvfmbx-2"
+})(["padding:1rem;padding-right:0;overflow:hidden;height:100%;"]);
 const Content = styled$1.div.withConfig({
   displayName: "FontColorConfigsModal__Content",
-  componentId: "sc-1xvfmbx-2"
-})(["padding:1rem;overflow-x:hidden;overflow-y:auto;height:100%;"]);
+  componentId: "sc-1xvfmbx-3"
+})(["overflow-x:hidden;overflow-y:auto;height:100%;"]);
 const SidebarContent$1 = styled$1.div.withConfig({
   displayName: "FontColorConfigsModal__SidebarContent",
-  componentId: "sc-1xvfmbx-3"
+  componentId: "sc-1xvfmbx-4"
 })(["padding:24px 4px;display:flex;flex-direction:column;"]);
 const SidebarButton$1 = styled$1.button.withConfig({
   displayName: "FontColorConfigsModal__SidebarButton",
-  componentId: "sc-1xvfmbx-4"
+  componentId: "sc-1xvfmbx-5"
 })(["all:unset;height:38px;", " display:flex;padding-left:16px;align-items:center;&:hover{background:", ";}background:", ";cursor:pointer;"], Fonts.body, Colors.black5, ({
   isActive
 }) => isActive ? `${Colors.black5}` : "");
@@ -3770,10 +3834,10 @@ const FontColorConfigsModal = ({
     key: sidebarContent.id,
     onClick: () => setActiveSidebar(sidebarContent.id),
     isActive: activeSidebar === sidebarContent.id
-  }, sidebarContent.title)))), /*#__PURE__*/React__default.createElement(Content, null, ActiveContent ? /*#__PURE__*/React__default.createElement(ActiveContent, {
+  }, sidebarContent.title)))), /*#__PURE__*/React__default.createElement(ContentWrapper, null, /*#__PURE__*/React__default.createElement(Content, null, ActiveContent ? /*#__PURE__*/React__default.createElement(ActiveContent, {
     editorContext: editorContext,
     onConfigChange: onConfigChange
-  }) : null)));
+  }) : null))));
 };
 
 const TOP_BAR_HEIGHT = 40;

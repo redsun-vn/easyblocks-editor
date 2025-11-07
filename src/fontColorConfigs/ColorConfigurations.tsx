@@ -4,6 +4,7 @@ import {
   ButtonPrimary,
   ButtonSecondary,
   Colors,
+  Fonts,
   HexAlphaColorPicker,
   Icons,
   Input,
@@ -25,8 +26,10 @@ const ColorConfigurationsContainer = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
 `;
+
+const StyledColorWrapper = styled.div``;
 
 const StyledColorCardWrapper = styled.div`
   max-width: 500px;
@@ -35,6 +38,12 @@ const StyledColorCardWrapper = styled.div`
   overflow: hidden;
   border: 1px solid ${Colors.black100};
   border-radius: 4px;
+`;
+
+const StyledColorContentWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 `;
 
 const StyledColorCard = styled.div<{ background: string }>`
@@ -79,6 +88,15 @@ const StyledButtonGroup = styled.div`
   justify-content: flex-end;
   margin-top: 14px;
   gap: 12px;
+`;
+
+const StyleColorTitle = styled.div`
+  color: ${Colors.black40};
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  ${Fonts.bodyLarge}
+  font-size: 14px;
+  font-weight: 500;
 `;
 
 export const ColorCard = ({
@@ -141,12 +159,28 @@ export const ColorConfigurations = ({
     id.startsWith("theme_5")
   );
 
+  const themeBackgroundAndTextOptions = {
+    id: "theme-background-and-text",
+    title: t("theme.background-and-text"),
+    options: [themeOptions1],
+  };
+
+  const themeActionColorsOptions = {
+    id: "theme-action-colors",
+    title: t("theme.action-colors"),
+    options: [themeOptions2],
+  };
+
+  const themeMoreColorsOptions = {
+    id: "theme-more-colors",
+    title: t("theme.more-colors"),
+    options: [themeOptions3, themeOptions4, themeOptions5],
+  };
+
   const themeOptions = [
-    themeOptions1,
-    themeOptions2,
-    themeOptions3,
-    themeOptions4,
-    themeOptions5,
+    themeBackgroundAndTextOptions,
+    themeActionColorsOptions,
+    themeMoreColorsOptions,
   ];
 
   const closeEditColor = () => {
@@ -239,21 +273,29 @@ export const ColorConfigurations = ({
 
   return (
     <ColorConfigurationsContainer>
-      {themeOptions.map((themeOption) => {
-        return (
-          <StyledColorCardWrapper>
-            {themeOption.map(([colorId, colorDetail]) => (
-              <ColorCard
-                key={colorId}
-                themeOption={{ [colorId]: colorDetail }}
-                openModal={() =>
-                  setOpenEditColor({ id: colorId, ...colorDetail })
-                }
-              />
-            ))}
-          </StyledColorCardWrapper>
-        );
-      })}
+      {themeOptions.map((themeOption) => (
+        <StyledColorWrapper key={themeOption.id}>
+          <StyleColorTitle>{themeOption.title}</StyleColorTitle>
+
+          <StyledColorContentWrapper>
+            {themeOption.options.map((themeOptionItems) => {
+              return (
+                <StyledColorCardWrapper>
+                  {themeOptionItems.map(([colorId, colorDetail]) => (
+                    <ColorCard
+                      key={colorId}
+                      themeOption={{ [colorId]: colorDetail }}
+                      openModal={() =>
+                        setOpenEditColor({ id: colorId, ...colorDetail })
+                      }
+                    />
+                  ))}
+                </StyledColorCardWrapper>
+              );
+            })}
+          </StyledColorContentWrapper>
+        </StyledColorWrapper>
+      ))}
 
       {openEditColor ? (
         <Modal

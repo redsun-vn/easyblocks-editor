@@ -13,6 +13,7 @@ import {
   ButtonPrimary,
   ButtonSecondary,
   Colors,
+  Fonts,
   Modal,
   Select,
   SelectItem,
@@ -181,6 +182,17 @@ const StyledSelect = styled(Select)`
   border-radius: 4px;
 `;
 
+const StyledFontWrapper = styled.div``;
+
+const StyleFontTitle = styled.div`
+  color: ${Colors.black40};
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  ${Fonts.bodyLarge}
+  font-size: 14px;
+  font-weight: 500;
+`;
+
 export const FontConfigurations = ({
   editorContext,
   onConfigChange,
@@ -196,8 +208,42 @@ export const FontConfigurations = ({
 
   const [isLoadingReset, setIsLoadingReset] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
-
   const [openEditFont, setOpenEditFont] = useState<IFont | null>(null);
+
+  const themeHeadingOptions = {
+    id: "theme-heading",
+    title: t("theme.heading"),
+    options: Object.entries(fontTokens).filter(([id]) =>
+      id.startsWith("heading")
+    ),
+  };
+
+  const themeBodyOptions = {
+    id: "theme-body",
+    title: t("theme.body"),
+    options: Object.entries(fontTokens).filter(([id]) => id.startsWith("body")),
+  };
+
+  const themeTitleOptions = {
+    id: "theme-title",
+    title: t("theme.title"),
+    options: Object.entries(fontTokens).filter(([id]) =>
+      id.startsWith("title")
+    ),
+  };
+
+  const themeTextOptions = {
+    id: "theme-text",
+    title: t("theme.text"),
+    options: Object.entries(fontTokens).filter(([id]) => id.startsWith("text")),
+  };
+
+  const themeOptions = [
+    themeHeadingOptions,
+    themeBodyOptions,
+    themeTitleOptions,
+    themeTextOptions,
+  ];
 
   const handleOpenEditFont = (id: string, fontDetail: Omit<IFont, "id">) => {
     setOpenEditFont({
@@ -301,46 +347,52 @@ export const FontConfigurations = ({
   return (
     <>
       <Container>
-        <FontGrid>
-          {Object.entries(fontTokens).map(([key, fontDetail]) => (
-            <FontCard
-              key={key}
-              onClick={() => handleOpenEditFont(key, fontDetail)}
-            >
-              <FontPreviewBox>
-                <FontPreviewText
-                  fontSize={
-                    fontDetail.value?.fontSize >= 32
-                      ? 32
-                      : fontDetail.value?.fontSize
-                  }
-                  fontFamily={fontDetail.value?.fontFamily}
-                  fontWeight={fontDetail.value?.fontWeight}
-                  lineHeight={fontDetail.value?.lineHeight}
-                >
-                  {fontDetail.label}
-                </FontPreviewText>
-              </FontPreviewBox>
+        {themeOptions.map((themeOption) => (
+          <StyledFontWrapper key={themeOption.id}>
+            <StyleFontTitle>{themeOption.title}</StyleFontTitle>
 
-              <FontDetails>
-                {[
-                  fontDetail.value?.fontFamily?.split(",")[0],
-                  fontDetail.value?.fontWeight
-                    ? `Font Weight: ${fontDetail.value?.fontWeight}`
-                    : null,
-                  fontDetail.value?.fontSize
-                    ? `${fontDetail.value?.fontSize}`
-                    : null,
-                  fontDetail.value?.lineHeight
-                    ? `${fontDetail.value?.lineHeight}`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(", ")}
-              </FontDetails>
-            </FontCard>
-          ))}
-        </FontGrid>
+            <FontGrid>
+              {themeOption.options.map(([key, fontDetail]) => (
+                <FontCard
+                  key={key}
+                  onClick={() => handleOpenEditFont(key, fontDetail)}
+                >
+                  <FontPreviewBox>
+                    <FontPreviewText
+                      fontSize={
+                        fontDetail.value?.fontSize >= 32
+                          ? 32
+                          : fontDetail.value?.fontSize
+                      }
+                      fontFamily={fontDetail.value?.fontFamily}
+                      fontWeight={fontDetail.value?.fontWeight}
+                      lineHeight={fontDetail.value?.lineHeight}
+                    >
+                      {fontDetail.label}
+                    </FontPreviewText>
+                  </FontPreviewBox>
+
+                  <FontDetails>
+                    {[
+                      fontDetail.value?.fontFamily?.split(",")[0],
+                      fontDetail.value?.fontWeight
+                        ? `Font Weight: ${fontDetail.value?.fontWeight}`
+                        : null,
+                      fontDetail.value?.fontSize
+                        ? `${fontDetail.value?.fontSize}`
+                        : null,
+                      fontDetail.value?.lineHeight
+                        ? `${fontDetail.value?.lineHeight}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </FontDetails>
+                </FontCard>
+              ))}
+            </FontGrid>
+          </StyledFontWrapper>
+        ))}
 
         <ButtonDanger
           isLoading={isLoadingReset}
@@ -351,107 +403,117 @@ export const FontConfigurations = ({
         </ButtonDanger>
       </Container>
 
-      <Modal
-        width="30vw"
-        maxHeight="auto"
-        title={`${t("theme.font.edit")} ${openEditFont?.label ?? "Font"}`}
-        isOpen={!!openEditFont}
-        onRequestClose={() => handleFontClose()}
-        mode="center-small"
-        headerLine
-      >
-        <Content>
-          <Form onSubmit={onSubmit}>
-            <Row>
-              <StyledSelect
-                value={openEditFont?.value?.fontFamily ?? defaultFontFamily}
-                onChange={(newFontFamily) => {
-                  onChange("fontFamily", newFontFamily);
-                }}
-              >
-                {getFontFamilies().map((f) => (
-                  <SelectItem key={f.id} value={f.value}>
-                    <div style={{ fontFamily: f.value }}>{f.label}</div>
-                  </SelectItem>
-                ))}
-              </StyledSelect>
+      {openEditFont ? (
+        <Modal
+          width="30vw"
+          maxHeight="auto"
+          title={`${t("theme.font.edit")} ${openEditFont?.label ?? "Font"}`}
+          isOpen={!!openEditFont}
+          onRequestClose={() => handleFontClose()}
+          mode="center-small"
+          headerLine
+        >
+          <Content>
+            <Form onSubmit={onSubmit}>
+              <Row>
+                <StyledSelect
+                  value={openEditFont?.value?.fontFamily ?? defaultFontFamily}
+                  onChange={(newFontFamily) => {
+                    onChange("fontFamily", newFontFamily);
+                  }}
+                >
+                  {getFontFamilies().map((f) => (
+                    <SelectItem key={f.id} value={f.value}>
+                      <div style={{ fontFamily: f.value }}>{f.label}</div>
+                    </SelectItem>
+                  ))}
+                </StyledSelect>
 
-              <StyledSelect
-                value={String(openEditFont?.value?.fontSize ?? defaultFontSize)}
-                onChange={(newFontSize) => {
-                  onChange("fontSize", newFontSize);
-                }}
-              >
-                {getFontSizes(editorContext).map((f) => (
-                  <SelectItem key={f.id} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </StyledSelect>
+                <StyledSelect
+                  value={String(
+                    openEditFont?.value?.fontSize ?? defaultFontSize
+                  )}
+                  onChange={(newFontSize) => {
+                    onChange("fontSize", newFontSize);
+                  }}
+                >
+                  {getFontSizes(editorContext).map((f) => (
+                    <SelectItem key={f.id} value={f.value}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                </StyledSelect>
 
-              <StyledSelect
-                value={String(
+                <StyledSelect
+                  value={String(
+                    openEditFont?.value?.fontWeight ?? defaultFontWeight
+                  )}
+                  onChange={(newFontWeight) => {
+                    onChange("fontWeight", newFontWeight);
+                  }}
+                >
+                  {getFontWeights().map((f) => (
+                    <SelectItem key={f.id} value={f.value}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                </StyledSelect>
+
+                <StyledSelect
+                  value={String(
+                    openEditFont?.value?.lineHeight ?? defaultLineHeight
+                  )}
+                  onChange={(newLineHeight) => {
+                    onChange("lineHeight", newLineHeight);
+                  }}
+                >
+                  {getLineHeights().map((f) => (
+                    <SelectItem key={f.id} value={f.value}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                </StyledSelect>
+              </Row>
+
+              <PreviewTextarea
+                id="textPreview"
+                fontFamily={
+                  openEditFont?.value?.fontFamily ?? defaultFontFamily
+                }
+                fontSize={openEditFont?.value?.fontSize ?? defaultFontSize}
+                fontWeight={
                   openEditFont?.value?.fontWeight ?? defaultFontWeight
-                )}
-                onChange={(newFontWeight) => {
-                  onChange("fontWeight", newFontWeight);
-                }}
-              >
-                {getFontWeights().map((f) => (
-                  <SelectItem key={f.id} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </StyledSelect>
-
-              <StyledSelect
-                value={String(
+                }
+                lineHeight={
                   openEditFont?.value?.lineHeight ?? defaultLineHeight
-                )}
-                onChange={(newLineHeight) => {
-                  onChange("lineHeight", newLineHeight);
+                }
+                defaultValue="Text preview"
+              />
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "flex-end",
+                  marginTop: 8,
+                  gap: 8,
                 }}
               >
-                {getLineHeights().map((f) => (
-                  <SelectItem key={f.id} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </StyledSelect>
-            </Row>
-
-            <PreviewTextarea
-              id="textPreview"
-              fontFamily={openEditFont?.value?.fontFamily ?? defaultFontFamily}
-              fontSize={openEditFont?.value?.fontSize ?? defaultFontSize}
-              fontWeight={openEditFont?.value?.fontWeight ?? defaultFontWeight}
-              lineHeight={openEditFont?.value?.lineHeight ?? defaultLineHeight}
-              defaultValue="Text preview"
-            />
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "flex-end",
-                marginTop: 8,
-                gap: 8,
-              }}
-            >
-              <ButtonSecondary onClick={() => handleFontClose()}>
-                {t("theme.font.cancel")}
-              </ButtonSecondary>
-              <ButtonPrimary
-                isLoading={isLoadingEdit}
-                disabled={isLoadingEdit}
-                type={"submit"}
-              >
-                {t("theme.font.save")}
-              </ButtonPrimary>
-            </div>
-          </Form>
-        </Content>
-      </Modal>
+                <ButtonSecondary onClick={() => handleFontClose()}>
+                  {t("theme.font.cancel")}
+                </ButtonSecondary>
+                <ButtonPrimary
+                  isLoading={isLoadingEdit}
+                  disabled={isLoadingEdit}
+                  type={"submit"}
+                >
+                  {t("theme.font.save")}
+                </ButtonPrimary>
+              </div>
+            </Form>
+          </Content>
+        </Modal>
+      ) : null}
     </>
   );
 };
