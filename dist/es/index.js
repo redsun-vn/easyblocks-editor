@@ -1,7 +1,7 @@
 "use client";
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, memo, useCallback } from 'react';
-import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, InputColor, RadixSelectTrigger, RadixSelectContent, RadixSelectViewport, RadixSelectItem, RadixSelectItemText, RadixSelectRoot, RadixSelectValue, ChevronDownIcon, RadixSelectPortal, Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, ButtonGhost, ThumbnailButton, RangeSlider, ButtonDanger, Modal, HexAlphaColorPicker, ToggleGroup, ToggleGroupItem, FormElement, InputFile, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, Fonts, useToaster, ButtonSecondary, ButtonPrimary, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, Icons, ToggleButton, Input, Loader, Typography, InputColor, RadixSelectTrigger, RadixSelectContent, RadixSelectViewport, RadixSelectItem, RadixSelectItemText, RadixSelectRoot, RadixSelectValue, ChevronDownIcon, RadixSelectPortal, Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, ButtonGhost, ThumbnailButton, RangeSlider, Modal, HexAlphaColorPicker, ButtonDanger, ToggleGroup, ToggleGroupItem, FormElement, InputFile, ButtonGhostColor, BasicRow, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import isPropValid from '@emotion/is-prop-valid';
 import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
@@ -1059,6 +1059,10 @@ const ColorCustomFields = ({
   }))));
 };
 
+const defaultFontFamily = "Roboto, sans-serif";
+const defaultFontSize = 16;
+const defaultFontWeight = 400;
+const defaultLineHeight = 1.4;
 function getFontFamilies() {
   const selectedFamilies = ["Roboto, sans-serif", "Open Sans, sans-serif", "Lato, sans-serif", "Montserrat, sans-serif", "Poppins, sans-serif", "Inter, sans-serif", "Oswald, sans-serif", "Raleway, sans-serif", "Noto Sans, sans-serif", "Roboto Condensed, sans-serif", "Nunito, sans-serif", "Work Sans, sans-serif", "Rubik, sans-serif", "Mukta, sans-serif", "Ubuntu, sans-serif", "Quicksand, sans-serif", "Hind, sans-serif", "Fira Sans, sans-serif", "Barlow, sans-serif", "Cabin, sans-serif", "Prompt, sans-serif", "Heebo, sans-serif", "Source Sans 3, sans-serif", "Titillium Web, sans-serif", "Muli, sans-serif", "Manrope, sans-serif", "Josefin Sans, sans-serif", "Karla, sans-serif", "DM Sans, sans-serif", "PT Sans, sans-serif", "Tajawal, sans-serif", "Public Sans, sans-serif", "Catamaran, sans-serif", "Urbanist, sans-serif", "Outfit, sans-serif", "Lexend, sans-serif", "Signika, sans-serif", "Asap, sans-serif", "Sarabun, sans-serif", "Red Hat Display, sans-serif", "Exo 2, sans-serif", "Sen, sans-serif", "Epilogue, sans-serif", "Jost, sans-serif", "IBM Plex Sans, sans-serif", "Varela Round, sans-serif", "Mulish, sans-serif", "Spartan, sans-serif", "Krub, sans-serif", "Questrial, sans-serif", "Barlow Condensed, sans-serif", "Overpass, sans-serif", "Alata, sans-serif", "Kanit, sans-serif", "Noto Serif, serif", "Merriweather, serif", "Playfair Display, serif", "Lora, serif", "Cormorant Garamond, serif", "EB Garamond, serif", "PT Serif, serif", "Libre Baskerville, serif", "DM Serif Display, serif", "Crimson Text, serif", "Bitter, serif", "Spectral, serif", "Cormorant, serif", "Zilla Slab, serif", "Nanum Myeongjo, serif", "Tinos, serif", "Cardo, serif", "Domine, serif", "Arvo, serif", "Vollkorn, serif", "Bree Serif, serif", "Alegreya, serif", "Noticia Text, serif", "Libre Caslon Text, serif", "Faustina, serif", "Mate, serif", "Lusitana, serif", "Arapey, serif", "Fira Sans Condensed, sans-serif", "Space Grotesk, sans-serif", "Sofia Sans, sans-serif", "Niramit, sans-serif", "Be Vietnam Pro, sans-serif", "Eczar, serif", "Quattrocento, serif", "Rokkitt, serif", "Cormorant Infant, serif", "Slabo 27px, serif", "Ultra, serif", "Rozha One, serif", "Old Standard TT, serif", "Baskervville, serif", "Play, sans-serif", "Mada, sans-serif", "Rajdhani, sans-serif", "Cabinet Grotesk, sans-serif", "Archivo, sans-serif", "Anton, display", "Bebas Neue, display", "Abril Fatface, display", "Alfa Slab One, display", "Righteous, display", "Lobster, display", "Pacifico, handwriting", "Caveat, handwriting", "Dancing Script, handwriting", "Great Vibes, handwriting", "Satisfy, handwriting", "Shadows Into Light, handwriting", "Cookie, handwriting", "Gloria Hallelujah, handwriting", "Indie Flower, handwriting", "Courgette, handwriting", "Amatic SC, display", "Fredoka, sans-serif", "Baloo 2, display", "Chewy, display", "Luckiest Guy, display", "Permanent Marker, handwriting", "Architects Daughter, handwriting", "Rock Salt, handwriting", "Handlee, handwriting", "Kaushan Script, handwriting", "Patrick Hand, handwriting", "Carter One, display", "Sigmar, display", "Rye, display", "Black Ops One, display", "Bungee, display", "Press Start 2P, monospace", "Space Mono, monospace", "Fira Code, monospace", "Roboto Mono, monospace", "JetBrains Mono, monospace", "Inconsolata, monospace", "Share Tech Mono, monospace", "Major Mono Display, monospace", "Source Code Pro, monospace", "Audiowide, display", "Syncopate, display", "Unica One, display", "Orbitron, display", "Chakra Petch, sans-serif", "Expletus Sans, display", "Staatliches, display", "Poiret One, display", "Aldrich, sans-serif", "Gruppo, display", "Viga, sans-serif", "Suez One, serif", "Frank Ruhl Libre, serif", "Cambo, serif", "Marcellus, serif", "Cinzel, serif", "Judson, serif", "Gelasio, serif", "Abhaya Libre, serif", "Cormorant SC, serif", "Crimson Pro, serif", "Noto Serif Display, serif", "Sanchez, serif", "DM Serif Text, serif", "Fjord One, serif", "Suranna, serif", "Kreon, serif", "Cormorant Upright, serif", "Gloock, serif", "Julius Sans One, sans-serif", "Assistant, sans-serif", "Encode Sans, sans-serif", "Nanum Gothic, sans-serif", "Maven Pro, sans-serif", "Overpass Mono, monospace", "Albert Sans, sans-serif", "Palanquin, sans-serif", "Chivo, sans-serif", "Arimo, sans-serif", "Exo, sans-serif", "Molengo, sans-serif", "Abel, sans-serif", "Teko, sans-serif", "Saira, sans-serif", "Jura, sans-serif", "Kumbh Sans, sans-serif", "Hepta Slab, serif", "Azeret Mono, monospace", "League Spartan, sans-serif", "Rufina, serif", "Crete Round, serif", "Amiri, serif", "Spectral SC, serif", "Petrona, serif", "Neuton, serif", "Coustard, serif", "Vidaloka, serif", "Bellefair, serif", "Antic Slab, serif", "Copse, serif", "DM Mono, monospace", "Anonymous Pro, monospace", "Oxygen Mono, monospace", "Courier Prime, monospace", "IBM Plex Mono, monospace", "Zilla Slab Highlight, display", "Shrikhand, display", "Bungee Shade, display", "Fugaz One, display", "Monoton, display", "Rammetto One, display", "Cinzel Decorative, display", "Fascinate Inline, display", "Racing Sans One, display", "Lilita One, display", "Potta One, display", "Tourney, display", "Cherry Swash, display", "Creepster, display", "Butcherman, display", "Ewert, display", "Bowlby One SC, display", "Galindo, display", "Knewave, display", "Fredoka One, display", "Ranchers, display", "Codystar, display", "VT323, monospace", "Cutive Mono, monospace", "IBM Plex Serif, serif", "Philosopher, sans-serif"];
   return selectedFamilies.sort().map(font => {
@@ -1252,28 +1256,28 @@ const FontCustomFields = ({
     options: getFontFamilies(),
     type: "string",
     inputType: "select",
-    defaultValue: "Roboto, sans-serif"
+    defaultValue: defaultFontFamily
   }, {
     key: "fontSize",
     label: t("definition.schema.label.fontSize"),
     type: "number",
     options: getFontSizes(editorContext),
     inputType: "select",
-    defaultValue: 16
+    defaultValue: defaultFontSize
   }, {
     key: "fontWeight",
     label: t("definition.schema.label.fontWeight"),
     type: "number",
     options: getFontWeights(),
     inputType: "select",
-    defaultValue: 400
+    defaultValue: defaultFontWeight
   }, {
     key: "lineHeight",
     label: t("definition.schema.label.lineHeight"),
     type: "number",
     options: getLineHeights(),
     inputType: "select",
-    defaultValue: 1.4
+    defaultValue: defaultLineHeight
   }], []);
   const defaultInputValue = customFields.reduce((prev, curr) => {
     prev[curr.key] = curr.defaultValue ?? (curr.type === "number" ? 0 : "");
@@ -1335,7 +1339,7 @@ const Trigger = styled$1(RadixSelectTrigger).withConfig({
   displayName: "ColorFieldPlugin__Trigger",
   componentId: "sc-19dwflf-0"
 })(["all:unset;display:flex;align-items:center;", ";display:flex;gap:4px;max-width:100%;box-sizing:border-box;height:28px;padding:0 2px 0 6px;border-radius:2px;@media (hover:hover){&:hover{box-shadow:0 0 0 1px ", ";}}"], Fonts.body, Colors.black10);
-const Content$1 = styled$1(RadixSelectContent).withConfig({
+const Content$2 = styled$1(RadixSelectContent).withConfig({
   displayName: "ColorFieldPlugin__Content",
   componentId: "sc-19dwflf-1"
 })(["overflow:hidden;background-color:white;border-radius:2px;border:1px solid #ddd;box-shadow:0px 4px 12px #0000001a;padding:4px 0;"]);
@@ -1464,7 +1468,7 @@ const ColorFieldPlugin = ({
       placeholder: "Select item"
     }), /*#__PURE__*/React__default.createElement(ChevronDownIcon, {
       color: Colors.black40
-    })), /*#__PURE__*/React__default.createElement(RadixSelectPortal, null, /*#__PURE__*/React__default.createElement(Content$1, null, /*#__PURE__*/React__default.createElement(SelectTitle, null, t("theme.colors")), /*#__PURE__*/React__default.createElement(Viewport, {
+    })), /*#__PURE__*/React__default.createElement(RadixSelectPortal, null, /*#__PURE__*/React__default.createElement(Content$2, null, /*#__PURE__*/React__default.createElement(SelectTitle, null, t("theme.colors")), /*#__PURE__*/React__default.createElement(Viewport, {
       shape: "rectangle"
     }, /*#__PURE__*/React__default.createElement(ColorOptions, {
       options: themeOptions,
@@ -3291,287 +3295,6 @@ const EditorSidebar = props => {
   }));
 };
 
-const FontConfigurations = ({
-  editorContext,
-  onConfigChange
-}) => {
-  const fontTokens = editorContext.theme.fonts;
-  const backend = editorContext.backend;
-  const {
-    t
-  } = useTranslation();
-  const toaster = useToaster();
-  const router = new URLSearchParams(window.location.search);
-  const themeId = router.get("themeId");
-  const [isLoadingReset, setIsLoadingReset] = useState(false);
-  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
-  const [openEditFont, setOpenEditFont] = useState(false);
-  const [font, setFont] = useState({
-    id: "",
-    label: "",
-    value: {
-      fontFamily: "",
-      fontSize: "",
-      fontWeight: "",
-      lineHeight: ""
-    }
-  });
-  const {
-    id,
-    label,
-    value
-  } = font;
-  const canSend = label.trim() !== "";
-  const handleOpenEditFont = (id, f) => {
-    setFont({
-      id,
-      label: f.label || "",
-      value: {
-        fontFamily: f.value?.fontFamily || "",
-        fontSize: String(f.value.fontSize ?? ""),
-        fontWeight: String(f.value.fontWeight ?? ""),
-        lineHeight: String(f.value.lineHeight ?? "")
-      }
-    });
-    setOpenEditFont(true);
-  };
-  const handleFontClose = () => {
-    setOpenEditFont(false);
-    setFont({
-      id: "",
-      label: "",
-      value: {
-        fontFamily: "",
-        fontSize: "",
-        fontWeight: "",
-        lineHeight: ""
-      }
-    });
-  };
-  const onReset = async () => {
-    if (themeId) {
-      setIsLoadingReset(true);
-      try {
-        await backend.themes?.reset({
-          id: themeId,
-          configs: ["fonts"]
-        });
-        toaster.success(t("theme.font.reset.success"));
-      } catch (error) {
-        toaster.error(t("theme.font.reset.error"));
-      } finally {
-        setIsLoadingReset(false);
-        onConfigChange?.();
-      }
-    }
-  };
-  const onSubmit = async () => {
-    if (!canSend) return;
-    if (themeId) {
-      setIsLoadingEdit(true);
-      const existingFonts = Object.entries(fontTokens).map(([key, f]) => ({
-        id: key,
-        label: f.label,
-        value: f.value,
-        isDefault: f.isDefault
-      }));
-      const updatedFonts = existingFonts.map(f => f.id === id ? {
-        id,
-        label,
-        value: {
-          ...value,
-          fontSize: value.fontSize ?? Number(value.fontSize),
-          fontWeight: value.fontWeight ?? Number(value.fontWeight),
-          lineHeight: value.lineHeight ?? Number(value.lineHeight)
-        },
-        isDefault: f.isDefault
-      } : f);
-      try {
-        await backend.themes?.update({
-          id: themeId,
-          config: {
-            fonts: updatedFonts
-          }
-        });
-        toaster.success(t("theme.font.save.success"));
-      } catch (error) {
-        toaster.error(t("theme.font.save.error"));
-      } finally {
-        setIsLoadingEdit(false);
-        onConfigChange?.();
-        handleFontClose();
-      }
-    }
-  };
-  const Container = styled$1.div.withConfig({
-    displayName: "FontConfigurations__Container",
-    componentId: "sc-1rpaqke-0"
-  })(["padding:6px;background-color:#ffffff;max-height:100vh;font-family:system-ui,-apple-system,sans-serif;"]);
-  const FontGrid = styled$1.div.withConfig({
-    displayName: "FontConfigurations__FontGrid",
-    componentId: "sc-1rpaqke-1"
-  })(["display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px;"]);
-  const FontCard = styled$1.div.withConfig({
-    displayName: "FontConfigurations__FontCard",
-    componentId: "sc-1rpaqke-2"
-  })(["border:1px solid transparent;padding:4px;cursor:pointer;transition:border-color 0.2s ease;&:hover{border-color:#e5e5e5;}"]);
-  const FontPreviewBox = styled$1.div.withConfig({
-    displayName: "FontConfigurations__FontPreviewBox",
-    componentId: "sc-1rpaqke-3"
-  })(["height:120px;display:flex;align-items:center;justify-content:center;background-color:#e5e5e5;padding:32px;overflow:hidden;"]);
-  const FontPreviewText = styled$1.div.withConfig({
-    displayName: "FontConfigurations__FontPreviewText",
-    componentId: "sc-1rpaqke-4"
-  })(["font-size:", "px;font-family:", ";font-weight:", ";line-height:", ";color:#000;text-align:center;user-select:none;max-width:100%;word-break:break-word;overflow-wrap:break-word;overflow:hidden;"], f => f.fontSize, f => f.fontFamily, f => f.fontWeight, f => f.lineHeight);
-  const FontDetails = styled$1.div.withConfig({
-    displayName: "FontConfigurations__FontDetails",
-    componentId: "sc-1rpaqke-5"
-  })(["margin-top:8px;background-color:white;font-size:12px;line-height:16px;color:#000;text-align:center;"]);
-  const Content = styled$1.div.withConfig({
-    displayName: "FontConfigurations__Content",
-    componentId: "sc-1rpaqke-6"
-  })(["padding:1rem 0.5rem;::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:#e5e5e5;border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#9ca3af;}scrollbar-width:thin;scrollbar-color:#e5e5e5 #f1f1f1;"]);
-  const Form = styled$1.form.withConfig({
-    displayName: "FontConfigurations__Form",
-    componentId: "sc-1rpaqke-7"
-  })(["display:flex;flex-direction:column;gap:12px;margin-top:2px;"]);
-  const Row = styled$1.div.withConfig({
-    displayName: "FontConfigurations__Row",
-    componentId: "sc-1rpaqke-8"
-  })(["display:grid;grid-template-columns:repeat(4,1fr);gap:12px;"]);
-  const PreviewTextarea = styled$1.textarea.withConfig({
-    displayName: "FontConfigurations__PreviewTextarea",
-    componentId: "sc-1rpaqke-9"
-  })(["border-radius:0.5rem;width:100%;height:17vh;background-color:#e5e5e5;resize:none;outline:none;padding:1rem;font-family:", ";font-size:", "px;font-weight:", ";line-height:", ";"], f => f.fontFamily, f => f.fontSize, f => f.fontWeight, f => f.lineHeight);
-  const StyledLabel = styled$1.label.withConfig({
-    displayName: "FontConfigurations__StyledLabel",
-    componentId: "sc-1rpaqke-10"
-  })(["display:block;margin-bottom:0.5rem;font-size:0.75rem;font-weight:400;color:#000;"]);
-  const StyledSelect = styled$1.select.withConfig({
-    displayName: "FontConfigurations__StyledSelect",
-    componentId: "sc-1rpaqke-11"
-  })(["background-color:#ffffff;border:1px solid #d1d5db;color:#111827;font-size:0.875rem;border-radius:0.375rem;display:block;width:100%;padding:0.5rem 0.75rem;cursor:pointer;&:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.1);}&:hover{border-color:#9ca3af;}"]);
-  const FormField = styled$1.div.withConfig({
-    displayName: "FontConfigurations__FormField",
-    componentId: "sc-1rpaqke-12"
-  })(["display:flex;flex-direction:column;min-width:0;"]);
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(Container, null, /*#__PURE__*/React__default.createElement(FontGrid, null, Object.entries(fontTokens).map(([key, f]) => /*#__PURE__*/React__default.createElement(FontCard, {
-    key: key,
-    onClick: () => handleOpenEditFont(key, f)
-  }, /*#__PURE__*/React__default.createElement(FontPreviewBox, null, /*#__PURE__*/React__default.createElement(FontPreviewText, {
-    fontSize: f.value.fontSize,
-    fontFamily: f.value.fontFamily,
-    fontWeight: f.value.fontWeight,
-    lineHeight: f.value.lineHeight
-  }, f.label)), /*#__PURE__*/React__default.createElement(FontDetails, null, [f.value.fontFamily?.split(",")[0], f.value.fontWeight ? `Font Weight: ${f.value.fontWeight}` : null, f.value.fontSize ? `${f.value.fontSize}` : null, f.value.lineHeight ? `${f.value.lineHeight}` : null].filter(Boolean).join(", "))))), /*#__PURE__*/React__default.createElement(ButtonDanger, {
-    isLoading: isLoadingReset,
-    disabled: isLoadingReset,
-    onClick: onReset
-  }, t("theme.font.reset"))), /*#__PURE__*/React__default.createElement(Modal, {
-    width: "40vw",
-    title: `${t("theme.font.edit")} ${label ?? "Font"}`,
-    isOpen: openEditFont,
-    onRequestClose: () => handleFontClose(),
-    mode: "center-small",
-    headerLine: true
-  }, /*#__PURE__*/React__default.createElement(Content, null, /*#__PURE__*/React__default.createElement(Form, {
-    onSubmit: onSubmit
-  }, /*#__PURE__*/React__default.createElement(Row, null, /*#__PURE__*/React__default.createElement(FormField, null, /*#__PURE__*/React__default.createElement(StyledLabel, {
-    htmlFor: "fontFamily"
-  }, t("theme.font.family")), /*#__PURE__*/React__default.createElement(StyledSelect, {
-    id: "fontFamily",
-    name: "fontFamily",
-    value: value.fontFamily,
-    onChange: e => {
-      setFont({
-        ...font,
-        value: {
-          ...value,
-          fontFamily: e.target.value
-        }
-      });
-    }
-  }, getFontFamilies().map(f => /*#__PURE__*/React__default.createElement("option", {
-    key: f.id,
-    value: f.value
-  }, f.label)))), /*#__PURE__*/React__default.createElement(FormField, null, /*#__PURE__*/React__default.createElement(StyledLabel, {
-    htmlFor: "fontSize"
-  }, t("theme.font.size")), /*#__PURE__*/React__default.createElement(StyledSelect, {
-    id: "fontSize",
-    name: "fontSize",
-    value: value.fontSize,
-    onChange: e => {
-      setFont({
-        ...font,
-        value: {
-          ...value,
-          fontSize: e.target.value
-        }
-      });
-    }
-  }, getFontSizes(editorContext).map(f => /*#__PURE__*/React__default.createElement("option", {
-    key: f.id,
-    value: f.value
-  }, f.label)))), /*#__PURE__*/React__default.createElement(FormField, null, /*#__PURE__*/React__default.createElement(StyledLabel, {
-    htmlFor: "fontWeight"
-  }, t("theme.font.weight")), /*#__PURE__*/React__default.createElement(StyledSelect, {
-    id: "fontWeight",
-    name: "fontWeight",
-    value: value.fontWeight,
-    onChange: e => {
-      setFont({
-        ...font,
-        value: {
-          ...value,
-          fontWeight: e.target.value
-        }
-      });
-    }
-  }, getFontWeights().map(f => /*#__PURE__*/React__default.createElement("option", {
-    key: f.id,
-    value: f.value
-  }, f.label)))), /*#__PURE__*/React__default.createElement(FormField, null, /*#__PURE__*/React__default.createElement(StyledLabel, {
-    htmlFor: "lineHeight"
-  }, t("theme.font.lineHeight")), /*#__PURE__*/React__default.createElement(StyledSelect, {
-    id: "lineHeight",
-    name: "lineHeight",
-    value: value.lineHeight,
-    onChange: e => {
-      setFont({
-        ...font,
-        value: {
-          ...value,
-          lineHeight: e.target.value
-        }
-      });
-    }
-  }, getLineHeights().map(f => /*#__PURE__*/React__default.createElement("option", {
-    key: f.id,
-    value: f.value
-  }, f.label))))), /*#__PURE__*/React__default.createElement(PreviewTextarea, {
-    id: "textPreview",
-    fontFamily: value.fontFamily,
-    fontSize: value.fontSize,
-    fontWeight: value.fontWeight,
-    lineHeight: value.lineHeight,
-    defaultValue: "Text preview"
-  }), /*#__PURE__*/React__default.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      marginTop: 8,
-      gap: 8
-    }
-  }, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
-    onClick: () => handleFontClose()
-  }, t("theme.font.cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
-    isLoading: isLoadingEdit,
-    disabled: isLoadingEdit,
-    type: "submit"
-  }, t("theme.font.save")))))));
-};
-
 const getIconColor = hex => {
   // remove "#"
   hex = hex.replace("#", "");
@@ -3591,11 +3314,11 @@ const ColorConfigurationsContainer = styled$1.div.withConfig({
 const StyledColorCardWrapper = styled$1.div.withConfig({
   displayName: "ColorConfigurations__StyledColorCardWrapper",
   componentId: "sc-qln4q1-1"
-})(["max-width:250px;width:100%;display:flex;overflow:hidden;border:1px solid ", ";border-radius:4px;"], Colors.black100);
+})(["max-width:500px;width:100%;display:flex;overflow:hidden;border:1px solid ", ";border-radius:4px;"], Colors.black100);
 const StyledColorCard = styled$1.div.withConfig({
   displayName: "ColorConfigurations__StyledColorCard",
   componentId: "sc-qln4q1-2"
-})(["display:flex;justify-content:center;align-items:center;max-width:50px;width:100%;height:50px;background:", ";& > div{display:none;color:", ";}&:hover{cursor:pointer;& > div{display:block;}}"], ({
+})(["display:flex;justify-content:center;align-items:center;width:100%;height:40px;background:", ";& > div{display:none;color:", ";}&:hover{cursor:pointer;& > div{display:block;}}"], ({
   background
 }) => background, ({
   background
@@ -3671,10 +3394,8 @@ const ColorConfigurations = ({
     setOpenEditColor(prev => {
       if (!prev) return prev;
       return {
-        id: prev.id,
-        value: newColor,
-        isDefault: prev.isDefault,
-        label: prev.label
+        ...prev,
+        value: newColor
       };
     });
   };
@@ -3762,7 +3483,7 @@ const ColorConfigurations = ({
     isLoading: isLoadingEdit,
     disabled: isLoadingEdit,
     onClick: onSaveEditColor
-  }, t("template.save.default")))) : null, /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+  }, t("template.save.default")))) : null, /*#__PURE__*/React__default.createElement(ButtonDanger, {
     isLoading: isLoadingReset,
     disabled: isLoadingReset,
     style: {
@@ -3770,6 +3491,229 @@ const ColorConfigurations = ({
     },
     onClick: onReset
   }, t("theme.colors.reset")));
+};
+
+const stringKeys = ["fontFamily"];
+const Container = styled$1.div.withConfig({
+  displayName: "FontConfigurations__Container",
+  componentId: "sc-1rpaqke-0"
+})(["background-color:#ffffff;max-height:100vh;font-family:system-ui,-apple-system,sans-serif;"]);
+const FontGrid = styled$1.div.withConfig({
+  displayName: "FontConfigurations__FontGrid",
+  componentId: "sc-1rpaqke-1"
+})(["display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;"]);
+const FontCard = styled$1.div.withConfig({
+  displayName: "FontConfigurations__FontCard",
+  componentId: "sc-1rpaqke-2"
+})(["min-width:230px;border:1px solid transparent;padding:4px;cursor:pointer;transition:border-color 0.2s ease;&:hover{border-color:", ";}"], Colors.black10);
+const FontPreviewBox = styled$1.div.withConfig({
+  displayName: "FontConfigurations__FontPreviewBox",
+  componentId: "sc-1rpaqke-3"
+})(["height:120px;display:flex;align-items:center;justify-content:center;background-color:", ";padding:32px;overflow:hidden;"], Colors.black10);
+const FontPreviewText = styled$1.div.withConfig({
+  displayName: "FontConfigurations__FontPreviewText",
+  componentId: "sc-1rpaqke-4"
+})(["font-size:", "px;font-family:", ";font-weight:", ";line-height:", ";color:#000;text-align:center;user-select:none;max-width:100%;word-break:break-word;overflow-wrap:break-word;overflow:hidden;"], f => f.fontSize, f => f.fontFamily, f => f.fontWeight, f => f.lineHeight);
+const FontDetails = styled$1.div.withConfig({
+  displayName: "FontConfigurations__FontDetails",
+  componentId: "sc-1rpaqke-5"
+})(["margin-top:8px;background-color:white;font-size:12px;line-height:16px;color:#000;text-align:center;"]);
+const Content$1 = styled$1.div.withConfig({
+  displayName: "FontConfigurations__Content",
+  componentId: "sc-1rpaqke-6"
+})(["::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:", ";border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#9ca3af;}scrollbar-width:thin;scrollbar-color:", " #f1f1f1;"], Colors.black10, Colors.black10);
+const Form$1 = styled$1.form.withConfig({
+  displayName: "FontConfigurations__Form",
+  componentId: "sc-1rpaqke-7"
+})(["display:flex;flex-direction:column;gap:12px;margin-top:2px;"]);
+const Row = styled$1.div.withConfig({
+  displayName: "FontConfigurations__Row",
+  componentId: "sc-1rpaqke-8"
+})(["display:grid;grid-template-columns:2fr 1fr 2fr 1fr;gap:12px;& > button{justify-content:flex-end;overflow:hidden;box-shadow:0 0 0 1px ", ";cursor:pointer;& > span{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;& > div{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}}}"], Colors.black10);
+const PreviewTextarea = styled$1.textarea.withConfig({
+  displayName: "FontConfigurations__PreviewTextarea",
+  componentId: "sc-1rpaqke-9"
+})(["border-radius:4px;width:100%;height:17vh;background-color:", ";resize:none;outline:none;padding:1rem;font-family:", ";font-size:", "px;font-weight:", ";line-height:", ";"], Colors.black10, f => f.fontFamily, f => f.fontSize, f => f.fontWeight, f => f.lineHeight);
+const StyledSelect = styled$1(Select).withConfig({
+  displayName: "FontConfigurations__StyledSelect",
+  componentId: "sc-1rpaqke-10"
+})(["display:flex;flex-direction:column;align-items:flex-end;min-width:0;cursor:pointer;border:1px solid ", ";border-radius:4px;"], Colors.black10);
+const FontConfigurations = ({
+  editorContext,
+  onConfigChange
+}) => {
+  const colorTokens = editorContext.theme.colors;
+  const fontTokens = editorContext.theme.fonts;
+  const backend = editorContext.backend;
+  const {
+    t
+  } = useTranslation();
+  const toaster = useToaster();
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId");
+  const [isLoadingReset, setIsLoadingReset] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [openEditFont, setOpenEditFont] = useState(null);
+  const handleOpenEditFont = (id, fontDetail) => {
+    setOpenEditFont({
+      id,
+      ...fontDetail
+    });
+  };
+  const handleFontClose = () => {
+    setOpenEditFont(null);
+  };
+  const onReset = async () => {
+    if (themeId) {
+      setIsLoadingReset(true);
+      try {
+        await backend.themes?.reset({
+          id: themeId,
+          configs: ["fonts"]
+        });
+        toaster.success(t("theme.font.reset.success"));
+      } catch (error) {
+        toaster.error(t("theme.font.reset.error"));
+      } finally {
+        setIsLoadingReset(false);
+        onConfigChange?.();
+      }
+    }
+  };
+  const onSubmit = async event => {
+    event?.preventDefault();
+    if (!openEditFont) {
+      return;
+    }
+    const canSend = openEditFont?.label?.trim() !== "";
+    if (!canSend) return;
+    if (themeId) {
+      setIsLoadingEdit(true);
+      const newFontTokens = {
+        ...fontTokens,
+        [openEditFont.id]: {
+          value: openEditFont.value,
+          isDefault: openEditFont.isDefault,
+          label: openEditFont.label
+        }
+      };
+      const fontTokenPayloads = Object.entries(newFontTokens).map(([id, value]) => ({
+        id,
+        ...value
+      }));
+      const colorTokenPayloads = Object.entries(colorTokens).map(([id, value]) => ({
+        id,
+        ...value
+      }));
+      try {
+        await backend.themes?.update({
+          id: themeId,
+          config: {
+            fonts: fontTokenPayloads,
+            colors: colorTokenPayloads
+          }
+        });
+        toaster.success(t("theme.font.save.success"));
+      } catch (error) {
+        toaster.error(t("theme.font.save.error"));
+      } finally {
+        setIsLoadingEdit(false);
+        handleFontClose();
+        onConfigChange?.();
+      }
+    }
+  };
+  const onChange = (id, newValue) => {
+    setOpenEditFont(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        value: {
+          ...prev.value,
+          [id]: stringKeys.includes(id) ? newValue : Number(newValue)
+        }
+      };
+    });
+  };
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(Container, null, /*#__PURE__*/React__default.createElement(FontGrid, null, Object.entries(fontTokens).map(([key, fontDetail]) => /*#__PURE__*/React__default.createElement(FontCard, {
+    key: key,
+    onClick: () => handleOpenEditFont(key, fontDetail)
+  }, /*#__PURE__*/React__default.createElement(FontPreviewBox, null, /*#__PURE__*/React__default.createElement(FontPreviewText, {
+    fontSize: fontDetail.value?.fontSize >= 32 ? 32 : fontDetail.value?.fontSize,
+    fontFamily: fontDetail.value?.fontFamily,
+    fontWeight: fontDetail.value?.fontWeight,
+    lineHeight: fontDetail.value?.lineHeight
+  }, fontDetail.label)), /*#__PURE__*/React__default.createElement(FontDetails, null, [fontDetail.value?.fontFamily?.split(",")[0], fontDetail.value?.fontWeight ? `Font Weight: ${fontDetail.value?.fontWeight}` : null, fontDetail.value?.fontSize ? `${fontDetail.value?.fontSize}` : null, fontDetail.value?.lineHeight ? `${fontDetail.value?.lineHeight}` : null].filter(Boolean).join(", "))))), /*#__PURE__*/React__default.createElement(ButtonDanger, {
+    isLoading: isLoadingReset,
+    disabled: isLoadingReset,
+    onClick: onReset
+  }, t("theme.font.reset"))), /*#__PURE__*/React__default.createElement(Modal, {
+    width: "30vw",
+    title: `${t("theme.font.edit")} ${openEditFont?.label ?? "Font"}`,
+    isOpen: !!openEditFont,
+    onRequestClose: () => handleFontClose(),
+    mode: "center-small",
+    headerLine: true
+  }, /*#__PURE__*/React__default.createElement(Content$1, null, /*#__PURE__*/React__default.createElement(Form$1, {
+    onSubmit: onSubmit
+  }, /*#__PURE__*/React__default.createElement(Row, null, /*#__PURE__*/React__default.createElement(StyledSelect, {
+    value: openEditFont?.value?.fontFamily ?? defaultFontFamily,
+    onChange: newFontFamily => {
+      onChange("fontFamily", newFontFamily);
+    }
+  }, getFontFamilies().map(f => /*#__PURE__*/React__default.createElement(SelectItem, {
+    key: f.id,
+    value: f.value
+  }, /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      fontFamily: f.value
+    }
+  }, f.label)))), /*#__PURE__*/React__default.createElement(StyledSelect, {
+    value: String(openEditFont?.value?.fontSize ?? defaultFontSize),
+    onChange: newFontSize => {
+      onChange("fontSize", newFontSize);
+    }
+  }, getFontSizes(editorContext).map(f => /*#__PURE__*/React__default.createElement(SelectItem, {
+    key: f.id,
+    value: f.value
+  }, f.label))), /*#__PURE__*/React__default.createElement(StyledSelect, {
+    value: String(openEditFont?.value?.fontWeight ?? defaultFontWeight),
+    onChange: newFontWeight => {
+      onChange("fontWeight", newFontWeight);
+    }
+  }, getFontWeights().map(f => /*#__PURE__*/React__default.createElement(SelectItem, {
+    key: f.id,
+    value: f.value
+  }, f.label))), /*#__PURE__*/React__default.createElement(StyledSelect, {
+    value: String(openEditFont?.value?.lineHeight ?? defaultLineHeight),
+    onChange: newLineHeight => {
+      onChange("lineHeight", newLineHeight);
+    }
+  }, getLineHeights().map(f => /*#__PURE__*/React__default.createElement(SelectItem, {
+    key: f.id,
+    value: f.value
+  }, f.label)))), /*#__PURE__*/React__default.createElement(PreviewTextarea, {
+    id: "textPreview",
+    fontFamily: openEditFont?.value?.fontFamily ?? defaultFontFamily,
+    fontSize: openEditFont?.value?.fontSize ?? defaultFontSize,
+    fontWeight: openEditFont?.value?.fontWeight ?? defaultFontWeight,
+    lineHeight: openEditFont?.value?.lineHeight ?? defaultLineHeight,
+    defaultValue: "Text preview"
+  }), /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginTop: 8,
+      gap: 8
+    }
+  }, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+    onClick: () => handleFontClose()
+  }, t("theme.font.cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+    isLoading: isLoadingEdit,
+    disabled: isLoadingEdit,
+    type: "submit"
+  }, t("theme.font.save")))))));
 };
 
 const ModalRoot$1 = styled$1.div.withConfig({
@@ -3783,7 +3727,7 @@ const Sidebar$1 = styled$1.div.withConfig({
 const Content = styled$1.div.withConfig({
   displayName: "FontColorConfigsModal__Content",
   componentId: "sc-1xvfmbx-2"
-})(["padding:2rem 1rem;overflow-x:hidden;overflow-y:auto;height:100%;"]);
+})(["padding:1rem;overflow-x:hidden;overflow-y:auto;height:100%;"]);
 const SidebarContent$1 = styled$1.div.withConfig({
   displayName: "FontColorConfigsModal__SidebarContent",
   componentId: "sc-1xvfmbx-3"
@@ -7167,6 +7111,10 @@ const EditorContent = ({
   }));
   const editorContext = {
     ...compilationContext,
+    contextParams: {
+      ...compilationContext.contextParams,
+      locale: currentLocale
+    },
     backend: props.config.backend,
     types: editorTypes,
     isAdminMode,
@@ -9278,5 +9226,5 @@ function EasyblocksEditor(props) {
   }), selectedWindow === "preview" && /*#__PURE__*/React__default.createElement(PreviewRenderer, props));
 }
 
-export { EasyblocksEditor, EditorContext, getFontFamilies, getFontSizes, getFontWeights, getLineHeights, useEditorContext };
+export { EasyblocksEditor, EditorContext, defaultFontFamily, defaultFontSize, defaultFontWeight, defaultLineHeight, getFontFamilies, getFontSizes, getFontWeights, getLineHeights, useEditorContext };
 //# sourceMappingURL=index.js.map

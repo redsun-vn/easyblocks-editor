@@ -6,6 +6,11 @@ interface IFont {
   label: string;
 }
 
+export const defaultFontFamily = "Roboto, sans-serif";
+export const defaultFontSize = 16;
+export const defaultFontWeight = 400;
+export const defaultLineHeight = 1.4;
+
 export function getFontFamilies(): IFont[] {
   const selectedFamilies = [
     "Roboto, sans-serif",

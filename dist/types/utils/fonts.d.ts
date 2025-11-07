@@ -4,6 +4,10 @@ interface IFont {
     value: string;
     label: string;
 }
+export declare const defaultFontFamily = "Roboto, sans-serif";
+export declare const defaultFontSize = 16;
+export declare const defaultFontWeight = 400;
+export declare const defaultLineHeight = 1.4;
 export declare function getFontFamilies(): IFont[];
 export declare function getFontWeights(): IFont[];
 export declare function getLineHeights(): IFont[];

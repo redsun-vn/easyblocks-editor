@@ -5,6 +5,10 @@ import styled from "styled-components";
 import { useEditorContext } from "../../../../../EditorContext";
 import { useTranslation } from "../../../../../useTranslation";
 import {
+  defaultFontFamily,
+  defaultFontSize,
+  defaultFontWeight,
+  defaultLineHeight,
   getFontFamilies,
   getFontSizes,
   getFontWeights,
@@ -108,7 +112,7 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
         options: getFontFamilies(),
         type: "string",
         inputType: "select",
-        defaultValue: "Roboto, sans-serif",
+        defaultValue: defaultFontFamily,
       },
       {
         key: "fontSize",
@@ -116,7 +120,7 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
         type: "number",
         options: getFontSizes(editorContext),
         inputType: "select",
-        defaultValue: 16,
+        defaultValue: defaultFontSize,
       },
       {
         key: "fontWeight",
@@ -124,7 +128,7 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
         type: "number",
         options: getFontWeights(),
         inputType: "select",
-        defaultValue: 400,
+        defaultValue: defaultFontWeight,
       },
       {
         key: "lineHeight",
@@ -132,7 +136,7 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
         type: "number",
         options: getLineHeights(),
         inputType: "select",
-        defaultValue: 1.4,
+        defaultValue: defaultLineHeight,
       },
     ],
     []

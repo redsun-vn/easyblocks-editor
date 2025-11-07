@@ -1,10 +1,10 @@
 import { Colors, Fonts, Modal } from "@redsun-vn/easyblocks-design-system";
 import React, { useState } from "react";
 import styled from "styled-components";
-import { useTranslation } from "../useTranslation";
-import { FontConfigurations } from "./FontConfigurations";
-import { ColorConfigurations } from "./ColorConfigurations";
 import { useEditorContext } from "../EditorContext";
+import { useTranslation } from "../useTranslation";
+import { ColorConfigurations } from "./ColorConfigurations";
+import { FontConfigurations } from "./FontConfigurations";
 
 type IFontColorConfigsModalProps = {
   isOpen: boolean;
@@ -31,7 +31,7 @@ const Sidebar = styled.div`
 `;
 
 const Content = styled.div`
-  padding: 2rem 1rem;
+  padding: 1rem;
   overflow-x: hidden;
   overflow-y: auto;
   height: 100%;

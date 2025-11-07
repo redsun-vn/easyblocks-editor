@@ -1,5 +1,6 @@
 import { ThemeTokenValue } from "@redsun-vn/easyblocks-core";
 import {
+  ButtonDanger,
   ButtonPrimary,
   ButtonSecondary,
   Colors,
@@ -28,7 +29,7 @@ const ColorConfigurationsContainer = styled.div`
 `;
 
 const StyledColorCardWrapper = styled.div`
-  max-width: 250px;
+  max-width: 500px;
   width: 100%;
   display: flex;
   overflow: hidden;
@@ -40,9 +41,8 @@ const StyledColorCard = styled.div<{ background: string }>`
   display: flex;
   justify-content: center;
   align-items: center;
-  max-width: 50px;
   width: 100%;
-  height: 50px;
+  height: 40px;
   background: ${({ background }) => background};
 
   & > div {
@@ -172,10 +172,8 @@ export const ColorConfigurations = ({
     setOpenEditColor((prev) => {
       if (!prev) return prev;
       return {
-        id: prev.id,
+        ...prev,
         value: newColor,
-        isDefault: prev.isDefault,
-        label: prev.label,
       };
     });
   };
@@ -296,14 +294,14 @@ export const ColorConfigurations = ({
         </Modal>
       ) : null}
 
-      <ButtonPrimary
+      <ButtonDanger
         isLoading={isLoadingReset}
         disabled={isLoadingReset}
         style={{ width: "fit-content" }}
         onClick={onReset}
       >
         {t("theme.colors.reset")}
-      </ButtonPrimary>
+      </ButtonDanger>
     </ColorConfigurationsContainer>
   );
 };

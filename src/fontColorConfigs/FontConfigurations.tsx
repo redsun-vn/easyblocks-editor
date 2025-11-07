@@ -1,9 +1,27 @@
+import {
+  defaultFontFamily,
+  defaultFontSize,
+  defaultFontWeight,
+  defaultLineHeight,
+  getFontFamilies,
+  getFontSizes,
+  getFontWeights,
+  getLineHeights,
+} from "@/utils/fonts";
+import {
+  ButtonDanger,
+  ButtonPrimary,
+  ButtonSecondary,
+  Colors,
+  Modal,
+  Select,
+  SelectItem,
+  useToaster,
+} from "@redsun-vn/easyblocks-design-system";
 import React, { useState } from "react";
+import styled from "styled-components";
 import { EditorContextType } from "../EditorContext";
 import { useTranslation } from "../useTranslation";
-import { ButtonDanger, ButtonPrimary, ButtonSecondary, FormElement, Modal, Select, SelectItem, useToaster } from "@redsun-vn/easyblocks-design-system";
-import styled from "styled-components";
-import { getFontFamilies, getFontSizes, getFontWeights, getLineHeights } from "@/utils/fonts";
 
 interface IFontConfiguration {
   onConfigChange?: () => Promise<void>;
@@ -12,18 +30,162 @@ interface IFontConfiguration {
 
 interface IFontValue {
   fontFamily: string;
-  fontSize: string;
-  fontWeight: string;
-  lineHeight: string;
+  fontSize: number;
+  fontWeight: number;
+  lineHeight: number;
 }
 
 interface IFont {
   id: string;
-  label: string;
+  label?: string;
   value: IFontValue;
+  isDefault?: boolean;
 }
 
-export const FontConfigurations = ({ editorContext, onConfigChange }: IFontConfiguration) => {
+const stringKeys = ["fontFamily"];
+
+const Container = styled.div`
+  background-color: #ffffff;
+  max-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+`;
+
+const FontGrid = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+`;
+
+const FontCard = styled.div`
+  min-width: 230px;
+  border: 1px solid transparent;
+  padding: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: ${Colors.black10};
+  }
+`;
+
+const FontPreviewBox = styled.div`
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: ${Colors.black10};
+  padding: 32px;
+  overflow: hidden;
+`;
+
+const FontPreviewText = styled.div<IFontValue>`
+  font-size: ${(f) => f.fontSize}px;
+  font-family: ${(f) => f.fontFamily};
+  font-weight: ${(f) => f.fontWeight};
+  line-height: ${(f) => f.lineHeight};
+  color: #000;
+  text-align: center;
+  user-select: none;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  overflow: hidden;
+`;
+
+const FontDetails = styled.div`
+  margin-top: 8px;
+  background-color: white;
+  font-size: 12px;
+  line-height: 16px;
+  color: #000;
+  text-align: center;
+`;
+
+const Content = styled.div`
+  /* Light scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: ${Colors.black10};
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  scrollbar-width: thin;
+  scrollbar-color: ${Colors.black10} #f1f1f1;
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 2px;
+`;
+
+const Row = styled.div`
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr 1fr;
+  gap: 12px;
+
+  & > button {
+    justify-content: flex-end;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px ${Colors.black10};
+    cursor: pointer;
+
+    & > span {
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+
+      & > div {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+    }
+  }
+`;
+
+const PreviewTextarea = styled.textarea<IFontValue>`
+  border-radius: 4px;
+  width: 100%;
+  height: 17vh;
+  background-color: ${Colors.black10};
+  resize: none;
+  outline: none;
+  padding: 1rem;
+  font-family: ${(f) => f.fontFamily};
+  font-size: ${(f) => f.fontSize}px;
+  font-weight: ${(f) => f.fontWeight};
+  line-height: ${(f) => f.lineHeight};
+`;
+
+const StyledSelect = styled(Select)`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  cursor: pointer;
+  border: 1px solid ${Colors.black10};
+  border-radius: 4px;
+`;
+
+export const FontConfigurations = ({
+  editorContext,
+  onConfigChange,
+}: IFontConfiguration) => {
+  const colorTokens = editorContext.theme.colors;
   const fontTokens = editorContext.theme.fonts;
   const backend = editorContext.backend;
   const { t } = useTranslation();
@@ -35,49 +197,17 @@ export const FontConfigurations = ({ editorContext, onConfigChange }: IFontConfi
   const [isLoadingReset, setIsLoadingReset] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
 
-  const [openEditFont, setOpenEditFont] = useState(false);
+  const [openEditFont, setOpenEditFont] = useState<IFont | null>(null);
 
-  const [font, setFont] = useState<IFont>({
-    id: "",
-    label: "",
-    value: {
-      fontFamily: "",
-      fontSize: "",
-      fontWeight: "",
-      lineHeight: "",
-    },
-  });
-
-  const { id, label, value } = font;
-
-  const canSend = label.trim() !== "";
-
-  const handleOpenEditFont = (id: string, f: any) => {
-    setFont({
+  const handleOpenEditFont = (id: string, fontDetail: Omit<IFont, "id">) => {
+    setOpenEditFont({
       id,
-      label: f.label || "",
-      value: {
-        fontFamily: f.value?.fontFamily || "",
-        fontSize: String(f.value.fontSize ?? ""),
-        fontWeight: String(f.value.fontWeight ?? ""),
-        lineHeight: String(f.value.lineHeight ?? ""),
-      },
+      ...fontDetail,
     });
-    setOpenEditFont(true);
   };
 
   const handleFontClose = () => {
-    setOpenEditFont(false);
-    setFont({
-      id: "",
-      label: "",
-      value: {
-        fontFamily: "",
-        fontSize: "",
-        fontWeight: "",
-        lineHeight: "",
-      },
-    });
+    setOpenEditFont(null);
   };
 
   const onReset = async () => {
@@ -87,234 +217,123 @@ export const FontConfigurations = ({ editorContext, onConfigChange }: IFontConfi
       try {
         await backend.themes?.reset({ id: themeId, configs: ["fonts"] });
         toaster.success(t("theme.font.reset.success"));
-      }
-      catch (error) {
+      } catch (error) {
         toaster.error(t("theme.font.reset.error"));
-      }
-      finally {
+      } finally {
         setIsLoadingReset(false);
         onConfigChange?.();
       }
     }
-  }
+  };
 
-  const onSubmit = async () => {
+  const onSubmit = async (
+    event: React.FormEvent<HTMLFormElement> | undefined
+  ) => {
+    event?.preventDefault();
+    if (!openEditFont) {
+      return;
+    }
+
+    const canSend = openEditFont?.label?.trim() !== "";
     if (!canSend) return;
 
     if (themeId) {
       setIsLoadingEdit(true);
-      const existingFonts = Object.entries(fontTokens).map(([key, f]) => ({
-        id: key,
-        label: f.label,
-        value: f.value,
-        isDefault: f.isDefault
-      }));
 
-      const updatedFonts = existingFonts.map(f =>
-        f.id === id
-          ? {
-            id,
-            label,
-            value: {
-              ...value,
-              fontSize: value.fontSize ?? Number(value.fontSize),
-              fontWeight: value.fontWeight ?? Number(value.fontWeight),
-              lineHeight: value.lineHeight ?? Number(value.lineHeight),
-            },
-            isDefault: f.isDefault
-          }
-          : f
+      const newFontTokens = {
+        ...fontTokens,
+        [openEditFont.id]: {
+          value: openEditFont.value,
+          isDefault: openEditFont.isDefault,
+          label: openEditFont.label,
+        },
+      };
+
+      const fontTokenPayloads = Object.entries(newFontTokens).map(
+        ([id, value]) => ({
+          id,
+          ...value,
+        })
+      );
+
+      const colorTokenPayloads = Object.entries(colorTokens).map(
+        ([id, value]) => ({
+          id,
+          ...value,
+        })
       );
 
       try {
         await backend.themes?.update({
           id: themeId,
           config: {
-            fonts: updatedFonts
-          }
-        })
+            fonts: fontTokenPayloads,
+            colors: colorTokenPayloads,
+          },
+        });
         toaster.success(t("theme.font.save.success"));
-      }
-      catch (error) {
+      } catch (error) {
         toaster.error(t("theme.font.save.error"));
-      }
-      finally {
+      } finally {
         setIsLoadingEdit(false);
-        onConfigChange?.();
         handleFontClose();
+        onConfigChange?.();
       }
     }
-  }
+  };
 
-  const Container = styled.div`
-    padding: 6px;
-    background-color: #ffffff;
-    max-height: 100vh;
-    font-family: system-ui, -apple-system, sans-serif;
-  `;
-
-  const FontGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 24px;
-  `;
-
-  const FontCard = styled.div`
-    border: 1px solid transparent;
-    padding: 4px;
-    cursor: pointer;
-    transition: border-color 0.2s ease;
-
-    &:hover {
-      border-color: #e5e5e5;
-    }
-  `;
-
-  const FontPreviewBox = styled.div`
-    height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #e5e5e5;
-    padding: 32px;
-    overflow: hidden;
-  `;
-
-  const FontPreviewText = styled.div<{ fontSize: string; fontFamily: string; fontWeight: string; lineHeight: string }>`
-    font-size: ${(f) => f.fontSize}px;
-    font-family: ${(f) => f.fontFamily};
-    font-weight: ${(f) => f.fontWeight};
-    line-height: ${(f) => f.lineHeight};
-    color: #000;
-    text-align: center;
-    user-select: none;
-    max-width: 100%;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    overflow: hidden;
-  `;
-
-  const FontDetails = styled.div`
-    margin-top: 8px;
-    background-color: white;
-    font-size: 12px;
-    line-height: 16px;
-    color: #000;
-    text-align: center;
-  `;
-
-  const Content = styled.div`
-  padding: 1rem 0.5rem;
-
-  /* Light scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #e5e5e5;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #9ca3af;
-    }
-
-    scrollbar-width: thin;
-    scrollbar-color: #e5e5e5 #f1f1f1;
-  `;
-
-  const Form = styled.form`
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 2px;
-  `;
-
-  const Row = styled.div`
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  `;
-
-  const PreviewTextarea = styled.textarea<{ fontFamily: string; fontSize: string; fontWeight: string; lineHeight: string; }>`
-    border-radius: 0.5rem;
-    width: 100%;
-    height: 17vh;
-    background-color: #e5e5e5;
-    resize: none;
-    outline: none;
-    padding: 1rem;
-    font-family: ${(f) => f.fontFamily};
-    font-size: ${(f) => f.fontSize}px;
-    font-weight: ${(f) => f.fontWeight};
-    line-height: ${(f) => f.lineHeight};
-  `;
-
-  const StyledLabel = styled.label`
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 400;
-    color: #000;
-  `;
-
-  const StyledSelect = styled.select`
-    background-color: #ffffff;
-    border: 1px solid #d1d5db;
-    color: #111827;
-    font-size: 0.875rem;
-    border-radius: 0.375rem;
-    display: block;
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    cursor: pointer;
-    
-    &:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    &:hover {
-      border-color: #9ca3af;
-    }
-  `;
-
-  const FormField = styled.div`
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  `;
+  const onChange = (
+    id: "fontFamily" | "fontSize" | "fontWeight" | "lineHeight",
+    newValue: string | number
+  ) => {
+    setOpenEditFont((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        value: {
+          ...prev.value,
+          [id]: stringKeys.includes(id) ? newValue : Number(newValue),
+        },
+      };
+    });
+  };
 
   return (
     <>
       <Container>
         <FontGrid>
-          {Object.entries(fontTokens).map(([key, f]) => (
-            <FontCard key={key} onClick={() => handleOpenEditFont(key, f)}>
+          {Object.entries(fontTokens).map(([key, fontDetail]) => (
+            <FontCard
+              key={key}
+              onClick={() => handleOpenEditFont(key, fontDetail)}
+            >
               <FontPreviewBox>
                 <FontPreviewText
-                  fontSize={f.value.fontSize}
-                  fontFamily={f.value.fontFamily}
-                  fontWeight={f.value.fontWeight}
-                  lineHeight={f.value.lineHeight}
+                  fontSize={
+                    fontDetail.value?.fontSize >= 32
+                      ? 32
+                      : fontDetail.value?.fontSize
+                  }
+                  fontFamily={fontDetail.value?.fontFamily}
+                  fontWeight={fontDetail.value?.fontWeight}
+                  lineHeight={fontDetail.value?.lineHeight}
                 >
-                  {f.label}
+                  {fontDetail.label}
                 </FontPreviewText>
               </FontPreviewBox>
 
               <FontDetails>
                 {[
-                  f.value.fontFamily?.split(",")[0],
-                  f.value.fontWeight ? `Font Weight: ${f.value.fontWeight}` : null,
-                  f.value.fontSize ? `${f.value.fontSize}` : null,
-                  f.value.lineHeight ? `${f.value.lineHeight}` : null,
+                  fontDetail.value?.fontFamily?.split(",")[0],
+                  fontDetail.value?.fontWeight
+                    ? `Font Weight: ${fontDetail.value?.fontWeight}`
+                    : null,
+                  fontDetail.value?.fontSize
+                    ? `${fontDetail.value?.fontSize}`
+                    : null,
+                  fontDetail.value?.lineHeight
+                    ? `${fontDetail.value?.lineHeight}`
+                    : null,
                 ]
                   .filter(Boolean)
                   .join(", ")}
@@ -333,9 +352,9 @@ export const FontConfigurations = ({ editorContext, onConfigChange }: IFontConfi
       </Container>
 
       <Modal
-        width="40vw"
-        title={`${t("theme.font.edit")} ${label ?? "Font"}`}
-        isOpen={openEditFont}
+        width="30vw"
+        title={`${t("theme.font.edit")} ${openEditFont?.label ?? "Font"}`}
+        isOpen={!!openEditFont}
         onRequestClose={() => handleFontClose()}
         mode="center-small"
         headerLine
@@ -343,110 +362,71 @@ export const FontConfigurations = ({ editorContext, onConfigChange }: IFontConfi
         <Content>
           <Form onSubmit={onSubmit}>
             <Row>
-              <FormField>
-                <StyledLabel htmlFor="fontFamily">{t("theme.font.family")}</StyledLabel>
-                <StyledSelect
-                  id="fontFamily"
-                  name="fontFamily"
-                  value={value.fontFamily}
-                  onChange={(e) => {
-                    setFont({
-                      ...font,
-                      value: {
-                        ...value,
-                        fontFamily: e.target.value
-                      }
-                    });
-                  }}
-                >
-                  {getFontFamilies().map((f) => (
-                    <option key={f.id} value={f.value}>
-                      {f.label}
-                    </option>
-                  ))}
-                </StyledSelect>
-              </FormField>
+              <StyledSelect
+                value={openEditFont?.value?.fontFamily ?? defaultFontFamily}
+                onChange={(newFontFamily) => {
+                  onChange("fontFamily", newFontFamily);
+                }}
+              >
+                {getFontFamilies().map((f) => (
+                  <SelectItem key={f.id} value={f.value}>
+                    <div style={{ fontFamily: f.value }}>{f.label}</div>
+                  </SelectItem>
+                ))}
+              </StyledSelect>
 
-              <FormField>
-                <StyledLabel htmlFor="fontSize">{t("theme.font.size")}</StyledLabel>
-                <StyledSelect
-                  id="fontSize"
-                  name="fontSize"
-                  value={value.fontSize}
-                  onChange={(e) => {
-                    setFont({
-                      ...font,
-                      value: {
-                        ...value,
-                        fontSize: e.target.value
-                      }
-                    });
-                  }}
-                >
-                  {getFontSizes(editorContext).map((f) => (
-                    <option key={f.id} value={f.value}>
-                      {f.label}
-                    </option>
-                  ))}
-                </StyledSelect>
-              </FormField>
+              <StyledSelect
+                value={String(openEditFont?.value?.fontSize ?? defaultFontSize)}
+                onChange={(newFontSize) => {
+                  onChange("fontSize", newFontSize);
+                }}
+              >
+                {getFontSizes(editorContext).map((f) => (
+                  <SelectItem key={f.id} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </StyledSelect>
 
-              <FormField>
-                <StyledLabel htmlFor="fontWeight">{t("theme.font.weight")}</StyledLabel>
-                <StyledSelect
-                  id="fontWeight"
-                  name="fontWeight"
-                  value={value.fontWeight}
-                  onChange={(e) => {
-                    setFont({
-                      ...font,
-                      value: {
-                        ...value,
-                        fontWeight: e.target.value
-                      }
-                    });
-                  }}
-                >
-                  {getFontWeights().map((f) => (
-                    <option key={f.id} value={f.value}>
-                      {f.label}
-                    </option>
-                  ))}
-                </StyledSelect>
-              </FormField>
+              <StyledSelect
+                value={String(
+                  openEditFont?.value?.fontWeight ?? defaultFontWeight
+                )}
+                onChange={(newFontWeight) => {
+                  onChange("fontWeight", newFontWeight);
+                }}
+              >
+                {getFontWeights().map((f) => (
+                  <SelectItem key={f.id} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </StyledSelect>
 
-              <FormField>
-                <StyledLabel htmlFor="lineHeight">{t("theme.font.lineHeight")}</StyledLabel>
-                <StyledSelect
-                  id="lineHeight"
-                  name="lineHeight"
-                  value={value.lineHeight}
-                  onChange={(e) => {
-                    setFont({
-                      ...font,
-                      value: {
-                        ...value,
-                        lineHeight: e.target.value
-                      }
-                    });
-                  }}
-                >
-                  {getLineHeights().map((f) => (
-                    <option key={f.id} value={f.value}>
-                      {f.label}
-                    </option>
-                  ))}
-                </StyledSelect>
-              </FormField>
+              <StyledSelect
+                value={String(
+                  openEditFont?.value?.lineHeight ?? defaultLineHeight
+                )}
+                onChange={(newLineHeight) => {
+                  onChange("lineHeight", newLineHeight);
+                }}
+              >
+                {getLineHeights().map((f) => (
+                  <SelectItem key={f.id} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </StyledSelect>
             </Row>
 
             <PreviewTextarea
               id="textPreview"
-              fontFamily={value.fontFamily}
-              fontSize={value.fontSize}
-              fontWeight={value.fontWeight}
-              lineHeight={value.lineHeight}
-              defaultValue="Text preview" />
+              fontFamily={openEditFont?.value?.fontFamily ?? defaultFontFamily}
+              fontSize={openEditFont?.value?.fontSize ?? defaultFontSize}
+              fontWeight={openEditFont?.value?.fontWeight ?? defaultFontWeight}
+              lineHeight={openEditFont?.value?.lineHeight ?? defaultLineHeight}
+              defaultValue="Text preview"
+            />
 
             <div
               style={{
@@ -457,9 +437,7 @@ export const FontConfigurations = ({ editorContext, onConfigChange }: IFontConfi
                 gap: 8,
               }}
             >
-              <ButtonSecondary
-                onClick={() => handleFontClose()}
-              >
+              <ButtonSecondary onClick={() => handleFontClose()}>
                 {t("theme.font.cancel")}
               </ButtonSecondary>
               <ButtonPrimary

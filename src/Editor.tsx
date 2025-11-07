@@ -961,6 +961,10 @@ const EditorContent = ({
 
   const editorContext: EditorContextType = {
     ...compilationContext,
+    contextParams: {
+      ...compilationContext.contextParams,
+      locale: currentLocale,
+    },
     backend: props.config.backend,
     types: editorTypes,
     isAdminMode,
