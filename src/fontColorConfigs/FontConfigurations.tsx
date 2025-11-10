@@ -59,7 +59,7 @@ const FontGrid = styled.div`
 `;
 
 const FontCard = styled.div`
-  min-width: 230px;
+  width: 230px;
   border: 1px solid transparent;
   padding: 4px;
   cursor: pointer;

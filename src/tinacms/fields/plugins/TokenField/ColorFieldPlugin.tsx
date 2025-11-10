@@ -121,7 +121,7 @@ const Item = styled(RadixSelectItem)<{ shape: "circle" | "rectangle" }>`
     transform: scale(1.4);
     ${({ shape }) =>
       shape === "circle"
-        ? "box-shadow: inset 0 0 0 1px #c8c8c880, 0 0 1px 2px #fff, 0 0 0 4px #7e8796;"
+        ? "box-shadow: 0 0 1px 2px #fff, 0 0 0 4px #7e8796;"
         : ""};
     ${({ shape }) => (shape === "circle" ? "border-radius: 100%" : "")};
     z-index: 1;
@@ -185,13 +185,29 @@ export const ColorOptions = ({
                     viewBox="0 0 15 16"
                     fill="none"
                   >
-                    <circle
-                      cx="7.5"
-                      cy="8"
-                      r="6.5"
-                      fill={color}
-                      stroke={Colors.black100}
-                    />
+                    <defs>
+                      <pattern
+                        id="checker"
+                        width="4"
+                        height="4"
+                        patternUnits="userSpaceOnUse"
+                      >
+                        <rect width="2" height="2" fill="#e5e7eb" />
+                        <rect x="2" y="2" width="2" height="2" fill="#e5e7eb" />
+                      </pattern>
+                    </defs>
+
+                    {color === "transparent" ? (
+                      <circle cx="7.5" cy="8" r="6.5" fill="url(#checker)" />
+                    ) : (
+                      <circle
+                        cx="7.5"
+                        cy="8"
+                        r="6.5"
+                        fill={color}
+                        stroke={Colors.black100}
+                      />
+                    )}
                   </svg>
                 ) : (
                   <svg

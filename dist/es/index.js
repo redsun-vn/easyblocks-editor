@@ -1354,7 +1354,7 @@ const Item = styled$1(RadixSelectItem).withConfig({
   componentId: "sc-19dwflf-3"
 })(["position:relative;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transform:scale(1.2);width:8px;height:8px;outline:none;margin:10px;&[data-highlighted]{background-color:#f2f2f2;}&[data-state=\"checked\"]{cursor:pointer;transform:scale(1.4);", ";", ";z-index:1;}@media (hover:hover){&:hover{background-color:transparent;border:none;cursor:pointer;transform:scale(1.4);z-index:2;}}"], ({
   shape
-}) => shape === "circle" ? "box-shadow: inset 0 0 0 1px #c8c8c880, 0 0 1px 2px #fff, 0 0 0 4px #7e8796;" : "", ({
+}) => shape === "circle" ? "box-shadow: 0 0 1px 2px #fff, 0 0 0 4px #7e8796;" : "", ({
   shape
 }) => shape === "circle" ? "border-radius: 100%" : "");
 const ItemText = styled$1(RadixSelectItemText).withConfig({
@@ -1388,7 +1388,27 @@ const ColorOptions = ({
       height: "16",
       viewBox: "0 0 15 16",
       fill: "none"
-    }, /*#__PURE__*/React__default.createElement("circle", {
+    }, /*#__PURE__*/React__default.createElement("defs", null, /*#__PURE__*/React__default.createElement("pattern", {
+      id: "checker",
+      width: "4",
+      height: "4",
+      patternUnits: "userSpaceOnUse"
+    }, /*#__PURE__*/React__default.createElement("rect", {
+      width: "2",
+      height: "2",
+      fill: "#e5e7eb"
+    }), /*#__PURE__*/React__default.createElement("rect", {
+      x: "2",
+      y: "2",
+      width: "2",
+      height: "2",
+      fill: "#e5e7eb"
+    }))), color === "transparent" ? /*#__PURE__*/React__default.createElement("circle", {
+      cx: "7.5",
+      cy: "8",
+      r: "6.5",
+      fill: "url(#checker)"
+    }) : /*#__PURE__*/React__default.createElement("circle", {
       cx: "7.5",
       cy: "8",
       r: "6.5",
@@ -3534,7 +3554,7 @@ const FontGrid = styled$1.div.withConfig({
 const FontCard = styled$1.div.withConfig({
   displayName: "FontConfigurations__FontCard",
   componentId: "sc-1rpaqke-2"
-})(["min-width:230px;border:1px solid transparent;padding:4px;cursor:pointer;transition:border-color 0.2s ease;&:hover{border-color:", ";}"], Colors.black10);
+})(["width:230px;border:1px solid transparent;padding:4px;cursor:pointer;transition:border-color 0.2s ease;&:hover{border-color:", ";}"], Colors.black10);
 const FontPreviewBox = styled$1.div.withConfig({
   displayName: "FontConfigurations__FontPreviewBox",
   componentId: "sc-1rpaqke-3"
