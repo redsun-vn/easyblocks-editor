@@ -410,7 +410,15 @@ const HorizontalLine$2 = styled.div.withConfig({
 const IdWrapper = styled.div.withConfig({
   displayName: "SidebarFooter__IdWrapper",
   componentId: "sc-17xf0ak-2"
-})(["display:flex;padding:12px 16px;gap:16px;", " color:", ";"], Fonts.body, Colors.black40);
+})(["padding:12px 16px;gap:16px;", " color:", ";"], Fonts.body, Colors.black40);
+const ButtonWrapper = styled.div.withConfig({
+  displayName: "SidebarFooter__ButtonWrapper",
+  componentId: "sc-17xf0ak-3"
+})(["display:flex;gap:16px;"]);
+const StyledCopyId = styled.a.withConfig({
+  displayName: "SidebarFooter__StyledCopyId",
+  componentId: "sc-17xf0ak-4"
+})(["cursor:pointer;text-decoration:underline;"]);
 function SidebarFooter(props) {
   const editorContext = useEditorContext();
   const toaster = useToaster();
@@ -440,7 +448,21 @@ function SidebarFooter(props) {
   if (!showSaveAsTemplate || !isAdminMode) {
     return null;
   }
-  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$2, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate && /*#__PURE__*/React.createElement(ButtonSecondary, {
+  const onCopy = async value => {
+    try {
+      if (typeof value === "string") {
+        await copyToClipboard(value);
+      } else {
+        await copyToClipboard(JSON.stringify(value));
+      }
+      toaster.success(t("template.entry.copy.success"));
+    } catch (error) {
+      toaster.error(t("template.entry.copy.error"));
+    }
+  };
+  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$2, null), /*#__PURE__*/React.createElement(IdWrapper, null, /*#__PURE__*/React.createElement("div", null, "Id:", " ", /*#__PURE__*/React.createElement(StyledCopyId, {
+    onClick: () => onCopy(value._id)
+  }, value._id)), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React.createElement(ButtonSecondary, {
     onClick: () => {
       editorContext.actions.openTemplateModal({
         mode: "create",
@@ -450,19 +472,12 @@ function SidebarFooter(props) {
       });
     }
   }, t("template.save")), isAdminMode && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ButtonPrimary, {
-    onClick: async () => {
-      try {
-        await copyToClipboard(JSON.stringify(value));
-        toaster.success(t("template.entry.copy.success"));
-      } catch (error) {
-        toaster.error(t("template.entry.copy.error"));
-      }
-    }
+    onClick: () => onCopy(value)
   }, t("template.entry.copy"))), value._master && /*#__PURE__*/React.createElement("div", {
     style: {
       paddingTop: 16
     }
-  }, "Master: ", value._master))));
+  }, "Master: ", value._master)))));
 }
 
 const Toggle = ({

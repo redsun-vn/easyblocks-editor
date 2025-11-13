@@ -31,11 +31,20 @@ const HorizontalLine = styled.div`
 `;
 
 const IdWrapper = styled.div`
-  display: flex;
   padding: 12px 16px;
   gap: 16px;
   ${Fonts.body}
   color: ${Colors.black40};
+`;
+
+const ButtonWrapper = styled.div`
+  display: flex;
+  gap: 16px;
+`;
+
+const StyledCopyId = styled.a`
+  cursor: pointer;
+  text-decoration: underline;
 `;
 
 export function SidebarFooter(props: { paths: string[] }) {
@@ -77,49 +86,59 @@ export function SidebarFooter(props: { paths: string[] }) {
     return null;
   }
 
+  const onCopy = async (value: NoCodeComponentEntry | string) => {
+    try {
+      if (typeof value === "string") {
+        await copyToClipboard(value);
+      } else {
+        await copyToClipboard(JSON.stringify(value));
+      }
+      toaster.success(t("template.entry.copy.success"));
+    } catch (error) {
+      toaster.error(t("template.entry.copy.error"));
+    }
+  };
+
   return (
     <SidebarFooterContainer>
       <HorizontalLine />
       <IdWrapper>
-        {/* <div>Id: {value._id}</div> */}
-        {/* <br /> */}
+        <div>
+          Id:{" "}
+          <StyledCopyId onClick={() => onCopy(value._id)}>
+            {value._id}
+          </StyledCopyId>
+        </div>
+        <br />
 
-        {showSaveAsTemplate && (
-          <ButtonSecondary
-            onClick={() => {
-              editorContext.actions.openTemplateModal({
-                mode: "create",
-                config: value,
-                width,
-                widthAuto,
-              });
-            }}
-          >
-            {t("template.save")}
-          </ButtonSecondary>
-        )}
-
-        {isAdminMode && (
-          <div>
+        <ButtonWrapper>
+          {showSaveAsTemplate && (
+            <ButtonSecondary
+              onClick={() => {
+                editorContext.actions.openTemplateModal({
+                  mode: "create",
+                  config: value,
+                  width,
+                  widthAuto,
+                });
+              }}
+            >
+              {t("template.save")}
+            </ButtonSecondary>
+          )}
+          {isAdminMode && (
             <div>
-              <ButtonPrimary
-                onClick={async () => {
-                  try {
-                    await copyToClipboard(JSON.stringify(value));
-                    toaster.success(t("template.entry.copy.success"));
-                  } catch (error) {
-                    toaster.error(t("template.entry.copy.error"));
-                  }
-                }}
-              >
-                {t("template.entry.copy")}
-              </ButtonPrimary>
+              <div>
+                <ButtonPrimary onClick={() => onCopy(value)}>
+                  {t("template.entry.copy")}
+                </ButtonPrimary>
+              </div>
+              {value._master && (
+                <div style={{ paddingTop: 16 }}>Master: {value._master}</div>
+              )}
             </div>
-            {value._master && (
-              <div style={{ paddingTop: 16 }}>Master: {value._master}</div>
-            )}
-          </div>
-        )}
+          )}
+        </ButtonWrapper>
       </IdWrapper>
     </SidebarFooterContainer>
   );
