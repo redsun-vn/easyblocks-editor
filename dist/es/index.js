@@ -445,9 +445,6 @@ function SidebarFooter(props) {
   const definition = findComponentDefinition(value, editorContext);
   const isSaveable = !!definition?.allowSave;
   const showSaveAsTemplate = isSaveable && !editorContext.readOnly && !editorContext.disableCustomTemplates;
-  if (!showSaveAsTemplate || !isAdminMode) {
-    return null;
-  }
   const onCopy = async value => {
     try {
       if (typeof value === "string") {
@@ -462,7 +459,7 @@ function SidebarFooter(props) {
   };
   return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$2, null), /*#__PURE__*/React.createElement(IdWrapper, null, /*#__PURE__*/React.createElement("div", null, "Id:", " ", /*#__PURE__*/React.createElement(StyledCopyId, {
     onClick: () => onCopy(value._id)
-  }, value._id)), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React.createElement(ButtonSecondary, {
+  }, value._id)), /*#__PURE__*/React.createElement("br", null), showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React.createElement(ButtonSecondary, {
     onClick: () => {
       editorContext.actions.openTemplateModal({
         mode: "create",
@@ -477,7 +474,7 @@ function SidebarFooter(props) {
     style: {
       paddingTop: 16
     }
-  }, "Master: ", value._master)))));
+  }, "Master: ", value._master))) : null));
 }
 
 const Toggle = ({

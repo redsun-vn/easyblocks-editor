@@ -480,9 +480,6 @@ function SidebarFooter(props) {
   const definition = _internals.findComponentDefinition(value, editorContext);
   const isSaveable = !!definition?.allowSave;
   const showSaveAsTemplate = isSaveable && !editorContext.readOnly && !editorContext.disableCustomTemplates;
-  if (!showSaveAsTemplate || !isAdminMode) {
-    return null;
-  }
   const onCopy = async value => {
     try {
       if (typeof value === "string") {
@@ -497,7 +494,7 @@ function SidebarFooter(props) {
   };
   return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$2, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, /*#__PURE__*/React__namespace.createElement("div", null, "Id:", " ", /*#__PURE__*/React__namespace.createElement(StyledCopyId, {
     onClick: () => onCopy(value._id)
-  }, value._id)), /*#__PURE__*/React__namespace.createElement("br", null), /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
+  }, value._id)), /*#__PURE__*/React__namespace.createElement("br", null), showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
     onClick: () => {
       editorContext.actions.openTemplateModal({
         mode: "create",
@@ -512,7 +509,7 @@ function SidebarFooter(props) {
     style: {
       paddingTop: 16
     }
-  }, "Master: ", value._master)))));
+  }, "Master: ", value._master))) : null));
 }
 
 const Toggle = ({

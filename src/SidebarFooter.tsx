@@ -82,10 +82,6 @@ export function SidebarFooter(props: { paths: string[] }) {
     !editorContext.readOnly &&
     !editorContext.disableCustomTemplates;
 
-  if (!showSaveAsTemplate || !isAdminMode) {
-    return null;
-  }
-
   const onCopy = async (value: NoCodeComponentEntry | string) => {
     try {
       if (typeof value === "string") {
@@ -111,34 +107,36 @@ export function SidebarFooter(props: { paths: string[] }) {
         </div>
         <br />
 
-        <ButtonWrapper>
-          {showSaveAsTemplate && (
-            <ButtonSecondary
-              onClick={() => {
-                editorContext.actions.openTemplateModal({
-                  mode: "create",
-                  config: value,
-                  width,
-                  widthAuto,
-                });
-              }}
-            >
-              {t("template.save")}
-            </ButtonSecondary>
-          )}
-          {isAdminMode && (
-            <div>
+        {showSaveAsTemplate || isAdminMode ? (
+          <ButtonWrapper>
+            {showSaveAsTemplate && (
+              <ButtonSecondary
+                onClick={() => {
+                  editorContext.actions.openTemplateModal({
+                    mode: "create",
+                    config: value,
+                    width,
+                    widthAuto,
+                  });
+                }}
+              >
+                {t("template.save")}
+              </ButtonSecondary>
+            )}
+            {isAdminMode && (
               <div>
-                <ButtonPrimary onClick={() => onCopy(value)}>
-                  {t("template.entry.copy")}
-                </ButtonPrimary>
+                <div>
+                  <ButtonPrimary onClick={() => onCopy(value)}>
+                    {t("template.entry.copy")}
+                  </ButtonPrimary>
+                </div>
+                {value._master && (
+                  <div style={{ paddingTop: 16 }}>Master: {value._master}</div>
+                )}
               </div>
-              {value._master && (
-                <div style={{ paddingTop: 16 }}>Master: {value._master}</div>
-              )}
-            </div>
-          )}
-        </ButtonWrapper>
+            )}
+          </ButtonWrapper>
+        ) : null}
       </IdWrapper>
     </SidebarFooterContainer>
   );
