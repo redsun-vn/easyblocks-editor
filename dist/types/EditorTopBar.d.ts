@@ -3,6 +3,7 @@ import React from "react";
 import { EditorHistory } from "./EditorHistory";
 export declare const TOP_BAR_HEIGHT = 40;
 export declare const EditorTopBar: React.FC<{
+    name?: string;
     saveLabel: string;
     onClose?: () => void;
     onSaveDocument?: () => void;

@@ -3942,6 +3942,7 @@ const VerticalLine = styled.styled.div.withConfig({
 })(["width:1px;height:20px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
 const debouncedSave = debounce__default["default"](fn => fn(), 200);
 const EditorTopBar = ({
+  name,
   onClose,
   onSaveDocument: _onSaveDocument,
   onConfigChange,
@@ -3999,12 +4000,22 @@ const EditorTopBar = ({
     onClick: () => {
       onRedo();
     }
-  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "Read-Only"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "(Read-Only)"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
     icon: easyblocksDesignSystem.Icons.ColorAndFonts,
     hideLabel: true,
     hidden: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
-  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default["default"].createElement(FontColorConfigsModal, {
+  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    style: {
+      maxWidth: 150,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      marginLeft: 6
+    },
+    variant: "body",
+    component: "label"
+  }, name), /*#__PURE__*/React__default["default"].createElement(FontColorConfigsModal, {
     isOpen: isOpenConfigs,
     onConfigChange: onConfigChange,
     onClose: () => setIsOpenConfigs(false)
@@ -7385,6 +7396,7 @@ const EditorContent = ({
   }, /*#__PURE__*/React__default["default"].createElement("div", {
     id: "rootContainer"
   }), /*#__PURE__*/React__default["default"].createElement(EditorTopBar, {
+    name: props.config.name,
     onUndo: undo,
     onRedo: redo,
     editorHistoryInstance: editorHistoryInstance,

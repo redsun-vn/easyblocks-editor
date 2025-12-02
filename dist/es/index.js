@@ -3907,6 +3907,7 @@ const VerticalLine = styled.div.withConfig({
 })(["width:1px;height:20px;background-color:", ";"], Colors.black10);
 const debouncedSave = debounce(fn => fn(), 200);
 const EditorTopBar = ({
+  name,
   onClose,
   onSaveDocument: _onSaveDocument,
   onConfigChange,
@@ -3964,12 +3965,22 @@ const EditorTopBar = ({
     onClick: () => {
       onRedo();
     }
-  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default.createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "Read-Only"), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default.createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "(Read-Only)"), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.ColorAndFonts,
     hideLabel: true,
     hidden: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
-  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default.createElement(FontColorConfigsModal, {
+  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default.createElement(VerticalLine, null), /*#__PURE__*/React__default.createElement(Typography, {
+    style: {
+      maxWidth: 150,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      marginLeft: 6
+    },
+    variant: "body",
+    component: "label"
+  }, name), /*#__PURE__*/React__default.createElement(FontColorConfigsModal, {
     isOpen: isOpenConfigs,
     onConfigChange: onConfigChange,
     onClose: () => setIsOpenConfigs(false)
@@ -7350,6 +7361,7 @@ const EditorContent = ({
   }, /*#__PURE__*/React__default.createElement("div", {
     id: "rootContainer"
   }), /*#__PURE__*/React__default.createElement(EditorTopBar, {
+    name: props.config.name,
     onUndo: undo,
     onRedo: redo,
     editorHistoryInstance: editorHistoryInstance,
