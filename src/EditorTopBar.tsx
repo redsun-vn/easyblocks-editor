@@ -199,15 +199,12 @@ export const EditorTopBar: React.FC<{
           {t("editor.sidebar.configurations")}
         </ButtonGhost>
 
-        <VerticalLine />
-
         <Typography
           style={{
             maxWidth: 150,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
-            marginLeft: 6,
           }}
           variant="body"
           component="label"

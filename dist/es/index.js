@@ -3970,13 +3970,12 @@ const EditorTopBar = ({
     hideLabel: true,
     hidden: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
-  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default.createElement(VerticalLine, null), /*#__PURE__*/React__default.createElement(Typography, {
+  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default.createElement(Typography, {
     style: {
       maxWidth: 150,
       overflow: "hidden",
       textOverflow: "ellipsis",
-      whiteSpace: "nowrap",
-      marginLeft: 6
+      whiteSpace: "nowrap"
     },
     variant: "body",
     component: "label"
