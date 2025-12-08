@@ -9,11 +9,7 @@ import {
   findComponentDefinitionById,
   parsePath,
 } from "@redsun-vn/easyblocks-core/_internals";
-import {
-  dotNotationGet,
-  last,
-  preOrderPathComparator,
-} from "@/utils";
+import { dotNotationGet, last, preOrderPathComparator } from "@/utils";
 import { EditorContextType } from "./EditorContext";
 import { Form } from "./form";
 import { ResolveDestination } from "./paste/destinationResolver";
@@ -308,8 +304,9 @@ function removeItems(
       throw new Error("Invalid path");
     }
 
-    const fieldPath = `${parent.path}${parent.path === "" ? "" : "."}${parent.fieldName
-      }`;
+    const fieldPath = `${parent.path}${parent.path === "" ? "" : "."}${
+      parent.fieldName
+    }`;
     const itemsLength = dotNotationGet(form.values, fieldPath).length;
     const isOnlyItem = itemsLength === 1;
     const isLastItem = itemsLength - 1 === index;
