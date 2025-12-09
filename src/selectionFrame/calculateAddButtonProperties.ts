@@ -47,18 +47,12 @@ function calculateAddButtonsProperties(
         before: {
           top: beforeButtonTopOffset,
           left: buttonsLeftOffset,
-          display:
-            isBeforeButtonWithinViewport
-              ? "block"
-              : "none",
+          display: isBeforeButtonWithinViewport ? "block" : "none",
         },
         after: {
           top: afterButtonTopOffset,
           left: buttonsLeftOffset,
-          display:
-            isAfterButtonWithinViewport
-              ? "block"
-              : "none",
+          display: isAfterButtonWithinViewport ? "block" : "none",
         },
       };
     } else {
@@ -142,17 +136,5 @@ function isButtonWithinViewport(
     target.top <= viewport.height &&
     target.left >= 0 &&
     target.left <= viewport.width
-  );
-}
-
-function isButtonWithinContainer(
-  target: { top: number; left: number },
-  container: DOMRect
-) {
-  return (
-    target.top >= container.top &&
-    target.top <= container.bottom &&
-    target.left >= container.left &&
-    target.left <= container.right
   );
 }
