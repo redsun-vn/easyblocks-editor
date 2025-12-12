@@ -7,7 +7,7 @@ import {
   getFontSizes,
   getFontWeights,
   getLineHeights,
-} from "@/utils/fonts";
+} from "@redsun-vn/easyblocks-core";
 import {
   ButtonDanger,
   ButtonPrimary,

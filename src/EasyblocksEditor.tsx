@@ -1,3 +1,4 @@
+import { loadGoogleFonts } from "@redsun-vn/easyblocks-core";
 import React, { useEffect, useState } from "react";
 import { EasyblocksEditorProps } from "./EasyblocksEditorProps";
 import { EasyblocksParent } from "./EasyblocksParent";
@@ -24,6 +25,8 @@ export function EasyblocksEditor(props: EasyblocksEditorProps) {
   };
 
   useEffect(() => {
+    loadGoogleFonts();
+
     if (parseQueryParams().preview) {
       setSelectedWindow("preview");
       return;

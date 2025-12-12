@@ -1,9 +1,3 @@
-import { TokenValue } from "@redsun-vn/easyblocks-core";
-import { Fonts } from "@redsun-vn/easyblocks-design-system";
-import React, { useMemo } from "react";
-import styled from "styled-components";
-import { useEditorContext } from "../../../../../EditorContext";
-import { useTranslation } from "../../../../../useTranslation";
 import {
   defaultFontFamily,
   defaultFontSize,
@@ -13,7 +7,13 @@ import {
   getFontSizes,
   getFontWeights,
   getLineHeights,
-} from "../../../../../utils/fonts";
+  TokenValue,
+} from "@redsun-vn/easyblocks-core";
+import { Fonts } from "@redsun-vn/easyblocks-design-system";
+import React, { useMemo } from "react";
+import styled from "styled-components";
+import { useEditorContext } from "../../../../../EditorContext";
+import { useTranslation } from "../../../../../useTranslation";
 import { TokenFieldProps } from "../../TokenField/TokenFieldPlugin";
 import { Tooltip, TooltipArrow, TooltipBody } from "../../Tooltip";
 import { useTooltip } from "../../useTooltip";
