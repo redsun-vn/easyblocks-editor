@@ -60,7 +60,7 @@ const configEs = {
     format: "es",
     dir: "./dist/es",
     banner: `"use client";`,
-    sourcemap: true,
+    sourcemap: false,
   },
   plugins: [
     ...getPlugins("es"),
@@ -80,7 +80,7 @@ const configCjs = {
     dir: "./dist/cjs",
     banner: `"use client";`,
     entryFileNames: "[name].cjs",
-    sourcemap: true,
+    sourcemap: false,
   },
   plugins: [
     ...getPlugins("cjs"),

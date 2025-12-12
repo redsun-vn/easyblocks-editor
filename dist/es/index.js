@@ -9385,4 +9385,3 @@ function EasyblocksEditor(props) {
 }
 
 export { EasyblocksEditor, EditorContext, defaultFontFamily, defaultFontSize, defaultFontWeight, defaultLineHeight, getFontFamilies, getFontSizes, getFontWeights, getLineHeights, useEditorContext };
-//# sourceMappingURL=index.js.map
