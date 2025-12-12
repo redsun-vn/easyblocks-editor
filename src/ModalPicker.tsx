@@ -1,6 +1,7 @@
+import { dotNotationGet } from "@/utils";
 import {
-  NoCodeComponentEntry,
   ComponentSchemaProp,
+  NoCodeComponentEntry,
   Template,
 } from "@redsun-vn/easyblocks-core";
 import {
@@ -8,11 +9,8 @@ import {
   findComponentDefinition,
   normalize,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { dotNotationGet } from "@/utils";
 import React, { FC } from "react";
 import { useEditorContext } from "./EditorContext";
-import { SearchableSmallPickerModal } from "./SearchableSmallPickerModal";
-import { SectionPickerModal } from "./SectionPicker";
 import { TemplatePicker, TemplatesDictionary } from "./TemplatePicker";
 import { OpenComponentPickerConfig } from "./types";
 import { unrollAcceptsFieldIntoComponents } from "./unrollAcceptsFieldIntoComponents";

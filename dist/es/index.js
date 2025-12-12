@@ -3339,6 +3339,136 @@ const getIconColor = hex => {
   return brightness < 128 ? "#ffffff" : "#000000";
 };
 
+/**
+ * This is a copy of validate-color function from validate-color npm package. This package has problem with bundling, so I copied it here. It was modified 100 years ago anyway and had 32 stars, so nothing fancy really.
+ */
+
+// Good article on HTML Colors:
+// https://dev.to/alvaromontoro/the-ultimate-guide-to-css-colors-2020-edition-1bh1#hsl
+
+// Check if parameter is defined and a string
+const isString = color => color && typeof color === "string";
+// All existing HTML color names
+const htmlColorNames = ["AliceBlue", "AntiqueWhite", "Aqua", "Aquamarine", "Azure", "Beige", "Bisque", "Black", "BlanchedAlmond", "Blue", "BlueViolet", "Brown", "BurlyWood", "CadetBlue", "Chartreuse", "Chocolate", "Coral", "CornflowerBlue", "Cornsilk", "Crimson", "Cyan", "DarkBlue", "DarkCyan", "DarkGoldenrod", "DarkGray", "DarkGreen", "DarkKhaki", "DarkMagenta", "DarkOliveGreen", "DarkOrange", "DarkOrchid", "DarkRed", "DarkSalmon", "DarkSeaGreen", "DarkSlateBlue", "DarkSlateGray", "DarkTurquoise", "DarkViolet", "DeepPink", "DeepSkyBlue", "DimGray", "DodgerBlue", "FireBrick", "FloralWhite", "ForestGreen", "Fuchsia", "Gainsboro", "GhostWhite", "Gold", "Goldenrod", "Gray", "Green", "GreenYellow", "HoneyDew", "HotPink", "IndianRed", "Indigo", "Ivory", "Khaki", "Lavender", "LavenderBlush", "LawnGreen", "LemonChiffon", "LightBlue", "LightCoral", "LightCyan", "LightGoldenrodYellow", "LightGray", "LightGreen", "LightPink", "LightSalmon", "LightSalmon", "LightSeaGreen", "LightSkyBlue", "LightSlateGray", "LightSteelBlue", "LightYellow", "Lime", "LimeGreen", "Linen", "Magenta", "Maroon", "MediumAquamarine", "MediumBlue", "MediumOrchid", "MediumPurple", "MediumSeaGreen", "MediumSlateBlue", "MediumSlateBlue", "MediumSpringGreen", "MediumTurquoise", "MediumVioletRed", "MidnightBlue", "MintCream", "MistyRose", "Moccasin", "NavajoWhite", "Navy", "OldLace", "Olive", "OliveDrab", "Orange", "OrangeRed", "Orchid", "PaleGoldenrod", "PaleGreen", "PaleTurquoise", "PaleVioletRed", "PapayaWhip", "PeachPuff", "Peru", "Pink", "Plum", "PowderBlue", "Purple", "RebeccaPurple", "Red", "RosyBrown", "RoyalBlue", "SaddleBrown", "Salmon", "SandyBrown", "SeaGreen", "SeaShell", "Sienna", "Silver", "SkyBlue", "SlateBlue", "SlateGray", "Snow", "SpringGreen", "SteelBlue", "Tan", "Teal", "Thistle", "Tomato", "Turquoise", "Violet", "Wheat", "White", "WhiteSmoke", "Yellow", "YellowGreen"];
+// These 3 values are valid, usable color names, which are special in their own way
+const htmlColorNamesSpecial = ["currentColor", "inherit", "transparent"];
+
+// Validate HTML color name (red, yellow, etc)
+const validateHTMLColorName = color => {
+  let status = false;
+  if (isString(color)) {
+    htmlColorNames.map(c => {
+      if (color.toLowerCase() === c.toLowerCase()) {
+        status = true;
+      }
+      return null;
+    });
+  }
+  return status;
+};
+
+// Validate HTML color special name (currentColor, inherit, etc)
+const validateHTMLColorSpecialName = color => {
+  let status = false;
+  if (isString(color)) {
+    htmlColorNamesSpecial.map(c => {
+      if (color.toLowerCase() === c.toLowerCase()) {
+        status = true;
+      }
+      return null;
+    });
+  }
+  return status;
+};
+
+// Validate HTML color 'hex'
+const validateHTMLColorHex = color => {
+  if (isString(color)) {
+    const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$/i;
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+
+// Validate HTML color 'rgb'
+// -- legacy notation
+// color: rgb(255, 255, 255);
+// color: rgba(255, 255, 255, 1);
+// -- new notation
+// color: rgb(255 255 255);
+// color: rgb(255 255 255 / 1);
+// Note that 'rgba()' is now merged into 'rgb()'
+const validateHTMLColorRgb = color => {
+  if (isString(color)) {
+    const regex = /(rgb)a?\((\s*\d+%?\s*?,?\s*){2}(\s*\d+%?\s*?,?\s*\)?)(\s*,?\s*\/?\s*(0?\.?\d+%?\s*)?|1|0)?\)$/i;
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+const optionalCommaOrRequiredSpace = `((\\s*,\\s*)|(\\s+))`;
+const optionalDecimals = `(\\.\\d+)?`;
+const anyPercentage = `((\\d*${optionalDecimals})%)`;
+const hundredPercent = `(([0-9]|[1-9][0-9]|100)%)`;
+const alphaPercentage = `(((${hundredPercent}))|(0?${optionalDecimals})|1))?`;
+const endingWithAlphaPercentage = `\\s*?\\)?)(\\s*?(\\/?)\\s+${alphaPercentage}\\s*?\\)$`;
+
+// Validate HTML color 'hsl'
+// -- These units are valid for the first parameter
+// 'deg': degrees | full circle = 360
+// 'gra': gradians | full circle = 400
+// 'radians': radians | full circle = 2π (approx. 6.28)
+// 'turn': turns | full circle = 1
+const validateHTMLColorHsl = color => {
+  if (isString(color)) {
+    // Validate each possible unit value separately, as their values differ
+    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
+    const graRegex = `(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-9][0-9]|400)gra)`;
+    const radRegex = `((([0-5])?\\.\\d+|6\\.([0-9]|1[0-9]|2[0-8])|[0-6])rad)`;
+    const turnRegex = `((0?${optionalDecimals}|1)turn)`;
+    const regexLogic = `(hsl)a?\\((\\s*?(${degRegex}|${graRegex}|${radRegex}|${turnRegex})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})\\s*?\\)?)(\\s*?(\\/?|,?)\\s*?(((${hundredPercent}))|(0?${optionalDecimals})|1))?\\)$`;
+    const regex = new RegExp(regexLogic);
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+
+// Validate HTML color 'hwb'
+// -- 'hwb' accepts 'deg' as unit in its 1st property, which stands for 'hue'
+// 'deg': degrees | full circle = 360
+const validateHTMLColorHwb = color => {
+  if (isString(color)) {
+    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
+    const regexLogic = `(hwb\\(\\s*?${degRegex}\\s+)((0|${hundredPercent})\\s+)((0|${hundredPercent})${endingWithAlphaPercentage}`;
+    const regex = new RegExp(regexLogic);
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+
+// Validate HTML color 'lab'
+// -- 'lab' 2nd & 3rd parameters are any number between -160 & 160
+const validateHTMLColorLab = color => {
+  if (isString(color)) {
+    const labParam = `(-?(([0-9]|[1-9][0-9]|1[0-5][0-9])${optionalDecimals}?|160))`;
+    const regexLogic = `(lab\\(\\s*?${anyPercentage}\\s+${labParam}\\s+${labParam}${endingWithAlphaPercentage}`;
+    const regex = new RegExp(regexLogic);
+    return !!color && regex.test(color);
+  }
+  return false;
+};
+const validateColor = color => {
+  // Former validation - source: https://www.regextester.com/103656
+  // if (isString(color)) {
+  //   const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$|(rgb|hsl)a?\((\s*-?\d+%?\s*,){2}(\s*-?\d+%?\s*,?\s*\)?)(,\s*(0?\.\d+)?|1|0)?\)$/i;
+  //   return color && regex.test(color);
+  // }
+  // New validation
+  if (color && validateHTMLColorHex(color) || validateHTMLColorName(color) || validateHTMLColorSpecialName(color) || validateHTMLColorRgb(color) || validateHTMLColorHsl(color) || validateHTMLColorHwb(color) || validateHTMLColorLab(color)) {
+    return true;
+  }
+  return false;
+};
+
 const ColorConfigurationsContainer = styled$1.div.withConfig({
   displayName: "ColorConfigurations__ColorConfigurationsContainer",
   componentId: "sc-qln4q1-0"
@@ -3379,6 +3509,10 @@ const StyleColorTitle = styled$1.div.withConfig({
   displayName: "ColorConfigurations__StyleColorTitle",
   componentId: "sc-qln4q1-8"
 })(["color:", ";text-transform:uppercase;margin-bottom:10px;", " font-size:14px;font-weight:500;"], Colors.black40, Fonts.bodyLarge);
+const StyleColorError = styled$1.div.withConfig({
+  displayName: "ColorConfigurations__StyleColorError",
+  componentId: "sc-qln4q1-9"
+})(["position:absolute;color:", ";margin-top:10px;", " font-size:11px;"], Colors.red, Fonts.body);
 const ColorCard = ({
   themeOption,
   openModal
@@ -3408,6 +3542,7 @@ const ColorConfigurations = ({
   const [openEditColor, setOpenEditColor] = useState(null);
   const [isLoadingReset, setIsLoadingReset] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [colorInputError, setColorInputError] = useState("");
   const themeOptions1 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_1"));
   const themeOptions2 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_2"));
   const themeOptions3 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_3"));
@@ -3461,18 +3596,23 @@ const ColorConfigurations = ({
   const onChangeColor = newColor => {
     clearTimeout(changeColorDetail);
     changeColorDetail = setTimeout(() => {
+      if (typeof newColor === "string" && !validateColor(newColor)) {
+        setColorInputError(t("theme.colors.input.error"));
+      } else {
+        setColorInputError("");
+      }
       setColor(newColor);
     }, 300);
   };
   const onSaveEditColor = async () => {
-    if (themeId && openEditColor) {
+    if (themeId && openEditColor?.value && !colorInputError) {
       setIsLoadingEdit(true);
       const newColorTokens = {
         ...colorTokens,
         [openEditColor?.id]: {
-          value: openEditColor.value,
+          value: openEditColor.value.trim(),
           isDefault: openEditColor.isDefault,
-          label: openEditColor.label
+          label: openEditColor.label?.trim()
         }
       };
       const fontTokenPayloads = Object.entries(fontTokens).map(([id, value]) => ({
@@ -3536,13 +3676,21 @@ const ColorConfigurations = ({
   }), /*#__PURE__*/React__default.createElement(StyledInputWrapper, null, /*#__PURE__*/React__default.createElement(StyledInputColor, {
     defaultValue: openEditColor?.value,
     value: openEditColor?.value,
-    onChange: e => setColor(e.target.value),
+    onChange: e => {
+      const newColor = e.target.value;
+      if (typeof newColor === "string" && !validateColor(newColor)) {
+        setColorInputError(t("theme.colors.input.error"));
+      } else {
+        setColorInputError("");
+      }
+      setColor(newColor);
+    },
     onKeyDown: onEnterChangeColor
-  })), /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+  }), colorInputError ? /*#__PURE__*/React__default.createElement(StyleColorError, null, colorInputError) : null), /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
     onClick: closeEditColor
   }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
     isLoading: isLoadingEdit,
-    disabled: isLoadingEdit,
+    disabled: isLoadingEdit || !!colorInputError,
     onClick: onSaveEditColor
   }, t("template.save.default")))) : null, /*#__PURE__*/React__default.createElement(ButtonDanger, {
     isLoading: isLoadingReset,
@@ -6212,6 +6360,13 @@ function useDataSaver(initialDocument, editorContext) {
    */
   const [initialConfigInCaseOfMissingDocument] = useState(deepClone(editorContext.form.values));
   const onTickRef = useRef(() => Promise.resolve());
+  const isConfigTheSame = () => {
+    const localConfig = editorContext.form.values;
+    const localConfigSnapshot = getConfigSnapshot(localConfig);
+    const previousConfig = remoteDocument.current ? remoteDocument.current.entry : initialConfigInCaseOfMissingDocument;
+    const previousConfigSnapshot = getConfigSnapshot(previousConfig);
+    return deepCompare(localConfigSnapshot, previousConfigSnapshot);
+  };
   const onTick = async ({
     mode
   }) => {
@@ -6224,9 +6379,6 @@ function useDataSaver(initialDocument, editorContext) {
     }
     const localConfig = editorContext.form.values;
     const localConfigSnapshot = getConfigSnapshot(localConfig);
-    const previousConfig = remoteDocument.current ? remoteDocument.current.entry : initialConfigInCaseOfMissingDocument;
-    const previousConfigSnapshot = getConfigSnapshot(previousConfig);
-    const isConfigTheSame = deepCompare(localConfigSnapshot, previousConfigSnapshot);
     const configToSaveWithLocalisedFlag = addLocalizedFlag(localConfigSnapshot, editorContext);
     async function runSaveCallback() {
       await editorContext.save(remoteDocument.current);
@@ -6237,7 +6389,7 @@ function useDataSaver(initialDocument, editorContext) {
       console.debug("New document");
 
       // There must be at least one change in order to create a new document, we're not storing empty temporary documents
-      if (isConfigTheSame) {
+      if (isConfigTheSame()) {
         console.debug("no change -> bye");
         setIsSaving(false);
         return;
@@ -6280,7 +6432,7 @@ function useDataSaver(initialDocument, editorContext) {
           remoteDocument.current = latestDocument;
 
           // Notify when local config was modified
-          if (!isConfigTheSame) {
+          if (!isConfigTheSame()) {
             console.debug("there were local changes -> notify");
             editorContext.actions.notify("Remote changes detected, local changes have been overwritten.");
           }
@@ -6288,7 +6440,7 @@ function useDataSaver(initialDocument, editorContext) {
         }
         // No remote change occurred
         else {
-          if (isConfigTheSame) {
+          if (isConfigTheSame()) {
             console.debug("no local changes -> bye");
             if (mode === "force") {
               toaster.success(t("topBar.noLocalChange"));
@@ -6339,6 +6491,34 @@ function useDataSaver(initialDocument, editorContext) {
     return () => {
       clearInterval(interval);
     };
+  }, []);
+  useEffect(() => {
+    const handler = event => {
+      if (!isConfigTheSame()) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [editorContext.form.values, remoteDocument.current]);
+  useEffect(() => {
+    const handler = async event => {
+      const {
+        id,
+        type
+      } = event.data;
+      if (type === "@easyblocks/content-saved-status") {
+        event.source.postMessage({
+          id,
+          type: "@easyblocks/content-saved-status",
+          payload: {
+            isSavedDocument: isConfigTheSame()
+          }
+        }, "*");
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
   }, []);
   return {
     isSaving,
@@ -7508,136 +7688,6 @@ function getMatchingDevice(devices, width) {
   }
   return null;
 }
-
-/**
- * This is a copy of validate-color function from validate-color npm package. This package has problem with bundling, so I copied it here. It was modified 100 years ago anyway and had 32 stars, so nothing fancy really.
- */
-
-// Good article on HTML Colors:
-// https://dev.to/alvaromontoro/the-ultimate-guide-to-css-colors-2020-edition-1bh1#hsl
-
-// Check if parameter is defined and a string
-const isString = color => color && typeof color === "string";
-// All existing HTML color names
-const htmlColorNames = ["AliceBlue", "AntiqueWhite", "Aqua", "Aquamarine", "Azure", "Beige", "Bisque", "Black", "BlanchedAlmond", "Blue", "BlueViolet", "Brown", "BurlyWood", "CadetBlue", "Chartreuse", "Chocolate", "Coral", "CornflowerBlue", "Cornsilk", "Crimson", "Cyan", "DarkBlue", "DarkCyan", "DarkGoldenrod", "DarkGray", "DarkGreen", "DarkKhaki", "DarkMagenta", "DarkOliveGreen", "DarkOrange", "DarkOrchid", "DarkRed", "DarkSalmon", "DarkSeaGreen", "DarkSlateBlue", "DarkSlateGray", "DarkTurquoise", "DarkViolet", "DeepPink", "DeepSkyBlue", "DimGray", "DodgerBlue", "FireBrick", "FloralWhite", "ForestGreen", "Fuchsia", "Gainsboro", "GhostWhite", "Gold", "Goldenrod", "Gray", "Green", "GreenYellow", "HoneyDew", "HotPink", "IndianRed", "Indigo", "Ivory", "Khaki", "Lavender", "LavenderBlush", "LawnGreen", "LemonChiffon", "LightBlue", "LightCoral", "LightCyan", "LightGoldenrodYellow", "LightGray", "LightGreen", "LightPink", "LightSalmon", "LightSalmon", "LightSeaGreen", "LightSkyBlue", "LightSlateGray", "LightSteelBlue", "LightYellow", "Lime", "LimeGreen", "Linen", "Magenta", "Maroon", "MediumAquamarine", "MediumBlue", "MediumOrchid", "MediumPurple", "MediumSeaGreen", "MediumSlateBlue", "MediumSlateBlue", "MediumSpringGreen", "MediumTurquoise", "MediumVioletRed", "MidnightBlue", "MintCream", "MistyRose", "Moccasin", "NavajoWhite", "Navy", "OldLace", "Olive", "OliveDrab", "Orange", "OrangeRed", "Orchid", "PaleGoldenrod", "PaleGreen", "PaleTurquoise", "PaleVioletRed", "PapayaWhip", "PeachPuff", "Peru", "Pink", "Plum", "PowderBlue", "Purple", "RebeccaPurple", "Red", "RosyBrown", "RoyalBlue", "SaddleBrown", "Salmon", "SandyBrown", "SeaGreen", "SeaShell", "Sienna", "Silver", "SkyBlue", "SlateBlue", "SlateGray", "Snow", "SpringGreen", "SteelBlue", "Tan", "Teal", "Thistle", "Tomato", "Turquoise", "Violet", "Wheat", "White", "WhiteSmoke", "Yellow", "YellowGreen"];
-// These 3 values are valid, usable color names, which are special in their own way
-const htmlColorNamesSpecial = ["currentColor", "inherit", "transparent"];
-
-// Validate HTML color name (red, yellow, etc)
-const validateHTMLColorName = color => {
-  let status = false;
-  if (isString(color)) {
-    htmlColorNames.map(c => {
-      if (color.toLowerCase() === c.toLowerCase()) {
-        status = true;
-      }
-      return null;
-    });
-  }
-  return status;
-};
-
-// Validate HTML color special name (currentColor, inherit, etc)
-const validateHTMLColorSpecialName = color => {
-  let status = false;
-  if (isString(color)) {
-    htmlColorNamesSpecial.map(c => {
-      if (color.toLowerCase() === c.toLowerCase()) {
-        status = true;
-      }
-      return null;
-    });
-  }
-  return status;
-};
-
-// Validate HTML color 'hex'
-const validateHTMLColorHex = color => {
-  if (isString(color)) {
-    const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$/i;
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-
-// Validate HTML color 'rgb'
-// -- legacy notation
-// color: rgb(255, 255, 255);
-// color: rgba(255, 255, 255, 1);
-// -- new notation
-// color: rgb(255 255 255);
-// color: rgb(255 255 255 / 1);
-// Note that 'rgba()' is now merged into 'rgb()'
-const validateHTMLColorRgb = color => {
-  if (isString(color)) {
-    const regex = /(rgb)a?\((\s*\d+%?\s*?,?\s*){2}(\s*\d+%?\s*?,?\s*\)?)(\s*,?\s*\/?\s*(0?\.?\d+%?\s*)?|1|0)?\)$/i;
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-const optionalCommaOrRequiredSpace = `((\\s*,\\s*)|(\\s+))`;
-const optionalDecimals = `(\\.\\d+)?`;
-const anyPercentage = `((\\d*${optionalDecimals})%)`;
-const hundredPercent = `(([0-9]|[1-9][0-9]|100)%)`;
-const alphaPercentage = `(((${hundredPercent}))|(0?${optionalDecimals})|1))?`;
-const endingWithAlphaPercentage = `\\s*?\\)?)(\\s*?(\\/?)\\s+${alphaPercentage}\\s*?\\)$`;
-
-// Validate HTML color 'hsl'
-// -- These units are valid for the first parameter
-// 'deg': degrees | full circle = 360
-// 'gra': gradians | full circle = 400
-// 'radians': radians | full circle = 2π (approx. 6.28)
-// 'turn': turns | full circle = 1
-const validateHTMLColorHsl = color => {
-  if (isString(color)) {
-    // Validate each possible unit value separately, as their values differ
-    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
-    const graRegex = `(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-9][0-9]|400)gra)`;
-    const radRegex = `((([0-5])?\\.\\d+|6\\.([0-9]|1[0-9]|2[0-8])|[0-6])rad)`;
-    const turnRegex = `((0?${optionalDecimals}|1)turn)`;
-    const regexLogic = `(hsl)a?\\((\\s*?(${degRegex}|${graRegex}|${radRegex}|${turnRegex})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})\\s*?\\)?)(\\s*?(\\/?|,?)\\s*?(((${hundredPercent}))|(0?${optionalDecimals})|1))?\\)$`;
-    const regex = new RegExp(regexLogic);
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-
-// Validate HTML color 'hwb'
-// -- 'hwb' accepts 'deg' as unit in its 1st property, which stands for 'hue'
-// 'deg': degrees | full circle = 360
-const validateHTMLColorHwb = color => {
-  if (isString(color)) {
-    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
-    const regexLogic = `(hwb\\(\\s*?${degRegex}\\s+)((0|${hundredPercent})\\s+)((0|${hundredPercent})${endingWithAlphaPercentage}`;
-    const regex = new RegExp(regexLogic);
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-
-// Validate HTML color 'lab'
-// -- 'lab' 2nd & 3rd parameters are any number between -160 & 160
-const validateHTMLColorLab = color => {
-  if (isString(color)) {
-    const labParam = `(-?(([0-9]|[1-9][0-9]|1[0-5][0-9])${optionalDecimals}?|160))`;
-    const regexLogic = `(lab\\(\\s*?${anyPercentage}\\s+${labParam}\\s+${labParam}${endingWithAlphaPercentage}`;
-    const regex = new RegExp(regexLogic);
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-const validateColor = color => {
-  // Former validation - source: https://www.regextester.com/103656
-  // if (isString(color)) {
-  //   const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$|(rgb|hsl)a?\((\s*-?\d+%?\s*,){2}(\s*-?\d+%?\s*,?\s*\)?)(,\s*(0?\.\d+)?|1|0)?\)$/i;
-  //   return color && regex.test(color);
-  // }
-  // New validation
-  if (color && validateHTMLColorHex(color) || validateHTMLColorName(color) || validateHTMLColorSpecialName(color) || validateHTMLColorRgb(color) || validateHTMLColorHsl(color) || validateHTMLColorHwb(color) || validateHTMLColorLab(color)) {
-    return true;
-  }
-  return false;
-};
 
 function ColorTokenWidget(props) {
   const [inputValue, setInputValue] = useState(props.value);

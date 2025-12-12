@@ -16,6 +16,7 @@ import styled from "styled-components";
 import { EditorContextType } from "../EditorContext";
 import { useTranslation } from "../useTranslation";
 import { getIconColor } from "../utils/colors";
+import { validateColor } from "../sidebar/validate-color";
 
 interface IColorConfiguration {
   onConfigChange?: () => Promise<void>;
@@ -99,6 +100,14 @@ const StyleColorTitle = styled.div`
   font-weight: 500;
 `;
 
+const StyleColorError = styled.div`
+  position: absolute;
+  color: ${Colors.red};
+  margin-top: 10px;
+  ${Fonts.body}
+  font-size: 11px;
+`;
+
 export const ColorCard = ({
   themeOption,
   openModal,
@@ -142,6 +151,7 @@ export const ColorConfigurations = ({
   >(null);
   const [isLoadingReset, setIsLoadingReset] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [colorInputError, setColorInputError] = useState("");
 
   const themeOptions1 = Object.entries(colorTokens).filter(([id]) =>
     id.startsWith("theme_1")
@@ -216,19 +226,24 @@ export const ColorConfigurations = ({
     clearTimeout(changeColorDetail);
 
     changeColorDetail = setTimeout(() => {
+      if (typeof newColor === "string" && !validateColor(newColor)) {
+        setColorInputError(t("theme.colors.input.error"));
+      } else {
+        setColorInputError("");
+      }
       setColor(newColor);
     }, 300);
   };
 
   const onSaveEditColor = async () => {
-    if (themeId && openEditColor) {
+    if (themeId && openEditColor?.value && !colorInputError) {
       setIsLoadingEdit(true);
       const newColorTokens = {
         ...colorTokens,
         [openEditColor?.id]: {
-          value: openEditColor.value,
+          value: openEditColor.value.trim(),
           isDefault: openEditColor.isDefault,
-          label: openEditColor.label,
+          label: openEditColor.label?.trim(),
         },
       };
 
@@ -316,9 +331,20 @@ export const ColorConfigurations = ({
             <StyledInputColor
               defaultValue={openEditColor?.value}
               value={openEditColor?.value}
-              onChange={(e) => setColor(e.target.value)}
+              onChange={(e) => {
+                const newColor = e.target.value;
+                if (typeof newColor === "string" && !validateColor(newColor)) {
+                  setColorInputError(t("theme.colors.input.error"));
+                } else {
+                  setColorInputError("");
+                }
+                setColor(newColor);
+              }}
               onKeyDown={onEnterChangeColor}
             />
+            {colorInputError ? (
+              <StyleColorError>{colorInputError}</StyleColorError>
+            ) : null}
           </StyledInputWrapper>
 
           <StyledButtonGroup>
@@ -327,7 +353,7 @@ export const ColorConfigurations = ({
             </ButtonSecondary>
             <ButtonPrimary
               isLoading={isLoadingEdit}
-              disabled={isLoadingEdit}
+              disabled={isLoadingEdit || !!colorInputError}
               onClick={onSaveEditColor}
             >
               {t("template.save.default")}

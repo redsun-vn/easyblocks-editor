@@ -32,6 +32,18 @@ export function useDataSaver(
   );
   const onTickRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
+  const isConfigTheSame = () => {
+    const localConfig = editorContext.form.values;
+    const localConfigSnapshot = getConfigSnapshot(localConfig);
+
+    const previousConfig = remoteDocument.current
+      ? remoteDocument.current.entry
+      : initialConfigInCaseOfMissingDocument;
+    const previousConfigSnapshot = getConfigSnapshot(previousConfig);
+
+    return deepCompare(localConfigSnapshot, previousConfigSnapshot);
+  };
+
   const onTick = async ({ mode }: { mode: "auto" | "force" }) => {
     // Playground mode is a special case, we don't want to save anything
     if (editorContext.readOnly) {
@@ -44,16 +56,6 @@ export function useDataSaver(
 
     const localConfig = editorContext.form.values;
     const localConfigSnapshot = getConfigSnapshot(localConfig);
-
-    const previousConfig = remoteDocument.current
-      ? remoteDocument.current.entry
-      : initialConfigInCaseOfMissingDocument;
-    const previousConfigSnapshot = getConfigSnapshot(previousConfig);
-
-    const isConfigTheSame = deepCompare(
-      localConfigSnapshot,
-      previousConfigSnapshot
-    );
 
     const configToSaveWithLocalisedFlag = addLocalizedFlag(
       localConfigSnapshot,
@@ -69,7 +71,7 @@ export function useDataSaver(
       console.debug("New document");
 
       // There must be at least one change in order to create a new document, we're not storing empty temporary documents
-      if (isConfigTheSame) {
+      if (isConfigTheSame()) {
         console.debug("no change -> bye");
         setIsSaving(false);
         return;
@@ -126,7 +128,7 @@ export function useDataSaver(
           remoteDocument.current = latestDocument;
 
           // Notify when local config was modified
-          if (!isConfigTheSame) {
+          if (!isConfigTheSame()) {
             console.debug("there were local changes -> notify");
 
             editorContext.actions.notify(
@@ -138,7 +140,7 @@ export function useDataSaver(
         }
         // No remote change occurred
         else {
-          if (isConfigTheSame) {
+          if (isConfigTheSame()) {
             console.debug("no local changes -> bye");
 
             if (mode === "force") {
@@ -197,6 +199,40 @@ export function useDataSaver(
     return () => {
       clearInterval(interval);
     };
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (!isConfigTheSame()) {
+        event.preventDefault();
+      }
+    };
+
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [editorContext.form.values, remoteDocument.current]);
+
+  useEffect(() => {
+    const handler = async <T>(event: {
+      source: any;
+      data: { id: string; type: string; payload?: T };
+    }) => {
+      const { id, type } = event.data;
+
+      if (type === "@easyblocks/content-saved-status") {
+        event.source.postMessage(
+          {
+            id,
+            type: "@easyblocks/content-saved-status",
+            payload: { isSavedDocument: isConfigTheSame() },
+          },
+          "*"
+        );
+      }
+    };
+
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
   }, []);
 
   return {
