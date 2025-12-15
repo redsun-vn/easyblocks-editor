@@ -6396,7 +6396,7 @@ function useDataSaver(initialDocument, editorContext) {
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [editorContext.form.values, remoteDocument.current]);
+  }, []);
   useEffect(() => {
     const handler = async event => {
       const {
