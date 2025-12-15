@@ -202,17 +202,6 @@ export function useDataSaver(
   }, []);
 
   useEffect(() => {
-    const handler = (event: BeforeUnloadEvent) => {
-      if (!isConfigTheSame()) {
-        event.preventDefault();
-      }
-    };
-
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
-
-  useEffect(() => {
     const handler = async <T>(event: {
       source: any;
       data: { id: string; type: string; payload?: T };

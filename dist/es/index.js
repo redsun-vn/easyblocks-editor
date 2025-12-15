@@ -6389,15 +6389,6 @@ function useDataSaver(initialDocument, editorContext) {
     };
   }, []);
   useEffect(() => {
-    const handler = event => {
-      if (!isConfigTheSame()) {
-        event.preventDefault();
-      }
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
-  useEffect(() => {
     const handler = async event => {
       const {
         id,

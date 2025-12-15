@@ -6424,15 +6424,6 @@ function useDataSaver(initialDocument, editorContext) {
     };
   }, []);
   React.useEffect(() => {
-    const handler = event => {
-      if (!isConfigTheSame()) {
-        event.preventDefault();
-      }
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
-  React.useEffect(() => {
     const handler = async event => {
       const {
         id,
