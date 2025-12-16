@@ -42,7 +42,7 @@ const theme = css`
     --tina-font-size-7: 26px;
     --tina-font-size-8: 32px;
 
-    --tina-font-family: "Inter", sans-serif;
+    --tina-font-family: "Roboto", sans-serif;
 
     --tina-font-weight-regular: 400;
     --tina-font-weight-bold: 600;
@@ -74,7 +74,7 @@ export const GlobalStyles = createGlobalStyle`
 
 const tina_reset_styles = css`
   * {
-    font-family: "Inter", sans-serif;
+    font-family: "Roboto", sans-serif;
     &::-webkit-scrollbar {
       width: 8px;
     }
@@ -114,7 +114,7 @@ const tina_reset_styles = css`
   h6,
   p {
     :not([class]) {
-      font-family: "Inter", sans-serif;
+      font-family: "Roboto", sans-serif;
       &:first-child {
         margin-top: 0;
       }

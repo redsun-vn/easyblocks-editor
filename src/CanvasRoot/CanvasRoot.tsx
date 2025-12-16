@@ -88,7 +88,7 @@ const globalEditorRendererStyles = `
     --tina-font-size-6: 22px;
     --tina-font-size-7: 26px;
     --tina-font-size-8: 32px;
-    --tina-font-family: 'Inter', sans-serif;
+    --tina-font-family: 'Roboto', sans-serif;
     --tina-font-weight-regular: 400;
     --tina-font-weight-bold: 600;
     --tina-shadow-big: 0px 2px 3px rgba(0, 0, 0, 0.05),
