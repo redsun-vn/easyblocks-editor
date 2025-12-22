@@ -80,7 +80,7 @@ function createFieldController({
           );
 
           const canvasIframe = document.getElementById(
-            "shopstory-canvas"
+            "editor-canvas"
           ) as HTMLIFrameElement | null;
 
           if (canvasIframe === null || canvasIframe.contentWindow === null) {

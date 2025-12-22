@@ -268,7 +268,7 @@ function EditorIframe({
   return /*#__PURE__*/React__default["default"].createElement(IframeContainer, {
     ref: containerRef
   }, /*#__PURE__*/React__default["default"].createElement(IframeInnerContainer, null, /*#__PURE__*/React__default["default"].createElement(Iframe, {
-    id: "shopstory-canvas",
+    id: "editor-canvas",
     src: window.location.href,
     onLoad: handleIframeLoaded,
     style: {
@@ -438,7 +438,7 @@ const SidebarFooterContainer = styled.styled.div.withConfig({
   displayName: "SidebarFooter__SidebarFooterContainer",
   componentId: "sc-17xf0ak-0"
 })(["position:sticky;bottom:0;background:", ";"], easyblocksDesignSystem.Colors.white);
-const HorizontalLine$2 = styled.styled.div.withConfig({
+const HorizontalLine$3 = styled.styled.div.withConfig({
   displayName: "SidebarFooter__HorizontalLine",
   componentId: "sc-17xf0ak-1"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
@@ -492,7 +492,7 @@ function SidebarFooter(props) {
       toaster.error(t("template.entry.copy.error"));
     }
   };
-  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$2, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, /*#__PURE__*/React__namespace.createElement("div", null, "Id:", " ", /*#__PURE__*/React__namespace.createElement(StyledCopyId, {
+  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$3, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, /*#__PURE__*/React__namespace.createElement("div", null, "Id:", " ", /*#__PURE__*/React__namespace.createElement(StyledCopyId, {
     onClick: () => onCopy(value._id)
   }, value._id)), /*#__PURE__*/React__namespace.createElement("br", null), showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
     onClick: () => {
@@ -2023,7 +2023,7 @@ const GroupPanel = styled.styled.div.withConfig({
   componentId: "sc-5mryxt-2"
 })(["position:absolute;width:100%;top:0;bottom:0;left:0;overflow:hidden;pointer-events:", ";> *{", ";", ";}"], p => p.isExpanded ? "all" : "none", p => p.isExpanded && styled.css(["animation-name:", ";animation-duration:150ms;animation-delay:0ms;animation-iteration-count:1;animation-timing-function:ease-out;animation-fill-mode:backwards;"], GroupPanelKeyframes), p => !p.isExpanded && styled.css(["transition:transform 150ms ease-out;transform:translate3d(100%,0,0);"]));
 
-const HorizontalLine$1 = styled__default["default"].div.withConfig({
+const HorizontalLine$2 = styled__default["default"].div.withConfig({
   displayName: "IdentityFieldPlugin__HorizontalLine",
   componentId: "sc-ayv92b-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
@@ -2128,7 +2128,7 @@ function IdentityField({
       opacity: isNonRemovable ? 0 : 1,
       pointerEvents: isNonRemovable ? "none" : "auto"
     }
-  }, t("delete")))), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$1, null));
+  }, t("delete")))), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$2, null));
 }
 const IdentityFieldPlugin = {
   name: "identity",
@@ -2776,7 +2776,7 @@ function createFieldController({
         invalidateCache(normalizedFieldName[0], editorContext);
         if (templateId === "@easyblocks/rich-text-part") {
           const schemaPropNameToUpdate = last(normalizedFieldName[0].split("."));
-          const canvasIframe = document.getElementById("shopstory-canvas");
+          const canvasIframe = document.getElementById("editor-canvas");
           if (canvasIframe === null || canvasIframe.contentWindow === null) {
             throw new Error("No Shopstory canvas");
           }
@@ -3093,7 +3093,7 @@ function FieldBuilder({
     layout: "column"
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, null, "Unrecognized field type"));
 }
-const HorizontalLine = styled.styled.div.withConfig({
+const HorizontalLine$1 = styled.styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
   componentId: "sc-ignixa-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
@@ -3120,7 +3120,7 @@ function FieldsBuilder({
       ungrouped.push(field);
     }
   });
-  const horizontalLine = /*#__PURE__*/React__default["default"].createElement(HorizontalLine, null);
+  const horizontalLine = /*#__PURE__*/React__default["default"].createElement(HorizontalLine$1, null);
   const identityField = fields.find(field => field.component === "identity");
   const breakpointIndex = panelContext ? editorContext.breakpointIndex : undefined;
   return /*#__PURE__*/React__default["default"].createElement(FieldsGroup, null, identityField !== undefined && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(FieldBuilder, {
@@ -4003,7 +4003,9 @@ const EditorTopBar = ({
   locale,
   onLocaleChange,
   hideCloseButton,
-  readOnly
+  readOnly,
+  isShowLayers,
+  setIsShowLayers
 }) => {
   const headingRef = React.useRef(null);
   const router = new URLSearchParams(window.location.search);
@@ -4045,9 +4047,15 @@ const EditorTopBar = ({
       onRedo();
     }
   }, t("editor.sidebar.redo")), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "(Read-Only)"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+    icon: easyblocksDesignSystem.Icons.Layers,
+    hideLabel: true,
+    onClick: () => setIsShowLayers(prev => !prev),
+    style: {
+      background: isShowLayers ? easyblocksDesignSystem.Colors.black10 : "transparent"
+    }
+  }, t("editor.sidebar.layers")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
     icon: easyblocksDesignSystem.Icons.ColorAndFonts,
     hideLabel: true,
-    hidden: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
   }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
     style: {
@@ -5258,6 +5266,227 @@ function takeLastOfEachParent(where) {
   return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
 }
 
+/**
+ * Outputs comparable config that is FULL COPY of config
+ */
+function getConfigSnapshot(config) {
+  const strippedConfig = deepClone(config);
+  return strippedConfig;
+}
+
+const normalizeComponentLayers = (components, prefix = "data", _rootParentId) => {
+  if (Array.isArray(components)) {
+    return components.map((component, layer) => {
+      const path = `${prefix}.${layer}`;
+      const rootParentId = _rootParentId || component._id;
+      return {
+        id: component._id,
+        component: component._component,
+        path,
+        rootParentId,
+        children: normalizeComponentLayers(component, path, rootParentId)
+      };
+    });
+  }
+  if (!Array.isArray(components) && typeof components === "object") {
+    return Object.entries(components).filter(([_, componentValue]) => Array.isArray(componentValue) && componentValue.length).map(([componentName, componentValue]) => {
+      const path = `${prefix}.${componentName}`;
+      const rootParentId = _rootParentId || componentValue._id;
+      return normalizeComponentLayers(componentValue, path, rootParentId);
+    }).flat();
+  }
+  return [];
+};
+
+const StyledEditorLayerLabel$1 = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorLayerChildren__StyledEditorLayerLabel",
+  componentId: "sc-1v3iddr-0"
+})(["display:block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;", ""], ({
+  isFocus
+}) => `
+    font-weight: ${isFocus ? 700 : 400};
+  `);
+const StyledEditorLayerComponent$1 = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorLayerChildren__StyledEditorLayerComponent",
+  componentId: "sc-1v3iddr-1"
+})(["display:flex;align-items:center;width:fit-content;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+  isFocus
+}) => `
+    background: ${isFocus ? easyblocksDesignSystem.Colors.black10 : "transparent"};
+  `, easyblocksDesignSystem.Colors.black10);
+const EditorLayerChildren = ({
+  layer,
+  currentLayer,
+  onClickLayer
+}) => {
+  return /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerComponent$1, {
+    id: `sidebar-layer-${layer.id}`,
+    onClick: () => onClickLayer(layer.id, layer.path, layer.rootParentId),
+    isFocus: currentLayer === layer.path
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.LayerChildren, {
+    size: 18
+  }), /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerLabel$1, {
+    isFocus: currentLayer === layer.path,
+    variant: "body",
+    component: "label"
+  }, `${layer.component}-${layer.id}`));
+};
+
+const StyledEditorLayerLabel = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorLayerGroup__StyledEditorLayerLabel",
+  componentId: "sc-p2lu63-0"
+})(["display:block;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;", ""], ({
+  isFocus
+}) => `
+    font-weight: ${isFocus ? 700 : 400};
+  `);
+const StyledEditorLayerComponent = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorLayerGroup__StyledEditorLayerComponent",
+  componentId: "sc-p2lu63-1"
+})(["display:flex;align-items:center;width:fit-content;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+  isFocus
+}) => `
+    background: ${isFocus ? easyblocksDesignSystem.Colors.black10 : "transparent"};
+  `, easyblocksDesignSystem.Colors.black10);
+const StyledWrapperChevronIcon = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorLayerGroup__StyledWrapperChevronIcon",
+  componentId: "sc-p2lu63-2"
+})(["transition:transform 0.2s ease;", ""], ({
+  isOpen
+}) => `transform: rotate(${isOpen ? 180 : 0}deg);`);
+const StyledWrapperEditorLayerDetail = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorLayerGroup__StyledWrapperEditorLayerDetail",
+  componentId: "sc-p2lu63-3"
+})(["padding-left:15px;", ""], ({
+  isOpen
+}) => `
+    height: ${isOpen ? "100%" : "0%"}; 
+    display: ${isOpen ? "block" : "none"};
+    `);
+const RawEditorLayerGroup = ({
+  layer,
+  currentLayer,
+  onClickLayer
+}) => {
+  const [openedLayer, setOpenedLayer] = React__default["default"].useState(false);
+  const expandClickRef = React.useRef(false);
+  const isFocus = currentLayer === layer.path;
+  const onExpandLayer = React.useCallback(() => {
+    expandClickRef.current = true;
+    onClickLayer(layer.id, layer.path, layer.rootParentId);
+    setOpenedLayer(prev => !prev);
+  }, [layer.path, onClickLayer]);
+  React.useEffect(() => {
+    if (!currentLayer) {
+      return;
+    }
+    if (expandClickRef.current) {
+      expandClickRef.current = false;
+      return;
+    }
+    const shouldOpen = currentLayer.length >= layer.path.length && currentLayer.startsWith(layer.path);
+    shouldOpen ? setOpenedLayer(shouldOpen) : null;
+  }, [currentLayer, layer.path, layer.id]);
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerComponent, {
+    id: `sidebar-layer-${layer.id}`,
+    onClick: onExpandLayer,
+    isFocus: isFocus
+  }, /*#__PURE__*/React__default["default"].createElement(StyledWrapperChevronIcon, {
+    isOpen: openedLayer
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ChevronDown, {
+    size: 16
+  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.LayerGroup, {
+    size: 18
+  }), /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerLabel, {
+    isFocus: isFocus,
+    variant: "body",
+    component: "label"
+  }, `${layer.component}-${layer.id}`)), /*#__PURE__*/React__default["default"].createElement(StyledWrapperEditorLayerDetail, {
+    isOpen: openedLayer
+  }, /*#__PURE__*/React__default["default"].createElement(EditorLayerDetail, {
+    currentLayer: currentLayer,
+    onClickLayer: onClickLayer,
+    layers: layer.children
+  })));
+};
+const EditorLayerGroup = /*#__PURE__*/React__default["default"].memo(RawEditorLayerGroup);
+
+const EditorLayerDetail = ({
+  layers,
+  currentLayer,
+  onClickLayer
+}) => {
+  return layers.map(layer => {
+    if (layer.children.length) {
+      return /*#__PURE__*/React__default["default"].createElement(EditorLayerGroup, {
+        currentLayer: currentLayer,
+        onClickLayer: (id, path, rootParentId) => onClickLayer?.(id, path, rootParentId),
+        layer: layer,
+        key: layer.id
+      });
+    }
+    return /*#__PURE__*/React__default["default"].createElement(EditorLayerChildren, {
+      currentLayer: currentLayer,
+      onClickLayer: (id, path, rootParentId) => onClickLayer?.(id, path, rootParentId),
+      layer: layer,
+      key: layer.id
+    });
+  });
+};
+
+const HorizontalLine = styled__default["default"].div.withConfig({
+  displayName: "EditorLayer__HorizontalLine",
+  componentId: "sc-vnm02d-0"
+})(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
+const StyledEditorLayerRoot = styled__default["default"].div.withConfig({
+  displayName: "EditorLayer__StyledEditorLayerRoot",
+  componentId: "sc-vnm02d-1"
+})(["overflow-x:hidden;"]);
+const StyledEditorLayer = styled__default["default"].div.withConfig({
+  displayName: "EditorLayer__StyledEditorLayer",
+  componentId: "sc-vnm02d-2"
+})(["overflow-x:auto;padding-top:20px;padding-bottom:16px;"]);
+const StyledEditorLayerTitle = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorLayer__StyledEditorLayerTitle",
+  componentId: "sc-vnm02d-3"
+})(["line-height:14px;font-weight:700;padding:17px 12px;"]);
+const EditorLayer = () => {
+  const editorContext = useEditorContext();
+  const [layers, setLayers] = React.useState();
+  const deferredLayers = React.useDeferredValue(layers);
+  const deferredCurrentLayer = React.useDeferredValue(editorContext.focussedField[0]);
+  const initLayers = async () => {
+    const localConfig = editorContext.form.values;
+    const localConfigSnapshot = getConfigSnapshot(localConfig);
+    setLayers(normalizeComponentLayers(localConfigSnapshot.data));
+  };
+  const onClickLayer = (id, layer, rootParentId) => {
+    const editorCanvasIframe = window.document.getElementById("editor-canvas");
+    if (rootParentId) {
+      const parentTargetComponent = editorCanvasIframe?.contentDocument?.getElementById(rootParentId);
+      const childTargetComponent = editorCanvasIframe?.contentDocument?.getElementById(id);
+      const parentRectTop = parentTargetComponent?.getBoundingClientRect()?.top ?? 0;
+      const childRectTop = childTargetComponent?.getBoundingClientRect()?.top ?? 0;
+      const top = (rootParentId === id ? parentRectTop : parentRectTop + childRectTop) + (editorCanvasIframe?.contentWindow?.scrollY ?? 0);
+      editorCanvasIframe?.contentWindow?.scrollTo({
+        top,
+        behavior: "smooth"
+      });
+    }
+    editorContext.setFocussedField(layer);
+  };
+  React.useEffect(() => {
+    initLayers();
+  }, [editorContext.form.values]);
+  return /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerTitle, null, "Layer"), /*#__PURE__*/React__default["default"].createElement(HorizontalLine, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorLayer, {
+    id: "editor-layer"
+  }, deferredLayers ? /*#__PURE__*/React__default["default"].createElement(EditorLayerDetail, {
+    currentLayer: deferredCurrentLayer,
+    onClickLayer: onClickLayer,
+    layers: deferredLayers
+  }) : null));
+};
+
 function reconcile({
   context,
   templateId,
@@ -6236,14 +6465,6 @@ function useUpdateFormValues(form, values) {
   }, [form, values]);
 }
 
-/**
- * Outputs comparable config that is FULL COPY of config
- */
-function getConfigSnapshot(config) {
-  const strippedConfig = deepClone(config);
-  return strippedConfig;
-}
-
 function addLocalizedFlag(config, context) {
   return configMap(config, context, ({
     value,
@@ -6774,7 +6995,9 @@ const SidebarAndContentContainer = styled.styled.div.withConfig({
 const SidebarContainer = styled.styled.div.withConfig({
   displayName: "Editor__SidebarContainer",
   componentId: "sc-t95yuf-2"
-})(["flex:0 0 240px;background:", ";border-left:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}overflow-y:auto;"], easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100);
+})(["", " background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}overflow-y:auto;"], ({
+  width = "240px"
+}) => `flex: 0 0 ${width};`, easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100, easyblocksDesignSystem.Colors.black100);
 const DataSaverRoot = styled.styled.div.withConfig({
   displayName: "Editor__DataSaverRoot",
   componentId: "sc-t95yuf-3"
@@ -7087,6 +7310,7 @@ const EditorContent = ({
 
   const compilationCache = React.useRef(new easyblocksCore.CompilationCache());
   const [isEditing, setEditing] = React.useState(true);
+  const [isShowLayers, setIsShowLayers] = React.useState(false);
   const [currentLocale, setCurrentLocale] = React.useState(compilationContext.contextParams.locale);
   const prevLocale = React.useRef("");
   const [componentPickerData, setComponentPickerData] = React.useState(undefined);
@@ -7396,8 +7620,8 @@ const EditorContent = ({
         actions.openComponentPicker({
           path: event.data.payload.path
         }).then(config => {
-          const shopstoryCanvasIframe = window.document.getElementById("shopstory-canvas");
-          shopstoryCanvasIframe?.contentWindow?.postMessage(_internals.componentPickerClosed(config));
+          const editorCanvasIframe = window.document.getElementById("editor-canvas");
+          editorCanvasIframe?.contentWindow?.postMessage(_internals.componentPickerClosed(config));
         });
       }
       if (event.data.type === "@easyblocks-editor/item-inserted") {
@@ -7491,10 +7715,15 @@ const EditorContent = ({
     locales: editorContext.locales,
     onLocaleChange: onLocaleChange,
     hideCloseButton: props.config.hideCloseButton ?? false,
-    readOnly: editorContext.readOnly
+    readOnly: editorContext.readOnly,
+    isShowLayers: isShowLayers,
+    setIsShowLayers: setIsShowLayers
   }), /*#__PURE__*/React__default["default"].createElement(SidebarAndContentContainer, {
     height: appHeight
-  }, /*#__PURE__*/React__default["default"].createElement(ContentContainer, {
+  }, isShowLayers && isEditMode && /*#__PURE__*/React__default["default"].createElement(SidebarContainer, {
+    width: "280px",
+    ref: sidebarNodeRef
+  }, /*#__PURE__*/React__default["default"].createElement(EditorLayer, null)), /*#__PURE__*/React__default["default"].createElement(ContentContainer, {
     onClick: () => {
       setFocussedField([]);
     }
@@ -9272,7 +9501,7 @@ function EasyblocksEditor(props) {
       /**
        * Why try catch?
        *
-       * It's because window.parent.isShopstoryEditor might throw if window.parent is cross origin (when shopstory Launcher is run in iframe of CMS - like Contentful); In that case we're sure it's a parent window, not a child.
+       * It's because window.parent.isShopstoryEditor might throw if window.parent is cross origin (when editor Launcher is run in iframe of CMS - like Contentful); In that case we're sure it's a parent window, not a child.
        */
       try {
         // Parent window is always rendered first so `window.isShopstoryEditor` will always be set when <iframe /> with child is loading

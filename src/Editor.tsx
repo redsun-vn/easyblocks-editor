@@ -49,6 +49,7 @@ import { Colors, Fonts, useToaster } from "@redsun-vn/easyblocks-design-system";
 import throttle from "lodash.throttle";
 import React, {
   ComponentType,
+  lazy,
   memo,
   useCallback,
   useEffect,
@@ -77,6 +78,7 @@ import {
   removeItems,
   replaceItems,
 } from "./editorActions";
+import { EditorLayer } from "./editorLayer/EditorLayer";
 import { Form } from "./form";
 import { destinationResolver } from "./paste/destinationResolver";
 import { pasteManager } from "./paste/manager";
@@ -93,6 +95,10 @@ import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShort
 import { useEditorHistory } from "./useEditorHistory";
 import { checkLocalesCorrectness } from "./utils/locales/checkLocalesCorrectness";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
+
+const EditorLayerLazy = lazy(() =>
+  import("./editorLayer/EditorLayer").then((e) => ({ default: e.EditorLayer }))
+);
 
 declare global {
   interface Window {
@@ -123,10 +129,11 @@ const SidebarAndContentContainer = styled.div<{ height: "100vh" | "100%" }>`
   align-items: stretch;
 `;
 
-const SidebarContainer = styled.div`
-  flex: 0 0 240px;
+const SidebarContainer = styled.div<{ width?: string }>`
+  ${({ width = "240px" }) => `flex: 0 0 ${width};`}
   background: ${Colors.white};
   border-left: 1px solid ${Colors.black100};
+  border-right: 1px solid ${Colors.black100};
   box-sizing: border-box;
 
   > * {
@@ -679,6 +686,7 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
+  const [isShowLayers, setIsShowLayers] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(
     compilationContext.contextParams.locale
   );
@@ -1061,11 +1069,11 @@ const EditorContent = ({
         actions
           .openComponentPicker({ path: event.data.payload.path })
           .then((config) => {
-            const shopstoryCanvasIframe = window.document.getElementById(
-              "shopstory-canvas"
+            const editorCanvasIframe = window.document.getElementById(
+              "editor-canvas"
             ) as HTMLIFrameElement | undefined;
 
-            shopstoryCanvasIframe?.contentWindow?.postMessage(
+            editorCanvasIframe?.contentWindow?.postMessage(
               componentPickerClosed(config)
             );
           });
@@ -1215,8 +1223,15 @@ const EditorContent = ({
               onLocaleChange={onLocaleChange}
               hideCloseButton={props.config.hideCloseButton ?? false}
               readOnly={editorContext.readOnly}
+              isShowLayers={isShowLayers}
+              setIsShowLayers={setIsShowLayers}
             />
             <SidebarAndContentContainer height={appHeight}>
+              {isShowLayers && isEditMode && (
+                <SidebarContainer width="280px" ref={sidebarNodeRef}>
+                  <EditorLayer />
+                </SidebarContainer>
+              )}
               <ContentContainer
                 onClick={() => {
                   setFocussedField([]);

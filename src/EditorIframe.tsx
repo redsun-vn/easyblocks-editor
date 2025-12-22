@@ -50,7 +50,7 @@ function EditorIframe({
     <IframeContainer ref={containerRef}>
       <IframeInnerContainer>
         <Iframe
-          id="shopstory-canvas"
+          id="editor-canvas"
           src={window.location.href}
           onLoad={handleIframeLoaded}
           style={{

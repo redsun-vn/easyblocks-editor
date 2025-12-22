@@ -9,7 +9,6 @@ node_modules/
 *.log
 **/node_modules/
 
-# temporarily removed, build of tina modifications from context of shopstory to be done
 # **/build/
 # **/dist/
 **/dist-types/
