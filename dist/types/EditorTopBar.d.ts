@@ -22,5 +22,7 @@ export declare const EditorTopBar: React.FC<{
     onLocaleChange: (locale: string) => void;
     hideCloseButton: boolean;
     readOnly: boolean;
+    isShowLayers: boolean;
+    setIsShowLayers: React.Dispatch<React.SetStateAction<boolean>>;
 }>;
 //# sourceMappingURL=EditorTopBar.d.ts.map

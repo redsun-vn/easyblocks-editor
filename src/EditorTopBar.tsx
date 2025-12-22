@@ -118,6 +118,8 @@ export const EditorTopBar: React.FC<{
   onLocaleChange: (locale: string) => void;
   hideCloseButton: boolean;
   readOnly: boolean;
+  isShowLayers: boolean;
+  setIsShowLayers: React.Dispatch<React.SetStateAction<boolean>>;
 }> = ({
   name,
   onClose,
@@ -137,6 +139,8 @@ export const EditorTopBar: React.FC<{
   onLocaleChange,
   hideCloseButton,
   readOnly,
+  isShowLayers,
+  setIsShowLayers,
 }) => {
   const headingRef = useRef<HTMLDivElement>(null);
   const router = new URLSearchParams(window.location.search);
@@ -191,9 +195,17 @@ export const EditorTopBar: React.FC<{
         {readOnly && <Label>(Read-Only)</Label>}
 
         <ButtonGhost
+          icon={Icons.Layers}
+          hideLabel
+          onClick={() => setIsShowLayers((prev) => !prev)}
+          style={{ background: isShowLayers ? Colors.black10 : "transparent" }}
+        >
+          {t("editor.sidebar.layers")}
+        </ButtonGhost>
+
+        <ButtonGhost
           icon={Icons.ColorAndFonts}
           hideLabel
-          hidden
           onClick={() => setIsOpenConfigs((prev) => !prev)}
         >
           {t("editor.sidebar.configurations")}

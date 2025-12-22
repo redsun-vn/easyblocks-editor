@@ -40,7 +40,7 @@ export function EasyblocksEditor(props: EasyblocksEditorProps) {
       /**
        * Why try catch?
        *
-       * It's because window.parent.isShopstoryEditor might throw if window.parent is cross origin (when shopstory Launcher is run in iframe of CMS - like Contentful); In that case we're sure it's a parent window, not a child.
+       * It's because window.parent.isShopstoryEditor might throw if window.parent is cross origin (when editor Launcher is run in iframe of CMS - like Contentful); In that case we're sure it's a parent window, not a child.
        */
       try {
         // Parent window is always rendered first so `window.isShopstoryEditor` will always be set when <iframe /> with child is loading
