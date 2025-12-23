@@ -5317,8 +5317,14 @@ const StyledEditorLayerComponent$1 = styled__default["default"](easyblocksDesign
 const EditorLayerChildren = ({
   layer,
   currentLayer,
-  onClickLayer
+  onClickLayer,
+  onFocusLayer
 }) => {
+  React.useEffect(() => {
+    if (currentLayer === layer.path) {
+      onFocusLayer?.(layer.id);
+    }
+  }, [currentLayer]);
   return /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerComponent$1, {
     id: `sidebar-layer-${layer.id}`,
     onClick: () => onClickLayer(layer.id, layer.path, layer.rootParentId),
@@ -5366,7 +5372,8 @@ const StyledWrapperEditorLayerDetail = styled__default["default"](easyblocksDesi
 const RawEditorLayerGroup = ({
   layer,
   currentLayer,
-  onClickLayer
+  onClickLayer,
+  onFocusLayer
 }) => {
   const [openedLayer, setOpenedLayer] = React__default["default"].useState(false);
   const expandClickRef = React.useRef(false);
@@ -5379,6 +5386,9 @@ const RawEditorLayerGroup = ({
   React.useEffect(() => {
     if (!currentLayer) {
       return;
+    }
+    if (currentLayer === layer.path) {
+      onFocusLayer?.(layer.id);
     }
     if (expandClickRef.current) {
       expandClickRef.current = false;
@@ -5404,6 +5414,7 @@ const RawEditorLayerGroup = ({
   }, layer.component)), /*#__PURE__*/React__default["default"].createElement(StyledWrapperEditorLayerDetail, {
     isOpen: openedLayer
   }, /*#__PURE__*/React__default["default"].createElement(EditorLayerDetail, {
+    onFocusLayer: onFocusLayer,
     currentLayer: currentLayer,
     onClickLayer: onClickLayer,
     layers: layer.children
@@ -5414,13 +5425,15 @@ const EditorLayerGroup = /*#__PURE__*/React__default["default"].memo(RawEditorLa
 const EditorLayerDetail = ({
   layers,
   currentLayer,
-  onClickLayer
+  onClickLayer,
+  onFocusLayer
 }) => {
   return layers.map(layer => {
     if (layer.children.length) {
       return /*#__PURE__*/React__default["default"].createElement(EditorLayerGroup, {
         currentLayer: currentLayer,
         onClickLayer: (id, path, rootParentId) => onClickLayer?.(id, path, rootParentId),
+        onFocusLayer: layerId => onFocusLayer?.(layerId),
         layer: layer,
         key: layer.id
       });
@@ -5428,6 +5441,7 @@ const EditorLayerDetail = ({
     return /*#__PURE__*/React__default["default"].createElement(EditorLayerChildren, {
       currentLayer: currentLayer,
       onClickLayer: (id, path, rootParentId) => onClickLayer?.(id, path, rootParentId),
+      onFocusLayer: layerId => onFocusLayer?.(layerId),
       layer: layer,
       key: layer.id
     });
@@ -5475,12 +5489,22 @@ const EditorLayer = () => {
     }
     editorContext.setFocussedField(layer);
   };
+  const onFocusLayer = layerId => {
+    if (layerId) {
+      const targetEditorLayer = document.getElementById("editor-layer");
+      const targetComponent = document.getElementById(`sidebar-layer-${layerId}`);
+      const top = (targetComponent?.getBoundingClientRect()?.top ?? 0) - (targetEditorLayer?.getBoundingClientRect()?.top ?? 0) + (targetEditorLayer?.scrollTop ?? 0);
+      targetEditorLayer?.scrollTo({
+        top,
+        behavior: "smooth"
+      });
+    }
+  };
   React.useEffect(() => {
     initLayers();
   }, [editorContext.form.values]);
-  return /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerTitle, null, "Layer"), /*#__PURE__*/React__default["default"].createElement(HorizontalLine, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorLayer, {
-    id: "editor-layer"
-  }, deferredLayers ? /*#__PURE__*/React__default["default"].createElement(EditorLayerDetail, {
+  return /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerTitle, null, "Layer"), /*#__PURE__*/React__default["default"].createElement(HorizontalLine, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorLayer, null, deferredLayers ? /*#__PURE__*/React__default["default"].createElement(EditorLayerDetail, {
+    onFocusLayer: onFocusLayer,
     currentLayer: deferredCurrentLayer,
     onClickLayer: onClickLayer,
     layers: deferredLayers
@@ -7721,6 +7745,7 @@ const EditorContent = ({
   }), /*#__PURE__*/React__default["default"].createElement(SidebarAndContentContainer, {
     height: appHeight
   }, isShowLayers && isEditMode && /*#__PURE__*/React__default["default"].createElement(SidebarContainer, {
+    id: "editor-layer",
     width: "280px",
     ref: sidebarNodeRef
   }, /*#__PURE__*/React__default["default"].createElement(EditorLayer, null)), /*#__PURE__*/React__default["default"].createElement(ContentContainer, {

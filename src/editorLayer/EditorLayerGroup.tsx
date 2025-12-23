@@ -49,10 +49,12 @@ export const RawEditorLayerGroup = ({
   layer,
   currentLayer,
   onClickLayer,
+  onFocusLayer,
 }: {
   layer: ILayer;
   onClickLayer: (id: string, path: string, rootParentId?: string) => void;
   currentLayer?: string;
+  onFocusLayer?: (layerId: string) => void;
 }) => {
   const [openedLayer, setOpenedLayer] = React.useState<boolean>(false);
   const expandClickRef = useRef(false);
@@ -68,6 +70,10 @@ export const RawEditorLayerGroup = ({
   useEffect(() => {
     if (!currentLayer) {
       return;
+    }
+
+    if (currentLayer === layer.path) {
+      onFocusLayer?.(layer.id);
     }
 
     if (expandClickRef.current) {
@@ -103,6 +109,7 @@ export const RawEditorLayerGroup = ({
 
       <StyledWrapperEditorLayerDetail isOpen={openedLayer}>
         <EditorLayerDetail
+          onFocusLayer={onFocusLayer}
           currentLayer={currentLayer}
           onClickLayer={onClickLayer}
           layers={layer.children}

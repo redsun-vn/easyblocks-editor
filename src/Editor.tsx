@@ -1228,7 +1228,11 @@ const EditorContent = ({
             />
             <SidebarAndContentContainer height={appHeight}>
               {isShowLayers && isEditMode && (
-                <SidebarContainer width="280px" ref={sidebarNodeRef}>
+                <SidebarContainer
+                  id="editor-layer"
+                  width="280px"
+                  ref={sidebarNodeRef}
+                >
                   <EditorLayer />
                 </SidebarContainer>
               )}

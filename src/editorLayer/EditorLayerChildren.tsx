@@ -1,5 +1,5 @@
 import { Colors, Icons, Typography } from "@redsun-vn/easyblocks-design-system";
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import { ILayer } from "../utils/normalizeComponentLayers";
 
@@ -35,11 +35,19 @@ export const EditorLayerChildren = ({
   layer,
   currentLayer,
   onClickLayer,
+  onFocusLayer,
 }: {
   layer: ILayer;
   onClickLayer: (id: string, path: string, rootParentId?: string) => void;
+  onFocusLayer?: (layerId: string) => void;
   currentLayer?: string;
 }) => {
+  useEffect(() => {
+    if (currentLayer === layer.path) {
+      onFocusLayer?.(layer.id);
+    }
+  }, [currentLayer]);
+
   return (
     <StyledEditorLayerComponent
       id={`sidebar-layer-${layer.id}`}

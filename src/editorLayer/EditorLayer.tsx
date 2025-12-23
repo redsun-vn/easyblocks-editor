@@ -72,6 +72,24 @@ export const EditorLayer: React.FC = () => {
     editorContext.setFocussedField(layer);
   };
 
+  const onFocusLayer = (layerId: string) => {
+    if (layerId) {
+      const targetEditorLayer = document.getElementById("editor-layer");
+      const targetComponent = document.getElementById(
+        `sidebar-layer-${layerId}`
+      );
+      const top =
+        (targetComponent?.getBoundingClientRect()?.top ?? 0) -
+        (targetEditorLayer?.getBoundingClientRect()?.top ?? 0) +
+        (targetEditorLayer?.scrollTop ?? 0);
+
+      targetEditorLayer?.scrollTo({
+        top,
+        behavior: "smooth",
+      });
+    }
+  };
+
   useEffect(() => {
     initLayers();
   }, [editorContext.form.values]);
@@ -82,9 +100,10 @@ export const EditorLayer: React.FC = () => {
 
       <HorizontalLine />
 
-      <StyledEditorLayer id="editor-layer">
+      <StyledEditorLayer>
         {deferredLayers ? (
           <EditorLayerDetail
+            onFocusLayer={onFocusLayer}
             currentLayer={deferredCurrentLayer}
             onClickLayer={onClickLayer}
             layers={deferredLayers}

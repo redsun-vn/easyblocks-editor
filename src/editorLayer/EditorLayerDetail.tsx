@@ -7,10 +7,12 @@ export const EditorLayerDetail = ({
   layers,
   currentLayer,
   onClickLayer,
+  onFocusLayer,
 }: {
   layers: ILayer[];
   currentLayer?: string;
   onClickLayer?: (id: string, path: string, rootParentId?: string) => void;
+  onFocusLayer?: (layerId: string) => void;
 }) => {
   return layers.map((layer) => {
     if (layer.children.length) {
@@ -20,6 +22,7 @@ export const EditorLayerDetail = ({
           onClickLayer={(id, path, rootParentId) =>
             onClickLayer?.(id, path, rootParentId)
           }
+          onFocusLayer={(layerId) => onFocusLayer?.(layerId)}
           layer={layer}
           key={layer.id}
         />
@@ -32,6 +35,7 @@ export const EditorLayerDetail = ({
         onClickLayer={(id, path, rootParentId) =>
           onClickLayer?.(id, path, rootParentId)
         }
+        onFocusLayer={(layerId) => onFocusLayer?.(layerId)}
         layer={layer}
         key={layer.id}
       />
