@@ -5274,7 +5274,7 @@ const StyledEditorLayerLabel$1 = styled$1(Typography).withConfig({
 const StyledEditorLayerComponent$1 = styled$1(Typography).withConfig({
   displayName: "EditorLayerChildren__StyledEditorLayerComponent",
   componentId: "sc-1v3iddr-1"
-})(["display:flex;align-items:center;width:fit-content;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+})(["display:flex;align-items:center;width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
   isFocus
 }) => `
     background: ${isFocus ? Colors.black10 : "transparent"};
@@ -5294,7 +5294,7 @@ const EditorLayerChildren = ({
     isFocus: currentLayer === layer.path,
     variant: "body",
     component: "label"
-  }, `${layer.component}-${layer.id}`));
+  }, layer.component));
 };
 
 const StyledEditorLayerLabel = styled$1(Typography).withConfig({
@@ -5308,7 +5308,7 @@ const StyledEditorLayerLabel = styled$1(Typography).withConfig({
 const StyledEditorLayerComponent = styled$1(Typography).withConfig({
   displayName: "EditorLayerGroup__StyledEditorLayerComponent",
   componentId: "sc-p2lu63-1"
-})(["display:flex;align-items:center;width:fit-content;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+})(["display:flex;align-items:center;width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
   isFocus
 }) => `
     background: ${isFocus ? Colors.black10 : "transparent"};
@@ -5322,7 +5322,7 @@ const StyledWrapperChevronIcon = styled$1(Typography).withConfig({
 const StyledWrapperEditorLayerDetail = styled$1(Typography).withConfig({
   displayName: "EditorLayerGroup__StyledWrapperEditorLayerDetail",
   componentId: "sc-p2lu63-3"
-})(["padding-left:15px;", ""], ({
+})(["padding-left:18px;", ""], ({
   isOpen
 }) => `
     height: ${isOpen ? "100%" : "0%"}; 
@@ -5366,7 +5366,7 @@ const RawEditorLayerGroup = ({
     isFocus: isFocus,
     variant: "body",
     component: "label"
-  }, `${layer.component}-${layer.id}`)), /*#__PURE__*/React__default.createElement(StyledWrapperEditorLayerDetail, {
+  }, layer.component)), /*#__PURE__*/React__default.createElement(StyledWrapperEditorLayerDetail, {
     isOpen: openedLayer
   }, /*#__PURE__*/React__default.createElement(EditorLayerDetail, {
     currentLayer: currentLayer,

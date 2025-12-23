@@ -19,7 +19,7 @@ const StyledEditorLayerLabel = styled(Typography)<{ isFocus?: boolean }>`
 const StyledEditorLayerComponent = styled(Typography)<{ isFocus?: boolean }>`
   display: flex;
   align-items: center;
-  width: fit-content;
+  width: 100%;
   cursor: pointer;
   padding: 6px 10px;
   gap: 2px;
@@ -38,7 +38,7 @@ const StyledWrapperChevronIcon = styled(Typography)<{ isOpen: boolean }>`
 `;
 
 const StyledWrapperEditorLayerDetail = styled(Typography)<{ isOpen: boolean }>`
-  padding-left: 15px;
+  padding-left: 18px;
   ${({ isOpen }) => `
     height: ${isOpen ? "100%" : "0%"}; 
     display: ${isOpen ? "block" : "none"};
@@ -96,7 +96,9 @@ export const RawEditorLayerGroup = ({
           isFocus={isFocus}
           variant="body"
           component="label"
-        >{`${layer.component}-${layer.id}`}</StyledEditorLayerLabel>
+        >
+          {layer.component}
+        </StyledEditorLayerLabel>
       </StyledEditorLayerComponent>
 
       <StyledWrapperEditorLayerDetail isOpen={openedLayer}>

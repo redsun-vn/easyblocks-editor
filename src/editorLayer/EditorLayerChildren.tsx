@@ -18,7 +18,7 @@ const StyledEditorLayerLabel = styled(Typography)<{ isFocus?: boolean }>`
 const StyledEditorLayerComponent = styled(Typography)<{ isFocus?: boolean }>`
   display: flex;
   align-items: center;
-  width: fit-content;
+  width: 100%;
   cursor: pointer;
   padding: 6px 10px;
   gap: 2px;
@@ -51,7 +51,9 @@ export const EditorLayerChildren = ({
         isFocus={currentLayer === layer.path}
         variant="body"
         component="label"
-      >{`${layer.component}-${layer.id}`}</StyledEditorLayerLabel>
+      >
+        {layer.component}
+      </StyledEditorLayerLabel>
     </StyledEditorLayerComponent>
   );
 };
