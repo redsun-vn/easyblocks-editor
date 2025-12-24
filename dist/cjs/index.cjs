@@ -5301,7 +5301,7 @@ const normalizeComponentLayers = (components, prefix = "data", _rootParentId) =>
 const StyledEditorLayerLabel$1 = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
   displayName: "EditorLayerChildren__StyledEditorLayerLabel",
   componentId: "sc-1v3iddr-0"
-})(["display:block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;", ""], ({
+})(["display:block;cursor:pointer;", ""], ({
   isFocus
 }) => `
     font-weight: ${isFocus ? 700 : 400};
@@ -5309,7 +5309,7 @@ const StyledEditorLayerLabel$1 = styled__default["default"](easyblocksDesignSyst
 const StyledEditorLayerComponent$1 = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
   displayName: "EditorLayerChildren__StyledEditorLayerComponent",
   componentId: "sc-1v3iddr-1"
-})(["display:flex;align-items:center;width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+})(["display:flex;align-items:center;width:fit-content;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
   isFocus
 }) => `
     background: ${isFocus ? easyblocksDesignSystem.Colors.black10 : "transparent"};
@@ -5341,7 +5341,7 @@ const EditorLayerChildren = ({
 const StyledEditorLayerLabel = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
   displayName: "EditorLayerGroup__StyledEditorLayerLabel",
   componentId: "sc-p2lu63-0"
-})(["display:block;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;", ""], ({
+})(["display:block;cursor:pointer;", ""], ({
   isFocus
 }) => `
     font-weight: ${isFocus ? 700 : 400};
@@ -5349,7 +5349,7 @@ const StyledEditorLayerLabel = styled__default["default"](easyblocksDesignSystem
 const StyledEditorLayerComponent = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
   displayName: "EditorLayerGroup__StyledEditorLayerComponent",
   componentId: "sc-p2lu63-1"
-})(["display:flex;align-items:center;width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+})(["display:flex;align-items:center;width:fit-content;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
   isFocus
 }) => `
     background: ${isFocus ? easyblocksDesignSystem.Colors.black10 : "transparent"};
@@ -5360,7 +5360,7 @@ const StyledWrapperChevronIcon = styled__default["default"](easyblocksDesignSyst
 })(["transition:transform 0.2s ease;", ""], ({
   isOpen
 }) => `transform: rotate(${isOpen ? 180 : 0}deg);`);
-const StyledWrapperEditorLayerDetail = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledWrapperEditorLayerDetail = styled__default["default"].div.withConfig({
   displayName: "EditorLayerGroup__StyledWrapperEditorLayerDetail",
   componentId: "sc-p2lu63-3"
 })(["padding-left:18px;", ""], ({

@@ -6,10 +6,6 @@ import { EditorLayerDetail } from "./EditorLayerDetail";
 
 const StyledEditorLayerLabel = styled(Typography)<{ isFocus?: boolean }>`
   display: block;
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   cursor: pointer;
   ${({ isFocus }) => `
     font-weight: ${isFocus ? 700 : 400};
@@ -19,7 +15,7 @@ const StyledEditorLayerLabel = styled(Typography)<{ isFocus?: boolean }>`
 const StyledEditorLayerComponent = styled(Typography)<{ isFocus?: boolean }>`
   display: flex;
   align-items: center;
-  width: 100%;
+  width: fit-content;
   cursor: pointer;
   padding: 6px 10px;
   gap: 2px;
@@ -37,7 +33,7 @@ const StyledWrapperChevronIcon = styled(Typography)<{ isOpen: boolean }>`
   ${({ isOpen }) => `transform: rotate(${isOpen ? 180 : 0}deg);`}
 `;
 
-const StyledWrapperEditorLayerDetail = styled(Typography)<{ isOpen: boolean }>`
+const StyledWrapperEditorLayerDetail = styled.div<{ isOpen: boolean }>`
   padding-left: 18px;
   ${({ isOpen }) => `
     height: ${isOpen ? "100%" : "0%"}; 

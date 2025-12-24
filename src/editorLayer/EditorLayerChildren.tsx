@@ -5,10 +5,6 @@ import { ILayer } from "../utils/normalizeComponentLayers";
 
 const StyledEditorLayerLabel = styled(Typography)<{ isFocus?: boolean }>`
   display: block;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   cursor: pointer;
   ${({ isFocus }) => `
     font-weight: ${isFocus ? 700 : 400};
@@ -18,7 +14,7 @@ const StyledEditorLayerLabel = styled(Typography)<{ isFocus?: boolean }>`
 const StyledEditorLayerComponent = styled(Typography)<{ isFocus?: boolean }>`
   display: flex;
   align-items: center;
-  width: 100%;
+  width: fit-content;
   cursor: pointer;
   padding: 6px 10px;
   gap: 2px;
