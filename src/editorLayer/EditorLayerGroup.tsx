@@ -16,6 +16,7 @@ const StyledEditorLayerComponent = styled(Typography)<{ isFocus?: boolean }>`
   display: flex;
   align-items: center;
   width: fit-content;
+  min-width: 100%;
   cursor: pointer;
   padding: 6px 10px;
   gap: 2px;

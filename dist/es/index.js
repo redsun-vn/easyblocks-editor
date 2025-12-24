@@ -5274,7 +5274,7 @@ const StyledEditorLayerLabel$1 = styled$1(Typography).withConfig({
 const StyledEditorLayerComponent$1 = styled$1(Typography).withConfig({
   displayName: "EditorLayerChildren__StyledEditorLayerComponent",
   componentId: "sc-1v3iddr-1"
-})(["display:flex;align-items:center;width:fit-content;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+})(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
   isFocus
 }) => `
     background: ${isFocus ? Colors.black10 : "transparent"};
@@ -5314,7 +5314,7 @@ const StyledEditorLayerLabel = styled$1(Typography).withConfig({
 const StyledEditorLayerComponent = styled$1(Typography).withConfig({
   displayName: "EditorLayerGroup__StyledEditorLayerComponent",
   componentId: "sc-p2lu63-1"
-})(["display:flex;align-items:center;width:fit-content;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+})(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
   isFocus
 }) => `
     background: ${isFocus ? Colors.black10 : "transparent"};
