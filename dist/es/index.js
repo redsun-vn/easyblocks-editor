@@ -3223,7 +3223,7 @@ const EditorSidebar = props => {
   }));
 };
 
-const getIconColor = hex => {
+const getBrightnessColor = hex => {
   // remove "#"
   hex = hex.replace("#", "");
 
@@ -3388,7 +3388,7 @@ const StyledColorCard = styled$1.div.withConfig({
   background
 }) => background, ({
   background
-}) => getIconColor(background));
+}) => getBrightnessColor(background));
 const StyledInputWrapper = styled$1.div.withConfig({
   displayName: "ColorConfigurations__StyledInputWrapper",
   componentId: "sc-qln4q1-5"
@@ -9526,4 +9526,4 @@ function EasyblocksEditor(props) {
   }), selectedWindow === "preview" && /*#__PURE__*/React__default.createElement(PreviewRenderer, props));
 }
 
-export { EasyblocksEditor, EditorContext, useEditorContext };
+export { EasyblocksEditor, EditorContext, getBrightnessColor, useEditorContext };

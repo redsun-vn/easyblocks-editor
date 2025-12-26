@@ -15,7 +15,7 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { EditorContextType } from "../EditorContext";
 import { useTranslation } from "../useTranslation";
-import { getIconColor } from "../utils/colors";
+import { getBrightnessColor } from "../utils/colors";
 import { validateColor } from "../sidebar/validate-color";
 
 interface IColorConfiguration {
@@ -57,7 +57,7 @@ const StyledColorCard = styled.div<{ background: string }>`
 
   & > div {
     display: none;
-    color: ${({ background }) => getIconColor(background)};
+    color: ${({ background }) => getBrightnessColor(background)};
   }
 
   &:hover {

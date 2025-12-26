@@ -3258,7 +3258,7 @@ const EditorSidebar = props => {
   }));
 };
 
-const getIconColor = hex => {
+const getBrightnessColor = hex => {
   // remove "#"
   hex = hex.replace("#", "");
 
@@ -3423,7 +3423,7 @@ const StyledColorCard = styled__default["default"].div.withConfig({
   background
 }) => background, ({
   background
-}) => getIconColor(background));
+}) => getBrightnessColor(background));
 const StyledInputWrapper = styled__default["default"].div.withConfig({
   displayName: "ColorConfigurations__StyledInputWrapper",
   componentId: "sc-qln4q1-5"
@@ -9563,4 +9563,5 @@ function EasyblocksEditor(props) {
 
 exports.EasyblocksEditor = EasyblocksEditor;
 exports.EditorContext = EditorContext;
+exports.getBrightnessColor = getBrightnessColor;
 exports.useEditorContext = useEditorContext;

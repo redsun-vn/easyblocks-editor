@@ -1,4 +1,4 @@
-export const getIconColor = (hex: string) => {
+export const getBrightnessColor = (hex: string) => {
   // remove "#"
   hex = hex.replace("#", "");
 
