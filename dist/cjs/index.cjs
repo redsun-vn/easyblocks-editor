@@ -5466,6 +5466,9 @@ const StyledEditorLayerTitle = styled__default["default"](easyblocksDesignSystem
 })(["line-height:14px;font-weight:700;padding:17px 12px;"]);
 const EditorLayer = () => {
   const editorContext = useEditorContext();
+  const {
+    t
+  } = useTranslation();
   const [layers, setLayers] = React.useState();
   const deferredLayers = React.useDeferredValue(layers);
   const deferredCurrentLayer = React.useDeferredValue(editorContext.focussedField[0]);
@@ -5503,7 +5506,7 @@ const EditorLayer = () => {
   React.useEffect(() => {
     initLayers();
   }, [editorContext.form.values]);
-  return /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerTitle, null, "Layer"), /*#__PURE__*/React__default["default"].createElement(HorizontalLine, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorLayer, null, deferredLayers ? /*#__PURE__*/React__default["default"].createElement(EditorLayerDetail, {
+  return /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerTitle, null, t("editor.sidebar.layers")), /*#__PURE__*/React__default["default"].createElement(HorizontalLine, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorLayer, null, deferredLayers ? /*#__PURE__*/React__default["default"].createElement(EditorLayerDetail, {
     onFocusLayer: onFocusLayer,
     currentLayer: deferredCurrentLayer,
     onClickLayer: onClickLayer,

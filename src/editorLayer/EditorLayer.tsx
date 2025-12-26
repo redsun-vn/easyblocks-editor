@@ -2,6 +2,7 @@ import { Colors, Typography } from "@redsun-vn/easyblocks-design-system";
 import React, { useDeferredValue, useEffect, useState } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../EditorContext";
+import { useTranslation } from "../useTranslation";
 import { getConfigSnapshot } from "../utils/config/getConfigSnapshot";
 import {
   ILayer,
@@ -33,6 +34,7 @@ const StyledEditorLayerTitle = styled(Typography)`
 
 export const EditorLayer: React.FC = () => {
   const editorContext = useEditorContext();
+  const { t } = useTranslation();
   const [layers, setLayers] = useState<ILayer[]>();
   const deferredLayers = useDeferredValue(layers);
   const deferredCurrentLayer = useDeferredValue(editorContext.focussedField[0]);
@@ -96,7 +98,9 @@ export const EditorLayer: React.FC = () => {
 
   return (
     <StyledEditorLayerRoot>
-      <StyledEditorLayerTitle>Layer</StyledEditorLayerTitle>
+      <StyledEditorLayerTitle>
+        {t("editor.sidebar.layers")}
+      </StyledEditorLayerTitle>
 
       <HorizontalLine />
 
