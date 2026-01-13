@@ -43,12 +43,16 @@ const testCompilationContext = createTestCompilationContext();
 
 export const testEditorContext: EditorContextType = {
   ...testCompilationContext,
-  syncTemplates: () => { },
+  syncTemplates: () => {},
   isAdminMode: false,
   breakpointIndex: "b1",
   // Removed as it is not part of EditorContextType
   devices: testDevices,
-  templates: [],
+  templates: {
+    items: [],
+    query: {},
+    count: {},
+  },
   contextParams: {
     locale: "en",
   },
@@ -64,24 +68,24 @@ export const testEditorContext: EditorContextType = {
   },
   mainBreakpointIndex: "b4",
   focussedField: [],
-  setFocussedField: () => { },
+  setFocussedField: () => {},
   form: new Form({} as any),
   actions: {
-    openTemplateModal: () => { },
-    notify: () => { },
+    openTemplateModal: () => {},
+    notify: () => {},
     openComponentPicker: () => {
-      return new Promise(() => { });
+      return new Promise(() => {});
     },
-    insertItem: () => { },
-    runChange: () => { },
-    duplicateItems: () => { },
-    moveItems: () => { },
-    removeItems: () => { },
-    replaceItems: () => { },
-    pasteItems: () => { },
-    logSelectedItems: () => { },
+    insertItem: () => {},
+    runChange: () => {},
+    duplicateItems: () => {},
+    moveItems: () => {},
+    removeItems: () => {},
+    replaceItems: () => {},
+    pasteItems: () => {},
+    logSelectedItems: () => {},
   },
-  save: async () => { },
+  save: async () => {},
   locales: [
     {
       code: "en",

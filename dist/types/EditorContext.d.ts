@@ -18,12 +18,29 @@ export type EditorTokenTypeDefinition = Omit<TokenTypeDefinition, "widgets"> & {
         component?: ComponentType<TokenTypeWidgetComponentProps<any>>;
     };
 };
-export type EditorContextType = Omit<BaseEditorContextType, "types"> & {
+export type TemplateQueryType = {
+    filters?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+};
+export type TemplateType = {
+    query: TemplateQueryType;
+    items: Template[];
+    count: Record<string, {
+        matchedCount: number;
+        total: number;
+    }>;
+};
+export type EditorContextType = Omit<BaseEditorContextType, "types" | "templates"> & {
     backend: Backend;
-    templates?: Template[];
-    syncTemplates: (props: {
+    isFetchingTemplates?: boolean;
+    templates?: TemplateType;
+    syncTemplateQuery?: (props: TemplateQueryType) => void;
+    syncTemplates: (props?: {
         mode?: "create" | "edit" | "delete";
         template?: Template;
+        getAllMode?: "replace" | "append";
     }) => void;
     focussedField: Array<string>;
     setFocussedField: (field: Array<string> | string) => void;

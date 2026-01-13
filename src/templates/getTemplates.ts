@@ -1,9 +1,10 @@
+import { uniqueId } from "@/utils";
 import {
-  buildRichTextNoCodeEntry,
-  NoCodeComponentEntry,
   InternalTemplate,
+  NoCodeComponentEntry,
   Template,
   UserDefinedTemplate,
+  buildRichTextNoCodeEntry,
   getDefaultLocale,
 } from "@redsun-vn/easyblocks-core";
 import {
@@ -11,8 +12,7 @@ import {
   findComponentDefinitionById,
   normalize,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { uniqueId } from "@/utils";
-import { EditorContextType } from "../EditorContext";
+import { EditorContextType, TemplateQueryType } from "../EditorContext";
 import { configMap } from "../utils/config/configMap";
 
 function getDefaultTemplateForDefinition(
@@ -45,18 +45,24 @@ function getDefaultTokenId(tokens: EditorContextType["theme"][string]) {
 
 export async function getTemplates(
   editorContext: EditorContextType,
-  configTemplates: InternalTemplate[] = []
-): Promise<Template[]> {
-  const remoteUserDefinedTemplates: UserDefinedTemplate[] =
-    !editorContext.disableCustomTemplates
-      ? await editorContext.backend.templates.getAll()
-      : [];
+  configTemplates: InternalTemplate[] = [],
+  query?: TemplateQueryType
+): Promise<{
+  items: NonNullable<EditorContextType["templates"]>["items"];
+  count: NonNullable<EditorContextType["templates"]>["count"];
+}> {
+  const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates
+    ? await editorContext.backend.templates.getAll(query)
+    : { items: [], count: {} };
 
-  return getTemplatesInternal(
-    editorContext,
-    configTemplates,
-    remoteUserDefinedTemplates
-  );
+  return {
+    items: getTemplatesInternal(
+      editorContext,
+      configTemplates,
+      remoteUserDefinedTemplates.items
+    ),
+    count: remoteUserDefinedTemplates.count,
+  };
 }
 
 function getNecessaryDefaultTemplates(

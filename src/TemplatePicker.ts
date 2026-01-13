@@ -5,15 +5,20 @@ import {
 
 export type TemplatesDictionary = {
   [componentId: string]: {
-    component: ComponentDefinitionShared;
+    component: ComponentDefinitionShared & { group?: string };
     templates: Template[];
   };
 };
 
-type TemplatePickerProps = {
+export type TemplatePickerProps = {
   isOpen: boolean;
   templates?: TemplatesDictionary;
+  templateCount?: Record<string, any>;
+  isFetching?: boolean;
   onClose: (template?: Template) => void;
+  onSearchGroup?: (text: string) => void;
+  onFilters?: (filters: string) => void;
+  onLoadMore?: () => void;
   mode?: string;
 };
 

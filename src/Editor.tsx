@@ -49,7 +49,6 @@ import { Colors, Fonts, useToaster } from "@redsun-vn/easyblocks-design-system";
 import throttle from "lodash.throttle";
 import React, {
   ComponentType,
-  lazy,
   memo,
   useCallback,
   useEffect,
@@ -61,7 +60,12 @@ import Modal from "react-modal";
 import { styled } from "styled-components";
 import { ConfigAfterAutoContext } from "./ConfigAfterAutoContext";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
-import { EditorContext, EditorContextType } from "./EditorContext";
+import {
+  EditorContext,
+  EditorContextType,
+  TemplateQueryType,
+  TemplateType,
+} from "./EditorContext";
 import { EditorExternalDataProvider } from "./EditorExternalDataProvider";
 import { EditorIframe } from "./EditorIframe";
 import { EditorSidebar } from "./EditorSidebar";
@@ -95,10 +99,6 @@ import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShort
 import { useEditorHistory } from "./useEditorHistory";
 import { checkLocalesCorrectness } from "./utils/locales/checkLocalesCorrectness";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
-
-const EditorLayerLazy = lazy(() =>
-  import("./editorLayer/EditorLayer").then((e) => ({ default: e.EditorLayer }))
-);
 
 declare global {
   interface Window {
@@ -741,7 +741,13 @@ const EditorContent = ({
     },
   });
 
-  const [templates, setTemplates] = useState<Template[] | undefined>(undefined);
+  const [templates, setTemplates] = useState<{
+    query: TemplateQueryType;
+    count: Record<string, { matchedCount: number; total: number }>;
+    items: Template[];
+  }>();
+  const [templateQuery, setTemplateQuery] = useState<TemplateQueryType>();
+  const [isFetchingTemplates, setIsFetchingTemplates] = useState(false);
 
   const [openTemplateModalAction, setOpenTemplateModalAction] = useState<
     OpenTemplateModalAction | undefined
@@ -844,11 +850,51 @@ const EditorContent = ({
     },
   };
 
-  const syncTemplates = ({
-    mode,
-    template,
-  }: { mode?: "create" | "edit" | "delete"; template?: Template } = {}) => {
-    let templateDefined;
+  const loadTemplates = ({
+    mode = "replace",
+    query,
+  }: {
+    mode?: "replace" | "append";
+    query?: TemplateQueryType;
+  }) => {
+    setIsFetchingTemplates(true);
+    getTemplates(
+      editorContext,
+      (props.config.templates as any) ?? [],
+      query ?? {}
+    )
+      .then((newTemplates) => {
+        switch (mode) {
+          case "append": {
+            setTemplates((prevTemplates) => ({
+              query: prevTemplates?.query ?? templateQuery ?? {},
+              count: newTemplates?.count ?? {},
+              items: [...(prevTemplates?.items ?? []), ...newTemplates.items],
+            }));
+            break;
+          }
+
+          default: {
+            setTemplates((prevTemplates) => ({
+              query: prevTemplates?.query ?? templateQuery ?? {},
+              count: newTemplates?.count ?? {},
+              items: newTemplates.items,
+            }));
+            break;
+          }
+        }
+      })
+      .finally(() => {
+        setIsFetchingTemplates(false);
+      });
+  };
+
+  const syncTemplates = (
+    props?: Parameters<EditorContextType["syncTemplates"]>[0]
+  ) => {
+    const { mode, template, getAllMode = "replace" } = props ?? {};
+
+    let templateDefined: Template | undefined;
     if (template) {
       templateDefined = {
         ...(template as UserDefinedTemplate),
@@ -861,10 +907,14 @@ const EditorContent = ({
         if (templateDefined) {
           setTemplates((prev) => {
             if (!prev) {
-              return [templateDefined];
+              return { items: [templateDefined], count: {}, query: {} };
             }
 
-            return [...prev, templateDefined];
+            return {
+              query: prev.query ?? {},
+              items: [...prev.items, templateDefined],
+              count: prev.count ?? {},
+            };
           });
         }
         break;
@@ -874,10 +924,14 @@ const EditorContent = ({
         if (templateDefined) {
           setTemplates((prev) => {
             if (!prev) {
-              return [templateDefined];
+              return {
+                items: [templateDefined],
+                count: {},
+                query: {},
+              };
             }
 
-            const templateIndex = prev.findIndex(
+            const templateIndex = prev.items.findIndex(
               (t) => t.id === templateDefined.id
             );
 
@@ -885,10 +939,10 @@ const EditorContent = ({
               return prev;
             }
 
-            const newTemplates = [...prev];
+            const newTemplates = [...prev.items];
             newTemplates[templateIndex] = templateDefined;
 
-            return newTemplates;
+            return { ...prev, items: newTemplates };
           });
         }
         break;
@@ -898,10 +952,10 @@ const EditorContent = ({
         if (templateDefined) {
           setTemplates((prev) => {
             if (!prev) {
-              return [];
+              return;
             }
 
-            const templateIndex = prev.findIndex(
+            const templateIndex = prev.items.findIndex(
               (t) => t.id === templateDefined.id
             );
 
@@ -909,24 +963,24 @@ const EditorContent = ({
               return prev;
             }
 
-            const newTemplates = [...prev];
+            const newTemplates = [...prev.items];
             newTemplates.splice(templateIndex, 1);
 
-            return newTemplates;
+            return { ...prev, items: newTemplates };
           });
         }
         break;
       }
 
       default: {
-        getTemplates(editorContext, (props.config.templates as any) ?? []).then(
-          (newTemplates) => {
-            setTemplates(newTemplates);
-          }
-        );
+        loadTemplates({ mode: getAllMode, query: templateQuery });
         break;
       }
     }
+  };
+
+  const syncTemplateQuery = (query: TemplateQueryType) => {
+    setTemplateQuery((prevQuery) => ({ ...prevQuery, ...query }));
   };
 
   useEffect(() => {
@@ -935,7 +989,7 @@ const EditorContent = ({
 
   useEffect(() => {
     syncTemplates();
-  }, [props.config.components, props.config.templates]);
+  }, [props.config.components, props.config.templates, templateQuery]);
 
   const editorTypes: EditorContextType["types"] = Object.fromEntries(
     Object.entries(compilationContext.types).map(
@@ -976,7 +1030,9 @@ const EditorContent = ({
     backend: props.config.backend,
     types: editorTypes,
     isAdminMode,
+    isFetchingTemplates,
     templates,
+    syncTemplateQuery,
     syncTemplates,
     breakpointIndex,
     focussedField,

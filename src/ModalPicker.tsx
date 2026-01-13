@@ -39,7 +39,7 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
   )!.schema.find((x) => x.prop === fieldName) as ComponentSchemaProp;
 
   const componentTypes = config.componentTypes ?? schemaProp.accepts;
-  const components = unrollAcceptsFieldIntoComponents(
+  const localComponents = unrollAcceptsFieldIntoComponents(
     componentTypes,
     editorContext
   );
@@ -49,32 +49,27 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
   if (editorContext.templates) {
     templatesDictionary = {};
 
-    components.forEach((component) => {
-      templatesDictionary![component.id] = {
-        component,
+    localComponents.forEach((localComponent) => {
+      templatesDictionary![localComponent.id] = {
+        component: localComponent,
         templates: [],
       };
 
-      editorContext.templates!.forEach((template) => {
-        if (component.id === template.entry._component) {
-          templatesDictionary![component.id].templates.push(template);
+      editorContext.templates!.items!.forEach((remoteTemplate) => {
+        if (localComponent.id === remoteTemplate.entry._component) {
+          templatesDictionary![localComponent.id].templates.push(
+            remoteTemplate
+          );
         }
       });
 
-      if (templatesDictionary![component.id].templates.length === 0) {
-        delete templatesDictionary![component.id];
+      if (templatesDictionary![localComponent.id].templates.length === 0) {
+        delete templatesDictionary![localComponent.id];
       }
     });
   }
 
   const picker = schemaProp.picker ?? "compact";
-
-  // const defaultPickerMode =
-  //   accepts.includes("section") || componentTypes.includes("card")
-  //     ? "big"
-  //     : "small";
-  //
-  // const pickerMode = schemaProp.picker || defaultPickerMode;
 
   const close = (config: NoCodeComponentEntry) => {
     const _itemProps = {
@@ -107,11 +102,31 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
     }
   };
 
+  const onSearchGroup = (search: string) => {
+    editorContext.syncTemplateQuery?.({ filters: "", search });
+  };
+
+  const onFilters = (filters: string) => {
+    editorContext.syncTemplateQuery?.({ filters, search: "" });
+  };
+
+  // const onLoadMore = () => {
+  //   editorContext.syncTemplateQuery?.({
+  //     page: (editorContext.templateQuery?.page ?? 0) + 1,
+  //   });
+  //   editorContext.syncTemplates({ getAllMode: "append" });
+  // };
+
   return pickers?.[picker] ? (
     pickers[picker]({
       isOpen: true,
       onClose: onModalClose,
+      isFetching: editorContext.isFetchingTemplates,
+      onSearchGroup,
+      onFilters,
+      // onLoadMore,
       templates: templatesDictionary,
+      templateCount: editorContext.templates?.count,
       mode: picker,
     })
   ) : (

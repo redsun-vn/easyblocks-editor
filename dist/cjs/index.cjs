@@ -4341,34 +4341,26 @@ const ModalPicker = ({
   const parentData = dotNotationGet(form.values, parentPath);
   const schemaProp = _internals.findComponentDefinition(parentData, editorContext).schema.find(x => x.prop === fieldName);
   const componentTypes = config.componentTypes ?? schemaProp.accepts;
-  const components = unrollAcceptsFieldIntoComponents(componentTypes, editorContext);
+  const localComponents = unrollAcceptsFieldIntoComponents(componentTypes, editorContext);
   let templatesDictionary = undefined;
   if (editorContext.templates) {
     templatesDictionary = {};
-    components.forEach(component => {
-      templatesDictionary[component.id] = {
-        component,
+    localComponents.forEach(localComponent => {
+      templatesDictionary[localComponent.id] = {
+        component: localComponent,
         templates: []
       };
-      editorContext.templates.forEach(template => {
-        if (component.id === template.entry._component) {
-          templatesDictionary[component.id].templates.push(template);
+      editorContext.templates.items.forEach(remoteTemplate => {
+        if (localComponent.id === remoteTemplate.entry._component) {
+          templatesDictionary[localComponent.id].templates.push(remoteTemplate);
         }
       });
-      if (templatesDictionary[component.id].templates.length === 0) {
-        delete templatesDictionary[component.id];
+      if (templatesDictionary[localComponent.id].templates.length === 0) {
+        delete templatesDictionary[localComponent.id];
       }
     });
   }
   const picker = schemaProp.picker ?? "compact";
-
-  // const defaultPickerMode =
-  //   accepts.includes("section") || componentTypes.includes("card")
-  //     ? "big"
-  //     : "small";
-  //
-  // const pickerMode = schemaProp.picker || defaultPickerMode;
-
   const close = config => {
     const _itemProps = {
       [parentData._component]: {
@@ -4388,10 +4380,35 @@ const ModalPicker = ({
       onClose();
     }
   };
+  const onSearchGroup = search => {
+    editorContext.syncTemplateQuery?.({
+      filters: "",
+      search
+    });
+  };
+  const onFilters = filters => {
+    editorContext.syncTemplateQuery?.({
+      filters,
+      search: ""
+    });
+  };
+
+  // const onLoadMore = () => {
+  //   editorContext.syncTemplateQuery?.({
+  //     page: (editorContext.templateQuery?.page ?? 0) + 1,
+  //   });
+  //   editorContext.syncTemplates({ getAllMode: "append" });
+  // };
+
   return pickers?.[picker] ? pickers[picker]({
     isOpen: true,
     onClose: onModalClose,
+    isFetching: editorContext.isFetchingTemplates,
+    onSearchGroup,
+    onFilters,
+    // onLoadMore,
     templates: templatesDictionary,
+    templateCount: editorContext.templates?.count,
     mode: picker
   }) : /*#__PURE__*/React__default["default"].createElement("div", null, "Unknown picker: ", picker);
 };
@@ -6144,9 +6161,15 @@ function getDefaultTemplateForDefinition(def, editorContext) {
 function getDefaultTokenId(tokens) {
   return Object.entries(tokens).find(([, value]) => value.isDefault)?.[0];
 }
-async function getTemplates(editorContext, configTemplates = []) {
-  const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates ? await editorContext.backend.templates.getAll() : [];
-  return getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates);
+async function getTemplates(editorContext, configTemplates = [], query) {
+  const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates ? await editorContext.backend.templates.getAll(query) : {
+    items: [],
+    count: {}
+  };
+  return {
+    items: getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates.items),
+    count: remoteUserDefinedTemplates.count
+  };
 }
 function getNecessaryDefaultTemplates(components, templates, editorContext) {
   const result = [];
@@ -7382,7 +7405,9 @@ const EditorContent = ({
       form.finalForm.change("", config);
     }
   });
-  const [templates, setTemplates] = React.useState(undefined);
+  const [templates, setTemplates] = React.useState();
+  const [templateQuery, setTemplateQuery] = React.useState();
+  const [isFetchingTemplates, setIsFetchingTemplates] = React.useState(false);
   const [openTemplateModalAction, setOpenTemplateModalAction] = React.useState(undefined);
   const {
     notify
@@ -7476,10 +7501,42 @@ const EditorContent = ({
       logItems(editorContext.form, focussedField);
     }
   };
-  const syncTemplates = ({
-    mode,
-    template
-  } = {}) => {
+  const loadTemplates = ({
+    mode = "replace",
+    query
+  }) => {
+    setIsFetchingTemplates(true);
+    getTemplates(editorContext, props.config.templates ?? [], query ?? {}).then(newTemplates => {
+      switch (mode) {
+        case "append":
+          {
+            setTemplates(prevTemplates => ({
+              query: prevTemplates?.query ?? templateQuery ?? {},
+              count: newTemplates?.count ?? {},
+              items: [...(prevTemplates?.items ?? []), ...newTemplates.items]
+            }));
+            break;
+          }
+        default:
+          {
+            setTemplates(prevTemplates => ({
+              query: prevTemplates?.query ?? templateQuery ?? {},
+              count: newTemplates?.count ?? {},
+              items: newTemplates.items
+            }));
+            break;
+          }
+      }
+    }).finally(() => {
+      setIsFetchingTemplates(false);
+    });
+  };
+  const syncTemplates = props => {
+    const {
+      mode,
+      template,
+      getAllMode = "replace"
+    } = props ?? {};
     let templateDefined;
     if (template) {
       templateDefined = {
@@ -7493,9 +7550,17 @@ const EditorContent = ({
           if (templateDefined) {
             setTemplates(prev => {
               if (!prev) {
-                return [templateDefined];
+                return {
+                  items: [templateDefined],
+                  count: {},
+                  query: {}
+                };
               }
-              return [...prev, templateDefined];
+              return {
+                query: prev.query ?? {},
+                items: [...prev.items, templateDefined],
+                count: prev.count ?? {}
+              };
             });
           }
           break;
@@ -7505,15 +7570,22 @@ const EditorContent = ({
           if (templateDefined) {
             setTemplates(prev => {
               if (!prev) {
-                return [templateDefined];
+                return {
+                  items: [templateDefined],
+                  count: {},
+                  query: {}
+                };
               }
-              const templateIndex = prev.findIndex(t => t.id === templateDefined.id);
+              const templateIndex = prev.items.findIndex(t => t.id === templateDefined.id);
               if (templateIndex === -1) {
                 return prev;
               }
-              const newTemplates = [...prev];
+              const newTemplates = [...prev.items];
               newTemplates[templateIndex] = templateDefined;
-              return newTemplates;
+              return {
+                ...prev,
+                items: newTemplates
+              };
             });
           }
           break;
@@ -7523,34 +7595,44 @@ const EditorContent = ({
           if (templateDefined) {
             setTemplates(prev => {
               if (!prev) {
-                return [];
+                return;
               }
-              const templateIndex = prev.findIndex(t => t.id === templateDefined.id);
+              const templateIndex = prev.items.findIndex(t => t.id === templateDefined.id);
               if (templateIndex === -1) {
                 return prev;
               }
-              const newTemplates = [...prev];
+              const newTemplates = [...prev.items];
               newTemplates.splice(templateIndex, 1);
-              return newTemplates;
+              return {
+                ...prev,
+                items: newTemplates
+              };
             });
           }
           break;
         }
       default:
         {
-          getTemplates(editorContext, props.config.templates ?? []).then(newTemplates => {
-            setTemplates(newTemplates);
+          loadTemplates({
+            mode: getAllMode,
+            query: templateQuery
           });
           break;
         }
     }
+  };
+  const syncTemplateQuery = query => {
+    setTemplateQuery(prevQuery => ({
+      ...prevQuery,
+      ...query
+    }));
   };
   React.useEffect(() => {
     prevLocale.current = currentLocale;
   }, [currentLocale]);
   React.useEffect(() => {
     syncTemplates();
-  }, [props.config.components, props.config.templates]);
+  }, [props.config.components, props.config.templates, templateQuery]);
   const editorTypes = Object.fromEntries(Object.entries(compilationContext.types).map(([typeName, typeDefinition]) => {
     return [typeName, {
       ...typeDefinition,
@@ -7578,7 +7660,9 @@ const EditorContent = ({
     backend: props.config.backend,
     types: editorTypes,
     isAdminMode,
+    isFetchingTemplates,
     templates,
+    syncTemplateQuery,
     syncTemplates,
     breakpointIndex,
     focussedField,
