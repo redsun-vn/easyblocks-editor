@@ -5,18 +5,21 @@ import {
   stripRichTextPartSelection,
 } from "@redsun-vn/easyblocks-core/_internals";
 import {
-  ButtonPrimary,
   ButtonSecondary,
   Colors,
   Fonts,
+  Icons,
   useToaster,
 } from "@redsun-vn/easyblocks-design-system";
 import * as React from "react";
 import { styled } from "styled-components";
 import { useEditorContext } from "./EditorContext";
 import { pathToCompiledPath } from "./pathToCompiledPath";
+import { SaveAsPicker } from "./SaveAsPicker";
+import { SaveAsTemplatePicker } from "./TemplatePicker";
 import { useTranslation } from "./useTranslation";
 import { copyToClipboard } from "./utils/copyToClipboard";
+import { useState } from "react";
 
 const SidebarFooterContainer = styled.div`
   position: sticky;
@@ -39,19 +42,29 @@ const IdWrapper = styled.div`
 
 const ButtonWrapper = styled.div`
   display: flex;
-  gap: 16px;
+  justify-content: end;
+  gap: 8px;
 `;
 
-const StyledCopyId = styled.a`
-  cursor: pointer;
-  text-decoration: underline;
+const StyledButtonCopyTemplate = styled(ButtonSecondary)`
+  min-width: auto !important;
+  & svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
 `;
 
-export function SidebarFooter(props: { paths: string[] }) {
+export function SidebarFooter(props: {
+  paths: string[];
+  SaveAsPicker?: SaveAsTemplatePicker;
+}) {
   const editorContext = useEditorContext();
   const toaster = useToaster();
   const { t } = useTranslation();
   const { form, isAdminMode } = editorContext;
+  const [saveAsEntry, setSaveAsEntry] = useState<NoCodeComponentEntry | null>(
+    null,
+  );
 
   if (props.paths.length === 0) {
     return null;
@@ -67,7 +80,7 @@ export function SidebarFooter(props: { paths: string[] }) {
   const compiledPath = pathToCompiledPath(path, editorContext);
   const compiledValue = dotNotationGet(
     editorContext.compiledComponentConfig,
-    compiledPath
+    compiledPath,
   );
 
   const widthInfo = compiledValue.__editing?.widthInfo;
@@ -99,45 +112,68 @@ export function SidebarFooter(props: { paths: string[] }) {
     <SidebarFooterContainer>
       <HorizontalLine />
       <IdWrapper>
-        <div>
-          Id:{" "}
-          <StyledCopyId onClick={() => onCopy(value._id)}>
-            {value._id}
-          </StyledCopyId>
-        </div>
-        <br />
-
         {showSaveAsTemplate || isAdminMode ? (
           <ButtonWrapper>
             {showSaveAsTemplate && (
-              <ButtonSecondary
-                onClick={() => {
-                  editorContext.actions.openTemplateModal({
-                    mode: "create",
-                    config: value,
-                    width,
-                    widthAuto,
-                  });
-                }}
-              >
-                {t("template.save")}
-              </ButtonSecondary>
+              <>
+                <ButtonSecondary
+                  icon={Icons.Save}
+                  hideLabel
+                  onClick={() => {
+                    editorContext.actions.openTemplateModal({
+                      mode: "create",
+                      config: value,
+                      width,
+                      widthAuto,
+                    });
+                  }}
+                  style={{ minWidth: "auto" }}
+                >
+                  {t("template.save")}
+                </ButtonSecondary>
+                <ButtonSecondary
+                  style={{ minWidth: "auto" }}
+                  icon={Icons.SaveAs}
+                  hideLabel
+                  onClick={() => setSaveAsEntry(value)}
+                >
+                  {t("template.saveAs")}
+                </ButtonSecondary>
+              </>
             )}
             {isAdminMode && (
-              <div>
-                <div>
-                  <ButtonPrimary onClick={() => onCopy(value)}>
-                    {t("template.entry.copy")}
-                  </ButtonPrimary>
-                </div>
+              <>
+                <StyledButtonCopyTemplate
+                  icon={Icons.Copy}
+                  hideLabel
+                  onClick={() => onCopy(value)}
+                >
+                  {t("template.entry.copy")}
+                </StyledButtonCopyTemplate>
+                <ButtonSecondary
+                  icon={Icons.Id}
+                  hideLabel
+                  onClick={() => onCopy(value._id)}
+                  style={{ minWidth: "auto" }}
+                >
+                  {t("template.id.copy")}
+                </ButtonSecondary>
                 {value._master && (
                   <div style={{ paddingTop: 16 }}>Master: {value._master}</div>
                 )}
-              </div>
+              </>
             )}
           </ButtonWrapper>
         ) : null}
       </IdWrapper>
+
+      {props.SaveAsPicker ? (
+        <SaveAsPicker
+          saveAsEntry={saveAsEntry}
+          setSaveAsEntry={setSaveAsEntry}
+          Component={props.SaveAsPicker}
+        />
+      ) : null}
     </SidebarFooterContainer>
   );
 }

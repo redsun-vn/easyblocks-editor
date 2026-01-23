@@ -1,6 +1,6 @@
-import { RequestedExternalData, Config, ContextParams, ExternalData, InlineTypeWidgetComponentProps, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
+import { Config, ContextParams, ExternalData, InlineTypeWidgetComponentProps, RequestedExternalData, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
 import React, { ComponentType } from "react";
-import { TemplatePicker } from "./TemplatePicker";
+import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
 export type ExternalDataChangeHandler = (externalData: RequestedExternalData, contextParams: ContextParams) => void;
 export type EasyblocksEditorProps = {
     config: Config;
@@ -13,5 +13,6 @@ export type EasyblocksEditorProps = {
     __debug?: boolean;
     isAdminMode?: boolean;
     defaultLocale?: string;
+    SaveAsPicker?: SaveAsTemplatePicker;
 };
 //# sourceMappingURL=EasyblocksEditorProps.d.ts.map

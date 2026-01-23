@@ -73,7 +73,7 @@ import { EditorTopBar, TOP_BAR_HEIGHT } from "./EditorTopBar";
 import { ModalPicker } from "./ModalPicker";
 import { SkeletonEditor } from "./SkeletonEditor";
 import { TemplateModal } from "./TemplateModal";
-import { TemplatePicker } from "./TemplatePicker";
+import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
 import {
   duplicateItems,
   logItems,
@@ -208,6 +208,7 @@ type EditorProps = {
   >;
   components?: Record<string, ComponentType<any>>;
   pickers?: Record<string, TemplatePicker>;
+  SaveAsPicker?: SaveAsTemplatePicker;
 };
 
 export const Editor = EditorBackendInitializer;
@@ -227,7 +228,7 @@ function EditorBackendInitializer(props: EditorProps) {
 
           if (!document) {
             throw new Error(
-              `Can't fetch document with id: ${props.documentId}`
+              `Can't fetch document with id: ${props.documentId}`,
             );
           }
 
@@ -236,7 +237,7 @@ function EditorBackendInitializer(props: EditorProps) {
       } catch (error) {
         console.error(error);
         setError(
-          `Backend initialization error, check out console for more details.`
+          `Backend initialization error, check out console for more details.`,
         );
         return;
       }
@@ -273,33 +274,33 @@ const EditorWrapper = memo(
       if (props.rootTemplateId) {
         if (props.rootComponentId) {
           throw new Error(
-            "You can't pass both 'rootContainer' and 'rootTemplate' parameters to the editor"
+            "You can't pass both 'rootContainer' and 'rootTemplate' parameters to the editor",
           );
         }
 
         const template = props.config.templates?.find(
-          (template) => template.id === props.rootTemplateId
+          (template) => template.id === props.rootTemplateId,
         );
 
         if (!template) {
           throw new Error(
-            `The template given in "rootTemplate" ("${props.rootTemplateId}") doesn't exist in Config.templates`
+            `The template given in "rootTemplate" ("${props.rootTemplateId}") doesn't exist in Config.templates`,
           );
         }
       } else {
         if (props.rootComponentId === null) {
           throw new Error(
-            "When you create a new document you must pass a 'rootContainer' or 'rootTemplate' parameter to the editor"
+            "When you create a new document you must pass a 'rootContainer' or 'rootTemplate' parameter to the editor",
           );
         }
 
         if (
           !props.config.components?.find(
-            (component) => component.id === props.rootComponentId
+            (component) => component.id === props.rootComponentId,
           )
         ) {
           throw new Error(
-            `The component given in rootContainer ("${props.rootComponentId}") doesn't exist in Config.components`
+            `The component given in rootContainer ("${props.rootComponentId}") doesn't exist in Config.components`,
           );
         }
       }
@@ -320,14 +321,14 @@ const EditorWrapper = memo(
 
     const rootComponentId = props.document
       ? props.document.entry._component
-      : rootTemplateEntry?._component ?? props.rootComponentId;
+      : (rootTemplateEntry?._component ?? props.rootComponentId);
 
     const compilationContext = createCompilationContext(
       props.config,
       {
         locale: props?.defaultLocale ?? locale,
       },
-      rootComponentId!
+      rootComponentId!,
     );
 
     const initialEntry = props.document
@@ -337,7 +338,7 @@ const EditorWrapper = memo(
             _id: uniqueId(),
             _component: rootComponentId!,
           },
-          compilationContext
+          compilationContext,
         );
 
     return (
@@ -348,7 +349,7 @@ const EditorWrapper = memo(
         initialEntry={initialEntry}
       />
     );
-  }
+  },
 );
 
 type EditorContentProps = EditorProps & {
@@ -377,7 +378,7 @@ function useBuiltContent(
   config: Config,
   rawContent: NoCodeComponentEntry,
   externalData: ExternalData,
-  onExternalDataChange: ExternalDataChangeHandler
+  onExternalDataChange: ExternalDataChangeHandler,
 ): NonEmptyRenderableContent & {
   meta: CompilationMetadata;
 } {
@@ -402,11 +403,11 @@ function useBuiltContent(
 
   const configFontsChanged = !deepCompare(
     inputConfigTokenFonts.current ?? {},
-    config.tokens?.fonts ?? {}
+    config.tokens?.fonts ?? {},
   );
   const configColorsChanged = !deepCompare(
     inputConfigTokenColors.current ?? {},
-    config.tokens?.colors ?? {}
+    config.tokens?.colors ?? {},
   );
 
   if (
@@ -463,7 +464,7 @@ function useBuiltContent(
           const { meta, ...rest } = compileInternal(
             normalizedContent,
             editorContext,
-            editorContext.compilationCache
+            editorContext.compilationCache,
           );
 
           resultMeta = mergeCompilationMeta(resultMeta, meta);
@@ -492,13 +493,13 @@ function useBuiltContent(
           inputRawContent.current
         ) {
           const { breakpointIndex, configId, fieldName } = parseExternalDataId(
-            externalDataValue.id
+            externalDataValue.id,
           );
 
           const config = findConfigById(
             inputRawContent.current,
             editorContext,
-            configId === "$" ? inputRawContent.current._id : configId
+            configId === "$" ? inputRawContent.current._id : configId,
           );
 
           if (!config) {
@@ -525,7 +526,7 @@ function useBuiltContent(
     if (Object.keys(buildEntryResult.current.externalData).length > 0) {
       onExternalDataChange(
         buildEntryResult.current.externalData,
-        editorContext.contextParams
+        editorContext.contextParams,
       );
     }
   }
@@ -547,7 +548,7 @@ function calculateViewportRelatedStuff(
   viewport: string,
   devices: DeviceRange[],
   mainBreakpointIndex: string,
-  availableSize?: { width: number; height: number }
+  availableSize?: { width: number; height: number },
 ) {
   let activeDevice: DeviceRange;
 
@@ -555,7 +556,7 @@ function calculateViewportRelatedStuff(
   if (viewport === "fit-screen") {
     if (!availableSize) {
       activeDevice = devices.find(
-        (device) => device.id === mainBreakpointIndex
+        (device) => device.id === mainBreakpointIndex,
       )!;
     } else {
       const matchingDevice = getMatchingDevice(devices, availableSize.width);
@@ -570,7 +571,7 @@ function calculateViewportRelatedStuff(
   }
 
   const activeDeviceindex = devices.findIndex(
-    (device) => device.id === activeDevice.id
+    (device) => device.id === activeDevice.id,
   );
 
   // Calculate width, height and scale
@@ -635,8 +636,8 @@ function useRerenderOnIframeResize(iframe?: HTMLIFrameElement | null) {
     new ResizeObserver(
       throttle(() => {
         forceRerender();
-      }, 100)
-    )
+      }, 100),
+    ),
   );
 
   useEffect(() => {
@@ -661,10 +662,11 @@ const EditorContent = ({
   isAdminMode = false,
   defaultLocale,
   onConfigChange,
+  SaveAsPicker,
   ...props
 }: EditorContentProps) => {
   const [currentViewport, setCurrentViewport] = useState<string>(
-    compilationContext.mainBreakpointIndex
+    compilationContext.mainBreakpointIndex,
   ); // "{ breakpoint }" or "fit-screen"
 
   const iframeContainerRef = useRef<HTMLIFrameElement>(null);
@@ -679,7 +681,7 @@ const EditorContent = ({
     currentViewport,
     compilationContext.devices,
     compilationContext.mainBreakpointIndex,
-    availableSize
+    availableSize,
   );
 
   useRerenderOnIframeResize(iframeContainerRef.current); // re-render on resize (recalculates viewport size, active breakpoint for fit-screen etc);
@@ -688,7 +690,7 @@ const EditorContent = ({
   const [isEditing, setEditing] = useState(true);
   const [isShowLayers, setIsShowLayers] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(
-    compilationContext.contextParams.locale
+    compilationContext.contextParams.locale,
   );
   const prevLocale = useRef<string>("");
   const [componentPickerData, setComponentPickerData] = useState<
@@ -704,7 +706,7 @@ const EditorContent = ({
     (field: Array<string> | string) => {
       const nextFocusedField = Array.isArray(field) ? field : [field];
       setFocussedField(nextFocusedField);
-    }
+    },
   ).current;
 
   const isEditMode = useMemo(() => {
@@ -788,7 +790,7 @@ const EditorContent = ({
         form.mutators.insert(
           name,
           index,
-          duplicateConfig(block, compilationContext)
+          duplicateConfig(block, compilationContext),
         );
 
         return [`${name}.${index}`];
@@ -809,7 +811,7 @@ const EditorContent = ({
             context: compilationContext,
           }),
           pasteCommand: pasteManager(),
-        })
+        }),
       );
     },
     runChange: (configChangeCallback) => {
@@ -861,7 +863,7 @@ const EditorContent = ({
     getTemplates(
       editorContext,
       (props.config.templates as any) ?? [],
-      query ?? {}
+      query ?? {},
     )
       .then((newTemplates) => {
         switch (mode) {
@@ -890,7 +892,7 @@ const EditorContent = ({
   };
 
   const syncTemplates = (
-    props?: Parameters<EditorContextType["syncTemplates"]>[0]
+    props?: Parameters<EditorContextType["syncTemplates"]>[0],
   ) => {
     const { mode, template, getAllMode = "replace" } = props ?? {};
 
@@ -932,7 +934,7 @@ const EditorContent = ({
             }
 
             const templateIndex = prev.items.findIndex(
-              (t) => t.id === templateDefined.id
+              (t) => t.id === templateDefined.id,
             );
 
             if (templateIndex === -1) {
@@ -956,7 +958,7 @@ const EditorContent = ({
             }
 
             const templateIndex = prev.items.findIndex(
-              (t) => t.id === templateDefined.id
+              (t) => t.id === templateDefined.id,
             );
 
             if (templateIndex === -1) {
@@ -1008,17 +1010,19 @@ const EditorContent = ({
                   }),
                 }
               : typeDefinition.widget
-              ? {
-                  widget: {
-                    ...typeDefinition.widget,
-                    component: props.widgets?.[typeDefinition.widget.id] as any,
-                  },
-                }
-              : {}),
+                ? {
+                    widget: {
+                      ...typeDefinition.widget,
+                      component: props.widgets?.[
+                        typeDefinition.widget.id
+                      ] as any,
+                    },
+                  }
+                : {}),
           },
         ];
-      }
-    )
+      },
+    ),
   );
 
   const editorContext: EditorContextType = {
@@ -1052,7 +1056,7 @@ const EditorContent = ({
     disableCustomTemplates: props.config.disableCustomTemplates ?? false,
     rootComponent: findComponentDefinitionById(
       initialEntry._component,
-      compilationContext
+      compilationContext,
     )!,
     components: props.components ?? {},
   };
@@ -1062,7 +1066,7 @@ const EditorContent = ({
     props.config,
     editableData,
     externalData,
-    props.onExternalDataChange
+    props.onExternalDataChange,
   );
 
   editorContext.compiledComponentConfig = renderableContent;
@@ -1119,18 +1123,18 @@ const EditorContent = ({
 
   useEffect(() => {
     function handleEditorEvents(
-      event: ComponentPickerOpenedEvent | ItemInsertedEvent | ItemMovedEvent
+      event: ComponentPickerOpenedEvent | ItemInsertedEvent | ItemMovedEvent,
     ) {
       if (event.data.type === "@easyblocks-editor/component-picker-opened") {
         actions
           .openComponentPicker({ path: event.data.payload.path })
           .then((config) => {
             const editorCanvasIframe = window.document.getElementById(
-              "editor-canvas"
+              "editor-canvas",
             ) as HTMLIFrameElement | undefined;
 
             editorCanvasIframe?.contentWindow?.postMessage(
-              componentPickerClosed(config)
+              componentPickerClosed(config),
             );
           });
       }
@@ -1165,7 +1169,7 @@ const EditorContent = ({
             form.mutators.move(
               pathToMove,
               fromPathParseResult.index,
-              toPathParseResult.index
+              toPathParseResult.index,
             );
 
             return [toPath];
@@ -1187,14 +1191,14 @@ const EditorContent = ({
           actions.runChange(() => {
             const newConfig = duplicateConfig(
               dotNotationGet(form.values, fromPath),
-              editorContext
+              editorContext,
             );
 
             const insertionIndex = calculateInsertionIndex(
               fromPath,
               toPath,
               placement,
-              form
+              form,
             );
 
             form.mutators.insert(insertionPath, insertionIndex, newConfig);
@@ -1259,7 +1263,7 @@ const EditorContent = ({
                     {
                       type: "@easyblocks/closed",
                     },
-                    "*"
+                    "*",
                   );
 
                   if (props.onClose) {
@@ -1315,7 +1319,11 @@ const EditorContent = ({
               </ContentContainer>
               {isEditMode && (
                 <SidebarContainer ref={sidebarNodeRef}>
-                  <EditorSidebar focussedField={focussedField} form={form} />
+                  <EditorSidebar
+                    focussedField={focussedField}
+                    form={form}
+                    SaveAsPicker={SaveAsPicker}
+                  />
                 </SidebarContainer>
               )}
               {componentPickerData && (
@@ -1346,7 +1354,7 @@ const EditorContent = ({
 
 function adaptRemoteConfig(
   config: NoCodeComponentEntry,
-  compilationContext: CompilationContextType
+  compilationContext: CompilationContextType,
 ) {
   const withoutLocalizedFlag = removeLocalizedFlag(config, compilationContext);
   const normalized = normalize(withoutLocalizedFlag, compilationContext);
@@ -1357,7 +1365,7 @@ function calculateInsertionIndex(
   fromPath: string,
   toPath: string,
   placement: "before" | "after" | undefined,
-  form: Form
+  form: Form,
 ) {
   const mostCommonPath = getMostCommonSubPath(fromPath, toPath);
   const mostCommonPathParseResult = parsePath(mostCommonPath ?? "", form);
@@ -1427,7 +1435,7 @@ function getMostCommonSubPath(path1: string, path2: string) {
 function findConfigById(
   config: NoCodeComponentEntry,
   context: CompilationContextType,
-  configId: string
+  configId: string,
 ): NoCodeComponentEntry | undefined {
   let foundConfig: NoCodeComponentEntry | undefined;
 
@@ -1448,7 +1456,7 @@ function getMatchingDevice(devices: Array<DeviceRange>, width: number) {
   const highestDevice = devices.find((d) => d.breakpoint === null);
 
   const visibleDevices = devices.filter(
-    (d) => !d.hidden && d.breakpoint !== null
+    (d) => !d.hidden && d.breakpoint !== null,
   );
 
   for (let i = 0; i < visibleDevices.length; i++) {

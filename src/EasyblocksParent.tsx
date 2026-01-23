@@ -1,3 +1,4 @@
+import isPropValid from "@emotion/is-prop-valid";
 import {
   Config,
   FetchOutputResources,
@@ -5,24 +6,23 @@ import {
   WidgetComponentProps,
 } from "@redsun-vn/easyblocks-core";
 import {
-  ModalContext,
   GlobalModalStyles,
+  ModalContext,
   Toaster,
   TooltipProvider,
 } from "@redsun-vn/easyblocks-design-system";
-import isPropValid from "@emotion/is-prop-valid";
 import React, { ComponentType } from "react";
 import { ShouldForwardProp, StyleSheetManager } from "styled-components";
-import { Editor } from "./Editor";
-import { ColorTokenWidget } from "./sidebar/ColorTokenWidget";
-import { GlobalStyles } from "./tinacms/styles";
-import { SpaceTokenWidget } from "./sidebar/SpaceTokenWidget";
-import { parseQueryParams } from "./parseQueryParams";
-import { DocumentDataWidgetComponent } from "./sidebar/DocumentDataWidget";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
-import { TemplatePicker } from "./TemplatePicker";
-import { SectionPickerModal } from "./SectionPicker";
+import { Editor } from "./Editor";
+import { parseQueryParams } from "./parseQueryParams";
 import { SearchableSmallPickerModal } from "./SearchableSmallPickerModal";
+import { SectionPickerModal } from "./SectionPicker";
+import { ColorTokenWidget } from "./sidebar/ColorTokenWidget";
+import { DocumentDataWidgetComponent } from "./sidebar/DocumentDataWidget";
+import { SpaceTokenWidget } from "./sidebar/SpaceTokenWidget";
+import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
+import { GlobalStyles } from "./tinacms/styles";
 
 type EasyblocksParentProps = {
   config: Config;
@@ -38,6 +38,7 @@ type EasyblocksParentProps = {
   pickers?: Record<string, TemplatePicker>;
   isAdminMode?: boolean;
   defaultLocale?: string;
+  SaveAsPicker?: SaveAsTemplatePicker;
 };
 
 const shouldForwardProp: ShouldForwardProp<"web"> = (propName, target) => {
@@ -102,6 +103,7 @@ export function EasyblocksParent(props: EasyblocksParentProps) {
             }}
             isAdminMode={props.isAdminMode}
             defaultLocale={props.defaultLocale}
+            SaveAsPicker={props.SaveAsPicker}
           />
         </TooltipProvider>
         <Toaster position="bottom-left" containerStyle={{ zIndex: 100100 }} />

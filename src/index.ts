@@ -3,6 +3,7 @@ export type { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
 export { EditorContext, useEditorContext } from "./EditorContext";
 export type { EditorContextType, TemplateQueryType } from "./EditorContext";
 export type {
+  SaveAsTemplatePickerProps,
   TemplatePickerProps,
   TemplatesDictionary,
 } from "./TemplatePicker";

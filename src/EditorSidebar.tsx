@@ -1,17 +1,19 @@
+import { dotNotationGet } from "@/utils";
 import { CompiledComponentConfig } from "@redsun-vn/easyblocks-core";
 import { Fonts } from "@redsun-vn/easyblocks-design-system";
-import { dotNotationGet } from "@/utils";
 import React from "react";
 import { styled } from "styled-components";
 import { buildTinaFields } from "./buildTinaFields";
 import { useEditorContext } from "./EditorContext";
-import { InlineSettings } from "./inline-settings";
-import { mergeCommonFields } from "./tinacms/form-builder/utils/mergeCommonFields";
 import { Form } from "./form";
+import { InlineSettings } from "./inline-settings";
+import { SaveAsTemplatePicker } from "./TemplatePicker";
+import { mergeCommonFields } from "./tinacms/form-builder/utils/mergeCommonFields";
 
 type EditorSidebarProps = {
   focussedField: Array<string>;
   form: Form;
+  SaveAsPicker?: SaveAsTemplatePicker;
 };
 
 const Error = styled.div`
@@ -26,7 +28,7 @@ const Error = styled.div`
 `;
 
 export const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
-  const { focussedField, form } = props;
+  const { focussedField, form, SaveAsPicker } = props;
   const editorContext = useEditorContext();
 
   const error = (() => {
@@ -34,7 +36,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
       const path = focussedField[0];
       const compiledComponent: CompiledComponentConfig = dotNotationGet(
         editorContext.compiledComponentConfig,
-        path
+        path,
       );
       const editableComponent = dotNotationGet(form.values, path);
       if (compiledComponent?._component === "@easyblocks/missing-component") {
@@ -60,7 +62,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
   return (
     <>
       {error && <Error>{error}</Error>}
-      <InlineSettings fields={mergedFields} />
+      <InlineSettings fields={mergedFields} SaveAsPicker={SaveAsPicker} />
     </>
   );
 };

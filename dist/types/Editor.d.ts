@@ -2,7 +2,7 @@ import { CompilationMetadata, Config, Document, ExternalData, FetchOutputResourc
 import React, { ComponentType } from "react";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
 import { EditorContextType } from "./EditorContext";
-import { TemplatePicker } from "./TemplatePicker";
+import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
 declare global {
     interface Window {
         editorWindowAPI?: {
@@ -32,6 +32,7 @@ type EditorProps = {
     widgets?: Record<string, ComponentType<WidgetComponentProps<any>> | ComponentType<InlineTypeWidgetComponentProps<any>> | ComponentType<TokenTypeWidgetComponentProps<any>>>;
     components?: Record<string, ComponentType<any>>;
     pickers?: Record<string, TemplatePicker>;
+    SaveAsPicker?: SaveAsTemplatePicker;
 };
 export declare const Editor: typeof EditorBackendInitializer;
 declare function EditorBackendInitializer(props: EditorProps): React.JSX.Element;

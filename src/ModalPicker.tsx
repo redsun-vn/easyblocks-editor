@@ -103,11 +103,11 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
   };
 
   const onSearchGroup = (search: string) => {
-    editorContext.syncTemplateQuery?.({ filters: "", search });
+    editorContext.syncTemplateQuery?.({ filters: "", search: search.trim() });
   };
 
   const onFilters = (filters: string) => {
-    editorContext.syncTemplateQuery?.({ filters, search: "" });
+    editorContext.syncTemplateQuery?.({ filters: filters.trim(), search: "" });
   };
 
   // const onLoadMore = () => {

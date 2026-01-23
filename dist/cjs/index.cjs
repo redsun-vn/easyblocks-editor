@@ -5,8 +5,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var easyblocksCore = require('@redsun-vn/easyblocks-core');
 var React = require('react');
-var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
 var isPropValid = require('@emotion/is-prop-valid');
+var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
 var styled = require('styled-components');
 var _extends = require('@babel/runtime/helpers/extends');
 var _internals = require('@redsun-vn/easyblocks-core/_internals');
@@ -410,6 +410,24 @@ const useTranslation = () => {
   };
 };
 
+function SaveAsPicker({
+  Component,
+  saveAsEntry,
+  setSaveAsEntry
+}) {
+  const toaster = easyblocksDesignSystem.useToaster();
+  const {
+    t
+  } = useTranslation();
+  return /*#__PURE__*/React__default["default"].createElement(Component, {
+    isOpen: !!saveAsEntry,
+    saveAsEntry: saveAsEntry,
+    onClose: () => setSaveAsEntry(null),
+    onSuccess: () => toaster.success(t("template.entry.saveAs.success")),
+    onError: () => toaster.error(t("template.entry.saveAs.error"))
+  });
+}
+
 async function copyToClipboard(textToCopy) {
   // Navigator clipboard api needs a secure context (https)
   if (navigator.clipboard && window.isSecureContext) {
@@ -449,11 +467,11 @@ const IdWrapper = styled.styled.div.withConfig({
 const ButtonWrapper = styled.styled.div.withConfig({
   displayName: "SidebarFooter__ButtonWrapper",
   componentId: "sc-17xf0ak-3"
-})(["display:flex;gap:16px;"]);
-const StyledCopyId = styled.styled.a.withConfig({
-  displayName: "SidebarFooter__StyledCopyId",
+})(["display:flex;justify-content:end;gap:8px;"]);
+const StyledButtonCopyTemplate = styled.styled(easyblocksDesignSystem.ButtonSecondary).withConfig({
+  displayName: "SidebarFooter__StyledButtonCopyTemplate",
   componentId: "sc-17xf0ak-4"
-})(["cursor:pointer;text-decoration:underline;"]);
+})(["min-width:auto !important;& svg{width:14px !important;height:14px !important;}"]);
 function SidebarFooter(props) {
   const editorContext = useEditorContext();
   const toaster = easyblocksDesignSystem.useToaster();
@@ -464,6 +482,7 @@ function SidebarFooter(props) {
     form,
     isAdminMode
   } = editorContext;
+  const [saveAsEntry, setSaveAsEntry] = React.useState(null);
   if (props.paths.length === 0) {
     return null;
   }
@@ -492,9 +511,9 @@ function SidebarFooter(props) {
       toaster.error(t("template.entry.copy.error"));
     }
   };
-  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$3, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, /*#__PURE__*/React__namespace.createElement("div", null, "Id:", " ", /*#__PURE__*/React__namespace.createElement(StyledCopyId, {
-    onClick: () => onCopy(value._id)
-  }, value._id)), /*#__PURE__*/React__namespace.createElement("br", null), showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
+  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$3, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
+    icon: easyblocksDesignSystem.Icons.Save,
+    hideLabel: true,
     onClick: () => {
       editorContext.actions.openTemplateModal({
         mode: "create",
@@ -502,14 +521,37 @@ function SidebarFooter(props) {
         width,
         widthAuto
       });
+    },
+    style: {
+      minWidth: "auto"
     }
-  }, t("template.save")), isAdminMode && /*#__PURE__*/React__namespace.createElement("div", null, /*#__PURE__*/React__namespace.createElement("div", null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonPrimary, {
+  }, t("template.save")), /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
+    style: {
+      minWidth: "auto"
+    },
+    icon: easyblocksDesignSystem.Icons.SaveAs,
+    hideLabel: true,
+    onClick: () => setSaveAsEntry(value)
+  }, t("template.saveAs"))), isAdminMode && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(StyledButtonCopyTemplate, {
+    icon: easyblocksDesignSystem.Icons.Copy,
+    hideLabel: true,
     onClick: () => onCopy(value)
-  }, t("template.entry.copy"))), value._master && /*#__PURE__*/React__namespace.createElement("div", {
+  }, t("template.entry.copy")), /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
+    icon: easyblocksDesignSystem.Icons.Id,
+    hideLabel: true,
+    onClick: () => onCopy(value._id),
+    style: {
+      minWidth: "auto"
+    }
+  }, t("template.id.copy")), value._master && /*#__PURE__*/React__namespace.createElement("div", {
     style: {
       paddingTop: 16
     }
-  }, "Master: ", value._master))) : null));
+  }, "Master: ", value._master))) : null), props.SaveAsPicker ? /*#__PURE__*/React__namespace.createElement(SaveAsPicker, {
+    saveAsEntry: saveAsEntry,
+    setSaveAsEntry: setSaveAsEntry,
+    Component: props.SaveAsPicker
+  }) : null);
 }
 
 const Toggle = ({
@@ -3181,7 +3223,8 @@ const IconButton = styled.styled(Button).withConfig({
 })(["padding:0;width:", "px;height:", "px;margin:0;position:relative;transform-origin:50% 50%;transition:all 150ms ease-out;padding:2px;display:flex;flex-shrink:0;justify-content:center;align-items:center;svg{width:", "px;height:", "px;transition:all 150ms ease-out;}", ";"], ICON_BUTTON_SIZE, ICON_BUTTON_SIZE, ICON_SIZE, ICON_SIZE, props => props.open && styled.css(["background-color:var(--tina-color-grey-0);border-color:var(--tina-color-grey-2);outline:none;fill:var(--tina-color-primary);svg{transform:rotate(45deg);}&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);}"]));
 
 function InlineSettings({
-  fields
+  fields,
+  SaveAsPicker
 }) {
   const hasNoExtraFields = !(fields && fields.length);
   if (hasNoExtraFields) {
@@ -3195,11 +3238,13 @@ function InlineSettings({
       height: "100%"
     }
   }, /*#__PURE__*/React__default["default"].createElement(SettingsContent, {
-    fields: fields
+    fields: fields,
+    SaveAsPicker: SaveAsPicker
   }));
 }
 function SettingsContent({
-  fields
+  fields,
+  SaveAsPicker
 }) {
   const {
     form,
@@ -3212,7 +3257,8 @@ function SettingsContent({
     fields: fields,
     isEmptyField: !focussedField.length
   }), /*#__PURE__*/React__default["default"].createElement(SidebarFooter, {
-    paths: focussedField
+    paths: focussedField,
+    SaveAsPicker: SaveAsPicker
   })));
 }
 const FormBody = styled.styled.div.withConfig({
@@ -3231,7 +3277,8 @@ const Error$1 = styled.styled.div.withConfig({
 const EditorSidebar = props => {
   const {
     focussedField,
-    form
+    form,
+    SaveAsPicker
   } = props;
   const editorContext = useEditorContext();
   const error = (() => {
@@ -3254,7 +3301,8 @@ const EditorSidebar = props => {
     fields: fieldsPerFocusedField
   }) : fieldsPerFocusedField.flat();
   return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, error && /*#__PURE__*/React__default["default"].createElement(Error$1, null, error), /*#__PURE__*/React__default["default"].createElement(InlineSettings, {
-    fields: mergedFields
+    fields: mergedFields,
+    SaveAsPicker: SaveAsPicker
   }));
 };
 
@@ -4383,12 +4431,12 @@ const ModalPicker = ({
   const onSearchGroup = search => {
     editorContext.syncTemplateQuery?.({
       filters: "",
-      search
+      search: search.trim()
     });
   };
   const onFilters = filters => {
     editorContext.syncTemplateQuery?.({
-      filters,
+      filters: filters.trim(),
       search: ""
     });
   };
@@ -7343,6 +7391,7 @@ const EditorContent = ({
   isAdminMode = false,
   defaultLocale,
   onConfigChange,
+  SaveAsPicker,
   ...props
 }) => {
   const [currentViewport, setCurrentViewport] = React.useState(compilationContext.mainBreakpointIndex); // "{ breakpoint }" or "fit-screen"
@@ -7854,7 +7903,8 @@ const EditorContent = ({
     ref: sidebarNodeRef
   }, /*#__PURE__*/React__default["default"].createElement(EditorSidebar, {
     focussedField: focussedField,
-    form: form
+    form: form,
+    SaveAsPicker: SaveAsPicker
   })), componentPickerData && /*#__PURE__*/React__default["default"].createElement(ModalPicker, {
     onClose: closeComponentPickerModal,
     config: componentPickerData.config,
@@ -7952,47 +8002,6 @@ function getMatchingDevice(devices, width) {
   return null;
 }
 
-function ColorTokenWidget(props) {
-  const [inputValue, setInputValue] = React.useState(props.value);
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
-    value: inputValue,
-    onChange: e => {
-      setInputValue(e.target.value);
-    },
-    onBlur: () => {
-      if (validateColor(inputValue)) {
-        props.onChange(inputValue);
-        return;
-      }
-      if (validateColor("#" + inputValue)) {
-        props.onChange("#" + inputValue);
-        return;
-      }
-      props.onChange(props.value);
-    },
-    align: "right"
-  });
-}
-
-function SpaceTokenWidget(props) {
-  const [inputValue, setInputValue] = React.useState(props.value);
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
-    value: inputValue,
-    onChange: e => {
-      setInputValue(e.target.value);
-    },
-    onBlur: () => {
-      const int = Math.round(parseInt(inputValue));
-      if (isNaN(int) || int < 0) {
-        props.onChange("0px");
-        return;
-      }
-      props.onChange(`${int}px`);
-    },
-    align: "right"
-  });
-}
-
 function parseQueryParams() {
   const searchParams = new URLSearchParams(window.location.search);
   const readOnly = searchParams.get("readOnly") === "true" ? true : searchParams.get("readOnly") === "false" ? false : null;
@@ -8016,69 +8025,88 @@ function parseQueryParams() {
   return editorSearchParams;
 }
 
-function DocumentDataWidgetComponent({
-  id,
-  onChange,
-  resourceKey,
-  path
-}) {
-  if (id !== null && typeof id !== "string") {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
-      style: {
-        whiteSpace: "normal"
+function checkQueryForTemplate(query, template, component) {
+  return `${template.label ?? ""}${component.label ?? component.id}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
+}
+const SearchableSmallPickerModal = ({
+  onClose,
+  templates,
+  isOpen
+}) => {
+  const editorContext = useEditorContext();
+  const templatesDict = templates;
+  const [query, setQuery] = React.useState("");
+  const trimmedQuery = query.trim().toLocaleLowerCase();
+  const filteredTemplatesDict = {};
+  if (templatesDict) {
+    Object.values(templatesDict).forEach(({
+      templates,
+      component
+    }) => {
+      const filteredTemplates = trimmedQuery === "" ? templates : templates.filter(template => checkQueryForTemplate(trimmedQuery, template, component));
+      if (filteredTemplates.length > 0) {
+        filteredTemplatesDict[component.id] = {
+          component,
+          templates: filteredTemplates
+        };
       }
-    }, "Unsupported type of identifier for document data widget. Expected \"string\", but got \"", typeof id, "\".");
-  }
-  const {
-    editorContext,
-    externalData
-  } = window.editorWindowAPI ?? {};
-  const schema = editorContext.rootComponent.rootParams;
-  const documentExternalLocationKeys = assertDefined(schema).map(s => easyblocksCore.getExternalReferenceLocationKey("$", s.prop));
-  const documentCompoundResources = Object.entries(externalData).filter(r => {
-    const [externalId, externalDataValue] = r;
-    return documentExternalLocationKeys.includes(externalId) && easyblocksCore.isResolvedCompoundExternalDataValue(externalDataValue);
-  });
-  const entry = dotNotationGet(editorContext.form.values, path.slice(0, path.lastIndexOf(".")));
-  const definition = _internals.findComponentDefinitionById(entry._component, editorContext);
-  const schemaProp = definition.schema.find(s => s.prop === path.split(".").pop());
-  const options = documentCompoundResources.flatMap(([externalId, externalDataValue]) => getBasicResourcesOfType(externalDataValue.value, schemaProp.type).map(r => {
-    const resourceSchemaProp = assertDefined(schema?.find(s => s.prop === externalId.split(".")[1]));
-    return {
-      id: externalId,
-      key: r.key,
-      label: `${resourceSchemaProp.label ?? resourceSchemaProp.prop} > ${r.label ?? r.key}`
-    };
-  }));
-  if (options.length === 1 && !id && path) {
-    // We perform form change manually to avoid storing this change in editor's history
-    editorContext.form.change(path, {
-      id: options[0].id,
-      key: options[0].key,
-      widgetId: "@easyblocks/document-data"
     });
   }
-  if (!documentCompoundResources.length) {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
-      style: {
-        whiteSpace: "normal"
-      }
-    }, "Please select at least one non optional external data for document.");
-  }
-  return /*#__PURE__*/React__default["default"].createElement(CompoundResourceValueSelect, {
-    options: options,
-    resource: id === null ? {
-      id,
-      key: undefined
-    } : {
-      id,
-      key: resourceKey
-    },
-    onResourceKeyChange: (newId, newKey) => {
-      onChange(newId, newKey);
+  const close = template => {
+    setQuery("");
+    if (!template) {
+      onClose();
+    } else {
+      // @ts-expect-error
+      onClose(template);
     }
-  });
-}
+  };
+  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+    mode: "center-small",
+    isOpen: isOpen,
+    onRequestClose: () => {
+      close(undefined);
+    },
+    noPadding: true,
+    headerLine: true,
+    searchProps: {
+      value: query,
+      placeholder: "Search...",
+      onChange: e => {
+        setQuery(e.target.value);
+      }
+    },
+    headerSymbol: "S"
+  }, templatesDict === undefined && "Loading...", templatesDict !== undefined && Object.entries(filteredTemplatesDict).map(([, {
+    templates,
+    component
+  }]) => {
+    const isOnlyOne = templates.length === 1;
+    const componentLabel = component.label ?? component.id;
+    return templates.map(template => {
+      const templateLabel = template.label ?? template.id;
+      const title = isOnlyOne ? componentLabel : templateLabel;
+      const thumbnail = template.thumbnail ?? component.thumbnail;
+      const description = isOnlyOne ? undefined : componentLabel;
+      return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.BasicRow, {
+        key: template.id,
+        title: title,
+        description: description,
+        onClick: () => {
+          close(template);
+        },
+        image: thumbnail,
+        tinyDescription: true,
+        onEdit: template.isUserDefined ? () => {
+          editorContext.actions.openTemplateModal({
+            mode: "edit",
+            template: template
+          });
+        } : undefined
+      });
+    });
+  }));
+};
 
 /**
  * CARD
@@ -8281,88 +8309,110 @@ const SectionPickerModal = ({
   }))))))));
 };
 
-function checkQueryForTemplate(query, template, component) {
-  return `${template.label ?? ""}${component.label ?? component.id}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
-}
-const SearchableSmallPickerModal = ({
-  onClose,
-  templates,
-  isOpen
-}) => {
-  const editorContext = useEditorContext();
-  const templatesDict = templates;
-  const [query, setQuery] = React.useState("");
-  const trimmedQuery = query.trim().toLocaleLowerCase();
-  const filteredTemplatesDict = {};
-  if (templatesDict) {
-    Object.values(templatesDict).forEach(({
-      templates,
-      component
-    }) => {
-      const filteredTemplates = trimmedQuery === "" ? templates : templates.filter(template => checkQueryForTemplate(trimmedQuery, template, component));
-      if (filteredTemplates.length > 0) {
-        filteredTemplatesDict[component.id] = {
-          component,
-          templates: filteredTemplates
-        };
+function ColorTokenWidget(props) {
+  const [inputValue, setInputValue] = React.useState(props.value);
+  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    value: inputValue,
+    onChange: e => {
+      setInputValue(e.target.value);
+    },
+    onBlur: () => {
+      if (validateColor(inputValue)) {
+        props.onChange(inputValue);
+        return;
       }
+      if (validateColor("#" + inputValue)) {
+        props.onChange("#" + inputValue);
+        return;
+      }
+      props.onChange(props.value);
+    },
+    align: "right"
+  });
+}
+
+function DocumentDataWidgetComponent({
+  id,
+  onChange,
+  resourceKey,
+  path
+}) {
+  if (id !== null && typeof id !== "string") {
+    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+      style: {
+        whiteSpace: "normal"
+      }
+    }, "Unsupported type of identifier for document data widget. Expected \"string\", but got \"", typeof id, "\".");
+  }
+  const {
+    editorContext,
+    externalData
+  } = window.editorWindowAPI ?? {};
+  const schema = editorContext.rootComponent.rootParams;
+  const documentExternalLocationKeys = assertDefined(schema).map(s => easyblocksCore.getExternalReferenceLocationKey("$", s.prop));
+  const documentCompoundResources = Object.entries(externalData).filter(r => {
+    const [externalId, externalDataValue] = r;
+    return documentExternalLocationKeys.includes(externalId) && easyblocksCore.isResolvedCompoundExternalDataValue(externalDataValue);
+  });
+  const entry = dotNotationGet(editorContext.form.values, path.slice(0, path.lastIndexOf(".")));
+  const definition = _internals.findComponentDefinitionById(entry._component, editorContext);
+  const schemaProp = definition.schema.find(s => s.prop === path.split(".").pop());
+  const options = documentCompoundResources.flatMap(([externalId, externalDataValue]) => getBasicResourcesOfType(externalDataValue.value, schemaProp.type).map(r => {
+    const resourceSchemaProp = assertDefined(schema?.find(s => s.prop === externalId.split(".")[1]));
+    return {
+      id: externalId,
+      key: r.key,
+      label: `${resourceSchemaProp.label ?? resourceSchemaProp.prop} > ${r.label ?? r.key}`
+    };
+  }));
+  if (options.length === 1 && !id && path) {
+    // We perform form change manually to avoid storing this change in editor's history
+    editorContext.form.change(path, {
+      id: options[0].id,
+      key: options[0].key,
+      widgetId: "@easyblocks/document-data"
     });
   }
-  const close = template => {
-    setQuery("");
-    if (!template) {
-      onClose();
-    } else {
-      // @ts-expect-error
-      onClose(template);
-    }
-  };
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
-    mode: "center-small",
-    isOpen: isOpen,
-    onRequestClose: () => {
-      close(undefined);
-    },
-    noPadding: true,
-    headerLine: true,
-    searchProps: {
-      value: query,
-      placeholder: "Search...",
-      onChange: e => {
-        setQuery(e.target.value);
+  if (!documentCompoundResources.length) {
+    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+      style: {
+        whiteSpace: "normal"
       }
+    }, "Please select at least one non optional external data for document.");
+  }
+  return /*#__PURE__*/React__default["default"].createElement(CompoundResourceValueSelect, {
+    options: options,
+    resource: id === null ? {
+      id,
+      key: undefined
+    } : {
+      id,
+      key: resourceKey
     },
-    headerSymbol: "S"
-  }, templatesDict === undefined && "Loading...", templatesDict !== undefined && Object.entries(filteredTemplatesDict).map(([, {
-    templates,
-    component
-  }]) => {
-    const isOnlyOne = templates.length === 1;
-    const componentLabel = component.label ?? component.id;
-    return templates.map(template => {
-      const templateLabel = template.label ?? template.id;
-      const title = isOnlyOne ? componentLabel : templateLabel;
-      const thumbnail = template.thumbnail ?? component.thumbnail;
-      const description = isOnlyOne ? undefined : componentLabel;
-      return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.BasicRow, {
-        key: template.id,
-        title: title,
-        description: description,
-        onClick: () => {
-          close(template);
-        },
-        image: thumbnail,
-        tinyDescription: true,
-        onEdit: template.isUserDefined ? () => {
-          editorContext.actions.openTemplateModal({
-            mode: "edit",
-            template: template
-          });
-        } : undefined
-      });
-    });
-  }));
-};
+    onResourceKeyChange: (newId, newKey) => {
+      onChange(newId, newKey);
+    }
+  });
+}
+
+function SpaceTokenWidget(props) {
+  const [inputValue, setInputValue] = React.useState(props.value);
+  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    value: inputValue,
+    onChange: e => {
+      setInputValue(e.target.value);
+    },
+    onBlur: () => {
+      const int = Math.round(parseInt(inputValue));
+      if (isNaN(int) || int < 0) {
+        props.onChange("0px");
+        return;
+      }
+      props.onChange(`${int}px`);
+    },
+    align: "right"
+  });
+}
 
 const shouldForwardProp = (propName, target) => {
   if (typeof target === "string") {
@@ -8419,7 +8469,8 @@ function EasyblocksParent(props) {
       ...props.pickers
     },
     isAdminMode: props.isAdminMode,
-    defaultLocale: props.defaultLocale
+    defaultLocale: props.defaultLocale,
+    SaveAsPicker: props.SaveAsPicker
   })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toaster, {
     position: "bottom-left",
     containerStyle: {
@@ -9642,7 +9693,8 @@ function EasyblocksEditor(props) {
     components: props.components,
     pickers: props.pickers,
     isAdminMode: props.isAdminMode,
-    defaultLocale: props.defaultLocale
+    defaultLocale: props.defaultLocale,
+    SaveAsPicker: props.SaveAsPicker
   }), selectedWindow === "child" && /*#__PURE__*/React__default["default"].createElement(EasyblocksCanvas, {
     components: props.components
   }), selectedWindow === "preview" && /*#__PURE__*/React__default["default"].createElement(PreviewRenderer, props));

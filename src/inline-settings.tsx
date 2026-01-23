@@ -3,14 +3,16 @@ import React, { MouseEvent } from "react";
 import { styled } from "styled-components";
 import { useEditorContext } from "./EditorContext";
 import { SidebarFooter } from "./SidebarFooter";
+import { SaveAsTemplatePicker } from "./TemplatePicker";
 import { FieldsBuilder } from "./tinacms/form-builder";
 import { StyleReset } from "./tinacms/styles";
 
 interface InlineSettingsProps {
   fields: InternalField[];
+  SaveAsPicker?: SaveAsTemplatePicker;
 }
 
-export function InlineSettings({ fields }: InlineSettingsProps) {
+export function InlineSettings({ fields, SaveAsPicker }: InlineSettingsProps) {
   const hasNoExtraFields = !(fields && fields.length);
 
   if (hasNoExtraFields) {
@@ -25,16 +27,17 @@ export function InlineSettings({ fields }: InlineSettingsProps) {
       style={{ height: "100%" }}
     >
       {/* IMPORTANT: This stop propagation fixes issues with toggle unclicking */}
-      <SettingsContent fields={fields} />
+      <SettingsContent fields={fields} SaveAsPicker={SaveAsPicker} />
     </StyleReset>
   );
 }
 interface SettingsContentProps {
   title?: string;
   fields: InternalField[];
+  SaveAsPicker?: SaveAsTemplatePicker;
 }
 
-function SettingsContent({ fields }: SettingsContentProps) {
+function SettingsContent({ fields, SaveAsPicker }: SettingsContentProps) {
   const { form, focussedField } = useEditorContext();
 
   return (
@@ -45,7 +48,7 @@ function SettingsContent({ fields }: SettingsContentProps) {
           fields={fields}
           isEmptyField={!focussedField.length}
         />
-        <SidebarFooter paths={focussedField} />
+        <SidebarFooter paths={focussedField} SaveAsPicker={SaveAsPicker} />
       </Wrapper>
     </FormBody>
   );

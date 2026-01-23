@@ -1,4 +1,4 @@
-import { ComponentDefinitionShared, Template } from "@redsun-vn/easyblocks-core";
+import { ComponentDefinitionShared, NoCodeComponentEntry, Template } from "@redsun-vn/easyblocks-core";
 export type TemplatesDictionary = {
     [componentId: string]: {
         component: ComponentDefinitionShared & {
@@ -19,4 +19,12 @@ export type TemplatePickerProps = {
     mode?: string;
 };
 export type TemplatePicker<T = Record<never, never>> = React.FC<TemplatePickerProps & T>;
+export type SaveAsTemplatePickerProps = TemplatePickerProps & {
+    saveAsEntry: NoCodeComponentEntry | null;
+    title?: string;
+    onClose: () => void;
+    onSuccess?: () => void;
+    onError?: () => void;
+};
+export type SaveAsTemplatePicker<T = Record<never, never>> = React.FC<SaveAsTemplatePickerProps & T>;
 //# sourceMappingURL=TemplatePicker.d.ts.map

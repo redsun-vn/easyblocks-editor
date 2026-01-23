@@ -76,6 +76,7 @@ export function EasyblocksEditor(props: EasyblocksEditorProps) {
           pickers={props.pickers}
           isAdminMode={props.isAdminMode}
           defaultLocale={props.defaultLocale}
+          SaveAsPicker={props.SaveAsPicker}
         />
       )}
 

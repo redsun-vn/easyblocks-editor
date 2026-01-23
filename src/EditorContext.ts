@@ -91,7 +91,7 @@ export type EditorContextType = Omit<
 };
 
 export const EditorContext = React.createContext<EditorContextType | null>(
-  null
+  null,
 );
 
 export function useEditorContext() {

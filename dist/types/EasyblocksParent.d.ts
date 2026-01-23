@@ -1,7 +1,7 @@
 import { Config, FetchOutputResources, InlineTypeWidgetComponentProps, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
 import React, { ComponentType } from "react";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
-import { TemplatePicker } from "./TemplatePicker";
+import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
 type EasyblocksParentProps = {
     config: Config;
     externalData: FetchOutputResources;
@@ -12,6 +12,7 @@ type EasyblocksParentProps = {
     pickers?: Record<string, TemplatePicker>;
     isAdminMode?: boolean;
     defaultLocale?: string;
+    SaveAsPicker?: SaveAsTemplatePicker;
 };
 export declare function EasyblocksParent(props: EasyblocksParentProps): React.JSX.Element;
 export {};

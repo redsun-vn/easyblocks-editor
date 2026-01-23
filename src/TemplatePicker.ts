@@ -1,5 +1,6 @@
 import {
   ComponentDefinitionShared,
+  NoCodeComponentEntry,
   Template,
 } from "@redsun-vn/easyblocks-core";
 
@@ -24,4 +25,16 @@ export type TemplatePickerProps = {
 
 export type TemplatePicker<T = Record<never, never>> = React.FC<
   TemplatePickerProps & T
+>;
+
+export type SaveAsTemplatePickerProps = TemplatePickerProps & {
+  saveAsEntry: NoCodeComponentEntry | null;
+  title?: string;
+  onClose: () => void;
+  onSuccess?: () => void;
+  onError?: () => void;
+};
+
+export type SaveAsTemplatePicker<T = Record<never, never>> = React.FC<
+  SaveAsTemplatePickerProps & T
 >;
