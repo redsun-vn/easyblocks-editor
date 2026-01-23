@@ -477,7 +477,7 @@ function SidebarFooter(props) {
     }
   };
   return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$3, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ButtonSecondary, {
-    icon: Icons.Save,
+    icon: Icons.Save1,
     hideLabel: true,
     onClick: () => {
       editorContext.actions.openTemplateModal({

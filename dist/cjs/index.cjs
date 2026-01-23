@@ -512,7 +512,7 @@ function SidebarFooter(props) {
     }
   };
   return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$3, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
-    icon: easyblocksDesignSystem.Icons.Save,
+    icon: easyblocksDesignSystem.Icons.Save1,
     hideLabel: true,
     onClick: () => {
       editorContext.actions.openTemplateModal({

@@ -117,7 +117,7 @@ export function SidebarFooter(props: {
             {showSaveAsTemplate && (
               <>
                 <ButtonSecondary
-                  icon={Icons.Save}
+                  icon={Icons.Save1}
                   hideLabel
                   onClick={() => {
                     editorContext.actions.openTemplateModal({
