@@ -1,10 +1,11 @@
+import { dotNotationGet, toArray } from "@/utils";
 import {
-  NoCodeComponentEntry,
   ComponentSchemaProp,
   ExternalData,
   ExternalReference,
   LocalTextReference,
   NoCodeComponentDefinition,
+  NoCodeComponentEntry,
   SidebarPreviewVariant,
   resolveExternalValue,
   resolveLocalisedValue,
@@ -25,30 +26,33 @@ import {
   ThumbnailType,
   Typography,
 } from "@redsun-vn/easyblocks-design-system";
-import { dotNotationGet, toArray } from "@/utils";
+import { FormApi } from "final-form";
 import React from "react";
 import ReactDOM from "react-dom";
-import { styled, css, keyframes } from "styled-components";
+import { css, keyframes, styled } from "styled-components";
 import { useConfigAfterAuto } from "../../../ConfigAfterAutoContext";
 import { EditorContextType, useEditorContext } from "../../../EditorContext";
 import { useEditorExternalData } from "../../../EditorExternalDataProvider";
 import { SidebarFooter } from "../../../SidebarFooter";
 import { buildTinaFields } from "../../../buildTinaFields";
+import { Form } from "../../../form";
 import { FieldMixedValue } from "../../../types";
+import { useTranslation } from "../../../useTranslation";
 import { isConfigPathRichTextPart } from "../../../utils/isConfigPathRichTextPart";
 import { FieldRenderProps, FieldsBuilder } from "../../form-builder";
 import { mergeCommonFields } from "../../form-builder/utils/mergeCommonFields";
 import { isMixedFieldValue } from "../components/isMixedFieldValue";
-import { Form } from "../../../form";
-import { FormApi } from "final-form";
+import { Tooltip, TooltipArrow, TooltipBody } from "./Tooltip";
+import { useTooltip } from "./useTooltip";
 
 interface BlocksFieldDefinition extends InternalField {
   component: "block";
   schemaProp: ComponentSchemaProp | Component$$$SchemaProp;
 }
 
-interface BlockFieldProps
-  extends FieldRenderProps<NoCodeComponentEntry[] | FieldMixedValue> {
+interface BlockFieldProps extends FieldRenderProps<
+  NoCodeComponentEntry[] | FieldMixedValue
+> {
   field: BlocksFieldDefinition;
   form: FormApi;
   tinaForm: Form;
@@ -56,6 +60,7 @@ interface BlockFieldProps
 }
 
 const BlockField = ({ field, input, isLabelHidden }: BlockFieldProps) => {
+  const { isOpen, tooltipProps, triggerProps, arrowProps } = useTooltip();
   const [isSubcomponentPanelExpanded, setIsSubcomponentPanelExpanded] =
     React.useState(false);
   const editorContext = useEditorContext();
@@ -86,9 +91,22 @@ const BlockField = ({ field, input, isLabelHidden }: BlockFieldProps) => {
             alignItems: "center",
             padding: "4px 16px",
             minHeight: "28px",
+            cursor: "default",
           }}
         >
-          <Typography>{field.label || field.name}</Typography>
+          <div style={{ overflow: "hidden" }} {...triggerProps}>
+            <Typography
+              style={{ overflow: "hidden", textOverflow: "ellipsis" }}
+            >
+              {field.label || field.name}
+            </Typography>
+          </div>
+          {isOpen && (
+            <Tooltip {...tooltipProps}>
+              <TooltipArrow {...arrowProps} />
+              <TooltipBody>{field.label || field.name}</TooltipBody>
+            </Tooltip>
+          )}
         </div>
       )}
       <div
@@ -116,6 +134,7 @@ const BlockField = ({ field, input, isLabelHidden }: BlockFieldProps) => {
             {!field.schemaProp.required && (
               <div style={{ flex: "0 0 auto", minWidth: 0 }}>
                 <ButtonGhost
+                  showTooltip={false}
                   onClick={() => {
                     if (
                       editorContext.focussedField.some(isConfigPathRichTextPart)
@@ -144,7 +163,7 @@ const BlockField = ({ field, input, isLabelHidden }: BlockFieldProps) => {
                     if (newConfig) {
                       if (
                         editorContext.focussedField.some(
-                          isConfigPathRichTextPart
+                          isConfigPathRichTextPart,
                         )
                       ) {
                         input.onChange([newConfig]);
@@ -154,7 +173,7 @@ const BlockField = ({ field, input, isLabelHidden }: BlockFieldProps) => {
 
                       setIsSubcomponentPanelExpanded(true);
                     }
-                  }
+                  },
                 );
               }}
             />
@@ -169,8 +188,11 @@ interface AddButtonProps {
 }
 
 function AddButton({ onAdd }: AddButtonProps) {
+  const { t } = useTranslation();
+
   return (
     <ButtonGhost
+      showTooltip={false}
       style={{
         width: "100%",
         paddingLeft: "0",
@@ -200,7 +222,7 @@ function AddButton({ onAdd }: AddButtonProps) {
         >
           <Icons.Add size={16} />
         </div>
-        Add
+        {t("add")}
       </div>
     </ButtonGhost>
   );
@@ -237,7 +259,7 @@ const SubComponentPanelButton = ({
         componentDefinition,
         dotNotationGet(entryAfterAuto, paths[0]),
         externalData,
-        editorContext
+        editorContext,
       )
     : undefined;
 
@@ -267,7 +289,7 @@ const SubComponentPanelButton = ({
             onCollapse={onCollapse}
             paths={paths}
           />,
-          sidebarPanelsRoot
+          sidebarPanelsRoot,
         )}
     </>
   );
@@ -277,13 +299,13 @@ function getSidebarPreview(
   componentDefinition: NoCodeComponentDefinition,
   entryAfterAuto: NoCodeComponentEntry,
   externalData: ExternalData,
-  editorContext: EditorContextType
+  editorContext: EditorContextType,
 ): SidebarPreviewVariant | undefined {
   const previewValues = Object.fromEntries(
     componentDefinition.schema.map((s) => {
       const value = responsiveValueForceGet(
         entryAfterAuto[s.prop],
-        editorContext.breakpointIndex
+        editorContext.breakpointIndex,
       );
 
       if (isExternalSchemaProp(s, editorContext.types)) {
@@ -291,7 +313,7 @@ function getSidebarPreview(
           value as ExternalReference,
           entryAfterAuto._id,
           s,
-          externalData
+          externalData,
         );
         return [s.prop, externalDataValue];
       }
@@ -301,13 +323,13 @@ function getSidebarPreview(
           s.prop,
           resolveLocalisedValue<string>(
             (value as LocalTextReference).value,
-            editorContext
+            editorContext,
           )?.value,
         ];
       }
 
       return [s.prop, value];
-    })
+    }),
   );
 
   return componentDefinition.preview?.({ values: previewValues, externalData });

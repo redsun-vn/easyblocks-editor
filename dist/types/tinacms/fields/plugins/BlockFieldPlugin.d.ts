@@ -1,10 +1,10 @@
-import { NoCodeComponentEntry, ComponentSchemaProp } from "@redsun-vn/easyblocks-core";
+import { ComponentSchemaProp, NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import { Component$$$SchemaProp, InternalField } from "@redsun-vn/easyblocks-core/_internals";
+import { FormApi } from "final-form";
 import React from "react";
+import { Form } from "../../../form";
 import { FieldMixedValue } from "../../../types";
 import { FieldRenderProps } from "../../form-builder";
-import { Form } from "../../../form";
-import { FormApi } from "final-form";
 interface BlocksFieldDefinition extends InternalField {
     component: "block";
     schemaProp: ComponentSchemaProp | Component$$$SchemaProp;

@@ -1814,6 +1814,12 @@ const BlockField = ({
   input,
   isLabelHidden
 }) => {
+  const {
+    isOpen,
+    tooltipProps,
+    triggerProps,
+    arrowProps
+  } = useTooltip();
   const [isSubcomponentPanelExpanded, setIsSubcomponentPanelExpanded] = React__default.useState(false);
   const editorContext = useEditorContext();
   const {
@@ -1840,9 +1846,19 @@ const BlockField = ({
       display: "flex",
       alignItems: "center",
       padding: "4px 16px",
-      minHeight: "28px"
+      minHeight: "28px",
+      cursor: "default"
     }
-  }, /*#__PURE__*/React__default.createElement(Typography, null, field.label || field.name)), /*#__PURE__*/React__default.createElement("div", {
+  }, /*#__PURE__*/React__default.createElement("div", _extends({
+    style: {
+      overflow: "hidden"
+    }
+  }, triggerProps), /*#__PURE__*/React__default.createElement(Typography, {
+    style: {
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, field.label || field.name)), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, field.label || field.name))), /*#__PURE__*/React__default.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
@@ -1869,6 +1885,7 @@ const BlockField = ({
       minWidth: 0
     }
   }, /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    showTooltip: false,
     onClick: () => {
       if (editorContext.focussedField.some(isConfigPathRichTextPart)) {
         input.onChange([]);
@@ -1901,7 +1918,11 @@ const BlockField = ({
 function AddButton$1({
   onAdd
 }) {
+  const {
+    t
+  } = useTranslation();
   return /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    showTooltip: false,
     style: {
       width: "100%",
       paddingLeft: "0"
@@ -1928,7 +1949,7 @@ function AddButton$1({
     }
   }, /*#__PURE__*/React__default.createElement(Icons.Add, {
     size: 16
-  })), "Add"));
+  })), t("add")));
 }
 const SubComponentPanelButton = ({
   paths,
@@ -2024,11 +2045,28 @@ const PanelBody = styled.div.withConfig({
   displayName: "BlockFieldPlugin__PanelBody",
   componentId: "sc-5mryxt-1"
 })(["background:white;position:relative;height:100%;overflow-y:auto;"]);
-const GroupPanelKeyframes = keyframes(["0%{transform:translate3d( 100%,0,0 );}100%{transform:translate3d( 0,0,0 );}"]);
+const GroupPanelKeyframes = keyframes`
+  0% {
+    transform: translate3d( 100%, 0, 0 );
+  }
+  100% {
+    transform: translate3d( 0, 0, 0 );
+  }
+`;
 const GroupPanel = styled.div.withConfig({
   displayName: "BlockFieldPlugin__GroupPanel",
   componentId: "sc-5mryxt-2"
-})(["position:absolute;width:100%;top:0;bottom:0;left:0;overflow:hidden;pointer-events:", ";> *{", ";", ";}"], p => p.isExpanded ? "all" : "none", p => p.isExpanded && css(["animation-name:", ";animation-duration:150ms;animation-delay:0ms;animation-iteration-count:1;animation-timing-function:ease-out;animation-fill-mode:backwards;"], GroupPanelKeyframes), p => !p.isExpanded && css(["transition:transform 150ms ease-out;transform:translate3d(100%,0,0);"]));
+})(["position:absolute;width:100%;top:0;bottom:0;left:0;overflow:hidden;pointer-events:", ";> *{", ";", ";}"], p => p.isExpanded ? "all" : "none", p => p.isExpanded && css`
+        animation-name: ${GroupPanelKeyframes};
+        animation-duration: 150ms;
+        animation-delay: 0ms;
+        animation-iteration-count: 1;
+        animation-timing-function: ease-out;
+        animation-fill-mode: backwards;
+      `, p => !p.isExpanded && css`
+        transition: transform 150ms ease-out;
+        transform: translate3d(100%, 0, 0);
+      `);
 
 const HorizontalLine$2 = styled$1.div.withConfig({
   displayName: "IdentityFieldPlugin__HorizontalLine",
@@ -2041,7 +2079,7 @@ const IdentityFieldWrapper = styled$1.div.withConfig({
 const IdentityFieldContainer = styled$1.div.withConfig({
   displayName: "IdentityFieldPlugin__IdentityFieldContainer",
   componentId: "sc-ayv92b-2"
-})([""]);
+})(["position:sticky;top:0px;z-index:var(--tina-z-index-2);"]);
 function IdentityField({
   input,
   field

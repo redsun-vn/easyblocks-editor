@@ -22,8 +22,10 @@ import { isMixedFieldValue } from "../components/isMixedFieldValue";
 import { PanelContext } from "./BlockFieldPlugin";
 import { useTranslation } from "../../../useTranslation";
 
-interface IdentityFieldProps
-  extends FieldRenderProps<NoCodeComponentEntry, HTMLElement> {
+interface IdentityFieldProps extends FieldRenderProps<
+  NoCodeComponentEntry,
+  HTMLElement
+> {
   field: Field;
 }
 
@@ -41,7 +43,11 @@ const IdentityFieldWrapper = styled.div`
   background: ${Colors.white};
 `;
 
-const IdentityFieldContainer = styled.div``;
+const IdentityFieldContainer = styled.div`
+  position: sticky;
+  top: 0px;
+  z-index: var(--tina-z-index-2);
+`;
 
 function IdentityField({ input, field }: IdentityFieldProps) {
   const editorContext = useEditorContext();
@@ -57,7 +63,7 @@ function IdentityField({ input, field }: IdentityFieldProps) {
 
   const componentDefinition = findComponentDefinitionById(
     config._component,
-    editorContext
+    editorContext,
   );
 
   const configPaths = toArray(field.name);
@@ -68,7 +74,7 @@ function IdentityField({ input, field }: IdentityFieldProps) {
     ? findComponentDefinitionById(parent.templateId, editorContext)
     : undefined;
   const parentSchemaProp = parentComponentDefinition?.schema.find(
-    (schemaProp) => schemaProp.prop === parent!.fieldName
+    (schemaProp) => schemaProp.prop === parent!.fieldName,
   );
 
   const isNonRemovable =

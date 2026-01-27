@@ -64,7 +64,6 @@ import {
   EditorContext,
   EditorContextType,
   TemplateQueryType,
-  TemplateType,
 } from "./EditorContext";
 import { EditorExternalDataProvider } from "./EditorExternalDataProvider";
 import { EditorIframe } from "./EditorIframe";
