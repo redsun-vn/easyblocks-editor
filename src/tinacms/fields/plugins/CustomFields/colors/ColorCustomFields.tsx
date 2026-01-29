@@ -5,8 +5,10 @@ import styled from "styled-components";
 import { useEditorContext } from "../../../../../EditorContext";
 import { TokenFieldProps } from "../../TokenField/TokenFieldPlugin";
 
-interface IFontCustomInputElement
-  extends Omit<TokenFieldProps<TokenValue>, "meta"> {
+interface IFontCustomInputElement extends Omit<
+  TokenFieldProps<TokenValue>,
+  "meta"
+> {
   customValueTextFieldRef?: React.MutableRefObject<HTMLInputElement | null>;
 }
 
@@ -48,23 +50,17 @@ const InputStyleWrapper = styled.div`
 export const ColorCustomFields = ({ input }: IFontCustomInputElement) => {
   const editorContext = useEditorContext();
   const inputColorRef = useRef<HTMLInputElement | null>(null);
-
   const currentValue = useMemo(
     () =>
       input.value?.value || input.value?.[editorContext.breakpointIndex]?.value,
-    [input]
+    [input],
   );
-  let changeColorId: NodeJS.Timeout;
 
-  const onChange = (color: string) => {
-    clearTimeout(changeColorId);
-
-    changeColorId = setTimeout(() => {
-      input.onChange({
-        value: color,
-        widgetId: undefined,
-      });
-    }, 300);
+  const onChange = (newColor: string) => {
+    input.onChange({
+      value: newColor,
+      widgetId: undefined,
+    });
   };
 
   useEffect(() => {

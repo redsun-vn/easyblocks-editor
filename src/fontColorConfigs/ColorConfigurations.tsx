@@ -1,11 +1,11 @@
-import { ThemeTokenValue } from "@redsun-vn/easyblocks-core";
+import { ThemeTokenValue, validateColor } from "@redsun-vn/easyblocks-core";
 import {
   ButtonDanger,
   ButtonPrimary,
   ButtonSecondary,
+  ColorPicker,
   Colors,
   Fonts,
-  HexAlphaColorPicker,
   Icons,
   Input,
   Modal,
@@ -16,7 +16,6 @@ import styled from "styled-components";
 import { EditorContextType } from "../EditorContext";
 import { useTranslation } from "../useTranslation";
 import { getBrightnessColor } from "../utils/colors";
-import { validateColor } from "../sidebar/validate-color";
 
 interface IColorConfiguration {
   onConfigChange?: () => Promise<void>;
@@ -75,7 +74,7 @@ const StyledInputWrapper = styled.div`
 
 const StyledInputColor = styled(Input)`
   box-shadow: 0 0 0 1px ${Colors.black10};
-  width: 100%;
+  width: 100% !important;
   border-radius: 2px;
 
   &:focus {
@@ -154,19 +153,19 @@ export const ColorConfigurations = ({
   const [colorInputError, setColorInputError] = useState("");
 
   const themeOptions1 = Object.entries(colorTokens).filter(([id]) =>
-    id.startsWith("theme_1")
+    id.startsWith("theme_1"),
   );
   const themeOptions2 = Object.entries(colorTokens).filter(([id]) =>
-    id.startsWith("theme_2")
+    id.startsWith("theme_2"),
   );
   const themeOptions3 = Object.entries(colorTokens).filter(([id]) =>
-    id.startsWith("theme_3")
+    id.startsWith("theme_3"),
   );
   const themeOptions4 = Object.entries(colorTokens).filter(([id]) =>
-    id.startsWith("theme_4")
+    id.startsWith("theme_4"),
   );
   const themeOptions5 = Object.entries(colorTokens).filter(([id]) =>
-    id.startsWith("theme_5")
+    id.startsWith("theme_5"),
   );
 
   const themeBackgroundAndTextOptions = {
@@ -251,14 +250,14 @@ export const ColorConfigurations = ({
         ([id, value]) => ({
           id,
           ...value,
-        })
+        }),
       );
 
       const colorTokenPayloads = Object.entries(newColorTokens).map(
         ([id, value]) => ({
           id,
           ...value,
-        })
+        }),
       );
 
       try {
@@ -316,16 +315,25 @@ export const ColorConfigurations = ({
         <Modal
           title={t("theme.colors.edit")}
           isOpen={!!openEditColor}
-          mode="center-small"
+          mode="fit"
           onRequestClose={closeEditColor}
           maxHeight="auto"
+          endAdornment={
+            <StyledButtonGroup>
+              <ButtonSecondary onClick={closeEditColor}>
+                {t("cancel")}
+              </ButtonSecondary>
+              <ButtonPrimary
+                isLoading={isLoadingEdit}
+                disabled={isLoadingEdit || !!colorInputError}
+                onClick={onSaveEditColor}
+              >
+                {t("template.save.default")}
+              </ButtonPrimary>
+            </StyledButtonGroup>
+          }
         >
-          <HexAlphaColorPicker
-            style={{ width: "100%", padding: 4 }}
-            color={openEditColor?.value}
-            onChange={onChangeColor}
-            onKeyDown={onEnterChangeColor}
-          />
+          <ColorPicker value={openEditColor?.value} onChange={onChangeColor} />
 
           <StyledInputWrapper>
             <StyledInputColor
@@ -346,19 +354,6 @@ export const ColorConfigurations = ({
               <StyleColorError>{colorInputError}</StyleColorError>
             ) : null}
           </StyledInputWrapper>
-
-          <StyledButtonGroup>
-            <ButtonSecondary onClick={closeEditColor}>
-              {t("cancel")}
-            </ButtonSecondary>
-            <ButtonPrimary
-              isLoading={isLoadingEdit}
-              disabled={isLoadingEdit || !!colorInputError}
-              onClick={onSaveEditColor}
-            >
-              {t("template.save.default")}
-            </ButtonPrimary>
-          </StyledButtonGroup>
         </Modal>
       ) : null}
 

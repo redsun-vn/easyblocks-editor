@@ -87,11 +87,13 @@ const Content = styled(RadixSelectContent)`
   border: 1px solid #ddd;
   box-shadow: 0px 4px 12px #0000001a;
   padding: 4px 0;
+  width: 250px;
 `;
 
 const Viewport = styled(RadixSelectViewport)<{ shape: "circle" | "rectangle" }>`
   display: grid;
-  grid-template-columns: repeat(5, 30px);
+  grid-template-columns: ${({ shape }) =>
+    `repeat(${shape === "circle" ? "8" : "5"}, ${shape === "circle" ? "30px" : "46px"})`};
   padding: ${({ shape }) => (shape === "circle" ? "2px" : "2px 8px")};
   max-height: 200px;
   overflow: auto;
@@ -153,6 +155,9 @@ const SelectTitle = styled.div`
   font-size: 14px;
 `;
 
+const transparentImage =
+  'url(\'data:image/svg+xml,<svg width="100" height="50" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="checker" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="2" height="2" fill="%23ccc" /><rect x="2" y="2" width="2" height="2" fill="%23ccc" /></pattern></defs><rect width="100" height="50" fill="url(%23checker)" /></svg>\')';
+
 export const ColorOptions = ({
   field,
   options,
@@ -164,6 +169,11 @@ export const ColorOptions = ({
     const color =
       (field.tokens[option.id]?.value as unknown as string | undefined) ??
       option.id;
+
+    const colorStyled =
+      color === "transparent"
+        ? { backgroundImage: transparentImage }
+        : { background: color };
 
     return (
       <Item key={option.id} value={option.id} shape={shape}>
@@ -178,54 +188,25 @@ export const ColorOptions = ({
                 }}
               >
                 {shape === "circle" ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="15"
-                    height="16"
-                    viewBox="0 0 15 16"
-                    fill="none"
-                  >
-                    <defs>
-                      <pattern
-                        id="checker"
-                        width="4"
-                        height="4"
-                        patternUnits="userSpaceOnUse"
-                      >
-                        <rect width="2" height="2" fill="#e5e7eb" />
-                        <rect x="2" y="2" width="2" height="2" fill="#e5e7eb" />
-                      </pattern>
-                    </defs>
-
-                    {color === "transparent" ? (
-                      <circle cx="7.5" cy="8" r="6.5" fill="url(#checker)" />
-                    ) : (
-                      <circle
-                        cx="7.5"
-                        cy="8"
-                        r="6.5"
-                        fill={color}
-                        stroke={Colors.black100}
-                      />
-                    )}
-                  </svg>
+                  <span
+                    style={{
+                      width: 16,
+                      height: 16,
+                      ...colorStyled,
+                      border: `1px solid ${Colors.black100}`,
+                      borderRadius: "100%",
+                    }}
+                  />
                 ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="28"
-                    height="16"
-                    viewBox="0 0 30 18"
-                    fill="none"
-                  >
-                    <rect
-                      x="1"
-                      y="4"
-                      width="28"
-                      height="13"
-                      fill={color}
-                      stroke={Colors.black100}
-                    />
-                  </svg>
+                  <span
+                    style={{
+                      width: 40,
+                      height: 16,
+                      background: color,
+                      ...colorStyled,
+                      border: `1px solid ${Colors.black100}`,
+                    }}
+                  />
                 )}
               </span>
             </TooltipTrigger>

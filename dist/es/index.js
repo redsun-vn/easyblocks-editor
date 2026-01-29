@@ -1,9 +1,9 @@
 "use client";
-import { getExternalReferenceLocationKey, isTrulyResponsiveValue, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, isNoCodeComponentOfType, getDefaultLocale, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
+import { getExternalReferenceLocationKey, isTrulyResponsiveValue, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, validateColor, isNoCodeComponentOfType, getDefaultLocale, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, useCallback, useDeferredValue, memo } from 'react';
 import isPropValid from '@emotion/is-prop-valid';
-import { Colors, useToaster, Fonts, ButtonSecondary, Icons, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, ToggleButton, Input, Loader, Typography, InputColor, RadixSelectTrigger, RadixSelectContent, RadixSelectViewport, RadixSelectItem, RadixSelectItemText, RadixSelectRoot, RadixSelectValue, ChevronDownIcon, RadixSelectPortal, Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, ButtonGhost, ThumbnailButton, RangeSlider, Modal, HexAlphaColorPicker, ButtonPrimary, ButtonDanger, ToggleGroup, ToggleGroupItem, FormElement, InputFile, BasicRow, ButtonGhostColor, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
+import { Colors, useToaster, Fonts, ButtonSecondary, Icons, Toggle as Toggle$1, Select, SelectSeparator, SelectItem, SelectInline, ToggleButton, Input, Loader, Typography, InputColor, RadixSelectTrigger, RadixSelectContent, RadixSelectViewport, RadixSelectItem, RadixSelectItemText, RadixSelectRoot, RadixSelectValue, ChevronDownIcon, RadixSelectPortal, Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, ButtonGhost, ThumbnailButton, RangeSlider, Modal, ButtonPrimary, ColorPicker, ButtonDanger, ToggleGroup, ToggleGroupItem, FormElement, InputFile, BasicRow, ButtonGhostColor, ModalContext, GlobalModalStyles, TooltipProvider, Toaster } from '@redsun-vn/easyblocks-design-system';
 import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
 import { parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, findComponentDefinition, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
@@ -1088,15 +1088,11 @@ const ColorCustomFields = ({
   const editorContext = useEditorContext();
   const inputColorRef = useRef(null);
   const currentValue = useMemo(() => input.value?.value || input.value?.[editorContext.breakpointIndex]?.value, [input]);
-  let changeColorId;
-  const onChange = color => {
-    clearTimeout(changeColorId);
-    changeColorId = setTimeout(() => {
-      input.onChange({
-        value: color,
-        widgetId: undefined
-      });
-    }, 300);
+  const onChange = newColor => {
+    input.onChange({
+      value: newColor,
+      widgetId: undefined
+    });
   };
   useEffect(() => {
     if (inputColorRef.current && inputColorRef.current.value) {
@@ -1292,11 +1288,13 @@ const Trigger = styled$1(RadixSelectTrigger).withConfig({
 const Content$2 = styled$1(RadixSelectContent).withConfig({
   displayName: "ColorFieldPlugin__Content",
   componentId: "sc-19dwflf-1"
-})(["overflow:hidden;background-color:white;border-radius:2px;border:1px solid #ddd;box-shadow:0px 4px 12px #0000001a;padding:4px 0;"]);
+})(["overflow:hidden;background-color:white;border-radius:2px;border:1px solid #ddd;box-shadow:0px 4px 12px #0000001a;padding:4px 0;width:250px;"]);
 const Viewport = styled$1(RadixSelectViewport).withConfig({
   displayName: "ColorFieldPlugin__Viewport",
   componentId: "sc-19dwflf-2"
-})(["display:grid;grid-template-columns:repeat(5,30px);padding:", ";max-height:200px;overflow:auto;justify-items:center;justify-content:center;"], ({
+})(["display:grid;grid-template-columns:", ";padding:", ";max-height:200px;overflow:auto;justify-items:center;justify-content:center;"], ({
+  shape
+}) => `repeat(${shape === "circle" ? "8" : "5"}, ${shape === "circle" ? "30px" : "46px"})`, ({
   shape
 }) => shape === "circle" ? "2px" : "2px 8px");
 const Item = styled$1(RadixSelectItem).withConfig({
@@ -1315,6 +1313,7 @@ const SelectTitle = styled$1.div.withConfig({
   displayName: "ColorFieldPlugin__SelectTitle",
   componentId: "sc-19dwflf-5"
 })(["padding:8px 8px 2px 8px;", ";font-size:14px;"], Fonts.body);
+const transparentImage = 'url(\'data:image/svg+xml,<svg width="100" height="50" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="checker" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="2" height="2" fill="%23ccc" /><rect x="2" y="2" width="2" height="2" fill="%23ccc" /></pattern></defs><rect width="100" height="50" fill="url(%23checker)" /></svg>\')';
 const ColorOptions = ({
   field,
   options,
@@ -1322,6 +1321,11 @@ const ColorOptions = ({
 }) => {
   return options.map(option => {
     const color = field.tokens[option.id]?.value ?? option.id;
+    const colorStyled = color === "transparent" ? {
+      backgroundImage: transparentImage
+    } : {
+      background: color
+    };
     return /*#__PURE__*/React__default.createElement(Item, {
       key: option.id,
       value: option.id,
@@ -1332,52 +1336,23 @@ const ColorOptions = ({
         alignItems: "center",
         gap: shape === "circle" ? 6 : 0
       }
-    }, shape === "circle" ? /*#__PURE__*/React__default.createElement("svg", {
-      xmlns: "http://www.w3.org/2000/svg",
-      width: "15",
-      height: "16",
-      viewBox: "0 0 15 16",
-      fill: "none"
-    }, /*#__PURE__*/React__default.createElement("defs", null, /*#__PURE__*/React__default.createElement("pattern", {
-      id: "checker",
-      width: "4",
-      height: "4",
-      patternUnits: "userSpaceOnUse"
-    }, /*#__PURE__*/React__default.createElement("rect", {
-      width: "2",
-      height: "2",
-      fill: "#e5e7eb"
-    }), /*#__PURE__*/React__default.createElement("rect", {
-      x: "2",
-      y: "2",
-      width: "2",
-      height: "2",
-      fill: "#e5e7eb"
-    }))), color === "transparent" ? /*#__PURE__*/React__default.createElement("circle", {
-      cx: "7.5",
-      cy: "8",
-      r: "6.5",
-      fill: "url(#checker)"
-    }) : /*#__PURE__*/React__default.createElement("circle", {
-      cx: "7.5",
-      cy: "8",
-      r: "6.5",
-      fill: color,
-      stroke: Colors.black100
-    })) : /*#__PURE__*/React__default.createElement("svg", {
-      xmlns: "http://www.w3.org/2000/svg",
-      width: "28",
-      height: "16",
-      viewBox: "0 0 30 18",
-      fill: "none"
-    }, /*#__PURE__*/React__default.createElement("rect", {
-      x: "1",
-      y: "4",
-      width: "28",
-      height: "13",
-      fill: color,
-      stroke: Colors.black100
-    })))), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
+    }, shape === "circle" ? /*#__PURE__*/React__default.createElement("span", {
+      style: {
+        width: 16,
+        height: 16,
+        ...colorStyled,
+        border: `1px solid ${Colors.black100}`,
+        borderRadius: "100%"
+      }
+    }) : /*#__PURE__*/React__default.createElement("span", {
+      style: {
+        width: 40,
+        height: 16,
+        background: color,
+        ...colorStyled,
+        border: `1px solid ${Colors.black100}`
+      }
+    }))), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
       color: "white"
     }, color)))));
   });
@@ -2079,7 +2054,7 @@ const IdentityFieldWrapper = styled$1.div.withConfig({
 const IdentityFieldContainer = styled$1.div.withConfig({
   displayName: "IdentityFieldPlugin__IdentityFieldContainer",
   componentId: "sc-ayv92b-2"
-})(["position:sticky;top:0px;z-index:var(--tina-z-index-2);"]);
+})([""]);
 function IdentityField({
   input,
   field
@@ -3321,136 +3296,6 @@ const getBrightnessColor = hex => {
   return brightness < 128 ? "#ffffff" : "#000000";
 };
 
-/**
- * This is a copy of validate-color function from validate-color npm package. This package has problem with bundling, so I copied it here. It was modified 100 years ago anyway and had 32 stars, so nothing fancy really.
- */
-
-// Good article on HTML Colors:
-// https://dev.to/alvaromontoro/the-ultimate-guide-to-css-colors-2020-edition-1bh1#hsl
-
-// Check if parameter is defined and a string
-const isString = color => color && typeof color === "string";
-// All existing HTML color names
-const htmlColorNames = ["AliceBlue", "AntiqueWhite", "Aqua", "Aquamarine", "Azure", "Beige", "Bisque", "Black", "BlanchedAlmond", "Blue", "BlueViolet", "Brown", "BurlyWood", "CadetBlue", "Chartreuse", "Chocolate", "Coral", "CornflowerBlue", "Cornsilk", "Crimson", "Cyan", "DarkBlue", "DarkCyan", "DarkGoldenrod", "DarkGray", "DarkGreen", "DarkKhaki", "DarkMagenta", "DarkOliveGreen", "DarkOrange", "DarkOrchid", "DarkRed", "DarkSalmon", "DarkSeaGreen", "DarkSlateBlue", "DarkSlateGray", "DarkTurquoise", "DarkViolet", "DeepPink", "DeepSkyBlue", "DimGray", "DodgerBlue", "FireBrick", "FloralWhite", "ForestGreen", "Fuchsia", "Gainsboro", "GhostWhite", "Gold", "Goldenrod", "Gray", "Green", "GreenYellow", "HoneyDew", "HotPink", "IndianRed", "Indigo", "Ivory", "Khaki", "Lavender", "LavenderBlush", "LawnGreen", "LemonChiffon", "LightBlue", "LightCoral", "LightCyan", "LightGoldenrodYellow", "LightGray", "LightGreen", "LightPink", "LightSalmon", "LightSalmon", "LightSeaGreen", "LightSkyBlue", "LightSlateGray", "LightSteelBlue", "LightYellow", "Lime", "LimeGreen", "Linen", "Magenta", "Maroon", "MediumAquamarine", "MediumBlue", "MediumOrchid", "MediumPurple", "MediumSeaGreen", "MediumSlateBlue", "MediumSlateBlue", "MediumSpringGreen", "MediumTurquoise", "MediumVioletRed", "MidnightBlue", "MintCream", "MistyRose", "Moccasin", "NavajoWhite", "Navy", "OldLace", "Olive", "OliveDrab", "Orange", "OrangeRed", "Orchid", "PaleGoldenrod", "PaleGreen", "PaleTurquoise", "PaleVioletRed", "PapayaWhip", "PeachPuff", "Peru", "Pink", "Plum", "PowderBlue", "Purple", "RebeccaPurple", "Red", "RosyBrown", "RoyalBlue", "SaddleBrown", "Salmon", "SandyBrown", "SeaGreen", "SeaShell", "Sienna", "Silver", "SkyBlue", "SlateBlue", "SlateGray", "Snow", "SpringGreen", "SteelBlue", "Tan", "Teal", "Thistle", "Tomato", "Turquoise", "Violet", "Wheat", "White", "WhiteSmoke", "Yellow", "YellowGreen"];
-// These 3 values are valid, usable color names, which are special in their own way
-const htmlColorNamesSpecial = ["currentColor", "inherit", "transparent"];
-
-// Validate HTML color name (red, yellow, etc)
-const validateHTMLColorName = color => {
-  let status = false;
-  if (isString(color)) {
-    htmlColorNames.map(c => {
-      if (color.toLowerCase() === c.toLowerCase()) {
-        status = true;
-      }
-      return null;
-    });
-  }
-  return status;
-};
-
-// Validate HTML color special name (currentColor, inherit, etc)
-const validateHTMLColorSpecialName = color => {
-  let status = false;
-  if (isString(color)) {
-    htmlColorNamesSpecial.map(c => {
-      if (color.toLowerCase() === c.toLowerCase()) {
-        status = true;
-      }
-      return null;
-    });
-  }
-  return status;
-};
-
-// Validate HTML color 'hex'
-const validateHTMLColorHex = color => {
-  if (isString(color)) {
-    const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$/i;
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-
-// Validate HTML color 'rgb'
-// -- legacy notation
-// color: rgb(255, 255, 255);
-// color: rgba(255, 255, 255, 1);
-// -- new notation
-// color: rgb(255 255 255);
-// color: rgb(255 255 255 / 1);
-// Note that 'rgba()' is now merged into 'rgb()'
-const validateHTMLColorRgb = color => {
-  if (isString(color)) {
-    const regex = /(rgb)a?\((\s*\d+%?\s*?,?\s*){2}(\s*\d+%?\s*?,?\s*\)?)(\s*,?\s*\/?\s*(0?\.?\d+%?\s*)?|1|0)?\)$/i;
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-const optionalCommaOrRequiredSpace = `((\\s*,\\s*)|(\\s+))`;
-const optionalDecimals = `(\\.\\d+)?`;
-const anyPercentage = `((\\d*${optionalDecimals})%)`;
-const hundredPercent = `(([0-9]|[1-9][0-9]|100)%)`;
-const alphaPercentage = `(((${hundredPercent}))|(0?${optionalDecimals})|1))?`;
-const endingWithAlphaPercentage = `\\s*?\\)?)(\\s*?(\\/?)\\s+${alphaPercentage}\\s*?\\)$`;
-
-// Validate HTML color 'hsl'
-// -- These units are valid for the first parameter
-// 'deg': degrees | full circle = 360
-// 'gra': gradians | full circle = 400
-// 'radians': radians | full circle = 2π (approx. 6.28)
-// 'turn': turns | full circle = 1
-const validateHTMLColorHsl = color => {
-  if (isString(color)) {
-    // Validate each possible unit value separately, as their values differ
-    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
-    const graRegex = `(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-9][0-9]|400)gra)`;
-    const radRegex = `((([0-5])?\\.\\d+|6\\.([0-9]|1[0-9]|2[0-8])|[0-6])rad)`;
-    const turnRegex = `((0?${optionalDecimals}|1)turn)`;
-    const regexLogic = `(hsl)a?\\((\\s*?(${degRegex}|${graRegex}|${radRegex}|${turnRegex})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})${optionalCommaOrRequiredSpace})(\\s*?(0|${hundredPercent})\\s*?\\)?)(\\s*?(\\/?|,?)\\s*?(((${hundredPercent}))|(0?${optionalDecimals})|1))?\\)$`;
-    const regex = new RegExp(regexLogic);
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-
-// Validate HTML color 'hwb'
-// -- 'hwb' accepts 'deg' as unit in its 1st property, which stands for 'hue'
-// 'deg': degrees | full circle = 360
-const validateHTMLColorHwb = color => {
-  if (isString(color)) {
-    const degRegex = `(-?([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-9][0-9]|3[0-5][0-9]|360)(deg)?)`;
-    const regexLogic = `(hwb\\(\\s*?${degRegex}\\s+)((0|${hundredPercent})\\s+)((0|${hundredPercent})${endingWithAlphaPercentage}`;
-    const regex = new RegExp(regexLogic);
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-
-// Validate HTML color 'lab'
-// -- 'lab' 2nd & 3rd parameters are any number between -160 & 160
-const validateHTMLColorLab = color => {
-  if (isString(color)) {
-    const labParam = `(-?(([0-9]|[1-9][0-9]|1[0-5][0-9])${optionalDecimals}?|160))`;
-    const regexLogic = `(lab\\(\\s*?${anyPercentage}\\s+${labParam}\\s+${labParam}${endingWithAlphaPercentage}`;
-    const regex = new RegExp(regexLogic);
-    return !!color && regex.test(color);
-  }
-  return false;
-};
-const validateColor = color => {
-  // Former validation - source: https://www.regextester.com/103656
-  // if (isString(color)) {
-  //   const regex = /^#([\da-f]{3}){1,2}$|^#([\da-f]{4}){1,2}$|(rgb|hsl)a?\((\s*-?\d+%?\s*,){2}(\s*-?\d+%?\s*,?\s*\)?)(,\s*(0?\.\d+)?|1|0)?\)$/i;
-  //   return color && regex.test(color);
-  // }
-  // New validation
-  if (color && validateHTMLColorHex(color) || validateHTMLColorName(color) || validateHTMLColorSpecialName(color) || validateHTMLColorRgb(color) || validateHTMLColorHsl(color) || validateHTMLColorHwb(color) || validateHTMLColorLab(color)) {
-    return true;
-  }
-  return false;
-};
-
 const ColorConfigurationsContainer = styled$1.div.withConfig({
   displayName: "ColorConfigurations__ColorConfigurationsContainer",
   componentId: "sc-qln4q1-0"
@@ -3482,7 +3327,7 @@ const StyledInputWrapper = styled$1.div.withConfig({
 const StyledInputColor = styled$1(Input).withConfig({
   displayName: "ColorConfigurations__StyledInputColor",
   componentId: "sc-qln4q1-6"
-})(["box-shadow:0 0 0 1px ", ";width:100%;border-radius:2px;&:focus{outline:none;}"], Colors.black10);
+})(["box-shadow:0 0 0 1px ", ";width:100% !important;border-radius:2px;&:focus{outline:none;}"], Colors.black10);
 const StyledButtonGroup = styled$1.div.withConfig({
   displayName: "ColorConfigurations__StyledButtonGroup",
   componentId: "sc-qln4q1-7"
@@ -3644,17 +3489,19 @@ const ColorConfigurations = ({
   })))), openEditColor ? /*#__PURE__*/React__default.createElement(Modal, {
     title: t("theme.colors.edit"),
     isOpen: !!openEditColor,
-    mode: "center-small",
+    mode: "fit",
     onRequestClose: closeEditColor,
-    maxHeight: "auto"
-  }, /*#__PURE__*/React__default.createElement(HexAlphaColorPicker, {
-    style: {
-      width: "100%",
-      padding: 4
-    },
-    color: openEditColor?.value,
-    onChange: onChangeColor,
-    onKeyDown: onEnterChangeColor
+    maxHeight: "auto",
+    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+      onClick: closeEditColor
+    }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+      isLoading: isLoadingEdit,
+      disabled: isLoadingEdit || !!colorInputError,
+      onClick: onSaveEditColor
+    }, t("template.save.default")))
+  }, /*#__PURE__*/React__default.createElement(ColorPicker, {
+    value: openEditColor?.value,
+    onChange: onChangeColor
   }), /*#__PURE__*/React__default.createElement(StyledInputWrapper, null, /*#__PURE__*/React__default.createElement(StyledInputColor, {
     defaultValue: openEditColor?.value,
     value: openEditColor?.value,
@@ -3668,13 +3515,7 @@ const ColorConfigurations = ({
       setColor(newColor);
     },
     onKeyDown: onEnterChangeColor
-  }), colorInputError ? /*#__PURE__*/React__default.createElement(StyleColorError, null, colorInputError) : null), /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
-    onClick: closeEditColor
-  }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
-    isLoading: isLoadingEdit,
-    disabled: isLoadingEdit || !!colorInputError,
-    onClick: onSaveEditColor
-  }, t("template.save.default")))) : null, /*#__PURE__*/React__default.createElement(ButtonDanger, {
+  }), colorInputError ? /*#__PURE__*/React__default.createElement(StyleColorError, null, colorInputError) : null)) : null, /*#__PURE__*/React__default.createElement(ButtonDanger, {
     isLoading: isLoadingReset,
     disabled: isLoadingReset,
     style: {
