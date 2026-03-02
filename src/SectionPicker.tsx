@@ -109,7 +109,7 @@ type SectionCardProps = {
 
 function getTemplatePreviewImage(
   template: Template,
-  editorContext: EditorContextType
+  editorContext: EditorContextType,
 ): string | undefined {
   // template.previewImage is always most important and overrides other sources of preview
   if (template.thumbnail) {
@@ -310,7 +310,7 @@ export const SectionPickerModal: TemplatePicker = ({
                     key={`sectionPicker__group__${componentId}`}
                     onClick={() => {
                       const groupNode = document.getElementById(
-                        `sectionPicker__group__${componentId}`
+                        `sectionPicker__group__${componentId}`,
                       );
                       const groupOffsetTop = groupNode!.offsetTop;
                       gridRootRef.current!.scrollTo({
@@ -321,7 +321,7 @@ export const SectionPickerModal: TemplatePicker = ({
                   >
                     {label ?? componentId}
                   </SidebarButton>
-                )
+                ),
               )}
             </SidebarContent>
           )}
@@ -339,7 +339,7 @@ export const SectionPickerModal: TemplatePicker = ({
                     templates,
                   },
                 ],
-                index
+                index,
               ) => (
                 <div
                   style={{ paddingTop: "32px", paddingBottom: "32px" }}
@@ -362,7 +362,7 @@ export const SectionPickerModal: TemplatePicker = ({
                     ))}
                   </ModalGridRoot>
                 </div>
-              )
+              ),
             )}
         </GridRoot>
       </ModalRoot>

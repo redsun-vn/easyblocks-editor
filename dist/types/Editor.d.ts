@@ -1,4 +1,4 @@
-import { CompilationMetadata, Config, Document, ExternalData, FetchOutputResources, InlineTypeWidgetComponentProps, NonEmptyRenderableContent, TokenTypeWidgetComponentProps, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
+import { CompilationMetadata, Config, Document, ExternalData, FetchOutputResources, InlineTypeWidgetComponentProps, NonEmptyRenderableContent, TGlobalSectionChange, TokenTypeWidgetComponentProps, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
 import React, { ComponentType } from "react";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
 import { EditorContextType } from "./EditorContext";
@@ -29,6 +29,7 @@ type EditorProps = {
     externalData: FetchOutputResources;
     onExternalDataChange: ExternalDataChangeHandler;
     onConfigChange?: () => Promise<void>;
+    onGlobalSectionChange?: (payload: TGlobalSectionChange) => Promise<void>;
     widgets?: Record<string, ComponentType<WidgetComponentProps<any>> | ComponentType<InlineTypeWidgetComponentProps<any>> | ComponentType<TokenTypeWidgetComponentProps<any>>>;
     components?: Record<string, ComponentType<any>>;
     pickers?: Record<string, TemplatePicker>;

@@ -23,7 +23,7 @@ import {
 function duplicateItem(
   form: Form,
   { name, sourceIndex, targetIndex }: DuplicateItemActionType,
-  compilationContext: CompilationContextType
+  compilationContext: CompilationContextType,
 ) {
   // Placeholders are not copyable
   if (isPlaceholder(name + "." + sourceIndex, form.values)) {
@@ -32,13 +32,13 @@ function duplicateItem(
 
   const configToDuplicate = dotNotationGet(
     form.values,
-    name + "." + sourceIndex
+    name + "." + sourceIndex,
   );
 
   form.mutators.insert(
     name,
     targetIndex,
-    duplicateConfig(configToDuplicate, compilationContext)
+    duplicateConfig(configToDuplicate, compilationContext),
   );
 }
 
@@ -60,7 +60,7 @@ function pasteItems({
     .map((initialDestination) => {
       const destination = successfulInsertsPaths.reduce(
         (acc, current) => shiftPath(acc, current, "downward"),
-        initialDestination
+        initialDestination,
       );
 
       const resolvedDestinations = resolveDestination(destination);
@@ -87,10 +87,10 @@ function pasteItems({
 function duplicateItems(
   form: Form,
   fieldNames: Array<string>,
-  compilationContext: CompilationContextType
+  compilationContext: CompilationContextType,
 ): Array<string> | undefined {
   const duplicatableFieldNames = fieldNames.filter((fieldName) =>
-    isFieldDuplicatable(fieldName, form, compilationContext)
+    isFieldDuplicatable(fieldName, form, compilationContext),
   );
 
   if (duplicatableFieldNames.length === 0) {
@@ -99,7 +99,7 @@ function duplicateItems(
 
   const fieldsGroupedByParentPath = groupFieldsByParentPath(
     duplicatableFieldNames,
-    "ascending"
+    "ascending",
   );
 
   const nextFocusedFieldsPerGroup: Array<Array<string>> = [];
@@ -122,14 +122,14 @@ function duplicateItems(
             sourceIndex,
             targetIndex,
           },
-          compilationContext
+          compilationContext,
         );
 
         nextFocusedFieldsPerGroup[fieldsGroupIndex].push(
-          `${parentPath}.${lastFieldIndex + 1 + fieldIndex}`
+          `${parentPath}.${lastFieldIndex + 1 + fieldIndex}`,
         );
       });
-    }
+    },
   );
 
   return nextFocusedFieldsPerGroup.flat();
@@ -151,7 +151,7 @@ function moveItem(form: Form, { from, to, name }: MoveItemActionType) {
 function moveItems(
   form: Form,
   fieldsToMove: Array<string>,
-  direction: "top" | "right" | "bottom" | "left"
+  direction: "top" | "right" | "bottom" | "left",
 ): Array<string> | undefined {
   const nextFocusedFields: Array<string> = [];
   const isMovingMultipleFields = fieldsToMove.length > 1;
@@ -159,7 +159,7 @@ function moveItems(
   if (direction === "top" || direction === "left") {
     const fieldsGroupedByParentPath = groupFieldsByParentPath(
       fieldsToMove,
-      "ascending"
+      "ascending",
     );
 
     Object.values(fieldsGroupedByParentPath).forEach((sortedFields) => {
@@ -206,7 +206,7 @@ function moveItems(
   } else {
     const fieldsGroupedByParentPath = groupFieldsByParentPath(
       fieldsToMove,
-      "descending"
+      "descending",
     );
 
     Object.values(fieldsGroupedByParentPath).forEach((sortedFields) => {
@@ -253,8 +253,40 @@ function moveItems(
   }
 }
 
-function removeItem(form: Form, { index, name }: RemoveItemActionType) {
+function removeItem(
+  form: Form,
+  { index, name, editorContext }: RemoveItemActionType,
+) {
   const configPathToRemove = name + "." + index;
+
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+
+  const currentEntry: NoCodeComponentEntry = dotNotationGet(
+    editorContext.form.values,
+    editorContext.focussedField[editorContext.focussedField.length - 1],
+  );
+
+  if (currentDocument && currentEntry) {
+    let groupName: string = "";
+
+    const currentSection = Object.entries(
+      editorContext?.globalSections ?? {},
+    ).find(([name, groupValue]) => {
+      const isIncluded = Object.keys(groupValue).includes(currentEntry._id);
+      groupName = isIncluded ? name : "";
+      return isIncluded;
+    });
+
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      pages: currentSection?.[1][currentEntry._id].pages.filter(
+        (page) => page !== currentDocument,
+      ),
+      groupName,
+      entry: currentEntry,
+    });
+  }
 
   // Placeholders are not removable
   if (isPlaceholder(configPathToRemove, form.values)) {
@@ -277,10 +309,10 @@ function removeItem(form: Form, { index, name }: RemoveItemActionType) {
 function removeItems(
   form: Form,
   fieldNamesToRemove: Array<string>,
-  compilationContext: CompilationContextType
+  editorContext: EditorContextType,
 ): Array<string> | undefined {
   const removableFieldNames = fieldNamesToRemove.filter((fieldName) =>
-    isFieldRemovable(fieldName, form, compilationContext)
+    isFieldRemovable(fieldName, form, editorContext),
   );
 
   if (removableFieldNames.length === 0) {
@@ -291,13 +323,13 @@ function removeItems(
 
   const fieldsGroupedByParentPath = groupFieldsByParentPath(
     removableFieldNames,
-    "descending"
+    "descending",
   );
 
   if (!isRemovingMultipleFields) {
     const { index, parent, templateId } = parsePath(
       removableFieldNames[0],
-      form
+      form,
     );
 
     if (index === undefined || !parent) {
@@ -314,12 +346,10 @@ function removeItems(
     removeItem(form, {
       index,
       name: fieldPath,
+      editorContext,
     });
 
-    const definition = findComponentDefinitionById(
-      templateId,
-      compilationContext
-    );
+    const definition = findComponentDefinitionById(templateId, editorContext);
     const isTextWrapper =
       definition &&
       isNoCodeComponentOfType(definition, "@easyblocks/text-wrapper");
@@ -354,6 +384,7 @@ function removeItems(
       removeItem(form, {
         index,
         name: parentPath,
+        editorContext,
       });
     });
   });
@@ -364,12 +395,12 @@ function removeItems(
 function replaceItems(
   paths: string[],
   newConfig: NoCodeComponentEntry,
-  editorContext: EditorContextType
+  editorContext: EditorContextType,
 ) {
   paths.forEach((path) => {
     const oldConfig: NoCodeComponentEntry = dotNotationGet(
       editorContext.form.values,
-      path
+      path,
     );
 
     editorContext.form.change(
@@ -379,8 +410,8 @@ function replaceItems(
         //   ? changeComponentConfig(oldConfig, newConfig, editorContext)
         //   : newConfig,
         newConfig,
-        editorContext
-      )
+        editorContext,
+      ),
     );
   });
 }
@@ -406,7 +437,7 @@ export {
 
 function groupFieldsByParentPath(
   fields: Array<string>,
-  sortDirection: "ascending" | "descending"
+  sortDirection: "ascending" | "descending",
 ): Record<string, Array<string>> {
   const fieldsIndicesGroupedByParentPath = fields.reduce(
     (accumulator, currentField) => {
@@ -426,15 +457,15 @@ function groupFieldsByParentPath(
 
       return accumulator;
     },
-    {} as Record<string, Array<number>>
+    {} as Record<string, Array<number>>,
   );
 
   return Object.fromEntries(
     Object.entries(fieldsIndicesGroupedByParentPath).map(
       ([parentPath, indices]) => {
         return [parentPath, indices.map((index) => parentPath + "." + index)];
-      }
-    )
+      },
+    ),
   );
 }
 
@@ -465,7 +496,7 @@ function isLast(fieldPath: string, form: Form): boolean {
   const parentPath = getParentPath(fieldPath);
   const parentFieldElementsCount = dotNotationGet(
     form.values,
-    parentPath
+    parentPath,
   ).length;
 
   return index === parentFieldElementsCount - 1;
@@ -479,19 +510,19 @@ function isPlaceholder(path: string, values: any) {
 function isFieldRemovable(
   fieldName: string,
   form: Form,
-  compilationContext: CompilationContextType
+  compilationContext: CompilationContextType,
 ): boolean {
   const { parent } = parsePath(fieldName, form);
 
   if (parent) {
     const parentComponentDefinition = findComponentDefinitionById(
       parent.templateId,
-      compilationContext
+      compilationContext,
     );
 
     const fieldNameParent = last(getParentPath(fieldName).split("."));
     const fieldSchema = parentComponentDefinition?.schema.find(
-      (schema) => schema.prop === fieldNameParent
+      (schema) => schema.prop === fieldNameParent,
     );
 
     if (
@@ -509,7 +540,7 @@ function isFieldRemovable(
 function isFieldDuplicatable(
   fieldName: string,
   form: Form,
-  compilationContext: CompilationContextType
+  compilationContext: CompilationContextType,
 ): boolean {
   return isFieldRemovable(fieldName, form, compilationContext);
 }
@@ -517,7 +548,7 @@ function isFieldDuplicatable(
 export const shiftPath = (
   originalPath: string,
   shiftingPath: string,
-  direction: "upward" | "downward" = "downward"
+  direction: "upward" | "downward" = "downward",
 ) => {
   const directionFactor = direction === "downward" ? 1 : -1;
 
@@ -556,16 +587,19 @@ export const shiftPath = (
 };
 
 export function takeLastOfEachParent(where: string[]) {
-  const lastOfEachParent = where.reduce((acc, curr) => {
-    const trimmed = getParentPath(curr);
-    const index = getFieldPathIndex(curr);
+  const lastOfEachParent = where.reduce(
+    (acc, curr) => {
+      const trimmed = getParentPath(curr);
+      const index = getFieldPathIndex(curr);
 
-    acc[trimmed] = Math.max(index, acc[trimmed] ?? Number.MIN_SAFE_INTEGER);
+      acc[trimmed] = Math.max(index, acc[trimmed] ?? Number.MIN_SAFE_INTEGER);
 
-    return acc;
-  }, {} as Record<string, number>);
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   return Object.entries(lastOfEachParent).map(
-    ([key, value]) => `${key}.${value}`
+    ([key, value]) => `${key}.${value}`,
   );
 }

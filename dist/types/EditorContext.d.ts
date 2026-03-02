@@ -56,6 +56,15 @@ export type EditorContextType = Omit<BaseEditorContextType, "types" | "templates
     disableCustomTemplates: boolean;
     types: Record<string, EditorExternalTypeDefinition | EditorInlineTypeDefinition | EditorTokenTypeDefinition>;
     components: Record<string, ComponentType<any>>;
+    globalSections?: {
+        [sectionName: string]: {
+            [entryId: string]: {
+                label: string;
+                entry?: NoCodeComponentEntry;
+                pages: string[];
+            };
+        };
+    };
 };
 export declare const EditorContext: React.Context<EditorContextType | null>;
 export declare function useEditorContext(): EditorContextType;

@@ -88,6 +88,15 @@ export type EditorContextType = Omit<
     | EditorTokenTypeDefinition
   >;
   components: Record<string, ComponentType<any>>;
+  globalSections?: {
+    [sectionName: string]: {
+      [entryId: string]: {
+        label: string;
+        entry?: NoCodeComponentEntry;
+        pages: string[];
+      };
+    };
+  };
 };
 
 export const EditorContext = React.createContext<EditorContextType | null>(

@@ -3,6 +3,7 @@ import {
   Config,
   FetchOutputResources,
   InlineTypeWidgetComponentProps,
+  TGlobalSectionChange,
   WidgetComponentProps,
 } from "@redsun-vn/easyblocks-core";
 import {
@@ -29,6 +30,7 @@ type EasyblocksParentProps = {
   externalData: FetchOutputResources;
   onExternalDataChange: ExternalDataChangeHandler;
   onConfigChange?: () => Promise<void>;
+  onGlobalSectionChange?: (payload: TGlobalSectionChange) => Promise<void>;
   widgets?: Record<
     string,
     | ComponentType<WidgetComponentProps<any>>
@@ -92,6 +94,7 @@ export function EasyblocksParent(props: EasyblocksParentProps) {
             externalData={props.externalData}
             onExternalDataChange={props.onExternalDataChange}
             onConfigChange={props.onConfigChange}
+            onGlobalSectionChange={props.onGlobalSectionChange}
             widgets={{
               ...builtinWidgets,
               ...props.widgets,

@@ -1,4 +1,4 @@
-import { Config, FetchOutputResources, InlineTypeWidgetComponentProps, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
+import { Config, FetchOutputResources, InlineTypeWidgetComponentProps, TGlobalSectionChange, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
 import React, { ComponentType } from "react";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
 import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
@@ -7,6 +7,7 @@ type EasyblocksParentProps = {
     externalData: FetchOutputResources;
     onExternalDataChange: ExternalDataChangeHandler;
     onConfigChange?: () => Promise<void>;
+    onGlobalSectionChange?: (payload: TGlobalSectionChange) => Promise<void>;
     widgets?: Record<string, ComponentType<WidgetComponentProps<any>> | ComponentType<InlineTypeWidgetComponentProps<any>>>;
     components?: Record<string, ComponentType<any>>;
     pickers?: Record<string, TemplatePicker>;

@@ -1,9 +1,9 @@
 import {
   CompilationMetadata,
   CompiledShopstoryComponentConfig,
-  NoCodeComponentEntry,
   ExternalData,
   ExternalReference,
+  NoCodeComponentEntry,
   WidgetComponentProps,
 } from "@redsun-vn/easyblocks-core";
 import { EditorContextType } from "./EditorContext";
@@ -22,12 +22,14 @@ export type MoveItemActionType = {
 export type RemoveItemActionType = {
   index: number;
   name: string;
+  editorContext: EditorContextType;
 };
 
 type InsertItemActionType = {
   name: string;
   index: number;
   block: NoCodeComponentEntry;
+  keepId?: boolean;
 };
 
 export type DuplicateItemActionType = {
@@ -54,12 +56,12 @@ export type OpenTemplateModalAction =
 
 export type ActionsType = {
   openComponentPicker: (
-    config: OpenComponentPickerConfig
+    config: OpenComponentPickerConfig,
   ) => Promise<NoCodeComponentEntry | undefined>;
   openTemplateModal: (arg: OpenTemplateModalAction) => void;
   moveItems: (
     fieldNames: Array<string>,
-    direction: "top" | "right" | "bottom" | "left"
+    direction: "top" | "right" | "bottom" | "left",
   ) => void;
   replaceItems: (paths: Array<string>, newConfig: NoCodeComponentEntry) => void;
   removeItems: (fieldNames: Array<string>) => void;
@@ -67,7 +69,7 @@ export type ActionsType = {
   duplicateItems: (fieldNames: Array<string>) => void;
   pasteItems: (items: Array<NoCodeComponentEntry>) => void;
   runChange: <Callback extends () => Array<string> | void>(
-    configChangeCallback: Callback
+    configChangeCallback: Callback,
   ) => void;
   logSelectedItems: () => void;
   notify: (message: string) => void;
@@ -113,3 +115,5 @@ export type InternalWidgetComponentProps = Omit<
   resourceKey?: string;
   path: string;
 };
+
+export type TLeftSidebar = "global-sections" | "layers";

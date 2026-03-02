@@ -456,7 +456,7 @@ const SidebarFooterContainer = styled.styled.div.withConfig({
   displayName: "SidebarFooter__SidebarFooterContainer",
   componentId: "sc-17xf0ak-0"
 })(["position:sticky;bottom:0;background:", ";"], easyblocksDesignSystem.Colors.white);
-const HorizontalLine$3 = styled.styled.div.withConfig({
+const HorizontalLine$4 = styled.styled.div.withConfig({
   displayName: "SidebarFooter__HorizontalLine",
   componentId: "sc-17xf0ak-1"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
@@ -511,7 +511,7 @@ function SidebarFooter(props) {
       toaster.error(t("template.entry.copy.error"));
     }
   };
-  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$3, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
+  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$4, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
     icon: easyblocksDesignSystem.Icons.Save1,
     hideLabel: true,
     onClick: () => {
@@ -2078,7 +2078,7 @@ const GroupPanel = styled.styled.div.withConfig({
         transform: translate3d(100%, 0, 0);
       `);
 
-const HorizontalLine$2 = styled__default["default"].div.withConfig({
+const HorizontalLine$3 = styled__default["default"].div.withConfig({
   displayName: "IdentityFieldPlugin__HorizontalLine",
   componentId: "sc-ayv92b-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
@@ -2183,7 +2183,7 @@ function IdentityField({
       opacity: isNonRemovable ? 0 : 1,
       pointerEvents: isNonRemovable ? "none" : "auto"
     }
-  }, t("delete")))), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$2, null));
+  }, t("delete")))), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$3, null));
 }
 const IdentityFieldPlugin = {
   name: "identity",
@@ -3148,7 +3148,7 @@ function FieldBuilder({
     layout: "column"
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, null, "Unrecognized field type"));
 }
-const HorizontalLine$1 = styled.styled.div.withConfig({
+const HorizontalLine$2 = styled.styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
   componentId: "sc-ignixa-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
@@ -3175,7 +3175,7 @@ function FieldsBuilder({
       ungrouped.push(field);
     }
   });
-  const horizontalLine = /*#__PURE__*/React__default["default"].createElement(HorizontalLine$1, null);
+  const horizontalLine = /*#__PURE__*/React__default["default"].createElement(HorizontalLine$2, null);
   const identityField = fields.find(field => field.component === "identity");
   const breakpointIndex = panelContext ? editorContext.breakpointIndex : undefined;
   return /*#__PURE__*/React__default["default"].createElement(FieldsGroup, null, identityField !== undefined && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(FieldBuilder, {
@@ -3363,7 +3363,7 @@ const StyledInputColor = styled__default["default"](easyblocksDesignSystem.Input
   displayName: "ColorConfigurations__StyledInputColor",
   componentId: "sc-qln4q1-6"
 })(["box-shadow:0 0 0 1px ", ";width:100% !important;border-radius:2px;&:focus{outline:none;}"], easyblocksDesignSystem.Colors.black10);
-const StyledButtonGroup = styled__default["default"].div.withConfig({
+const StyledButtonGroup$2 = styled__default["default"].div.withConfig({
   displayName: "ColorConfigurations__StyledButtonGroup",
   componentId: "sc-qln4q1-7"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
@@ -3527,7 +3527,7 @@ const ColorConfigurations = ({
     mode: "fit",
     onRequestClose: closeEditColor,
     maxHeight: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
       onClick: closeEditColor
     }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
       isLoading: isLoadingEdit,
@@ -3931,8 +3931,8 @@ const EditorTopBar = ({
   onLocaleChange,
   hideCloseButton,
   readOnly,
-  isShowLayers,
-  setIsShowLayers
+  showLeftSidebar,
+  onShowLeftSidebar
 }) => {
   const headingRef = React.useRef(null);
   const router = new URLSearchParams(window.location.search);
@@ -3974,11 +3974,18 @@ const EditorTopBar = ({
       onRedo();
     }
   }, t("editor.sidebar.redo")), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "(Read-Only)"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+    icon: easyblocksDesignSystem.Icons.GlobalSections,
+    hideLabel: true,
+    onClick: () => onShowLeftSidebar("global-sections"),
+    style: {
+      background: showLeftSidebar === "global-sections" ? easyblocksDesignSystem.Colors.black10 : "transparent"
+    }
+  }, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
     icon: easyblocksDesignSystem.Icons.Layers,
     hideLabel: true,
-    onClick: () => setIsShowLayers(prev => !prev),
+    onClick: () => onShowLeftSidebar("layers"),
     style: {
-      background: isShowLayers ? easyblocksDesignSystem.Colors.black10 : "transparent"
+      background: showLeftSidebar === "layers" ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
   }, t("editor.sidebar.layers")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
     icon: easyblocksDesignSystem.Icons.ColorAndFonts,
@@ -5018,9 +5025,27 @@ function moveItems(form, fieldsToMove, direction) {
 }
 function removeItem(form, {
   index,
-  name
+  name,
+  editorContext
 }) {
   const configPathToRemove = name + "." + index;
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
+  if (currentDocument && currentEntry) {
+    let groupName = "";
+    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([name, groupValue]) => {
+      const isIncluded = Object.keys(groupValue).includes(currentEntry._id);
+      groupName = isIncluded ? name : "";
+      return isIncluded;
+    });
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      pages: currentSection?.[1][currentEntry._id].pages.filter(page => page !== currentDocument),
+      groupName,
+      entry: currentEntry
+    });
+  }
 
   // Placeholders are not removable
   if (isPlaceholder(configPathToRemove, form.values)) {
@@ -5038,8 +5063,8 @@ function removeItem(form, {
  * Removes fields given in `fieldNamesToRemove` from given `form`.
  * @returns Array of fields to focus
  */
-function removeItems(form, fieldNamesToRemove, compilationContext) {
-  const removableFieldNames = fieldNamesToRemove.filter(fieldName => isFieldRemovable(fieldName, form, compilationContext));
+function removeItems(form, fieldNamesToRemove, editorContext) {
+  const removableFieldNames = fieldNamesToRemove.filter(fieldName => isFieldRemovable(fieldName, form, editorContext));
   if (removableFieldNames.length === 0) {
     return;
   }
@@ -5060,9 +5085,10 @@ function removeItems(form, fieldNamesToRemove, compilationContext) {
     const isLastItem = itemsLength - 1 === index;
     removeItem(form, {
       index,
-      name: fieldPath
+      name: fieldPath,
+      editorContext
     });
-    const definition = _internals.findComponentDefinitionById(templateId, compilationContext);
+    const definition = _internals.findComponentDefinitionById(templateId, editorContext);
     const isTextWrapper = definition && easyblocksCore.isNoCodeComponentOfType(definition, "@easyblocks/text-wrapper");
 
     // If we're removing item from the text wrapper field let's focus the component holding that field for better UX
@@ -5090,7 +5116,8 @@ function removeItems(form, fieldNamesToRemove, compilationContext) {
       const parentPath = getParentPath(focusedField);
       removeItem(form, {
         index,
-        name: parentPath
+        name: parentPath,
+        editorContext
       });
     });
   });
@@ -5209,6 +5236,431 @@ function takeLastOfEachParent(where) {
   }, {});
   return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
 }
+
+const SelectionMoreActionsContainer = styled__default["default"].div.withConfig({
+  displayName: "Menu__SelectionMoreActionsContainer",
+  componentId: "sc-7fauqp-0"
+})(["", " border-radius:4px;box-shadow:var(--tina-shadow-big);width:max-content;background:", ";pointer-events:all;"], ({
+  styles
+}) => `
+    position: ${styles?.top && styles?.left ? "absolute" : "unset"};
+    top: ${styles?.top ?? "unset"};
+    left: ${styles?.left ?? "unset"};
+  `, easyblocksDesignSystem.Colors.white);
+const SelectionMoreActionsGroupButtons = styled__default["default"].div.withConfig({
+  displayName: "Menu__SelectionMoreActionsGroupButtons",
+  componentId: "sc-7fauqp-1"
+})(["height:36px;position:relative;padding:0px 16px;display:flex;align-items:center;gap:2px;cursor:pointer;&:hover{background:", ";}"], easyblocksDesignSystem.Colors.black10);
+const MenuItem = ({
+  menu
+}) => {
+  const [isHoverMenu, setIsHoverMenu] = React.useState(false);
+  const menuItemRef = React.useRef(null);
+  const onClickMenu = () => {
+    if (!menu.isLoading) {
+      return !menu?.children?.length ? menu?.onClick?.() : undefined;
+    }
+  };
+  return /*#__PURE__*/React__default["default"].createElement(SelectionMoreActionsGroupButtons, {
+    ref: menuItemRef,
+    onMouseEnter: () => setIsHoverMenu(true),
+    onMouseLeave: () => setIsHoverMenu(false),
+    onClick: onClickMenu
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    style: {
+      cursor: "pointer"
+    },
+    variant: "body",
+    component: "label"
+  }, menu.isLoading ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Loader, null) : menu.label), menu?.children?.length ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ChevronRight, {
+    size: 18
+  }) : null, isHoverMenu && menu?.children ? /*#__PURE__*/React__default["default"].createElement(Menu, {
+    styles: {
+      top: "0px",
+      left: `${menuItemRef.current?.offsetWidth ?? 0}px`
+    },
+    menus: menu.children
+  }) : null);
+};
+const Menu = ({
+  menus,
+  styles
+}) => {
+  return /*#__PURE__*/React__default["default"].createElement(SelectionMoreActionsContainer, {
+    styles: styles
+  }, menus.filter(menu => !menu.isHidden).map(menu => /*#__PURE__*/React__default["default"].createElement(MenuItem, {
+    key: menu.id,
+    menu: menu
+  })));
+};
+
+const StyledEditorGlobalSectionItem = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSectionGroupItem__StyledEditorGlobalSectionItem",
+  componentId: "sc-f9npik-0"
+})(["display:flex;align-items:center;justify-content:space-between;padding:0px 10px;height:38px;"]);
+const StyledWrapperMenu = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSectionGroupItem__StyledWrapperMenu",
+  componentId: "sc-f9npik-1"
+})(["position:relative;display:flex;align-items:center;gap:4px;"]);
+const StyledWrapperCheckIcon = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSectionGroupItem__StyledWrapperCheckIcon",
+  componentId: "sc-f9npik-2"
+})(["cursor:pointer;"]);
+const StyledWrapperThreeDotsIcon = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSectionGroupItem__StyledWrapperThreeDotsIcon",
+  componentId: "sc-f9npik-3"
+})(["cursor:pointer;&:hover{transform:scale(1.2);}"]);
+const StyledWrapperMenuDialog = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSectionGroupItem__StyledWrapperMenuDialog",
+  componentId: "sc-f9npik-4"
+})(["position:absolute;top:20px;right:0px;z-index:1;"]);
+const StyledWrapperAddToPage = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorGlobalSectionGroupItem__StyledWrapperAddToPage",
+  componentId: "sc-f9npik-5"
+})(["font-weight:500;cursor:pointer;color:", ";", ""], easyblocksDesignSystem.Colors.blue60, ({
+  disabled
+}) => disabled ? `
+    cursor: not-allowed;
+    user-select: none;
+    opacity: 0.7;
+    ` : `
+      &:hover {
+        color: ${easyblocksDesignSystem.Colors.blue50};
+      }`);
+const StyledWrapperLabel = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSectionGroupItem__StyledWrapperLabel",
+  componentId: "sc-f9npik-6"
+})(["width:140px;"]);
+const StyledLabel = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorGlobalSectionGroupItem__StyledLabel",
+  componentId: "sc-f9npik-7"
+})(["text-overflow:ellipsis;white-space:nowrap;overflow:hidden;"]);
+const EditorGlobalSectionGroupItem = ({
+  group,
+  groupItem,
+  setOpenConfirm,
+  setOpenEditSection
+}) => {
+  const editorContext = useEditorContext();
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+  const {
+    t
+  } = useTranslation();
+  const toaster = easyblocksDesignSystem.useToaster();
+  const menuRef = React.useRef(null);
+  const [openMenu, setOpenMenu] = React.useState(null);
+  const [isLoadingAddToPage, setIsLoadingAddToPage] = React.useState(false);
+  const isAddedToPage = groupItem.pages.includes(currentDocument);
+  const onOpenMenu = entryId => {
+    setOpenMenu({
+      entryId
+    });
+  };
+  const onCloseMenu = () => {
+    setOpenMenu(null);
+  };
+  const onAddToPage = () => {
+    const targetEntry = groupItem.entry;
+    if (targetEntry && Object.keys(targetEntry).length && !isLoadingAddToPage) {
+      let index = 0;
+      switch (group.name) {
+        case "Headers":
+          {
+            index = 0;
+            break;
+          }
+        case "Footers":
+          {
+            index = (editorContext.compiledComponentConfig?.components.data.length ?? 0) + 1;
+            break;
+          }
+      }
+      editorContext.actions.insertItem({
+        index,
+        block: targetEntry,
+        name: "data",
+        keepId: true
+      });
+      setIsLoadingAddToPage(true);
+      editorContext.onGlobalSectionChange?.({
+        mode: "update",
+        pages: [...new Set([...groupItem.pages, currentDocument])],
+        groupName: group.name,
+        entry: targetEntry
+      }).then(() => {
+        toaster.success(t("topBar.saved"));
+      }).catch(reason => {
+        toaster.error(reason);
+      }).finally(() => {
+        setIsLoadingAddToPage(false);
+      });
+    }
+  };
+  React.useEffect(() => {
+    const modalContainer = document.getElementById("modalContainer");
+    const handleClickOutside = event => {
+      if (menuRef.current && !menuRef.current.contains(event.target) && !modalContainer?.contains(event.target) && openMenu?.entryId) {
+        onCloseMenu();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenu]);
+  return /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionItem, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(StyledWrapperLabel, null, /*#__PURE__*/React__default["default"].createElement(StyledLabel, null, groupItem.label))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    color: "white"
+  }, groupItem.label))), /*#__PURE__*/React__default["default"].createElement(StyledWrapperMenu, {
+    ref: menuRef
+  }, isAddedToPage ? /*#__PURE__*/React__default["default"].createElement(StyledWrapperCheckIcon, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.Check, {
+    size: 16
+  })) : /*#__PURE__*/React__default["default"].createElement(StyledWrapperAddToPage, {
+    disabled: !groupItem.entry,
+    onClick: onAddToPage
+  }, isLoadingAddToPage ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Loader, null) : t("editor.sidebar.globalSections.addToPage")), /*#__PURE__*/React__default["default"].createElement(StyledWrapperThreeDotsIcon, {
+    onClick: () => onOpenMenu(groupItem.id)
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ThreeDotsHorizontal, {
+    size: 16
+  })), openMenu && openMenu.entryId === groupItem.id ? /*#__PURE__*/React__default["default"].createElement(StyledWrapperMenuDialog, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
+    menus: [{
+      id: `delete-section-${groupItem.id}`,
+      label: t("delete"),
+      onClick: () => {
+        setOpenConfirm({
+          entryId: groupItem.id,
+          groupName: group.name
+        });
+      }
+    }, {
+      id: `rename-section-${groupItem.id}`,
+      label: t("rename"),
+      onClick: () => {
+        setOpenEditSection({
+          label: groupItem.label,
+          entry: {
+            _id: groupItem.id,
+            _component: groupItem.component
+          },
+          groupName: group.name
+        });
+      }
+    }]
+  })) : null));
+};
+
+const StyledWrapperChevronIcon$1 = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorGlobalSectionGroup__StyledWrapperChevronIcon",
+  componentId: "sc-1eald7c-0"
+})(["transition:transform 0.2s ease;", ""], ({
+  isOpen
+}) => `transform: rotate(${isOpen ? 180 : 0}deg);`);
+const StyledEditorGlobalSectionGroups = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorGlobalSectionGroup__StyledEditorGlobalSectionGroups",
+  componentId: "sc-1eald7c-1"
+})(["display:flex;align-items:center;justify-content:space-between;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;border-top:1px solid ", ";border-bottom:1px solid ", ";background-color:", ";"], easyblocksDesignSystem.Colors.black40, easyblocksDesignSystem.Colors.black40, easyblocksDesignSystem.Colors.black10);
+const StyledEditorGlobalSectionsLabel = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorGlobalSectionGroup__StyledEditorGlobalSectionsLabel",
+  componentId: "sc-1eald7c-2"
+})(["display:block;font-weight:400;max-width:240px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;"]);
+const StyledButtonGroup$1 = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSectionGroup__StyledButtonGroup",
+  componentId: "sc-1eald7c-3"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const EditorGlobalSectionGroup = ({
+  globalSectionGroup,
+  openedSectionGroups,
+  onClickGlobalSectionGroup
+}) => {
+  const editorContext = useEditorContext();
+  const inputRef = React.useRef(null);
+  const toaster = easyblocksDesignSystem.useToaster();
+  const {
+    t
+  } = useTranslation();
+  const isExpandedGroups = openedSectionGroups.includes(globalSectionGroup.group.id);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [openConfirm, setOpenConfirm] = React.useState(null);
+  const [openEditSection, setOpenEditSection] = React.useState(null);
+  const onCloseConfirm = () => {
+    if (!isLoading) {
+      setOpenConfirm(null);
+    }
+  };
+  const onCloseEditSection = () => {
+    if (!isLoading) {
+      setOpenEditSection(null);
+    }
+  };
+  const onConfirmChange = () => {
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "delete",
+      groupName: openConfirm?.groupName ?? "",
+      entry: {
+        _id: openConfirm?.entryId ?? "",
+        _component: ""
+      }
+    }).then(() => {
+      setIsLoading(false);
+      toaster.success(t("template.delete.success"));
+      onCloseConfirm();
+    }).catch(reason => {
+      setIsLoading(false);
+      toaster.error(reason);
+    });
+  };
+  const onEditSection = () => {
+    if (isLoading || !inputRef?.current?.value) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      ...openEditSection,
+      groupName: openEditSection?.groupName ?? "",
+      label: inputRef.current.value
+    }).then(() => {
+      setIsLoading(false);
+      toaster.success(t("topBar.saved"));
+      onCloseEditSection();
+    }).catch(reason => {
+      setIsLoading(false);
+      toaster.error(reason);
+    });
+  };
+  const onEnter = e => {
+    if (e.code === "Enter" || e.code === "NumpadEnter") {
+      onEditSection();
+    }
+  };
+  React.useEffect(() => {
+    if (openEditSection?.groupName) {
+      queueMicrotask(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [openEditSection]);
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionGroups, {
+    id: globalSectionGroup.group.id,
+    onClick: () => onClickGlobalSectionGroup(globalSectionGroup.group.id)
+  }, /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsLabel, {
+    variant: "body",
+    component: "label"
+  }, globalSectionGroup.group.name, " (", Object.keys(globalSectionGroup.groupItem).length, ")"), /*#__PURE__*/React__default["default"].createElement(StyledWrapperChevronIcon$1, {
+    isOpen: isExpandedGroups
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ChevronDown, {
+    size: 16
+  }))), isExpandedGroups ? Object.entries(globalSectionGroup.groupItem).map(([entryId, entryValue]) => /*#__PURE__*/React__default["default"].createElement(EditorGlobalSectionGroupItem, {
+    group: globalSectionGroup.group,
+    groupItem: {
+      id: entryId,
+      entry: entryValue.entry,
+      component: entryValue?.entry?._component ?? "",
+      label: entryValue.label,
+      pages: entryValue.pages
+    },
+    setOpenConfirm: setOpenConfirm,
+    setOpenEditSection: setOpenEditSection
+  })) : null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+    title: `${t("delete")} (${openConfirm?.groupName})`,
+    isOpen: openConfirm !== null,
+    onRequestClose: onCloseConfirm,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+      onClick: onCloseConfirm
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+      isLoading: isLoading,
+      disabled: isLoading,
+      onClick: onConfirmChange
+    }, t("template.delete.default")))
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    variant: "body",
+    component: "label"
+  }, t("editor.sidebar.globalSections.delete.confirm"))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+    title: t("rename"),
+    isOpen: openEditSection !== null,
+    onRequestClose: onCloseEditSection,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+      onClick: onCloseEditSection
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+      isLoading: isLoading,
+      disabled: isLoading,
+      onClick: onEditSection
+    }, t("rename")))
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    defaultValue: openEditSection?.label,
+    ref: inputRef,
+    withBorder: true,
+    style: {
+      width: 300
+    },
+    onKeyDown: onEnter
+  })));
+};
+
+const HorizontalLine$1 = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSections__HorizontalLine",
+  componentId: "sc-ps3wnb-0"
+})(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
+const StyledEditorGlobalSectionsRoot = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSections__StyledEditorGlobalSectionsRoot",
+  componentId: "sc-ps3wnb-1"
+})(["overflow-x:hidden;height:100%;"]);
+const StyledEditorGlobalSections = styled__default["default"].div.withConfig({
+  displayName: "EditorGlobalSections__StyledEditorGlobalSections",
+  componentId: "sc-ps3wnb-2"
+})(["height:100%;overflow-x:auto;padding-top:20px;padding-bottom:16px;"]);
+const StyledEditorGlobalSectionsTitle = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorGlobalSections__StyledEditorGlobalSectionsTitle",
+  componentId: "sc-ps3wnb-3"
+})(["line-height:14px;font-weight:700;padding:17px 12px;"]);
+const StyledEditorGlobalSectionsDescription = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorGlobalSections__StyledEditorGlobalSectionsDescription",
+  componentId: "sc-ps3wnb-4"
+})(["padding:0px 12px;"]);
+const StyledEditorGlobalSectionGroup = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+  displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
+  componentId: "sc-ps3wnb-5"
+})(["padding:20px 0px;"]);
+const globalSectionGroups = [{
+  id: "group-headers",
+  name: "Headers"
+}, {
+  id: "group-footers",
+  name: "Footers"
+}];
+const EditorGlobalSections = ({
+  globalSections
+}) => {
+  const {
+    t
+  } = useTranslation();
+  const [openedSectionGroups, setOpenedSectionGroups] = React.useState(globalSectionGroups.map(group => group.id));
+  const onClickGlobalSectionGroup = sectionId => {
+    setOpenedSectionGroups(prev => {
+      if (prev.includes(sectionId)) {
+        return prev.filter(s => s !== sectionId);
+      }
+      return [...prev, sectionId];
+    });
+  };
+  return /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsTitle, null, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$1, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSections, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsDescription, null, t("editor.sidebar.globalSections.description")), /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionGroup, null, globalSectionGroups.map(globalSectionGroup => /*#__PURE__*/React__default["default"].createElement(EditorGlobalSectionGroup, {
+    key: globalSectionGroup.id,
+    openedSectionGroups: openedSectionGroups,
+    globalSectionGroup: {
+      group: globalSectionGroup,
+      groupItem: globalSections?.[globalSectionGroup.name] ?? {}
+    },
+    onClickGlobalSectionGroup: () => onClickGlobalSectionGroup(globalSectionGroup.id)
+  })))));
+};
 
 /**
  * Outputs comparable config that is FULL COPY of config
@@ -5823,6 +6275,136 @@ const SelectionFrameActionsGroupButtons = styled__default["default"].div.withCon
   displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
   componentId: "sc-1fta8jo-1"
 })(["display:flex;gap:2px;"]);
+const StyledButtonGroup = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__StyledButtonGroup",
+  componentId: "sc-1fta8jo-2"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const StyledMenu = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__StyledMenu",
+  componentId: "sc-1fta8jo-3"
+})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
+const SelectionMoreActions = ({
+  t
+}) => {
+  const editorContext = useEditorContext();
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+  const toaster = easyblocksDesignSystem.useToaster();
+  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const inputRef = React.useRef(null);
+  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
+  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections).includes(currentEntry._id));
+  const onRemoveGlobalSection = () => {
+    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue).includes(currentEntry._id));
+    const groupName = currentSection?.[0];
+    if (groupName) {
+      setIsLoading(true);
+      editorContext.onGlobalSectionChange?.({
+        mode: "update",
+        pages: currentSection?.[1][currentEntry._id].pages.filter(page => page !== currentDocument),
+        label: currentSection?.[1][currentEntry._id].label,
+        groupName,
+        entry: currentEntry
+      }).then(() => {
+        toaster.success(t("topBar.saved"));
+        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
+          ...currentEntry,
+          _id: uniqueId()
+        });
+      }).catch(reason => {
+        toaster.error(reason);
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    }
+  };
+  const menus = [{
+    id: "set-global",
+    label: t("editor.sidebar.globalSections.setGlobal"),
+    children: globalSectionGroups.map(globalSectionGroup => ({
+      id: globalSectionGroup.id,
+      label: globalSectionGroup.name,
+      onClick: () => setOpenConfirmGlobalSection({
+        groupName: globalSectionGroup.name
+      })
+    })),
+    isHidden: isAddedToPage
+  }, {
+    id: "remove-global",
+    label: t("editor.sidebar.globalSections.removeGlobal"),
+    isLoading,
+    isHidden: !isAddedToPage,
+    onClick: onRemoveGlobalSection
+  }];
+  const onClose = () => {
+    if (!isLoading) {
+      setOpenConfirmGlobalSection(null);
+    }
+  };
+  const onConfirmChange = () => {
+    if (!inputRef?.current?.value) {
+      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
+      return;
+    }
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      groupName: openConfirmGlobalSection?.groupName ?? "",
+      label: inputRef?.current?.value,
+      entry: currentEntry
+    }).then(() => {
+      setIsLoading(false);
+      toaster.success(t("topBar.saved"));
+      onClose();
+    }).catch(reason => {
+      setIsLoading(false);
+      toaster.error(reason);
+    });
+  };
+  const onEnter = e => {
+    if (e.code === "Enter" || e.code === "NumpadEnter") {
+      onConfirmChange();
+    }
+  };
+  React.useEffect(() => {
+    if (openConfirmGlobalSection?.groupName) {
+      queueMicrotask(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [openConfirmGlobalSection]);
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
+    menus: menus,
+    styles: {
+      top: "40px",
+      left: "80%"
+    }
+  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
+    isOpen: !!openConfirmGlobalSection,
+    onRequestClose: onClose,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+      onClick: onClose
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+      isLoading: isLoading,
+      disabled: isLoading,
+      onClick: onConfirmChange
+    }, t("template.save.default")))
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+    ref: inputRef,
+    withBorder: true,
+    style: {
+      width: 300
+    },
+    onKeyDown: onEnter
+  })));
+};
 const SelectionFrameActions = ({
   focussedField,
   actions,
@@ -5835,6 +6417,7 @@ const SelectionFrameActions = ({
     translationFiles,
     contextParams
   });
+  const [showMore, setShowMore] = React.useState(false);
   return /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsContainer, {
     onClick: e => e.stopPropagation()
   }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
@@ -5853,7 +6436,14 @@ const SelectionFrameActions = ({
     icon: easyblocksDesignSystem.Icons.ArrowDown,
     hideLabel: true,
     onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("down"))));
+  }, t("down")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+    icon: easyblocksDesignSystem.Icons.ThreeDotsHorizontal,
+    showTooltip: false,
+    hideLabel: true,
+    onClick: () => setShowMore(prev => !prev)
+  })), showMore ? /*#__PURE__*/React__default["default"].createElement(SelectionMoreActions, {
+    t: t
+  }) : null);
 };
 
 function SelectionFrame({
@@ -6482,6 +7072,8 @@ function useDataSaver(initialDocument, editorContext) {
   const {
     t
   } = getTranslation(editorContext);
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId") ?? "";
 
   /**
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
@@ -6542,7 +7134,8 @@ function useDataSaver(initialDocument, editorContext) {
       console.debug("Existing document");
       try {
         const latestDocument = await editorContext.backend.documents.get({
-          id: remoteDocument.current.id
+          id: remoteDocument.current.id,
+          themeId
         });
         const latestRemoteDocumentVersion = latestDocument.version ?? -1;
         const isNewerDocumentVersionAvailable = remoteDocument.current.version < latestRemoteDocumentVersion;
@@ -6581,7 +7174,7 @@ function useDataSaver(initialDocument, editorContext) {
               id: remoteDocument.current.id,
               entry: configToSaveWithLocalisedFlag,
               version: remoteDocument.current.version
-            });
+            }, themeId);
             if (updatedDocument?.id) {
               toaster.success(t("topBar.saved"));
             } else {
@@ -6996,12 +7589,15 @@ function EditorBackendInitializer(props) {
   const [enabled, setEnabled] = React.useState(false);
   const [error, setError] = React.useState(undefined);
   const [document, setDocument] = React.useState(null);
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId") ?? "";
   React.useEffect(() => {
     async function run() {
       try {
         if (props.documentId) {
           const document = await props.config.backend.documents.get({
-            id: props.documentId
+            id: props.documentId,
+            themeId
           });
           if (!document) {
             throw new Error(`Can't fetch document with id: ${props.documentId}`);
@@ -7288,7 +7884,7 @@ const EditorContent = ({
 
   const compilationCache = React.useRef(new easyblocksCore.CompilationCache());
   const [isEditing, setEditing] = React.useState(true);
-  const [isShowLayers, setIsShowLayers] = React.useState(false);
+  const [showLeftSidebar, setShowLeftSidebar] = React.useState(null);
   const [currentLocale, setCurrentLocale] = React.useState(compilationContext.contextParams.locale);
   const prevLocale = React.useRef("");
   const [componentPickerData, setComponentPickerData] = React.useState(undefined);
@@ -7371,10 +7967,11 @@ const EditorContent = ({
     insertItem: ({
       name,
       index,
-      block
+      block,
+      keepId
     }) => {
       actions.runChange(() => {
-        form.mutators.insert(name, index, _internals.duplicateConfig(block, compilationContext));
+        form.mutators.insert(name, index, keepId ? block : _internals.duplicateConfig(block, compilationContext));
         return [`${name}.${index}`];
       });
     },
@@ -7598,6 +8195,8 @@ const EditorContent = ({
     setFocussedField: handleSetFocussedField,
     translationFiles: props.config?.translationFiles ?? {},
     isEditing,
+    globalSections: props.config?.globalSections ?? {},
+    onGlobalSectionChange: props.onGlobalSectionChange,
     actions,
     save: async documentData => {
       window.postMessage({
@@ -7641,6 +8240,9 @@ const EditorContent = ({
     await sleep(1);
     compilationCache.current.clear();
     setEditing(prev => !prev);
+  };
+  const onShowLeftSidebar = sidebarName => {
+    setShowLeftSidebar(prevSidebarName => prevSidebarName === sidebarName ? null : sidebarName);
   };
   React.useEffect(() => {
     push({
@@ -7755,15 +8357,17 @@ const EditorContent = ({
     onLocaleChange: onLocaleChange,
     hideCloseButton: props.config.hideCloseButton ?? false,
     readOnly: editorContext.readOnly,
-    isShowLayers: isShowLayers,
-    setIsShowLayers: setIsShowLayers
+    showLeftSidebar: showLeftSidebar,
+    onShowLeftSidebar: onShowLeftSidebar
   }), /*#__PURE__*/React__default["default"].createElement(SidebarAndContentContainer, {
     height: appHeight
-  }, isShowLayers && isEditMode && /*#__PURE__*/React__default["default"].createElement(SidebarContainer, {
+  }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default["default"].createElement(SidebarContainer, {
     id: "editor-layer",
     width: "280px",
     ref: sidebarNodeRef
-  }, /*#__PURE__*/React__default["default"].createElement(EditorLayer, null)), /*#__PURE__*/React__default["default"].createElement(ContentContainer, {
+  }, showLeftSidebar === "global-sections" ? /*#__PURE__*/React__default["default"].createElement(EditorGlobalSections, {
+    globalSections: props.config.globalSections
+  }) : null, showLeftSidebar === "layers" ? /*#__PURE__*/React__default["default"].createElement(EditorLayer, null) : null), /*#__PURE__*/React__default["default"].createElement(ContentContainer, {
     onClick: () => {
       setFocussedField([]);
     }
@@ -8338,6 +8942,7 @@ function EasyblocksParent(props) {
     externalData: props.externalData,
     onExternalDataChange: props.onExternalDataChange,
     onConfigChange: props.onConfigChange,
+    onGlobalSectionChange: props.onGlobalSectionChange,
     widgets: {
       ...builtinWidgets,
       ...props.widgets
@@ -9568,6 +10173,7 @@ function EasyblocksEditor(props) {
     externalData: props.externalData ?? {},
     onExternalDataChange: props.onExternalDataChange ?? (() => ({})),
     onConfigChange: props.onConfigChange,
+    onGlobalSectionChange: props.onGlobalSectionChange,
     widgets: props.widgets,
     components: props.components,
     pickers: props.pickers,
@@ -9582,4 +10188,5 @@ function EasyblocksEditor(props) {
 exports.EasyblocksEditor = EasyblocksEditor;
 exports.EditorContext = EditorContext;
 exports.getBrightnessColor = getBrightnessColor;
+exports.globalSectionGroups = globalSectionGroups;
 exports.useEditorContext = useEditorContext;

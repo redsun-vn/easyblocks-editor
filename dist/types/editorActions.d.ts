@@ -25,7 +25,7 @@ declare function moveItems(form: Form, fieldsToMove: Array<string>, direction: "
  * Removes fields given in `fieldNamesToRemove` from given `form`.
  * @returns Array of fields to focus
  */
-declare function removeItems(form: Form, fieldNamesToRemove: Array<string>, compilationContext: CompilationContextType): Array<string> | undefined;
+declare function removeItems(form: Form, fieldNamesToRemove: Array<string>, editorContext: EditorContextType): Array<string> | undefined;
 declare function replaceItems(paths: string[], newConfig: NoCodeComponentEntry, editorContext: EditorContextType): void;
 declare function logItems(form: Form, configPaths: Array<string>): void;
 export { duplicateItems, logItems, moveItems, pasteItems, removeItems, replaceItems, };

@@ -31,17 +31,17 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
 
   const parentData: NoCodeComponentEntry = dotNotationGet(
     form.values,
-    parentPath
+    parentPath,
   );
   const schemaProp = findComponentDefinition(
     parentData,
-    editorContext
+    editorContext,
   )!.schema.find((x) => x.prop === fieldName) as ComponentSchemaProp;
 
   const componentTypes = config.componentTypes ?? schemaProp.accepts;
   const localComponents = unrollAcceptsFieldIntoComponents(
     componentTypes,
-    editorContext
+    editorContext,
   );
 
   let templatesDictionary: TemplatesDictionary | undefined = undefined;
@@ -58,7 +58,7 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
       editorContext.templates!.items!.forEach((remoteTemplate) => {
         if (localComponent.id === remoteTemplate.entry._component) {
           templatesDictionary![localComponent.id].templates.push(
-            remoteTemplate
+            remoteTemplate,
           );
         }
       });
@@ -86,9 +86,9 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
               ...config,
               _itemProps,
             },
-            editorContext
+            editorContext,
           ),
-          editorContext
+          editorContext,
         );
 
     onClose(newComponent);

@@ -1,4 +1,4 @@
-import { CompilationMetadata, CompiledShopstoryComponentConfig, NoCodeComponentEntry, ExternalData, ExternalReference, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
+import { CompilationMetadata, CompiledShopstoryComponentConfig, ExternalData, ExternalReference, NoCodeComponentEntry, WidgetComponentProps } from "@redsun-vn/easyblocks-core";
 import { EditorContextType } from "./EditorContext";
 export type OpenComponentPickerConfig = {
     path: string;
@@ -12,11 +12,13 @@ export type MoveItemActionType = {
 export type RemoveItemActionType = {
     index: number;
     name: string;
+    editorContext: EditorContextType;
 };
 type InsertItemActionType = {
     name: string;
     index: number;
     block: NoCodeComponentEntry;
+    keepId?: boolean;
 };
 export type DuplicateItemActionType = {
     name: string;
@@ -82,5 +84,6 @@ export type InternalWidgetComponentProps = Omit<WidgetComponentProps, "onChange"
     resourceKey?: string;
     path: string;
 };
+export type TLeftSidebar = "global-sections" | "layers";
 export {};
 //# sourceMappingURL=types.d.ts.map

@@ -17,6 +17,7 @@ import {
   InlineTypeWidgetComponentProps,
   NoCodeComponentEntry,
   NonEmptyRenderableContent,
+  TGlobalSectionChange,
   Template,
   ThemeColor,
   ThemeFont,
@@ -81,6 +82,7 @@ import {
   removeItems,
   replaceItems,
 } from "./editorActions";
+import { EditorGlobalSections } from "./editorGlobalSections/EditorGlobalSections";
 import { EditorLayer } from "./editorLayer/EditorLayer";
 import { Form } from "./form";
 import { destinationResolver } from "./paste/destinationResolver";
@@ -92,6 +94,7 @@ import {
   ActionsType,
   OpenComponentPickerConfig,
   OpenTemplateModalAction,
+  TLeftSidebar,
 } from "./types";
 import { useDataSaver } from "./useDataSaver";
 import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShortcuts";
@@ -199,6 +202,7 @@ type EditorProps = {
   externalData: FetchOutputResources;
   onExternalDataChange: ExternalDataChangeHandler;
   onConfigChange?: () => Promise<void>;
+  onGlobalSectionChange?: (payload: TGlobalSectionChange) => Promise<void>;
   widgets?: Record<
     string,
     | ComponentType<WidgetComponentProps<any>>
@@ -216,6 +220,8 @@ function EditorBackendInitializer(props: EditorProps) {
   const [enabled, setEnabled] = useState<boolean>(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [document, setDocument] = useState<Document | null>(null);
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId") ?? "";
 
   useEffect(() => {
     async function run() {
@@ -223,6 +229,7 @@ function EditorBackendInitializer(props: EditorProps) {
         if (props.documentId) {
           const document = await props.config.backend.documents.get({
             id: props.documentId,
+            themeId,
           });
 
           if (!document) {
@@ -687,7 +694,9 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
-  const [isShowLayers, setIsShowLayers] = useState(false);
+  const [showLeftSidebar, setShowLeftSidebar] = useState<TLeftSidebar | null>(
+    null,
+  );
   const [currentLocale, setCurrentLocale] = useState(
     compilationContext.contextParams.locale,
   );
@@ -784,12 +793,12 @@ const EditorContent = ({
         return removeItems(form, fieldNames, editorContext);
       });
     },
-    insertItem: ({ name, index, block }) => {
+    insertItem: ({ name, index, block, keepId }) => {
       actions.runChange(() => {
         form.mutators.insert(
           name,
           index,
-          duplicateConfig(block, compilationContext),
+          keepId ? block : duplicateConfig(block, compilationContext),
         );
 
         return [`${name}.${index}`];
@@ -1043,6 +1052,8 @@ const EditorContent = ({
     setFocussedField: handleSetFocussedField,
     translationFiles: props.config?.translationFiles ?? {},
     isEditing,
+    globalSections: props.config?.globalSections ?? {},
+    onGlobalSectionChange: props.onGlobalSectionChange,
     actions,
     save: async (documentData) => {
       window.postMessage({
@@ -1099,6 +1110,12 @@ const EditorContent = ({
 
     compilationCache.current.clear();
     setEditing((prev) => !prev);
+  };
+
+  const onShowLeftSidebar = (sidebarName: TLeftSidebar | null) => {
+    setShowLeftSidebar((prevSidebarName) =>
+      prevSidebarName === sidebarName ? null : sidebarName,
+    );
   };
 
   useEffect(() => {
@@ -1282,17 +1299,22 @@ const EditorContent = ({
               onLocaleChange={onLocaleChange}
               hideCloseButton={props.config.hideCloseButton ?? false}
               readOnly={editorContext.readOnly}
-              isShowLayers={isShowLayers}
-              setIsShowLayers={setIsShowLayers}
+              showLeftSidebar={showLeftSidebar}
+              onShowLeftSidebar={onShowLeftSidebar}
             />
             <SidebarAndContentContainer height={appHeight}>
-              {isShowLayers && isEditMode && (
+              {showLeftSidebar && isEditMode && (
                 <SidebarContainer
                   id="editor-layer"
                   width="280px"
                   ref={sidebarNodeRef}
                 >
-                  <EditorLayer />
+                  {showLeftSidebar === "global-sections" ? (
+                    <EditorGlobalSections
+                      globalSections={props.config.globalSections}
+                    />
+                  ) : null}
+                  {showLeftSidebar === "layers" ? <EditorLayer /> : null}
                 </SidebarContainer>
               )}
               <ContentContainer

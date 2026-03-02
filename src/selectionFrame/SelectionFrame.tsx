@@ -54,7 +54,7 @@ function SelectionFrame({ width, height, transform }: SelectionFrameProps) {
     compiledFocusedField
       ? dotNotationGet(
           editorContext.compiledComponentConfig,
-          compiledFocusedField
+          compiledFocusedField,
         )
       : undefined;
 
@@ -62,7 +62,7 @@ function SelectionFrame({ width, height, transform }: SelectionFrameProps) {
 
   const isAddingEnabled = isAddingEnabledForSelectedFields(
     focussedField,
-    editorContext
+    editorContext,
   );
 
   useLayoutEffect(() => {
@@ -73,7 +73,7 @@ function SelectionFrame({ width, height, transform }: SelectionFrameProps) {
 
   useLayoutEffect(() => {
     function handleSelectionFrameMessages(
-      event: SelectionFramePositionChangedEvent
+      event: SelectionFramePositionChangedEvent,
     ) {
       if (!isAddingEnabled) {
         hideAddButtons();
@@ -91,7 +91,7 @@ function SelectionFrame({ width, height, transform }: SelectionFrameProps) {
             width,
             height,
           },
-          event.data.payload.container
+          event.data.payload.container,
         );
       }
     }
@@ -122,11 +122,11 @@ function SelectionFrame({ width, height, transform }: SelectionFrameProps) {
 
     const definition = findComponentDefinitionById(
       parent.templateId,
-      editorContext
+      editorContext,
     );
 
     const schemaProp = definition?.schema.find(
-      (schemaProp) => schemaProp.prop === parent.fieldName
+      (schemaProp) => schemaProp.prop === parent.fieldName,
     );
 
     if (!schemaProp) {
@@ -183,13 +183,13 @@ function updateAddButtons(
     width: number;
     height: number;
   },
-  containerElementRect?: DOMRect
+  containerElementRect?: DOMRect,
 ) {
   const { after, before } = calculateAddButtonsProperties(
     direction,
     targetElementRect,
     viewport,
-    containerElementRect
+    containerElementRect,
   );
 
   setCssVariable(BEFORE_ADD_BUTTON_TOP, before.top + "px");
@@ -211,7 +211,7 @@ function setCssVariable(name: string, value: number | string) {
 
 function isAddingEnabledForSelectedFields(
   focusedFields: Array<string>,
-  editorContext: EditorContextType
+  editorContext: EditorContextType,
 ) {
   if (focusedFields.length === 0) {
     return false;
@@ -226,11 +226,11 @@ function isAddingEnabledForSelectedFields(
 
     const parentDefinition = findComponentDefinitionById(
       parent.templateId,
-      editorContext
+      editorContext,
     );
 
     const schemaProp = parentDefinition?.schema.find(
-      (schemaProp) => schemaProp.prop === parent.fieldName
+      (schemaProp) => schemaProp.prop === parent.fieldName,
     );
 
     if (!schemaProp) return false;

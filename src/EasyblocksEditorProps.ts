@@ -3,6 +3,7 @@ import {
   ContextParams,
   ExternalData,
   InlineTypeWidgetComponentProps,
+  TGlobalSectionChange,
   RequestedExternalData,
   WidgetComponentProps,
 } from "@redsun-vn/easyblocks-core";
@@ -19,6 +20,7 @@ export type EasyblocksEditorProps = {
   externalData?: ExternalData;
   onExternalDataChange?: ExternalDataChangeHandler;
   onConfigChange?: () => Promise<void>;
+  onGlobalSectionChange?: (payload: TGlobalSectionChange) => Promise<void>;
   components?: Record<string, React.ComponentType<any>>;
   widgets?: Record<
     string,

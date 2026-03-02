@@ -1,6 +1,7 @@
 import { Devices, Locale } from "@redsun-vn/easyblocks-core";
 import React from "react";
 import { EditorHistory } from "./EditorHistory";
+import { TLeftSidebar } from "./types";
 export declare const TOP_BAR_HEIGHT = 40;
 export declare const EditorTopBar: React.FC<{
     name?: string;
@@ -22,7 +23,7 @@ export declare const EditorTopBar: React.FC<{
     onLocaleChange: (locale: string) => void;
     hideCloseButton: boolean;
     readOnly: boolean;
-    isShowLayers: boolean;
-    setIsShowLayers: React.Dispatch<React.SetStateAction<boolean>>;
+    showLeftSidebar: TLeftSidebar | null;
+    onShowLeftSidebar: (sidebarName: TLeftSidebar | null) => void;
 }>;
 //# sourceMappingURL=EditorTopBar.d.ts.map

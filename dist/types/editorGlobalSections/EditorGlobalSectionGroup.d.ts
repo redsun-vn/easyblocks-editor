@@ -1,0 +1,20 @@
+import React from "react";
+import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
+export declare const EditorGlobalSectionGroup: ({ globalSectionGroup, openedSectionGroups, onClickGlobalSectionGroup, }: {
+    openedSectionGroups: string[];
+    globalSectionGroup: {
+        group: {
+            id: string;
+            name: string;
+        };
+        groupItem: {
+            [entryId: string]: {
+                label: string;
+                entry?: NoCodeComponentEntry;
+                pages: string[];
+            };
+        };
+    };
+    onClickGlobalSectionGroup: (groupId: string) => void;
+}) => React.JSX.Element;
+//# sourceMappingURL=EditorGlobalSectionGroup.d.ts.map

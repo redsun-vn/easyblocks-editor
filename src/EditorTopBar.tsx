@@ -20,6 +20,7 @@ import { styled } from "styled-components";
 import { EditorHistory } from "./EditorHistory";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
 import { useTranslation } from "./useTranslation";
+import { TLeftSidebar } from "./types";
 
 export const TOP_BAR_HEIGHT = 40;
 
@@ -118,8 +119,8 @@ export const EditorTopBar: React.FC<{
   onLocaleChange: (locale: string) => void;
   hideCloseButton: boolean;
   readOnly: boolean;
-  isShowLayers: boolean;
-  setIsShowLayers: React.Dispatch<React.SetStateAction<boolean>>;
+  showLeftSidebar: TLeftSidebar | null;
+  onShowLeftSidebar: (sidebarName: TLeftSidebar | null) => void;
 }> = ({
   name,
   onClose,
@@ -139,8 +140,8 @@ export const EditorTopBar: React.FC<{
   onLocaleChange,
   hideCloseButton,
   readOnly,
-  isShowLayers,
-  setIsShowLayers,
+  showLeftSidebar,
+  onShowLeftSidebar,
 }) => {
   const headingRef = useRef<HTMLDivElement>(null);
   const router = new URLSearchParams(window.location.search);
@@ -195,10 +196,27 @@ export const EditorTopBar: React.FC<{
         {readOnly && <Label>(Read-Only)</Label>}
 
         <ButtonGhost
+          icon={Icons.GlobalSections}
+          hideLabel
+          onClick={() => onShowLeftSidebar("global-sections")}
+          style={{
+            background:
+              showLeftSidebar === "global-sections"
+                ? Colors.black10
+                : "transparent",
+          }}
+        >
+          {t("editor.sidebar.globalSections")}
+        </ButtonGhost>
+
+        <ButtonGhost
           icon={Icons.Layers}
           hideLabel
-          onClick={() => setIsShowLayers((prev) => !prev)}
-          style={{ background: isShowLayers ? Colors.black10 : "transparent" }}
+          onClick={() => onShowLeftSidebar("layers")}
+          style={{
+            background:
+              showLeftSidebar === "layers" ? Colors.black10 : "transparent",
+          }}
         >
           {t("editor.sidebar.layers")}
         </ButtonGhost>
