@@ -121,7 +121,7 @@ export const EditorGlobalSectionGroup = ({
       })
       .then(() => {
         setIsLoading(false);
-        toaster.success(t("template.delete.success"));
+        toaster.success(t("editor.sidebar.globalSections.update.success"));
         onCloseConfirm();
       })
       .catch((reason) => {
@@ -145,7 +145,7 @@ export const EditorGlobalSectionGroup = ({
       })
       .then(() => {
         setIsLoading(false);
-        toaster.success(t("topBar.saved"));
+        toaster.success(t("editor.sidebar.globalSections.update.success"));
         onCloseEditSection();
       })
       .catch((reason) => {

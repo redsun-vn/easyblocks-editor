@@ -18,6 +18,9 @@ export function useDataSaver(
   initialDocument: Document | null,
   editorContext: EditorContextType,
 ) {
+  const initialGlobalConfigs = useRef<
+    EditorContextType["globalSections"] | null
+  >(editorContext.globalSections);
   const remoteDocument = useRef<Document | null>(initialDocument);
   const toaster = useToaster();
   const [isSaving, setIsSaving] = useState(false);
@@ -43,7 +46,13 @@ export function useDataSaver(
       : initialConfigInCaseOfMissingDocument;
     const previousConfigSnapshot = getConfigSnapshot(previousConfig);
 
-    return deepCompare(localConfigSnapshot, previousConfigSnapshot);
+    return (
+      deepCompare(localConfigSnapshot, previousConfigSnapshot) &&
+      deepCompare(
+        initialGlobalConfigs?.current ?? {},
+        editorContext.globalSections ?? {},
+      )
+    );
   };
 
   const onTick = async ({ mode }: { mode: "auto" | "force" }) => {
@@ -169,6 +178,7 @@ export function useDataSaver(
               toaster.error(t("topBar.save.error"));
             }
 
+            initialGlobalConfigs.current = editorContext.globalSections;
             remoteDocument.current.entry = localConfigSnapshot;
             remoteDocument.current.version = updatedDocument.version;
 

@@ -5354,7 +5354,7 @@ const EditorGlobalSectionGroupItem = ({
         groupName: group.name,
         entry: targetEntry
       }).then(() => {
-        toaster.success(t("topBar.saved"));
+        toaster.success(t("editor.sidebar.globalSections.addToPage.success"));
       }).catch(reason => {
         toaster.error(reason);
       }).finally(() => {
@@ -5471,7 +5471,7 @@ const EditorGlobalSectionGroup = ({
       }
     }).then(() => {
       setIsLoading(false);
-      toaster.success(t("template.delete.success"));
+      toaster.success(t("editor.sidebar.globalSections.update.success"));
       onCloseConfirm();
     }).catch(reason => {
       setIsLoading(false);
@@ -5490,7 +5490,7 @@ const EditorGlobalSectionGroup = ({
       label: inputRef.current.value
     }).then(() => {
       setIsLoading(false);
-      toaster.success(t("topBar.saved"));
+      toaster.success(t("editor.sidebar.globalSections.update.success"));
       onCloseEditSection();
     }).catch(reason => {
       setIsLoading(false);
@@ -6272,7 +6272,7 @@ const SelectionMoreActions = ({
         groupName,
         entry: currentEntry
       }).then(() => {
-        toaster.success(t("topBar.saved"));
+        toaster.success(t("editor.sidebar.globalSections.removeGlobal.success"));
         editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
           ...currentEntry,
           _id: uniqueId()
@@ -6323,7 +6323,7 @@ const SelectionMoreActions = ({
       entry: currentEntry
     }).then(() => {
       setIsLoading(false);
-      toaster.success(t("topBar.saved"));
+      toaster.success(t("editor.sidebar.globalSections.setGlobal.success"));
       onClose();
     }).catch(reason => {
       setIsLoading(false);
@@ -7031,6 +7031,7 @@ function removeLocalizedFlag(config, context) {
  * Data saver will perform first save when any local change is detected.
  */
 function useDataSaver(initialDocument, editorContext) {
+  const initialGlobalConfigs = useRef(editorContext.globalSections);
   const remoteDocument = useRef(initialDocument);
   const toaster = useToaster();
   const [isSaving, setIsSaving] = useState(false);
@@ -7051,7 +7052,7 @@ function useDataSaver(initialDocument, editorContext) {
     const localConfigSnapshot = getConfigSnapshot(localConfig);
     const previousConfig = remoteDocument.current ? remoteDocument.current.entry : initialConfigInCaseOfMissingDocument;
     const previousConfigSnapshot = getConfigSnapshot(previousConfig);
-    return deepCompare(localConfigSnapshot, previousConfigSnapshot);
+    return deepCompare(localConfigSnapshot, previousConfigSnapshot) && deepCompare(initialGlobalConfigs?.current ?? {}, editorContext.globalSections ?? {});
   };
   const onTick = async ({
     mode
@@ -7145,6 +7146,7 @@ function useDataSaver(initialDocument, editorContext) {
             } else {
               toaster.error(t("topBar.save.error"));
             }
+            initialGlobalConfigs.current = editorContext.globalSections;
             remoteDocument.current.entry = localConfigSnapshot;
             remoteDocument.current.version = updatedDocument.version;
             await runSaveCallback();

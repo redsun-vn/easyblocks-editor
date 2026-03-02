@@ -167,7 +167,7 @@ export const EditorGlobalSectionGroupItem = ({
           entry: targetEntry,
         })
         .then(() => {
-          toaster.success(t("topBar.saved"));
+          toaster.success(t("editor.sidebar.globalSections.addToPage.success"));
         })
         .catch((reason) => {
           toaster.error(reason);

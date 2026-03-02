@@ -106,7 +106,9 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
           entry: currentEntry,
         })
         .then(() => {
-          toaster.success(t("topBar.saved"));
+          toaster.success(
+            t("editor.sidebar.globalSections.removeGlobal.success"),
+          );
           editorContext.actions.replaceItems(
             [
               editorContext.focussedField[
@@ -177,7 +179,7 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
       })
       .then(() => {
         setIsLoading(false);
-        toaster.success(t("topBar.saved"));
+        toaster.success(t("editor.sidebar.globalSections.setGlobal.success"));
         onClose();
       })
       .catch((reason) => {
