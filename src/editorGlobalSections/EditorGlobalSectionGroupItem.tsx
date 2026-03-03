@@ -97,6 +97,7 @@ export const EditorGlobalSectionGroupItem = ({
   setOpenConfirm: React.Dispatch<
     React.SetStateAction<{
       entryId: string;
+      sectionName: string;
       groupName: string;
     } | null>
   >;
@@ -243,6 +244,7 @@ export const EditorGlobalSectionGroupItem = ({
                   onClick: () => {
                     setOpenConfirm({
                       entryId: groupItem.id,
+                      sectionName: groupItem.label,
                       groupName: group.name,
                     });
                   },

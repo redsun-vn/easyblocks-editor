@@ -83,6 +83,7 @@ export const EditorGlobalSectionGroup = ({
   const [isLoading, setIsLoading] = useState(false);
   const [openConfirm, setOpenConfirm] = useState<{
     entryId: string;
+    sectionName: string;
     groupName: string;
   } | null>(null);
 
@@ -206,7 +207,7 @@ export const EditorGlobalSectionGroup = ({
 
       {/* Modal confirm delete */}
       <Modal
-        title={`${t("delete")} (${openConfirm?.groupName})`}
+        title={`${t("delete")} (${openConfirm?.sectionName})`}
         isOpen={openConfirm !== null}
         onRequestClose={onCloseConfirm}
         mode="fit"

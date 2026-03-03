@@ -14,6 +14,7 @@ export declare const EditorGlobalSectionGroupItem: ({ group, groupItem, setOpenC
     };
     setOpenConfirm: React.Dispatch<React.SetStateAction<{
         entryId: string;
+        sectionName: string;
         groupName: string;
     } | null>>;
     setOpenEditSection: React.Dispatch<React.SetStateAction<{

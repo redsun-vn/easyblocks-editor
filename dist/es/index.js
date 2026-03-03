@@ -5394,6 +5394,7 @@ const EditorGlobalSectionGroupItem = ({
       onClick: () => {
         setOpenConfirm({
           entryId: groupItem.id,
+          sectionName: groupItem.label,
           groupName: group.name
         });
       }
@@ -5531,7 +5532,7 @@ const EditorGlobalSectionGroup = ({
     setOpenConfirm: setOpenConfirm,
     setOpenEditSection: setOpenEditSection
   })) : null, /*#__PURE__*/React__default.createElement(Modal, {
-    title: `${t("delete")} (${openConfirm?.groupName})`,
+    title: `${t("delete")} (${openConfirm?.sectionName})`,
     isOpen: openConfirm !== null,
     onRequestClose: onCloseConfirm,
     mode: "fit",
@@ -6332,6 +6333,8 @@ const SelectionMoreActions = ({
   };
   const onEnter = e => {
     if (e.code === "Enter" || e.code === "NumpadEnter") {
+      e.preventDefault();
+      e.stopPropagation();
       onConfirmChange();
     }
   };
@@ -7031,13 +7034,14 @@ function removeLocalizedFlag(config, context) {
  * Data saver will perform first save when any local change is detected.
  */
 function useDataSaver(initialDocument, editorContext) {
-  const initialGlobalConfigs = useRef(editorContext.globalSections);
+  const editorContextRef = useRef(editorContext);
+  const initialGlobalConfigs = useRef(editorContextRef.current.globalSections);
   const remoteDocument = useRef(initialDocument);
   const toaster = useToaster();
   const [isSaving, setIsSaving] = useState(false);
   const {
     t
-  } = getTranslation(editorContext);
+  } = getTranslation(editorContextRef.current);
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId") ?? "";
 
@@ -7045,30 +7049,30 @@ function useDataSaver(initialDocument, editorContext) {
    * This state variable is going to be used ONLY for comparison with local config in case of missing document.
    * It's not going to change at any time during the lifecycle of this hook.
    */
-  const [initialConfigInCaseOfMissingDocument] = useState(deepClone(editorContext.form.values));
+  const [initialConfigInCaseOfMissingDocument] = useState(deepClone(editorContextRef.current.form.values));
   const onTickRef = useRef(() => Promise.resolve());
   const isConfigTheSame = () => {
-    const localConfig = editorContext.form.values;
+    const localConfig = editorContextRef.current.form.values;
     const localConfigSnapshot = getConfigSnapshot(localConfig);
     const previousConfig = remoteDocument.current ? remoteDocument.current.entry : initialConfigInCaseOfMissingDocument;
     const previousConfigSnapshot = getConfigSnapshot(previousConfig);
-    return deepCompare(localConfigSnapshot, previousConfigSnapshot) && deepCompare(initialGlobalConfigs?.current ?? {}, editorContext.globalSections ?? {});
+    return deepCompare(localConfigSnapshot, previousConfigSnapshot) && deepCompare(initialGlobalConfigs?.current ?? {}, editorContextRef.current.globalSections ?? {});
   };
   const onTick = async ({
     mode
   }) => {
     // Playground mode is a special case, we don't want to save anything
-    if (editorContext.readOnly) {
+    if (editorContextRef.current.readOnly) {
       return;
     }
     if (mode === "force") {
       setIsSaving(true);
     }
-    const localConfig = editorContext.form.values;
+    const localConfig = editorContextRef.current.form.values;
     const localConfigSnapshot = getConfigSnapshot(localConfig);
-    const configToSaveWithLocalisedFlag = addLocalizedFlag(localConfigSnapshot, editorContext);
+    const configToSaveWithLocalisedFlag = addLocalizedFlag(localConfigSnapshot, editorContextRef.current);
     async function runSaveCallback() {
-      await editorContext.save(remoteDocument.current);
+      await editorContextRef.current.save(remoteDocument.current);
     }
 
     // New document
@@ -7082,7 +7086,7 @@ function useDataSaver(initialDocument, editorContext) {
         return;
       }
       console.debug("change detected! -> create");
-      const newDocument = await editorContext.backend.documents.create({
+      const newDocument = await editorContextRef.current.backend.documents.create({
         entry: configToSaveWithLocalisedFlag
       });
       remoteDocument.current = {
@@ -7099,7 +7103,7 @@ function useDataSaver(initialDocument, editorContext) {
     else {
       console.debug("Existing document");
       try {
-        const latestDocument = await editorContext.backend.documents.get({
+        const latestDocument = await editorContextRef.current.backend.documents.get({
           id: remoteDocument.current.id,
           themeId
         });
@@ -7112,9 +7116,9 @@ function useDataSaver(initialDocument, editorContext) {
           if (!latestDocument) {
             throw new Error("unexpected error");
           }
-          const latestConfig = removeLocalizedFlag(latestDocument.entry, editorContext);
-          editorContext.actions.runChange(() => {
-            editorContext.form.change("", latestConfig);
+          const latestConfig = removeLocalizedFlag(latestDocument.entry, editorContextRef.current);
+          editorContextRef.current.actions.runChange(() => {
+            editorContextRef.current.form.change("", latestConfig);
             return [];
           });
           remoteDocument.current = latestDocument;
@@ -7122,7 +7126,7 @@ function useDataSaver(initialDocument, editorContext) {
           // Notify when local config was modified
           if (!isConfigTheSame()) {
             console.debug("there were local changes -> notify");
-            editorContext.actions.notify("Remote changes detected, local changes have been overwritten.");
+            editorContextRef.current.actions.notify("Remote changes detected, local changes have been overwritten.");
           }
           return;
         }
@@ -7136,7 +7140,7 @@ function useDataSaver(initialDocument, editorContext) {
             // Let's do nothing, no remote and local change
           } else {
             console.debug("updating the document", remoteDocument.current.id);
-            const updatedDocument = await editorContext.backend.documents.update({
+            const updatedDocument = await editorContextRef.current.backend.documents.update({
               id: remoteDocument.current.id,
               entry: configToSaveWithLocalisedFlag,
               version: remoteDocument.current.version
@@ -7146,7 +7150,7 @@ function useDataSaver(initialDocument, editorContext) {
             } else {
               toaster.error(t("topBar.save.error"));
             }
-            initialGlobalConfigs.current = editorContext.globalSections;
+            initialGlobalConfigs.current = editorContextRef.current.globalSections;
             remoteDocument.current.entry = localConfigSnapshot;
             remoteDocument.current.version = updatedDocument.version;
             await runSaveCallback();
@@ -7166,6 +7170,21 @@ function useDataSaver(initialDocument, editorContext) {
   });
   const inProgress = useRef(false);
   const wasSaveNowCalled = useRef(false);
+  const messageHandler = async event => {
+    const {
+      id,
+      type
+    } = event.data;
+    if (type === "@easyblocks/content-saved-status") {
+      event.source.postMessage({
+        id,
+        type: "@easyblocks/content-saved-status",
+        payload: {
+          isSavedDocument: isConfigTheSame()
+        }
+      }, "*");
+    }
+  };
   useEffect(() => {
     const interval = setInterval(() => {
       // We ignore ticks when previous requests are in progress
@@ -7182,24 +7201,12 @@ function useDataSaver(initialDocument, editorContext) {
     };
   }, []);
   useEffect(() => {
-    const handler = async event => {
-      const {
-        id,
-        type
-      } = event.data;
-      if (type === "@easyblocks/content-saved-status") {
-        event.source.postMessage({
-          id,
-          type: "@easyblocks/content-saved-status",
-          payload: {
-            isSavedDocument: isConfigTheSame()
-          }
-        }, "*");
-      }
-    };
-    window.addEventListener("message", handler);
-    return () => window.removeEventListener("message", handler);
+    window.addEventListener("message", messageHandler);
+    return () => window.removeEventListener("message", messageHandler);
   }, []);
+  useEffect(() => {
+    editorContextRef.current = editorContext;
+  }, [editorContext]);
   return {
     isSaving,
     saveNow: async () => {
