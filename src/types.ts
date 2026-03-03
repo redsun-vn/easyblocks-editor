@@ -22,7 +22,6 @@ export type MoveItemActionType = {
 export type RemoveItemActionType = {
   index: number;
   name: string;
-  editorContext: EditorContextType;
 };
 
 type InsertItemActionType = {

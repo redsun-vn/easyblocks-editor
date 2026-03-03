@@ -5025,27 +5025,9 @@ function moveItems(form, fieldsToMove, direction) {
 }
 function removeItem(form, {
   index,
-  name,
-  editorContext
+  name
 }) {
   const configPathToRemove = name + "." + index;
-  const router = new URLSearchParams(window.location.search);
-  const currentDocument = router.get("document") ?? "";
-  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
-  if (currentDocument && currentEntry) {
-    let groupName = "";
-    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([name, groupValue]) => {
-      const isIncluded = Object.keys(groupValue).includes(currentEntry._id);
-      groupName = isIncluded ? name : "";
-      return isIncluded;
-    });
-    editorContext.onGlobalSectionChange?.({
-      mode: "update",
-      pages: currentSection?.[1][currentEntry._id].pages.filter(page => page !== currentDocument),
-      groupName,
-      entry: currentEntry
-    });
-  }
 
   // Placeholders are not removable
   if (isPlaceholder(configPathToRemove, form.values)) {
@@ -5085,8 +5067,7 @@ function removeItems(form, fieldNamesToRemove, editorContext) {
     const isLastItem = itemsLength - 1 === index;
     removeItem(form, {
       index,
-      name: fieldPath,
-      editorContext
+      name: fieldPath
     });
     const definition = _internals.findComponentDefinitionById(templateId, editorContext);
     const isTextWrapper = definition && easyblocksCore.isNoCodeComponentOfType(definition, "@easyblocks/text-wrapper");
@@ -5116,8 +5097,7 @@ function removeItems(form, fieldNamesToRemove, editorContext) {
       const parentPath = getParentPath(focusedField);
       removeItem(form, {
         index,
-        name: parentPath,
-        editorContext
+        name: parentPath
       });
     });
   });
@@ -5347,10 +5327,8 @@ const EditorGlobalSectionGroupItem = ({
   const {
     t
   } = useTranslation();
-  const toaster = easyblocksDesignSystem.useToaster();
   const menuRef = React.useRef(null);
   const [openMenu, setOpenMenu] = React.useState(null);
-  const [isLoadingAddToPage, setIsLoadingAddToPage] = React.useState(false);
   const isAddedToPage = groupItem.pages.includes(currentDocument);
   const onOpenMenu = entryId => {
     setOpenMenu({
@@ -5362,7 +5340,7 @@ const EditorGlobalSectionGroupItem = ({
   };
   const onAddToPage = () => {
     const targetEntry = groupItem.entry;
-    if (targetEntry && Object.keys(targetEntry).length && !isLoadingAddToPage) {
+    if (targetEntry && Object.keys(targetEntry).length) {
       let index = 0;
       switch (group.name) {
         case "Headers":
@@ -5381,19 +5359,6 @@ const EditorGlobalSectionGroupItem = ({
         block: targetEntry,
         name: "data",
         keepId: true
-      });
-      setIsLoadingAddToPage(true);
-      editorContext.onGlobalSectionChange?.({
-        mode: "update",
-        pages: [...new Set([...groupItem.pages, currentDocument])],
-        groupName: group.name,
-        entry: targetEntry
-      }).then(() => {
-        toaster.success(t("editor.sidebar.globalSections.addToPage.success"));
-      }).catch(reason => {
-        toaster.error(reason);
-      }).finally(() => {
-        setIsLoadingAddToPage(false);
       });
     }
   };
@@ -5418,7 +5383,7 @@ const EditorGlobalSectionGroupItem = ({
   })) : /*#__PURE__*/React__default["default"].createElement(StyledWrapperAddToPage, {
     disabled: !groupItem.entry,
     onClick: onAddToPage
-  }, isLoadingAddToPage ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Loader, null) : t("editor.sidebar.globalSections.addToPage")), /*#__PURE__*/React__default["default"].createElement(StyledWrapperThreeDotsIcon, {
+  }, t("editor.sidebar.globalSections.addToPage")), /*#__PURE__*/React__default["default"].createElement(StyledWrapperThreeDotsIcon, {
     onClick: () => onOpenMenu(groupItem.id)
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ThreeDotsHorizontal, {
     size: 16
@@ -7563,6 +7528,7 @@ function checkLocalesCorrectness(locales) {
   return true;
 }
 
+const debouncedUpdate = debounce__default["default"](fn => fn(), 100);
 const ContentContainer = styled.styled.div.withConfig({
   displayName: "Editor__ContentContainer",
   componentId: "sc-t95yuf-0"
@@ -7879,8 +7845,10 @@ const EditorContent = ({
   ...props
 }) => {
   const [currentViewport, setCurrentViewport] = React.useState(compilationContext.mainBreakpointIndex); // "{ breakpoint }" or "fit-screen"
-
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
   const iframeContainerRef = React.useRef(null);
+  const configAfterAutoRef = React.useRef();
   const availableSize = iframeContainerRef.current ? {
     width: iframeContainerRef.current.clientWidth,
     height: iframeContainerRef.current.clientHeight
@@ -8253,6 +8221,41 @@ const EditorContent = ({
   const onShowLeftSidebar = sidebarName => {
     setShowLeftSidebar(prevSidebarName => prevSidebarName === sidebarName ? null : sidebarName);
   };
+  const onUpdateGlobalSections = () => {
+    const {
+      globalSections
+    } = editorContext ?? {};
+    if (!Object.keys(globalSections ?? {}).length) {
+      return;
+    }
+
+    // 2 groups
+    for (const groupName in globalSections) {
+      // Each section in group
+      for (const globalSectionEntryId in globalSections[groupName]) {
+        const sectionValue = globalSections[groupName][globalSectionEntryId];
+        const entry = configAfterAutoRef?.current?.data.find(entryData => entryData._id === globalSectionEntryId);
+        let payload = {
+          mode: "update",
+          pages: sectionValue.pages,
+          groupName,
+          entry: sectionValue.entry
+        };
+        if (entry) {
+          payload = {
+            ...payload,
+            pages: sectionValue.pages.includes(currentDocument) ? sectionValue.pages : [...sectionValue.pages, currentDocument]
+          };
+        } else {
+          payload = {
+            ...payload,
+            pages: sectionValue.pages.filter(page => page !== currentDocument)
+          };
+        }
+        editorContext.onGlobalSectionChange?.(payload);
+      }
+    }
+  };
   React.useEffect(() => {
     push({
       config: initialEntry,
@@ -8311,6 +8314,13 @@ const EditorContent = ({
     window.addEventListener("message", handleEditorEvents);
     return () => window.removeEventListener("message", handleEditorEvents);
   }, []);
+  React.useEffect(() => {
+    const isSameConfig = deepCompare(configAfterAutoRef.current ?? {}, configAfterAuto);
+    if (!isSameConfig && configAfterAuto?._component === "StandardPage" && configAfterAuto?.data?.length) {
+      configAfterAutoRef.current = deepClone(configAfterAuto);
+      debouncedUpdate(onUpdateGlobalSections);
+    }
+  }, [configAfterAuto, editorContext?.globalSections]);
   const [isDataSaverOverlayOpen, setDataSaverOverlayOpen] = React.useState(false);
   useEditorGlobalKeyboardShortcuts(editorContext);
   const {

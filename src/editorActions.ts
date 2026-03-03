@@ -253,40 +253,8 @@ function moveItems(
   }
 }
 
-function removeItem(
-  form: Form,
-  { index, name, editorContext }: RemoveItemActionType,
-) {
+function removeItem(form: Form, { index, name }: RemoveItemActionType) {
   const configPathToRemove = name + "." + index;
-
-  const router = new URLSearchParams(window.location.search);
-  const currentDocument = router.get("document") ?? "";
-
-  const currentEntry: NoCodeComponentEntry = dotNotationGet(
-    editorContext.form.values,
-    editorContext.focussedField[editorContext.focussedField.length - 1],
-  );
-
-  if (currentDocument && currentEntry) {
-    let groupName: string = "";
-
-    const currentSection = Object.entries(
-      editorContext?.globalSections ?? {},
-    ).find(([name, groupValue]) => {
-      const isIncluded = Object.keys(groupValue).includes(currentEntry._id);
-      groupName = isIncluded ? name : "";
-      return isIncluded;
-    });
-
-    editorContext.onGlobalSectionChange?.({
-      mode: "update",
-      pages: currentSection?.[1][currentEntry._id].pages.filter(
-        (page) => page !== currentDocument,
-      ),
-      groupName,
-      entry: currentEntry,
-    });
-  }
 
   // Placeholders are not removable
   if (isPlaceholder(configPathToRemove, form.values)) {
@@ -346,7 +314,6 @@ function removeItems(
     removeItem(form, {
       index,
       name: fieldPath,
-      editorContext,
     });
 
     const definition = findComponentDefinitionById(templateId, editorContext);
@@ -384,7 +351,6 @@ function removeItems(
       removeItem(form, {
         index,
         name: parentPath,
-        editorContext,
       });
     });
   });

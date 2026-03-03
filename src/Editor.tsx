@@ -1,4 +1,5 @@
 import {
+  deepClone,
   deepCompare,
   dotNotationGet,
   sleep,
@@ -101,6 +102,7 @@ import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShort
 import { useEditorHistory } from "./useEditorHistory";
 import { checkLocalesCorrectness } from "./utils/locales/checkLocalesCorrectness";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
+import debounce from "lodash/debounce";
 
 declare global {
   interface Window {
@@ -114,6 +116,8 @@ declare global {
     };
   }
 }
+
+const debouncedUpdate = debounce((fn: () => void) => fn(), 100);
 
 const ContentContainer = styled.div`
   position: relative;
@@ -674,8 +678,11 @@ const EditorContent = ({
   const [currentViewport, setCurrentViewport] = useState<string>(
     compilationContext.mainBreakpointIndex,
   ); // "{ breakpoint }" or "fit-screen"
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
 
   const iframeContainerRef = useRef<HTMLIFrameElement>(null);
+  const configAfterAutoRef = useRef<NoCodeComponentEntry>();
   const availableSize = iframeContainerRef.current
     ? {
         width: iframeContainerRef.current.clientWidth,
@@ -1118,6 +1125,51 @@ const EditorContent = ({
     );
   };
 
+  const onUpdateGlobalSections = () => {
+    const { globalSections } = editorContext ?? {};
+
+    if (!Object.keys(globalSections ?? {}).length) {
+      return;
+    }
+
+    // 2 groups
+    for (const groupName in globalSections) {
+      // Each section in group
+      for (const globalSectionEntryId in globalSections[groupName]) {
+        const sectionValue = globalSections[groupName][globalSectionEntryId];
+        const entry = configAfterAutoRef?.current?.data.find(
+          (entryData: NoCodeComponentEntry) =>
+            entryData._id === globalSectionEntryId,
+        );
+
+        let payload: TGlobalSectionChange = {
+          mode: "update",
+          pages: sectionValue.pages,
+          groupName,
+          entry: sectionValue.entry,
+        };
+
+        if (entry) {
+          payload = {
+            ...payload,
+            pages: sectionValue.pages.includes(currentDocument)
+              ? sectionValue.pages
+              : [...sectionValue.pages, currentDocument],
+          };
+        } else {
+          payload = {
+            ...payload,
+            pages: sectionValue.pages.filter(
+              (page) => page !== currentDocument,
+            ),
+          };
+        }
+
+        editorContext.onGlobalSectionChange?.(payload);
+      }
+    }
+  };
+
   useEffect(() => {
     push({
       config: initialEntry,
@@ -1235,6 +1287,22 @@ const EditorContent = ({
 
     return () => window.removeEventListener("message", handleEditorEvents);
   }, []);
+
+  useEffect(() => {
+    const isSameConfig = deepCompare(
+      configAfterAutoRef.current ?? {},
+      configAfterAuto,
+    );
+
+    if (
+      !isSameConfig &&
+      configAfterAuto?._component === "StandardPage" &&
+      configAfterAuto?.data?.length
+    ) {
+      configAfterAutoRef.current = deepClone(configAfterAuto);
+      debouncedUpdate(onUpdateGlobalSections);
+    }
+  }, [configAfterAuto, editorContext?.globalSections]);
 
   const [isDataSaverOverlayOpen, setDataSaverOverlayOpen] = useState(false);
 

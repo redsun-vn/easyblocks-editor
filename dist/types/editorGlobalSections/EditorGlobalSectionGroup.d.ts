@@ -1,5 +1,5 @@
-import React from "react";
 import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
+import React from "react";
 export declare const EditorGlobalSectionGroup: ({ globalSectionGroup, openedSectionGroups, onClickGlobalSectionGroup, }: {
     openedSectionGroups: string[];
     globalSectionGroup: {

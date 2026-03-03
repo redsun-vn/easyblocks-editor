@@ -1,3 +1,4 @@
+import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import {
   ButtonPrimary,
   ButtonSecondary,
@@ -13,8 +14,6 @@ import styled from "styled-components";
 import { useEditorContext } from "../EditorContext";
 import { useTranslation } from "../useTranslation";
 import { EditorGlobalSectionGroupItem } from "./EditorGlobalSectionGroupItem";
-import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
-import { globalSectionGroups } from "./EditorGlobalSections";
 
 const StyledWrapperChevronIcon = styled(Typography)<{ isOpen: boolean }>`
   transition: transform 0.2s ease;

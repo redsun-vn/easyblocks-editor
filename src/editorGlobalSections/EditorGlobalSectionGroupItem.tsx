@@ -2,18 +2,16 @@ import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import {
   Colors,
   Icons,
-  Loader,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   Typography,
-  useToaster,
 } from "@redsun-vn/easyblocks-design-system";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
+import { useEditorContext } from "../EditorContext";
 import { Menu } from "../menu/Menu";
 import { useTranslation } from "../useTranslation";
-import { useEditorContext } from "../EditorContext";
 
 const StyledEditorGlobalSectionItem = styled.div`
   display: flex;
@@ -113,10 +111,8 @@ export const EditorGlobalSectionGroupItem = ({
   const router = new URLSearchParams(window.location.search);
   const currentDocument = router.get("document") ?? "";
   const { t } = useTranslation();
-  const toaster = useToaster();
   const menuRef = useRef<HTMLDivElement>(null);
   const [openMenu, setOpenMenu] = useState<{ entryId: string } | null>(null);
-  const [isLoadingAddToPage, setIsLoadingAddToPage] = useState(false);
 
   const isAddedToPage = groupItem.pages.includes(currentDocument);
 
@@ -131,7 +127,7 @@ export const EditorGlobalSectionGroupItem = ({
   const onAddToPage = () => {
     const targetEntry = groupItem.entry;
 
-    if (targetEntry && Object.keys(targetEntry).length && !isLoadingAddToPage) {
+    if (targetEntry && Object.keys(targetEntry).length) {
       let index = 0;
 
       switch (group.name) {
@@ -157,25 +153,6 @@ export const EditorGlobalSectionGroupItem = ({
         name: "data",
         keepId: true,
       });
-
-      setIsLoadingAddToPage(true);
-
-      editorContext
-        .onGlobalSectionChange?.({
-          mode: "update",
-          pages: [...new Set([...groupItem.pages, currentDocument])],
-          groupName: group.name,
-          entry: targetEntry,
-        })
-        .then(() => {
-          toaster.success(t("editor.sidebar.globalSections.addToPage.success"));
-        })
-        .catch((reason) => {
-          toaster.error(reason);
-        })
-        .finally(() => {
-          setIsLoadingAddToPage(false);
-        });
     }
   };
 
@@ -222,11 +199,7 @@ export const EditorGlobalSectionGroupItem = ({
             disabled={!groupItem.entry}
             onClick={onAddToPage}
           >
-            {isLoadingAddToPage ? (
-              <Loader />
-            ) : (
-              t("editor.sidebar.globalSections.addToPage")
-            )}
+            {t("editor.sidebar.globalSections.addToPage")}
           </StyledWrapperAddToPage>
         )}
 
