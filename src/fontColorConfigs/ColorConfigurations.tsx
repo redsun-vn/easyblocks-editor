@@ -281,6 +281,8 @@ export const ColorConfigurations = ({
 
   const onEnterChangeColor = (event: React.KeyboardEvent) => {
     if (event.code === "Enter" || event.code === "NumpadEnter") {
+      event.preventDefault();
+      event.stopPropagation();
       onSaveEditColor();
     }
   };

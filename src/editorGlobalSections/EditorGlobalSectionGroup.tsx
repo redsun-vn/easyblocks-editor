@@ -156,6 +156,8 @@ export const EditorGlobalSectionGroup = ({
 
   const onEnter = (e: React.KeyboardEvent) => {
     if (e.code === "Enter" || e.code === "NumpadEnter") {
+      e.preventDefault();
+      e.stopPropagation();
       onEditSection();
     }
   };

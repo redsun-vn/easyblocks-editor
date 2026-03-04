@@ -3505,6 +3505,8 @@ const ColorConfigurations = ({
   };
   const onEnterChangeColor = event => {
     if (event.code === "Enter" || event.code === "NumpadEnter") {
+      event.preventDefault();
+      event.stopPropagation();
       onSaveEditColor();
     }
   };
@@ -5500,6 +5502,8 @@ const EditorGlobalSectionGroup = ({
   };
   const onEnter = e => {
     if (e.code === "Enter" || e.code === "NumpadEnter") {
+      e.preventDefault();
+      e.stopPropagation();
       onEditSection();
     }
   };
