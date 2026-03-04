@@ -10,7 +10,7 @@ export declare const EditorGlobalSectionGroupItem: ({ group, groupItem, setOpenD
         component: string;
         label: string;
         pages: string[];
-        entry?: NoCodeComponentEntry;
+        entry: NoCodeComponentEntry;
     };
     setOpenDeleteConfirm: React.Dispatch<React.SetStateAction<{
         entryId: string;

@@ -7,7 +7,6 @@ import {
   Input,
   Modal,
   Typography,
-  useToaster,
 } from "@redsun-vn/easyblocks-design-system";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -74,7 +73,6 @@ export const EditorGlobalSectionGroup = ({
 }) => {
   const editorContext = useEditorContext();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const toaster = useToaster();
   const { t } = useTranslation();
   const isExpandedGroups = openedSectionGroups.includes(
     globalSectionGroup.group.id,
@@ -121,12 +119,10 @@ export const EditorGlobalSectionGroup = ({
       })
       .then(() => {
         setIsLoading(false);
-        toaster.success(t("editor.sidebar.globalSections.update.success"));
         onCloseConfirm();
       })
-      .catch((reason) => {
+      .catch(() => {
         setIsLoading(false);
-        toaster.error(reason);
       });
   };
 
@@ -145,12 +141,10 @@ export const EditorGlobalSectionGroup = ({
       })
       .then(() => {
         setIsLoading(false);
-        toaster.success(t("editor.sidebar.globalSections.update.success"));
         onCloseEditSection();
       })
-      .catch((reason) => {
+      .catch(() => {
         setIsLoading(false);
-        toaster.error(reason);
       });
   };
 
@@ -194,7 +188,7 @@ export const EditorGlobalSectionGroup = ({
                 group={globalSectionGroup.group}
                 groupItem={{
                   id: entryId,
-                  entry: entryValue.entry,
+                  entry: entryValue.entry!,
                   component: entryValue?.entry?._component ?? "",
                   label: entryValue.label,
                   pages: entryValue.pages,

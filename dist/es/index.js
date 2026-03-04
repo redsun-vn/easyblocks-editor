@@ -5371,10 +5371,7 @@ const EditorGlobalSectionGroupItem = ({
       onClick: () => {
         setOpenEditSection({
           label: groupItem.label,
-          entry: {
-            _id: groupItem.id,
-            _component: groupItem.component
-          },
+          entry: groupItem.entry,
           groupName: group.name
         });
       }
@@ -5407,7 +5404,6 @@ const EditorGlobalSectionGroup = ({
 }) => {
   const editorContext = useEditorContext();
   const inputRef = useRef(null);
-  const toaster = useToaster();
   const {
     t
   } = useTranslation();
@@ -5439,11 +5435,9 @@ const EditorGlobalSectionGroup = ({
       }
     }).then(() => {
       setIsLoading(false);
-      toaster.success(t("editor.sidebar.globalSections.update.success"));
       onCloseConfirm();
-    }).catch(reason => {
+    }).catch(() => {
       setIsLoading(false);
-      toaster.error(reason);
     });
   };
   const onEditSection = () => {
@@ -5458,11 +5452,9 @@ const EditorGlobalSectionGroup = ({
       label: inputRef.current.value
     }).then(() => {
       setIsLoading(false);
-      toaster.success(t("editor.sidebar.globalSections.update.success"));
       onCloseEditSection();
-    }).catch(reason => {
+    }).catch(() => {
       setIsLoading(false);
-      toaster.error(reason);
     });
   };
   const onEnter = e => {

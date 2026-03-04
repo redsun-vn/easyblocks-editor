@@ -90,7 +90,7 @@ export const EditorGlobalSectionGroupItem = ({
     component: string;
     label: string;
     pages: string[];
-    entry?: NoCodeComponentEntry;
+    entry: NoCodeComponentEntry;
   };
   setOpenDeleteConfirm: React.Dispatch<
     React.SetStateAction<{
@@ -228,10 +228,7 @@ export const EditorGlobalSectionGroupItem = ({
                   onClick: () => {
                     setOpenEditSection({
                       label: groupItem.label,
-                      entry: {
-                        _id: groupItem.id,
-                        _component: groupItem.component,
-                      },
+                      entry: groupItem.entry,
                       groupName: group.name,
                     });
                   },
