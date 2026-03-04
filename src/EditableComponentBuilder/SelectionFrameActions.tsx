@@ -159,7 +159,7 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
     }
   };
 
-  const onConfirmChange = () => {
+  const onConfirmSetGlobalSection = () => {
     if (!inputRef?.current?.value) {
       toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
       return;
@@ -192,7 +192,7 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
     if (e.code === "Enter" || e.code === "NumpadEnter") {
       e.preventDefault();
       e.stopPropagation();
-      onConfirmChange();
+      onConfirmSetGlobalSection();
     }
   };
 
@@ -221,7 +221,7 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
             <ButtonPrimary
               isLoading={isLoading}
               disabled={isLoading}
-              onClick={onConfirmChange}
+              onClick={onConfirmSetGlobalSection}
             >
               {t("template.save.default")}
             </ButtonPrimary>

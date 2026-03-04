@@ -80,7 +80,7 @@ export const EditorGlobalSectionGroup = ({
     globalSectionGroup.group.id,
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [openConfirm, setOpenConfirm] = useState<{
+  const [openDeleteConfirm, setOpenDeleteConfirm] = useState<{
     entryId: string;
     sectionName: string;
     groupName: string;
@@ -94,7 +94,7 @@ export const EditorGlobalSectionGroup = ({
 
   const onCloseConfirm = () => {
     if (!isLoading) {
-      setOpenConfirm(null);
+      setOpenDeleteConfirm(null);
     }
   };
 
@@ -104,7 +104,7 @@ export const EditorGlobalSectionGroup = ({
     }
   };
 
-  const onConfirmChange = () => {
+  const onConfirmDeleteSection = () => {
     if (isLoading) {
       return;
     }
@@ -113,9 +113,9 @@ export const EditorGlobalSectionGroup = ({
     editorContext
       .onGlobalSectionChange?.({
         mode: "delete",
-        groupName: openConfirm?.groupName ?? "",
+        groupName: openDeleteConfirm?.groupName ?? "",
         entry: {
-          _id: openConfirm?.entryId ?? "",
+          _id: openDeleteConfirm?.entryId ?? "",
           _component: "",
         },
       })
@@ -199,7 +199,7 @@ export const EditorGlobalSectionGroup = ({
                   label: entryValue.label,
                   pages: entryValue.pages,
                 }}
-                setOpenConfirm={setOpenConfirm}
+                setOpenDeleteConfirm={setOpenDeleteConfirm}
                 setOpenEditSection={setOpenEditSection}
               />
             ),
@@ -208,8 +208,8 @@ export const EditorGlobalSectionGroup = ({
 
       {/* Modal confirm delete */}
       <Modal
-        title={`${t("delete")} (${openConfirm?.sectionName})`}
-        isOpen={openConfirm !== null}
+        title={`${t("delete")} (${openDeleteConfirm?.sectionName})`}
+        isOpen={openDeleteConfirm !== null}
         onRequestClose={onCloseConfirm}
         mode="fit"
         height="auto"
@@ -221,7 +221,7 @@ export const EditorGlobalSectionGroup = ({
             <ButtonPrimary
               isLoading={isLoading}
               disabled={isLoading}
-              onClick={onConfirmChange}
+              onClick={onConfirmDeleteSection}
             >
               {t("template.delete.default")}
             </ButtonPrimary>

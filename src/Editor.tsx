@@ -1146,7 +1146,10 @@ const EditorContent = ({
           mode: "update",
           pages: sectionValue.pages,
           groupName,
-          entry: sectionValue.entry,
+          entry: sectionValue.entry ?? {
+            _id: globalSectionEntryId,
+            _component: "",
+          },
         };
 
         if (entry) {
@@ -1294,11 +1297,7 @@ const EditorContent = ({
       configAfterAuto,
     );
 
-    if (
-      !isSameConfig &&
-      configAfterAuto?._component === "StandardPage" &&
-      configAfterAuto?.data?.length
-    ) {
+    if (!isSameConfig && configAfterAuto?._component === "StandardPage") {
       configAfterAutoRef.current = deepClone(configAfterAuto);
       debouncedUpdate(onUpdateGlobalSections);
     }

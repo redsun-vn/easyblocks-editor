@@ -78,7 +78,7 @@ const StyledLabel = styled(Typography)`
 export const EditorGlobalSectionGroupItem = ({
   group,
   groupItem,
-  setOpenConfirm,
+  setOpenDeleteConfirm,
   setOpenEditSection,
 }: {
   group: {
@@ -92,7 +92,7 @@ export const EditorGlobalSectionGroupItem = ({
     pages: string[];
     entry?: NoCodeComponentEntry;
   };
-  setOpenConfirm: React.Dispatch<
+  setOpenDeleteConfirm: React.Dispatch<
     React.SetStateAction<{
       entryId: string;
       sectionName: string;
@@ -127,7 +127,7 @@ export const EditorGlobalSectionGroupItem = ({
   const onAddToPage = () => {
     const targetEntry = groupItem.entry;
 
-    if (targetEntry && Object.keys(targetEntry).length) {
+    if (targetEntry?._component && Object.keys(targetEntry).length) {
       let index = 0;
 
       switch (group.name) {
@@ -196,7 +196,7 @@ export const EditorGlobalSectionGroupItem = ({
           </StyledWrapperCheckIcon>
         ) : (
           <StyledWrapperAddToPage
-            disabled={!groupItem.entry}
+            disabled={!groupItem.entry?._component}
             onClick={onAddToPage}
           >
             {t("editor.sidebar.globalSections.addToPage")}
@@ -215,7 +215,7 @@ export const EditorGlobalSectionGroupItem = ({
                   id: `delete-section-${groupItem.id}`,
                   label: t("delete"),
                   onClick: () => {
-                    setOpenConfirm({
+                    setOpenDeleteConfirm({
                       entryId: groupItem.id,
                       sectionName: groupItem.label,
                       groupName: group.name,

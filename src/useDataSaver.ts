@@ -21,7 +21,7 @@ export function useDataSaver(
   const editorContextRef = useRef(editorContext);
   const initialGlobalConfigs = useRef<
     EditorContextType["globalSections"] | null
-  >(editorContextRef.current.globalSections);
+  >(deepClone(editorContextRef.current.globalSections));
   const remoteDocument = useRef<Document | null>(initialDocument);
 
   const toaster = useToaster();
@@ -166,15 +166,28 @@ export function useDataSaver(
           } else {
             console.debug("updating the document", remoteDocument.current.id);
 
-            const updatedDocument =
-              await editorContextRef.current.backend.documents.update(
+            const updatedPromises = [];
+
+            updatedPromises.push(
+              editorContextRef.current.backend.documents.update(
                 {
                   id: remoteDocument.current.id,
                   entry: configToSaveWithLocalisedFlag,
                   version: remoteDocument.current.version,
                 },
                 themeId,
+              ),
+            );
+
+            if (mode === "force" && editorContextRef.current.backend.themes) {
+              updatedPromises.push(
+                editorContextRef.current.backend.themes?.syncConfig({
+                  themeId,
+                }),
               );
+            }
+
+            const [updatedDocument] = await Promise.all(updatedPromises);
 
             if (updatedDocument?.id) {
               toaster.success(t("topBar.saved"));
@@ -185,7 +198,10 @@ export function useDataSaver(
             initialGlobalConfigs.current =
               editorContextRef.current.globalSections;
             remoteDocument.current.entry = localConfigSnapshot;
-            remoteDocument.current.version = updatedDocument.version;
+
+            if (updatedDocument) {
+              remoteDocument.current.version = updatedDocument.version;
+            }
 
             await runSaveCallback();
           }

@@ -5320,7 +5320,7 @@ const StyledLabel = styled__default["default"](easyblocksDesignSystem.Typography
 const EditorGlobalSectionGroupItem = ({
   group,
   groupItem,
-  setOpenConfirm,
+  setOpenDeleteConfirm,
   setOpenEditSection
 }) => {
   const editorContext = useEditorContext();
@@ -5342,7 +5342,7 @@ const EditorGlobalSectionGroupItem = ({
   };
   const onAddToPage = () => {
     const targetEntry = groupItem.entry;
-    if (targetEntry && Object.keys(targetEntry).length) {
+    if (targetEntry?._component && Object.keys(targetEntry).length) {
       let index = 0;
       switch (group.name) {
         case "Headers":
@@ -5383,7 +5383,7 @@ const EditorGlobalSectionGroupItem = ({
   }, isAddedToPage ? /*#__PURE__*/React__default["default"].createElement(StyledWrapperCheckIcon, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.Check, {
     size: 16
   })) : /*#__PURE__*/React__default["default"].createElement(StyledWrapperAddToPage, {
-    disabled: !groupItem.entry,
+    disabled: !groupItem.entry?._component,
     onClick: onAddToPage
   }, t("editor.sidebar.globalSections.addToPage")), /*#__PURE__*/React__default["default"].createElement(StyledWrapperThreeDotsIcon, {
     onClick: () => onOpenMenu(groupItem.id)
@@ -5394,7 +5394,7 @@ const EditorGlobalSectionGroupItem = ({
       id: `delete-section-${groupItem.id}`,
       label: t("delete"),
       onClick: () => {
-        setOpenConfirm({
+        setOpenDeleteConfirm({
           entryId: groupItem.id,
           sectionName: groupItem.label,
           groupName: group.name
@@ -5448,11 +5448,11 @@ const EditorGlobalSectionGroup = ({
   } = useTranslation();
   const isExpandedGroups = openedSectionGroups.includes(globalSectionGroup.group.id);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [openConfirm, setOpenConfirm] = React.useState(null);
+  const [openDeleteConfirm, setOpenDeleteConfirm] = React.useState(null);
   const [openEditSection, setOpenEditSection] = React.useState(null);
   const onCloseConfirm = () => {
     if (!isLoading) {
-      setOpenConfirm(null);
+      setOpenDeleteConfirm(null);
     }
   };
   const onCloseEditSection = () => {
@@ -5460,16 +5460,16 @@ const EditorGlobalSectionGroup = ({
       setOpenEditSection(null);
     }
   };
-  const onConfirmChange = () => {
+  const onConfirmDeleteSection = () => {
     if (isLoading) {
       return;
     }
     setIsLoading(true);
     editorContext.onGlobalSectionChange?.({
       mode: "delete",
-      groupName: openConfirm?.groupName ?? "",
+      groupName: openDeleteConfirm?.groupName ?? "",
       entry: {
-        _id: openConfirm?.entryId ?? "",
+        _id: openDeleteConfirm?.entryId ?? "",
         _component: ""
       }
     }).then(() => {
@@ -5533,11 +5533,11 @@ const EditorGlobalSectionGroup = ({
       label: entryValue.label,
       pages: entryValue.pages
     },
-    setOpenConfirm: setOpenConfirm,
+    setOpenDeleteConfirm: setOpenDeleteConfirm,
     setOpenEditSection: setOpenEditSection
   })) : null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
-    title: `${t("delete")} (${openConfirm?.sectionName})`,
-    isOpen: openConfirm !== null,
+    title: `${t("delete")} (${openDeleteConfirm?.sectionName})`,
+    isOpen: openDeleteConfirm !== null,
     onRequestClose: onCloseConfirm,
     mode: "fit",
     height: "auto",
@@ -5546,7 +5546,7 @@ const EditorGlobalSectionGroup = ({
     }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
       isLoading: isLoading,
       disabled: isLoading,
-      onClick: onConfirmChange
+      onClick: onConfirmDeleteSection
     }, t("template.delete.default")))
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
     variant: "body",
@@ -6312,7 +6312,7 @@ const SelectionMoreActions = ({
       setOpenConfirmGlobalSection(null);
     }
   };
-  const onConfirmChange = () => {
+  const onConfirmSetGlobalSection = () => {
     if (!inputRef?.current?.value) {
       toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
       return;
@@ -6339,7 +6339,7 @@ const SelectionMoreActions = ({
     if (e.code === "Enter" || e.code === "NumpadEnter") {
       e.preventDefault();
       e.stopPropagation();
-      onConfirmChange();
+      onConfirmSetGlobalSection();
     }
   };
   React.useEffect(() => {
@@ -6366,7 +6366,7 @@ const SelectionMoreActions = ({
     }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
       isLoading: isLoading,
       disabled: isLoading,
-      onClick: onConfirmChange
+      onClick: onConfirmSetGlobalSection
     }, t("template.save.default")))
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
     ref: inputRef,
@@ -7039,7 +7039,7 @@ function removeLocalizedFlag(config, context) {
  */
 function useDataSaver(initialDocument, editorContext) {
   const editorContextRef = React.useRef(editorContext);
-  const initialGlobalConfigs = React.useRef(editorContextRef.current.globalSections);
+  const initialGlobalConfigs = React.useRef(deepClone(editorContextRef.current.globalSections));
   const remoteDocument = React.useRef(initialDocument);
   const toaster = easyblocksDesignSystem.useToaster();
   const [isSaving, setIsSaving] = React.useState(false);
@@ -7144,11 +7144,18 @@ function useDataSaver(initialDocument, editorContext) {
             // Let's do nothing, no remote and local change
           } else {
             console.debug("updating the document", remoteDocument.current.id);
-            const updatedDocument = await editorContextRef.current.backend.documents.update({
+            const updatedPromises = [];
+            updatedPromises.push(editorContextRef.current.backend.documents.update({
               id: remoteDocument.current.id,
               entry: configToSaveWithLocalisedFlag,
               version: remoteDocument.current.version
-            }, themeId);
+            }, themeId));
+            if (mode === "force" && editorContextRef.current.backend.themes) {
+              updatedPromises.push(editorContextRef.current.backend.themes?.syncConfig({
+                themeId
+              }));
+            }
+            const [updatedDocument] = await Promise.all(updatedPromises);
             if (updatedDocument?.id) {
               toaster.success(t("topBar.saved"));
             } else {
@@ -7156,7 +7163,9 @@ function useDataSaver(initialDocument, editorContext) {
             }
             initialGlobalConfigs.current = editorContextRef.current.globalSections;
             remoteDocument.current.entry = localConfigSnapshot;
-            remoteDocument.current.version = updatedDocument.version;
+            if (updatedDocument) {
+              remoteDocument.current.version = updatedDocument.version;
+            }
             await runSaveCallback();
           }
         }
@@ -8243,7 +8252,10 @@ const EditorContent = ({
           mode: "update",
           pages: sectionValue.pages,
           groupName,
-          entry: sectionValue.entry
+          entry: sectionValue.entry ?? {
+            _id: globalSectionEntryId,
+            _component: ""
+          }
         };
         if (entry) {
           payload = {
@@ -8320,7 +8332,7 @@ const EditorContent = ({
   }, []);
   React.useEffect(() => {
     const isSameConfig = deepCompare(configAfterAutoRef.current ?? {}, configAfterAuto);
-    if (!isSameConfig && configAfterAuto?._component === "StandardPage" && configAfterAuto?.data?.length) {
+    if (!isSameConfig && configAfterAuto?._component === "StandardPage") {
       configAfterAutoRef.current = deepClone(configAfterAuto);
       debouncedUpdate(onUpdateGlobalSections);
     }

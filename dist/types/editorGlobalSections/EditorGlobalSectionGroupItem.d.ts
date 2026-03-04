@@ -1,6 +1,6 @@
 import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import React from "react";
-export declare const EditorGlobalSectionGroupItem: ({ group, groupItem, setOpenConfirm, setOpenEditSection, }: {
+export declare const EditorGlobalSectionGroupItem: ({ group, groupItem, setOpenDeleteConfirm, setOpenEditSection, }: {
     group: {
         id: string;
         name: string;
@@ -12,7 +12,7 @@ export declare const EditorGlobalSectionGroupItem: ({ group, groupItem, setOpenC
         pages: string[];
         entry?: NoCodeComponentEntry;
     };
-    setOpenConfirm: React.Dispatch<React.SetStateAction<{
+    setOpenDeleteConfirm: React.Dispatch<React.SetStateAction<{
         entryId: string;
         sectionName: string;
         groupName: string;
