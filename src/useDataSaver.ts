@@ -195,8 +195,9 @@ export function useDataSaver(
               toaster.error(t("topBar.save.error"));
             }
 
-            initialGlobalConfigs.current =
-              editorContextRef.current.globalSections;
+            initialGlobalConfigs.current = deepClone(
+              editorContextRef.current.globalSections,
+            );
             remoteDocument.current.entry = localConfigSnapshot;
 
             if (updatedDocument) {

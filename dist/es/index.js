@@ -7118,7 +7118,7 @@ function useDataSaver(initialDocument, editorContext) {
             } else {
               toaster.error(t("topBar.save.error"));
             }
-            initialGlobalConfigs.current = editorContextRef.current.globalSections;
+            initialGlobalConfigs.current = deepClone(editorContextRef.current.globalSections);
             remoteDocument.current.entry = localConfigSnapshot;
             if (updatedDocument) {
               remoteDocument.current.version = updatedDocument.version;
