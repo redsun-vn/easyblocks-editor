@@ -1308,13 +1308,30 @@ const EditorContent = ({
 
   useEditorGlobalKeyboardShortcuts(editorContext);
 
-  const { saveNow, isSaving } = useDataSaver(initialDocument, editorContext);
+  const { saveNow, isSaving, isDirty } = useDataSaver(
+    initialDocument,
+    editorContext,
+  );
 
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
+
+  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+    if (!isDirty()) {
+      event.preventDefault();
+    }
+  };
 
   useEffect(() => {
     Modal.setAppElement("#shopstory-app");
   }, []);
+
+  useEffect(() => {
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
 
   return (
     <div id={"shopstory-app"} style={{ height: appHeight, overflow: "hidden" }}>

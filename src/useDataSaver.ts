@@ -269,6 +269,7 @@ export function useDataSaver(
 
   return {
     isSaving,
+    isDirty: isConfigTheSame,
     saveNow: async () => {
       wasSaveNowCalled.current = true;
 

@@ -8,6 +8,7 @@ import { EditorContextType } from "./EditorContext";
  */
 export declare function useDataSaver(initialDocument: Document | null, editorContext: EditorContextType): {
     isSaving: boolean;
+    isDirty: () => boolean;
     saveNow: () => Promise<void>;
 };
 //# sourceMappingURL=useDataSaver.d.ts.map

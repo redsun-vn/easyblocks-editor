@@ -7220,6 +7220,7 @@ function useDataSaver(initialDocument, editorContext) {
   }, [editorContext]);
   return {
     isSaving,
+    isDirty: isConfigTheSame,
     saveNow: async () => {
       wasSaveNowCalled.current = true;
 
@@ -8339,12 +8340,24 @@ const EditorContent = ({
   useEditorGlobalKeyboardShortcuts(editorContext);
   const {
     saveNow,
-    isSaving
+    isSaving,
+    isDirty
   } = useDataSaver(initialDocument, editorContext);
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
+  const handleBeforeUnload = event => {
+    if (!isDirty()) {
+      event.preventDefault();
+    }
+  };
   React.useEffect(() => {
     Modal__default["default"].setAppElement("#shopstory-app");
   }, []);
+  React.useEffect(() => {
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
   return /*#__PURE__*/React__default["default"].createElement("div", {
     id: "shopstory-app",
     style: {
