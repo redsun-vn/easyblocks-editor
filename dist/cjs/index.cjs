@@ -7146,6 +7146,7 @@ function useDataSaver(initialDocument, editorContext) {
               updatedPromises.push(editorContextRef.current.backend.themes?.syncConfig({
                 themeId
               }));
+              initialGlobalConfigs.current = deepClone(editorContextRef.current.globalSections);
             }
             const [updatedDocument] = await Promise.all(updatedPromises);
             if (updatedDocument?.id) {
@@ -7153,7 +7154,6 @@ function useDataSaver(initialDocument, editorContext) {
             } else {
               toaster.error(t("topBar.save.error"));
             }
-            initialGlobalConfigs.current = deepClone(editorContextRef.current.globalSections);
             remoteDocument.current.entry = localConfigSnapshot;
             if (updatedDocument) {
               remoteDocument.current.version = updatedDocument.version;

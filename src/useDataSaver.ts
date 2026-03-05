@@ -185,6 +185,10 @@ export function useDataSaver(
                   themeId,
                 }),
               );
+
+              initialGlobalConfigs.current = deepClone(
+                editorContextRef.current.globalSections,
+              );
             }
 
             const [updatedDocument] = await Promise.all(updatedPromises);
@@ -195,9 +199,6 @@ export function useDataSaver(
               toaster.error(t("topBar.save.error"));
             }
 
-            initialGlobalConfigs.current = deepClone(
-              editorContextRef.current.globalSections,
-            );
             remoteDocument.current.entry = localConfigSnapshot;
 
             if (updatedDocument) {
