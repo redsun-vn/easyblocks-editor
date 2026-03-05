@@ -1135,8 +1135,9 @@ const EditorContent = ({
     // 2 groups
     for (const groupName in globalSections) {
       // Each section in group
-      for (const globalSectionEntryId in globalSections[groupName]) {
-        const sectionValue = globalSections[groupName][globalSectionEntryId];
+      for (const globalSectionEntryId in globalSections[groupName].entities) {
+        const sectionValue =
+          globalSections[groupName].entities[globalSectionEntryId];
         const entry = configAfterAutoRef?.current?.data.find(
           (entryData: NoCodeComponentEntry) =>
             entryData._id === globalSectionEntryId,

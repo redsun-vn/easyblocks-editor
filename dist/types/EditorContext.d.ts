@@ -1,4 +1,4 @@
-import { Backend, CompiledComponentConfig, Document, ExternalTypeDefinition, InlineTypeDefinition, InlineTypeWidgetComponentProps, NoCodeComponentEntry, Template, TokenTypeDefinition, TokenTypeWidgetComponentProps, Widget } from "@redsun-vn/easyblocks-core";
+import { Backend, CompiledComponentConfig, Document, ExternalTypeDefinition, InlineTypeDefinition, InlineTypeWidgetComponentProps, IThemeConfig, NoCodeComponentEntry, Template, TokenTypeDefinition, TokenTypeWidgetComponentProps, Widget } from "@redsun-vn/easyblocks-core";
 import { EditorContextType as BaseEditorContextType, CompilationCache, InternalAnyField } from "@redsun-vn/easyblocks-core/_internals";
 import React, { ComponentType } from "react";
 import { Form } from "./form";
@@ -56,15 +56,7 @@ export type EditorContextType = Omit<BaseEditorContextType, "types" | "templates
     disableCustomTemplates: boolean;
     types: Record<string, EditorExternalTypeDefinition | EditorInlineTypeDefinition | EditorTokenTypeDefinition>;
     components: Record<string, ComponentType<any>>;
-    globalSections?: {
-        [sectionName: string]: {
-            [entryId: string]: {
-                label: string;
-                entry?: NoCodeComponentEntry;
-                pages: string[];
-            };
-        };
-    };
+    globalSections?: IThemeConfig["globalSections"];
 };
 export declare const EditorContext: React.Context<EditorContextType | null>;
 export declare function useEditorContext(): EditorContextType;

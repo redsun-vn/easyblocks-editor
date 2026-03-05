@@ -1,4 +1,4 @@
-import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
+import { IThemeConfig, NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import {
   ButtonPrimary,
   ButtonSecondary,
@@ -61,13 +61,7 @@ export const EditorGlobalSectionGroup = ({
       id: string;
       name: string;
     };
-    groupItem: {
-      [entryId: string]: {
-        label: string;
-        entry?: NoCodeComponentEntry;
-        pages: string[];
-      };
-    };
+    groupItem: NonNullable<IThemeConfig["globalSections"]>[string];
   };
   onClickGlobalSectionGroup: (groupId: string) => void;
 }) => {
@@ -172,8 +166,8 @@ export const EditorGlobalSectionGroup = ({
       >
         {/* Section groups */}
         <StyledEditorGlobalSectionsLabel variant="body" component="label">
-          {globalSectionGroup.group.name} (
-          {Object.keys(globalSectionGroup.groupItem).length})
+          {globalSectionGroup.group.name}
+          {`(${Object.keys(globalSectionGroup.groupItem.orders).length})`}
         </StyledEditorGlobalSectionsLabel>
         <StyledWrapperChevronIcon isOpen={isExpandedGroups}>
           <Icons.ChevronDown size={16} />
@@ -182,8 +176,9 @@ export const EditorGlobalSectionGroup = ({
 
       {/* Section items */}
       {isExpandedGroups
-        ? Object.entries(globalSectionGroup.groupItem).map(
-            ([entryId, entryValue]) => (
+        ? globalSectionGroup.groupItem.orders.map((entryId) => {
+            const entryValue = globalSectionGroup.groupItem.entities[entryId];
+            return (
               <EditorGlobalSectionGroupItem
                 group={globalSectionGroup.group}
                 groupItem={{
@@ -196,8 +191,8 @@ export const EditorGlobalSectionGroup = ({
                 setOpenDeleteConfirm={setOpenDeleteConfirm}
                 setOpenEditSection={setOpenEditSection}
               />
-            ),
-          )
+            );
+          })
         : null}
 
       {/* Modal confirm delete */}

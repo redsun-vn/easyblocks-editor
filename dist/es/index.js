@@ -5477,22 +5477,25 @@ const EditorGlobalSectionGroup = ({
   }, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsLabel, {
     variant: "body",
     component: "label"
-  }, globalSectionGroup.group.name, " (", Object.keys(globalSectionGroup.groupItem).length, ")"), /*#__PURE__*/React__default.createElement(StyledWrapperChevronIcon$1, {
+  }, globalSectionGroup.group.name, `(${Object.keys(globalSectionGroup.groupItem.orders).length})`), /*#__PURE__*/React__default.createElement(StyledWrapperChevronIcon$1, {
     isOpen: isExpandedGroups
   }, /*#__PURE__*/React__default.createElement(Icons.ChevronDown, {
     size: 16
-  }))), isExpandedGroups ? Object.entries(globalSectionGroup.groupItem).map(([entryId, entryValue]) => /*#__PURE__*/React__default.createElement(EditorGlobalSectionGroupItem, {
-    group: globalSectionGroup.group,
-    groupItem: {
-      id: entryId,
-      entry: entryValue.entry,
-      component: entryValue?.entry?._component ?? "",
-      label: entryValue.label,
-      pages: entryValue.pages
-    },
-    setOpenDeleteConfirm: setOpenDeleteConfirm,
-    setOpenEditSection: setOpenEditSection
-  })) : null, /*#__PURE__*/React__default.createElement(Modal, {
+  }))), isExpandedGroups ? globalSectionGroup.groupItem.orders.map(entryId => {
+    const entryValue = globalSectionGroup.groupItem.entities[entryId];
+    return /*#__PURE__*/React__default.createElement(EditorGlobalSectionGroupItem, {
+      group: globalSectionGroup.group,
+      groupItem: {
+        id: entryId,
+        entry: entryValue.entry,
+        component: entryValue?.entry?._component ?? "",
+        label: entryValue.label,
+        pages: entryValue.pages
+      },
+      setOpenDeleteConfirm: setOpenDeleteConfirm,
+      setOpenEditSection: setOpenEditSection
+    });
+  }) : null, /*#__PURE__*/React__default.createElement(Modal, {
     title: `${t("delete")} (${openDeleteConfirm?.sectionName})`,
     isOpen: openDeleteConfirm !== null,
     onRequestClose: onCloseConfirm,
@@ -5583,7 +5586,10 @@ const EditorGlobalSections = ({
     openedSectionGroups: openedSectionGroups,
     globalSectionGroup: {
       group: globalSectionGroup,
-      groupItem: globalSections?.[globalSectionGroup.name] ?? {}
+      groupItem: globalSections?.[globalSectionGroup.name] ?? {
+        orders: [],
+        entities: {}
+      }
     },
     onClickGlobalSectionGroup: () => onClickGlobalSectionGroup(globalSectionGroup.id)
   })))));
@@ -6221,16 +6227,16 @@ const SelectionMoreActions = ({
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef(null);
   const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
-  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections).includes(currentEntry._id));
+  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections.entities).includes(currentEntry._id));
   const onRemoveGlobalSection = () => {
-    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue).includes(currentEntry._id));
+    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue.entities).includes(currentEntry._id));
     const groupName = currentSection?.[0];
     if (groupName) {
       setIsLoading(true);
       editorContext.onGlobalSectionChange?.({
         mode: "update",
-        pages: currentSection?.[1][currentEntry._id].pages.filter(page => page !== currentDocument),
-        label: currentSection?.[1][currentEntry._id].label,
+        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
+        label: currentSection?.[1].entities[currentEntry._id].label,
         groupName,
         entry: currentEntry
       }).then(() => {
@@ -8202,8 +8208,8 @@ const EditorContent = ({
     // 2 groups
     for (const groupName in globalSections) {
       // Each section in group
-      for (const globalSectionEntryId in globalSections[groupName]) {
-        const sectionValue = globalSections[groupName][globalSectionEntryId];
+      for (const globalSectionEntryId in globalSections[groupName].entities) {
+        const sectionValue = globalSections[groupName].entities[globalSectionEntryId];
         const entry = configAfterAutoRef?.current?.data.find(entryData => entryData._id === globalSectionEntryId);
         let payload = {
           mode: "update",

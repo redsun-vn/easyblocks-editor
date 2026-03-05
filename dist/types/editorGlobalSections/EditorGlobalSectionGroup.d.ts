@@ -1,4 +1,4 @@
-import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
+import { IThemeConfig } from "@redsun-vn/easyblocks-core";
 import React from "react";
 export declare const EditorGlobalSectionGroup: ({ globalSectionGroup, openedSectionGroups, onClickGlobalSectionGroup, }: {
     openedSectionGroups: string[];
@@ -7,13 +7,7 @@ export declare const EditorGlobalSectionGroup: ({ globalSectionGroup, openedSect
             id: string;
             name: string;
         };
-        groupItem: {
-            [entryId: string]: {
-                label: string;
-                entry?: NoCodeComponentEntry;
-                pages: string[];
-            };
-        };
+        groupItem: NonNullable<IThemeConfig["globalSections"]>[string];
     };
     onClickGlobalSectionGroup: (groupId: string) => void;
 }) => React.JSX.Element;

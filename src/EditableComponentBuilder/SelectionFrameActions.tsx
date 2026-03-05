@@ -81,14 +81,15 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
   );
 
   const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(
-    (globalSections) => Object.keys(globalSections).includes(currentEntry._id),
+    (globalSections) =>
+      Object.keys(globalSections.entities).includes(currentEntry._id),
   );
 
   const onRemoveGlobalSection = () => {
     const currentSection = Object.entries(
       editorContext?.globalSections ?? {},
     ).find(([_, groupValue]) =>
-      Object.keys(groupValue).includes(currentEntry._id),
+      Object.keys(groupValue.entities).includes(currentEntry._id),
     );
 
     const groupName = currentSection?.[0];
@@ -98,10 +99,10 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
       editorContext
         .onGlobalSectionChange?.({
           mode: "update",
-          pages: currentSection?.[1][currentEntry._id].pages.filter(
+          pages: currentSection?.[1].entities[currentEntry._id].pages.filter(
             (page) => page !== currentDocument,
           ),
-          label: currentSection?.[1][currentEntry._id].label,
+          label: currentSection?.[1].entities[currentEntry._id].label,
           groupName,
           entry: currentEntry,
         })

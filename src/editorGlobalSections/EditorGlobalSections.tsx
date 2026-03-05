@@ -80,7 +80,10 @@ export const EditorGlobalSections = ({
               openedSectionGroups={openedSectionGroups}
               globalSectionGroup={{
                 group: globalSectionGroup,
-                groupItem: globalSections?.[globalSectionGroup.name] ?? {},
+                groupItem: globalSections?.[globalSectionGroup.name] ?? {
+                  orders: [],
+                  entities: {},
+                },
               }}
               onClickGlobalSectionGroup={() =>
                 onClickGlobalSectionGroup(globalSectionGroup.id)
