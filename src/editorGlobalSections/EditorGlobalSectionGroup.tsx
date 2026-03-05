@@ -167,7 +167,7 @@ export const EditorGlobalSectionGroup = ({
         {/* Section groups */}
         <StyledEditorGlobalSectionsLabel variant="body" component="label">
           {globalSectionGroup.group.name}
-          {`(${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`}
+          {` (${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`}
         </StyledEditorGlobalSectionsLabel>
         <StyledWrapperChevronIcon isOpen={isExpandedGroups}>
           <Icons.ChevronDown size={16} />

@@ -5477,7 +5477,7 @@ const EditorGlobalSectionGroup = ({
   }, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsLabel, {
     variant: "body",
     component: "label"
-  }, globalSectionGroup.group.name, `(${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`), /*#__PURE__*/React__default.createElement(StyledWrapperChevronIcon$1, {
+  }, globalSectionGroup.group.name, ` (${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`), /*#__PURE__*/React__default.createElement(StyledWrapperChevronIcon$1, {
     isOpen: isExpandedGroups
   }, /*#__PURE__*/React__default.createElement(Icons.ChevronDown, {
     size: 16
