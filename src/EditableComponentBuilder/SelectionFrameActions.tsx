@@ -82,14 +82,14 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
 
   const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(
     (globalSections) =>
-      Object.keys(globalSections.entities).includes(currentEntry._id),
+      Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id),
   );
 
   const onRemoveGlobalSection = () => {
     const currentSection = Object.entries(
       editorContext?.globalSections ?? {},
     ).find(([_, groupValue]) =>
-      Object.keys(groupValue.entities).includes(currentEntry._id),
+      Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id),
     );
 
     const groupName = currentSection?.[0];

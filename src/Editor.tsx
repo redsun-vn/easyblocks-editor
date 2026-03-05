@@ -1144,6 +1144,7 @@ const EditorContent = ({
         );
 
         let payload: TGlobalSectionChange = {
+          label: sectionValue.label,
           mode: "update",
           pages: sectionValue.pages,
           groupName,

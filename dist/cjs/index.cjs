@@ -5512,11 +5512,11 @@ const EditorGlobalSectionGroup = ({
   }, /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsLabel, {
     variant: "body",
     component: "label"
-  }, globalSectionGroup.group.name, `(${Object.keys(globalSectionGroup.groupItem.orders).length})`), /*#__PURE__*/React__default["default"].createElement(StyledWrapperChevronIcon$1, {
+  }, globalSectionGroup.group.name, `(${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`), /*#__PURE__*/React__default["default"].createElement(StyledWrapperChevronIcon$1, {
     isOpen: isExpandedGroups
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ChevronDown, {
     size: 16
-  }))), isExpandedGroups ? globalSectionGroup.groupItem.orders.map(entryId => {
+  }))), isExpandedGroups ? globalSectionGroup.groupItem?.orders?.map(entryId => {
     const entryValue = globalSectionGroup.groupItem.entities[entryId];
     return /*#__PURE__*/React__default["default"].createElement(EditorGlobalSectionGroupItem, {
       group: globalSectionGroup.group,
@@ -6262,9 +6262,9 @@ const SelectionMoreActions = ({
   const [isLoading, setIsLoading] = React.useState(false);
   const inputRef = React.useRef(null);
   const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
-  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections.entities).includes(currentEntry._id));
+  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
   const onRemoveGlobalSection = () => {
-    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue.entities).includes(currentEntry._id));
+    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
     const groupName = currentSection?.[0];
     if (groupName) {
       setIsLoading(true);
@@ -8248,6 +8248,7 @@ const EditorContent = ({
         const sectionValue = globalSections[groupName].entities[globalSectionEntryId];
         const entry = configAfterAutoRef?.current?.data.find(entryData => entryData._id === globalSectionEntryId);
         let payload = {
+          label: sectionValue.label,
           mode: "update",
           pages: sectionValue.pages,
           groupName,

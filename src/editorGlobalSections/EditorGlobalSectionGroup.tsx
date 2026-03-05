@@ -167,7 +167,7 @@ export const EditorGlobalSectionGroup = ({
         {/* Section groups */}
         <StyledEditorGlobalSectionsLabel variant="body" component="label">
           {globalSectionGroup.group.name}
-          {`(${Object.keys(globalSectionGroup.groupItem.orders).length})`}
+          {`(${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`}
         </StyledEditorGlobalSectionsLabel>
         <StyledWrapperChevronIcon isOpen={isExpandedGroups}>
           <Icons.ChevronDown size={16} />
@@ -176,7 +176,7 @@ export const EditorGlobalSectionGroup = ({
 
       {/* Section items */}
       {isExpandedGroups
-        ? globalSectionGroup.groupItem.orders.map((entryId) => {
+        ? globalSectionGroup.groupItem?.orders?.map((entryId) => {
             const entryValue = globalSectionGroup.groupItem.entities[entryId];
             return (
               <EditorGlobalSectionGroupItem
