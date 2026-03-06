@@ -7160,16 +7160,15 @@ function useDataSaver(initialDocument, editorContext) {
             if (updatedDocument?.id) {
               remoteDocument.current.version = updatedDocument.version;
               toaster.success(t("topBar.saved"));
-            } else {
+            } else if (!updatedDocument?.id) {
               toaster.error(t("topBar.save.error"));
             }
             if (mode === "force" && updateThemeSuccess) {
               toaster.success(t("editor.sidebar.globalSections.save.success"));
-            } else {
+            } else if (mode === "force" && !updateThemeSuccess) {
               toaster.error(t("editor.sidebar.globalSections.save.error"));
             }
             remoteDocument.current.entry = localConfigSnapshot;
-            if (updatedDocument) {}
             await runSaveCallback();
           }
         }
