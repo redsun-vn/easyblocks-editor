@@ -191,18 +191,28 @@ export function useDataSaver(
               );
             }
 
-            const [updatedDocument] = await Promise.all(updatedPromises);
+            const [_updatedDocument, _updateThemeSuccess] =
+              await Promise.all(updatedPromises);
+
+            const updatedDocument = _updatedDocument as Document;
+            const updateThemeSuccess = _updateThemeSuccess as boolean;
 
             if (updatedDocument?.id) {
+              remoteDocument.current.version = updatedDocument.version;
               toaster.success(t("topBar.saved"));
             } else {
               toaster.error(t("topBar.save.error"));
             }
 
+            if (mode === "force" && updateThemeSuccess) {
+              toaster.success(t("editor.sidebar.globalSections.save.success"));
+            } else {
+              toaster.error(t("editor.sidebar.globalSections.save.error"));
+            }
+
             remoteDocument.current.entry = localConfigSnapshot;
 
             if (updatedDocument) {
-              remoteDocument.current.version = updatedDocument.version;
             }
 
             await runSaveCallback();

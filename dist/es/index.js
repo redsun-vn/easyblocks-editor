@@ -7119,16 +7119,22 @@ function useDataSaver(initialDocument, editorContext) {
               }));
               initialGlobalConfigs.current = deepClone(editorContextRef.current.globalSections);
             }
-            const [updatedDocument] = await Promise.all(updatedPromises);
+            const [_updatedDocument, _updateThemeSuccess] = await Promise.all(updatedPromises);
+            const updatedDocument = _updatedDocument;
+            const updateThemeSuccess = _updateThemeSuccess;
             if (updatedDocument?.id) {
+              remoteDocument.current.version = updatedDocument.version;
               toaster.success(t("topBar.saved"));
             } else {
               toaster.error(t("topBar.save.error"));
             }
-            remoteDocument.current.entry = localConfigSnapshot;
-            if (updatedDocument) {
-              remoteDocument.current.version = updatedDocument.version;
+            if (mode === "force" && updateThemeSuccess) {
+              toaster.success(t("editor.sidebar.globalSections.save.success"));
+            } else {
+              toaster.error(t("editor.sidebar.globalSections.save.error"));
             }
+            remoteDocument.current.entry = localConfigSnapshot;
+            if (updatedDocument) {}
             await runSaveCallback();
           }
         }
