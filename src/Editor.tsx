@@ -1005,7 +1005,7 @@ const EditorContent = ({
   }, [currentLocale]);
 
   useEffect(() => {
-    syncTemplates();
+    syncTemplates({ getAllMode: templateQuery?.mode ?? "replace" });
   }, [props.config.components, props.config.templates, templateQuery]);
 
   const editorTypes: EditorContextType["types"] = Object.fromEntries(

@@ -4236,6 +4236,7 @@ const ModalPicker = ({
   const {
     form
   } = editorContext;
+  const [loadMode, setLoadMode] = useState("replace");
   const split = config.path.split("."); // TODO: right now only for collections
   const parentPath = split.slice(0, split.length - 1).join(".");
   const fieldName = split[split.length - 1];
@@ -4281,33 +4282,63 @@ const ModalPicker = ({
       onClose();
     }
   };
+  const queryLimit = 30;
+  const currentFiltersRef = useRef("");
   const onSearchGroup = search => {
+    currentFiltersRef.current = "";
+    setLoadMode("replace");
     editorContext.syncTemplateQuery?.({
       filters: "",
-      search: search.trim()
+      search: search.trim(),
+      page: 1,
+      limit: search !== "" ? queryLimit : 200,
+      mode: "replace"
     });
   };
   const onFilters = filters => {
+    currentFiltersRef.current = filters.trim();
+    setLoadMode("replace");
     editorContext.syncTemplateQuery?.({
       filters: filters.trim(),
-      search: ""
+      search: "",
+      page: 1,
+      limit: 200,
+      mode: "replace"
     });
   };
+  const onLoadMore = (pageNum, groupId) => {
+    if (currentFiltersRef.current !== "") return;
+    setLoadMode("append");
+    const templateItems = editorContext.templates?.items ?? [];
+    const templateCount = editorContext.templates?.count;
+    const totalAvailable = templateCount?.[groupId.trim()]?.total ?? 0;
+    if (!totalAvailable) return;
+    const templateItemFilterLength = templateItems ? Object.values(templateItems).filter(item => item.group === groupId.trim()).length : 0;
+    const hasNextPage = !!templateCount && totalAvailable > 0 && templateItemFilterLength < totalAvailable;
 
-  // const onLoadMore = () => {
-  //   editorContext.syncTemplateQuery?.({
-  //     page: (editorContext.templateQuery?.page ?? 0) + 1,
-  //   });
-  //   editorContext.syncTemplates({ getAllMode: "append" });
-  // };
-
+    // console.log("-------------------------");
+    // console.log("page num", pageNum);
+    // console.log("group id", groupId.trim());
+    // console.log("template items", Object.values(templateItems).filter(item => item.group === groupId.trim()));
+    // console.log("temp count", templateCount, "total available", totalAvailable, "temp item length", templateItemFilterLength);
+    // console.log("has next page", hasNextPage);
+    // console.log("-------------------------");
+    if (!hasNextPage) return;
+    editorContext.syncTemplateQuery?.({
+      page: pageNum,
+      limit: queryLimit,
+      mode: "append"
+    });
+    // editorContext.syncTemplates({ getAllMode: "append" });
+  };
   return pickers?.[picker] ? pickers[picker]({
+    loadMode,
     isOpen: true,
     onClose: onModalClose,
     isFetching: editorContext.isFetchingTemplates,
     onSearchGroup,
     onFilters,
-    // onLoadMore,
+    onLoadMore,
     templates: templatesDictionary,
     templateCount: editorContext.templates?.count,
     mode: picker
@@ -8119,7 +8150,9 @@ const EditorContent = ({
     prevLocale.current = currentLocale;
   }, [currentLocale]);
   useEffect(() => {
-    syncTemplates();
+    syncTemplates({
+      getAllMode: templateQuery?.mode ?? "replace"
+    });
   }, [props.config.components, props.config.templates, templateQuery]);
   const editorTypes = Object.fromEntries(Object.entries(compilationContext.types).map(([typeName, typeDefinition]) => {
     return [typeName, {

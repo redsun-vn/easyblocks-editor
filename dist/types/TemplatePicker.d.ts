@@ -15,8 +15,9 @@ export type TemplatePickerProps = {
     onClose: (template?: Template) => void;
     onSearchGroup?: (text: string) => void;
     onFilters?: (filters: string) => void;
-    onLoadMore?: () => void;
+    onLoadMore?: (pageNum: number, groupId: string) => Promise<void> | void;
     mode?: string;
+    loadMode?: "replace" | "append";
 };
 export type TemplatePicker<T = Record<never, never>> = React.FC<TemplatePickerProps & T>;
 export type SaveAsTemplatePickerProps = TemplatePickerProps & {

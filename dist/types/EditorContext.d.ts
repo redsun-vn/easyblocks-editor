@@ -23,6 +23,7 @@ export type TemplateQueryType = {
     search?: string;
     page?: number;
     limit?: number;
+    mode?: "replace" | "append";
 };
 export type TemplateType = {
     query: TemplateQueryType;
