@@ -200,7 +200,9 @@ export const EditorGlobalSectionGroup = ({
           })
         : null}
 
-      {isExpandedGroups ? <HorizontalLine /> : null}
+      {isExpandedGroups && globalSectionGroup.groupItem?.orders?.length ? (
+        <HorizontalLine />
+      ) : null}
 
       {/* Modal confirm delete */}
       <Modal

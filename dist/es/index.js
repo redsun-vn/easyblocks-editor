@@ -5499,7 +5499,7 @@ const EditorGlobalSectionGroup = ({
       setOpenDeleteConfirm: setOpenDeleteConfirm,
       setOpenEditSection: setOpenEditSection
     });
-  }) : null, isExpandedGroups ? /*#__PURE__*/React__default.createElement(HorizontalLine$2, null) : null, /*#__PURE__*/React__default.createElement(Modal, {
+  }) : null, isExpandedGroups && globalSectionGroup.groupItem?.orders?.length ? /*#__PURE__*/React__default.createElement(HorizontalLine$2, null) : null, /*#__PURE__*/React__default.createElement(Modal, {
     title: `${t("delete")} (${openDeleteConfirm?.sectionName})`,
     isOpen: openDeleteConfirm !== null,
     onRequestClose: onCloseConfirm,

@@ -5534,7 +5534,7 @@ const EditorGlobalSectionGroup = ({
       setOpenDeleteConfirm: setOpenDeleteConfirm,
       setOpenEditSection: setOpenEditSection
     });
-  }) : null, isExpandedGroups ? /*#__PURE__*/React__default["default"].createElement(HorizontalLine$2, null) : null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  }) : null, isExpandedGroups && globalSectionGroup.groupItem?.orders?.length ? /*#__PURE__*/React__default["default"].createElement(HorizontalLine$2, null) : null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
     title: `${t("delete")} (${openDeleteConfirm?.sectionName})`,
     isOpen: openDeleteConfirm !== null,
     onRequestClose: onCloseConfirm,
