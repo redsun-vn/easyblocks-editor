@@ -19,7 +19,7 @@ const StyledEditorGlobalSectionsRoot = styled.div`
 const StyledEditorGlobalSections = styled.div`
   height: 100%;
   overflow-x: auto;
-  padding-top: 20px;
+  padding-top: 0px;
   padding-bottom: 16px;
 `;
 
@@ -30,11 +30,11 @@ const StyledEditorGlobalSectionsTitle = styled(Typography)`
 `;
 
 const StyledEditorGlobalSectionsDescription = styled(Typography)`
-  padding: 0px 12px;
+  padding: 20px 12px;
 `;
 
 const StyledEditorGlobalSectionGroup = styled(Typography)`
-  padding: 20px 0px;
+  padding: 10px 0px;
 `;
 
 export const globalSectionGroups = [
@@ -72,6 +72,8 @@ export const EditorGlobalSections = ({
         <StyledEditorGlobalSectionsDescription>
           {t("editor.sidebar.globalSections.description")}
         </StyledEditorGlobalSectionsDescription>
+
+        <HorizontalLine />
 
         <StyledEditorGlobalSectionGroup>
           {globalSectionGroups.map((globalSectionGroup) => (

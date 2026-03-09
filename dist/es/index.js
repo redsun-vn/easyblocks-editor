@@ -421,7 +421,7 @@ const SidebarFooterContainer = styled.div.withConfig({
   displayName: "SidebarFooter__SidebarFooterContainer",
   componentId: "sc-17xf0ak-0"
 })(["position:sticky;bottom:0;background:", ";"], Colors.white);
-const HorizontalLine$4 = styled.div.withConfig({
+const HorizontalLine$5 = styled.div.withConfig({
   displayName: "SidebarFooter__HorizontalLine",
   componentId: "sc-17xf0ak-1"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
@@ -476,7 +476,7 @@ function SidebarFooter(props) {
       toaster.error(t("template.entry.copy.error"));
     }
   };
-  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$4, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ButtonSecondary, {
+  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$5, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ButtonSecondary, {
     icon: Icons.Save1,
     hideLabel: true,
     onClick: () => {
@@ -2043,7 +2043,7 @@ const GroupPanel = styled.div.withConfig({
         transform: translate3d(100%, 0, 0);
       `);
 
-const HorizontalLine$3 = styled$1.div.withConfig({
+const HorizontalLine$4 = styled$1.div.withConfig({
   displayName: "IdentityFieldPlugin__HorizontalLine",
   componentId: "sc-ayv92b-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
@@ -2148,7 +2148,7 @@ function IdentityField({
       opacity: isNonRemovable ? 0 : 1,
       pointerEvents: isNonRemovable ? "none" : "auto"
     }
-  }, t("delete")))), /*#__PURE__*/React__default.createElement(HorizontalLine$3, null));
+  }, t("delete")))), /*#__PURE__*/React__default.createElement(HorizontalLine$4, null));
 }
 const IdentityFieldPlugin = {
   name: "identity",
@@ -3113,7 +3113,7 @@ function FieldBuilder({
     layout: "column"
   }, /*#__PURE__*/React__default.createElement(Typography, null, "Unrecognized field type"));
 }
-const HorizontalLine$2 = styled.div.withConfig({
+const HorizontalLine$3 = styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
   componentId: "sc-ignixa-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
@@ -3140,7 +3140,7 @@ function FieldsBuilder({
       ungrouped.push(field);
     }
   });
-  const horizontalLine = /*#__PURE__*/React__default.createElement(HorizontalLine$2, null);
+  const horizontalLine = /*#__PURE__*/React__default.createElement(HorizontalLine$3, null);
   const identityField = fields.find(field => field.component === "identity");
   const breakpointIndex = panelContext ? editorContext.breakpointIndex : undefined;
   return /*#__PURE__*/React__default.createElement(FieldsGroup, null, identityField !== undefined && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(FieldBuilder, {
@@ -5244,7 +5244,7 @@ const Menu = ({
 const StyledEditorGlobalSectionItem = styled$1.div.withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledEditorGlobalSectionItem",
   componentId: "sc-f9npik-0"
-})(["display:flex;align-items:center;justify-content:space-between;padding:0px 10px;height:38px;"]);
+})(["display:flex;align-items:center;justify-content:space-between;padding:0px 10px 0px 16px;height:38px;"]);
 const StyledWrapperMenu = styled$1.div.withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledWrapperMenu",
   componentId: "sc-f9npik-1"
@@ -5379,23 +5379,27 @@ const EditorGlobalSectionGroupItem = ({
   })) : null));
 };
 
+const HorizontalLine$2 = styled$1.div.withConfig({
+  displayName: "EditorGlobalSectionGroup__HorizontalLine",
+  componentId: "sc-1eald7c-0"
+})(["height:1px;margin-top:-1px;background-color:", ";margin:4px 10px;"], Colors.black10);
 const StyledWrapperChevronIcon$1 = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSectionGroup__StyledWrapperChevronIcon",
-  componentId: "sc-1eald7c-0"
+  componentId: "sc-1eald7c-1"
 })(["transition:transform 0.2s ease;", ""], ({
   isOpen
 }) => `transform: rotate(${isOpen ? 180 : 0}deg);`);
 const StyledEditorGlobalSectionGroups = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSectionGroup__StyledEditorGlobalSectionGroups",
-  componentId: "sc-1eald7c-1"
-})(["display:flex;align-items:center;justify-content:space-between;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;border-top:1px solid ", ";border-bottom:1px solid ", ";background-color:", ";"], Colors.black40, Colors.black40, Colors.black10);
+  componentId: "sc-1eald7c-2"
+})(["display:flex;align-items:center;justify-content:space-between;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;"]);
 const StyledEditorGlobalSectionsLabel = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSectionGroup__StyledEditorGlobalSectionsLabel",
-  componentId: "sc-1eald7c-2"
-})(["display:block;font-weight:400;max-width:240px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;"]);
+  componentId: "sc-1eald7c-3"
+})(["display:block;font-weight:700;max-width:240px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;cursor:pointer;"]);
 const StyledButtonGroup$1 = styled$1.div.withConfig({
   displayName: "EditorGlobalSectionGroup__StyledButtonGroup",
-  componentId: "sc-1eald7c-3"
+  componentId: "sc-1eald7c-4"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
 const EditorGlobalSectionGroup = ({
   globalSectionGroup,
@@ -5480,7 +5484,7 @@ const EditorGlobalSectionGroup = ({
   }, globalSectionGroup.group.name, ` (${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`), /*#__PURE__*/React__default.createElement(StyledWrapperChevronIcon$1, {
     isOpen: isExpandedGroups
   }, /*#__PURE__*/React__default.createElement(Icons.ChevronDown, {
-    size: 16
+    size: 22
   }))), isExpandedGroups ? globalSectionGroup.groupItem?.orders?.map(entryId => {
     const entryValue = globalSectionGroup.groupItem.entities[entryId];
     return /*#__PURE__*/React__default.createElement(EditorGlobalSectionGroupItem, {
@@ -5495,7 +5499,7 @@ const EditorGlobalSectionGroup = ({
       setOpenDeleteConfirm: setOpenDeleteConfirm,
       setOpenEditSection: setOpenEditSection
     });
-  }) : null, /*#__PURE__*/React__default.createElement(Modal, {
+  }) : null, isExpandedGroups ? /*#__PURE__*/React__default.createElement(HorizontalLine$2, null) : null, /*#__PURE__*/React__default.createElement(Modal, {
     title: `${t("delete")} (${openDeleteConfirm?.sectionName})`,
     isOpen: openDeleteConfirm !== null,
     onRequestClose: onCloseConfirm,
@@ -5546,7 +5550,7 @@ const StyledEditorGlobalSectionsRoot = styled$1.div.withConfig({
 const StyledEditorGlobalSections = styled$1.div.withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSections",
   componentId: "sc-ps3wnb-2"
-})(["height:100%;overflow-x:auto;padding-top:20px;padding-bottom:16px;"]);
+})(["height:100%;overflow-x:auto;padding-top:0px;padding-bottom:16px;"]);
 const StyledEditorGlobalSectionsTitle = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionsTitle",
   componentId: "sc-ps3wnb-3"
@@ -5554,11 +5558,11 @@ const StyledEditorGlobalSectionsTitle = styled$1(Typography).withConfig({
 const StyledEditorGlobalSectionsDescription = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionsDescription",
   componentId: "sc-ps3wnb-4"
-})(["padding:0px 12px;"]);
+})(["padding:20px 12px;"]);
 const StyledEditorGlobalSectionGroup = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
   componentId: "sc-ps3wnb-5"
-})(["padding:20px 0px;"]);
+})(["padding:10px 0px;"]);
 const globalSectionGroups = [{
   id: "group-headers",
   name: "Headers"
@@ -5581,7 +5585,7 @@ const EditorGlobalSections = ({
       return [...prev, sectionId];
     });
   };
-  return /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsRoot, null, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsTitle, null, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default.createElement(HorizontalLine$1, null), /*#__PURE__*/React__default.createElement(StyledEditorGlobalSections, null, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsDescription, null, t("editor.sidebar.globalSections.description")), /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionGroup, null, globalSectionGroups.map(globalSectionGroup => /*#__PURE__*/React__default.createElement(EditorGlobalSectionGroup, {
+  return /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsRoot, null, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsTitle, null, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default.createElement(HorizontalLine$1, null), /*#__PURE__*/React__default.createElement(StyledEditorGlobalSections, null, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsDescription, null, t("editor.sidebar.globalSections.description")), /*#__PURE__*/React__default.createElement(HorizontalLine$1, null), /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionGroup, null, globalSectionGroups.map(globalSectionGroup => /*#__PURE__*/React__default.createElement(EditorGlobalSectionGroup, {
     key: globalSectionGroup.id,
     openedSectionGroups: openedSectionGroups,
     globalSectionGroup: {

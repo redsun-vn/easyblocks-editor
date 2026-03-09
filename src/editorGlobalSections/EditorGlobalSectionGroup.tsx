@@ -14,6 +14,13 @@ import { useEditorContext } from "../EditorContext";
 import { useTranslation } from "../useTranslation";
 import { EditorGlobalSectionGroupItem } from "./EditorGlobalSectionGroupItem";
 
+const HorizontalLine = styled.div`
+  height: 1px;
+  margin-top: -1px;
+  background-color: ${Colors.black10};
+  margin: 4px 10px;
+`;
+
 const StyledWrapperChevronIcon = styled(Typography)<{ isOpen: boolean }>`
   transition: transform 0.2s ease;
   ${({ isOpen }) => `transform: rotate(${isOpen ? 180 : 0}deg);`}
@@ -28,18 +35,16 @@ const StyledEditorGlobalSectionGroups = styled(Typography)`
   cursor: pointer;
   padding: 6px 10px;
   gap: 2px;
-  border-top: 1px solid ${Colors.black40};
-  border-bottom: 1px solid ${Colors.black40};
-  background-color: ${Colors.black10};
 `;
 
 const StyledEditorGlobalSectionsLabel = styled(Typography)`
   display: block;
-  font-weight: 400;
+  font-weight: 700;
   max-width: 240px;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+  cursor: pointer;
 `;
 
 const StyledButtonGroup = styled.div`
@@ -170,7 +175,7 @@ export const EditorGlobalSectionGroup = ({
           {` (${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`}
         </StyledEditorGlobalSectionsLabel>
         <StyledWrapperChevronIcon isOpen={isExpandedGroups}>
-          <Icons.ChevronDown size={16} />
+          <Icons.ChevronDown size={22} />
         </StyledWrapperChevronIcon>
       </StyledEditorGlobalSectionGroups>
 
@@ -194,6 +199,8 @@ export const EditorGlobalSectionGroup = ({
             );
           })
         : null}
+
+      {isExpandedGroups ? <HorizontalLine /> : null}
 
       {/* Modal confirm delete */}
       <Modal

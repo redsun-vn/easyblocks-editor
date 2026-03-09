@@ -17,7 +17,7 @@ const StyledEditorGlobalSectionItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0px 10px;
+  padding: 0px 10px 0px 16px;
   height: 38px;
 `;
 
