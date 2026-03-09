@@ -5312,7 +5312,7 @@ const StyledWrapperAddToPage = styled__default["default"](easyblocksDesignSystem
 const StyledWrapperLabel = styled__default["default"].div.withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledWrapperLabel",
   componentId: "sc-f9npik-6"
-})(["width:140px;"]);
+})(["width:190px;"]);
 const StyledLabel = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledLabel",
   componentId: "sc-f9npik-7"
@@ -5385,7 +5385,7 @@ const EditorGlobalSectionGroupItem = ({
   })) : /*#__PURE__*/React__default["default"].createElement(StyledWrapperAddToPage, {
     disabled: !groupItem.entry?._component,
     onClick: onAddToPage
-  }, t("editor.sidebar.globalSections.addToPage")), /*#__PURE__*/React__default["default"].createElement(StyledWrapperThreeDotsIcon, {
+  }, t("add")), /*#__PURE__*/React__default["default"].createElement(StyledWrapperThreeDotsIcon, {
     onClick: () => onOpenMenu(groupItem.id)
   }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ThreeDotsHorizontal, {
     size: 16

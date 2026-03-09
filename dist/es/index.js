@@ -5277,7 +5277,7 @@ const StyledWrapperAddToPage = styled$1(Typography).withConfig({
 const StyledWrapperLabel = styled$1.div.withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledWrapperLabel",
   componentId: "sc-f9npik-6"
-})(["width:140px;"]);
+})(["width:190px;"]);
 const StyledLabel = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledLabel",
   componentId: "sc-f9npik-7"
@@ -5350,7 +5350,7 @@ const EditorGlobalSectionGroupItem = ({
   })) : /*#__PURE__*/React__default.createElement(StyledWrapperAddToPage, {
     disabled: !groupItem.entry?._component,
     onClick: onAddToPage
-  }, t("editor.sidebar.globalSections.addToPage")), /*#__PURE__*/React__default.createElement(StyledWrapperThreeDotsIcon, {
+  }, t("add")), /*#__PURE__*/React__default.createElement(StyledWrapperThreeDotsIcon, {
     onClick: () => onOpenMenu(groupItem.id)
   }, /*#__PURE__*/React__default.createElement(Icons.ThreeDotsHorizontal, {
     size: 16
