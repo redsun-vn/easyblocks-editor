@@ -4331,11 +4331,11 @@ const ModalPicker = ({
       filters: filters.trim(),
       search: "",
       page: 1,
-      limit: filters !== "" ? queryLimit : 200,
+      limit: filters ? queryLimit : 200,
       mode: "replace"
     });
   };
-  const onLoadMore = (pageNum, groupId) => {
+  const onLoadMore = (page, groupId) => {
     setLoadMode("append");
     const templateItems = editorContext.templates?.items ?? [];
     const templateCount = editorContext.templates?.count;
@@ -4343,21 +4343,12 @@ const ModalPicker = ({
     if (!totalAvailable) return;
     const templateItemFilterLength = templateItems ? Object.values(templateItems).filter(item => item.group === groupId.trim()).length : 0;
     const hasNextPage = !!templateCount && totalAvailable > 0 && templateItemFilterLength < totalAvailable;
-
-    // console.log("-------------------------");
-    // console.log("page num", pageNum);
-    // console.log("group id", groupId.trim());
-    // console.log("template items", Object.values(templateItems).filter(item => item.group === groupId.trim()));
-    // console.log("temp count", templateCount, "total available", totalAvailable, "temp item length", templateItemFilterLength);
-    // console.log("has next page", hasNextPage);
-    // console.log("-------------------------");
     if (!hasNextPage) return;
     editorContext.syncTemplateQuery?.({
-      page: pageNum,
+      page,
       limit: queryLimit,
       mode: "append"
     });
-    // editorContext.syncTemplates({ getAllMode: "append" });
   };
   return pickers?.[picker] ? pickers[picker]({
     loadMode,

@@ -112,39 +112,40 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
 
   const onFilters = (filters: string) => {
     setLoadMode("replace");
-    editorContext.syncTemplateQuery?.({ filters: filters.trim(), search: "", page: 1, limit: filters !== "" ? queryLimit : 200, mode: "replace" });
+    editorContext.syncTemplateQuery?.({
+      filters: filters.trim(),
+      search: "",
+      page: 1,
+      limit: filters ? queryLimit : 200,
+      mode: "replace",
+    });
   };
 
-  const onLoadMore = (pageNum: number, groupId: string) => {
+  const onLoadMore = (page: number, groupId: string) => {
     setLoadMode("append");
     const templateItems = editorContext.templates?.items ?? [];
     const templateCount = editorContext.templates?.count;
-    
+
     const totalAvailable = templateCount?.[groupId.trim()]?.total ?? 0;
     if (!totalAvailable) return;
-    
+
     const templateItemFilterLength = templateItems
-      ? Object.values(templateItems).filter(item => item.group === groupId.trim()).length
+      ? Object.values(templateItems).filter(
+          (item) => item.group === groupId.trim(),
+        ).length
       : 0;
 
-    const hasNextPage = !!templateCount
-      && totalAvailable > 0
-      && templateItemFilterLength < totalAvailable;
+    const hasNextPage =
+      !!templateCount &&
+      totalAvailable > 0 &&
+      templateItemFilterLength < totalAvailable;
 
-    // console.log("-------------------------");
-    // console.log("page num", pageNum);
-    // console.log("group id", groupId.trim());
-    // console.log("template items", Object.values(templateItems).filter(item => item.group === groupId.trim()));
-    // console.log("temp count", templateCount, "total available", totalAvailable, "temp item length", templateItemFilterLength);
-    // console.log("has next page", hasNextPage);
-    // console.log("-------------------------");
     if (!hasNextPage) return;
-      editorContext.syncTemplateQuery?.({
-        page: pageNum,
-        limit: queryLimit,
-        mode: "append"
-      });
-      // editorContext.syncTemplates({ getAllMode: "append" });
+    editorContext.syncTemplateQuery?.({
+      page,
+      limit: queryLimit,
+      mode: "append",
+    });
   };
 
   return pickers?.[picker] ? (

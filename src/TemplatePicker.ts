@@ -19,7 +19,7 @@ export type TemplatePickerProps = {
   onClose: (template?: Template) => void;
   onSearchGroup?: (text: string) => void;
   onFilters?: (filters: string) => void;
-  onLoadMore?: (pageNum: number, groupId: string) => Promise<void> | void;
+  onLoadMore?: (page: number, groupId: string) => Promise<void> | void;
   mode?: string;
   loadMode?: "replace" | "append";
 };
