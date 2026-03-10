@@ -9,6 +9,7 @@ import {
   Icons,
   Input,
   Modal,
+  Typography,
   useToaster,
 } from "@redsun-vn/easyblocks-design-system";
 import React, { useState } from "react";
@@ -150,6 +151,7 @@ export const ColorConfigurations = ({
   >(null);
   const [isLoadingReset, setIsLoadingReset] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [openConfirmReset, setOpenConfirmReset] = useState(false);
   const [colorInputError, setColorInputError] = useState("");
 
   const themeOptions1 = Object.entries(colorTokens).filter(([id]) =>
@@ -192,6 +194,10 @@ export const ColorConfigurations = ({
     themeMoreColorsOptions,
   ];
 
+  const onCloseConfirmReset = () => {
+    setOpenConfirmReset(false);
+  };
+
   const closeEditColor = () => {
     setOpenEditColor(null);
   };
@@ -206,6 +212,7 @@ export const ColorConfigurations = ({
         toaster.error(t("theme.colors.reset.fail"));
       } finally {
         setIsLoadingReset(false);
+        setOpenConfirmReset(false);
         onConfigChange?.();
       }
     }
@@ -231,7 +238,7 @@ export const ColorConfigurations = ({
         setColorInputError("");
       }
       setColor(newColor);
-    }, 300);
+    }, 100);
   };
 
   const onSaveEditColor = async () => {
@@ -360,13 +367,38 @@ export const ColorConfigurations = ({
       ) : null}
 
       <ButtonDanger
-        isLoading={isLoadingReset}
-        disabled={isLoadingReset}
         style={{ width: "fit-content" }}
-        onClick={onReset}
+        onClick={() => setOpenConfirmReset(true)}
       >
         {t("theme.colors.reset")}
       </ButtonDanger>
+
+      {/* Modal confirm reset colors */}
+      <Modal
+        title={t("theme.colors.reset")}
+        isOpen={openConfirmReset}
+        onRequestClose={onCloseConfirmReset}
+        mode="fit"
+        height="auto"
+        endAdornment={
+          <StyledButtonGroup>
+            <ButtonSecondary onClick={onCloseConfirmReset}>
+              {t("cancel")}
+            </ButtonSecondary>
+            <ButtonDanger
+              isLoading={isLoadingReset}
+              disabled={isLoadingReset}
+              onClick={onReset}
+            >
+              {t("theme.colors.reset")}
+            </ButtonDanger>
+          </StyledButtonGroup>
+        }
+      >
+        <Typography variant={"body"} component="label">
+          {t("theme.colors.reset.confirm")}
+        </Typography>
+      </Modal>
     </ColorConfigurationsContainer>
   );
 };

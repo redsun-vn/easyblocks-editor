@@ -3363,7 +3363,7 @@ const StyledInputColor = styled__default["default"](easyblocksDesignSystem.Input
   displayName: "ColorConfigurations__StyledInputColor",
   componentId: "sc-qln4q1-6"
 })(["box-shadow:0 0 0 1px ", ";width:100% !important;border-radius:2px;&:focus{outline:none;}"], easyblocksDesignSystem.Colors.black10);
-const StyledButtonGroup$2 = styled__default["default"].div.withConfig({
+const StyledButtonGroup$3 = styled__default["default"].div.withConfig({
   displayName: "ColorConfigurations__StyledButtonGroup",
   componentId: "sc-qln4q1-7"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
@@ -3404,6 +3404,7 @@ const ColorConfigurations = ({
   const [openEditColor, setOpenEditColor] = React.useState(null);
   const [isLoadingReset, setIsLoadingReset] = React.useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = React.useState(false);
+  const [openConfirmReset, setOpenConfirmReset] = React.useState(false);
   const [colorInputError, setColorInputError] = React.useState("");
   const themeOptions1 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_1"));
   const themeOptions2 = Object.entries(colorTokens).filter(([id]) => id.startsWith("theme_2"));
@@ -3426,6 +3427,9 @@ const ColorConfigurations = ({
     options: [themeOptions3, themeOptions4, themeOptions5]
   };
   const themeOptions = [themeBackgroundAndTextOptions, themeActionColorsOptions, themeMoreColorsOptions];
+  const onCloseConfirmReset = () => {
+    setOpenConfirmReset(false);
+  };
   const closeEditColor = () => {
     setOpenEditColor(null);
   };
@@ -3442,6 +3446,7 @@ const ColorConfigurations = ({
         toaster.error(t("theme.colors.reset.fail"));
       } finally {
         setIsLoadingReset(false);
+        setOpenConfirmReset(false);
         onConfigChange?.();
       }
     }
@@ -3464,7 +3469,7 @@ const ColorConfigurations = ({
         setColorInputError("");
       }
       setColor(newColor);
-    }, 300);
+    }, 100);
   };
   const onSaveEditColor = async () => {
     if (themeId && openEditColor?.value && !colorInputError) {
@@ -3529,7 +3534,7 @@ const ColorConfigurations = ({
     mode: "fit",
     onRequestClose: closeEditColor,
     maxHeight: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
       onClick: closeEditColor
     }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
       isLoading: isLoadingEdit,
@@ -3553,67 +3558,85 @@ const ColorConfigurations = ({
     },
     onKeyDown: onEnterChangeColor
   }), colorInputError ? /*#__PURE__*/React__default["default"].createElement(StyleColorError, null, colorInputError) : null)) : null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
-    isLoading: isLoadingReset,
-    disabled: isLoadingReset,
     style: {
       width: "fit-content"
     },
-    onClick: onReset
-  }, t("theme.colors.reset")));
+    onClick: () => setOpenConfirmReset(true)
+  }, t("theme.colors.reset")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+    title: t("theme.colors.reset"),
+    isOpen: openConfirmReset,
+    onRequestClose: onCloseConfirmReset,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+      onClick: onCloseConfirmReset
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
+      isLoading: isLoadingReset,
+      disabled: isLoadingReset,
+      onClick: onReset
+    }, t("theme.colors.reset")))
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    variant: "body",
+    component: "label"
+  }, t("theme.colors.reset.confirm"))));
 };
 
 const stringKeys = ["fontFamily"];
+const StyledButtonGroup$2 = styled__default["default"].div.withConfig({
+  displayName: "FontConfigurations__StyledButtonGroup",
+  componentId: "sc-1rpaqke-0"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
 const Container = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__Container",
-  componentId: "sc-1rpaqke-0"
+  componentId: "sc-1rpaqke-1"
 })(["background-color:#ffffff;max-height:100vh;font-family:system-ui,-apple-system,sans-serif;"]);
 const FontGrid = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__FontGrid",
-  componentId: "sc-1rpaqke-1"
+  componentId: "sc-1rpaqke-2"
 })(["display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;"]);
 const FontCard = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__FontCard",
-  componentId: "sc-1rpaqke-2"
+  componentId: "sc-1rpaqke-3"
 })(["width:230px;border:1px solid transparent;padding:4px;cursor:pointer;transition:border-color 0.2s ease;&:hover{border-color:", ";}"], easyblocksDesignSystem.Colors.black10);
 const FontPreviewBox = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__FontPreviewBox",
-  componentId: "sc-1rpaqke-3"
+  componentId: "sc-1rpaqke-4"
 })(["height:120px;display:flex;align-items:center;justify-content:center;background-color:", ";padding:32px;overflow:hidden;"], easyblocksDesignSystem.Colors.black10);
 const FontPreviewText = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__FontPreviewText",
-  componentId: "sc-1rpaqke-4"
+  componentId: "sc-1rpaqke-5"
 })(["font-size:", "px;font-family:", ";font-weight:", ";line-height:", ";color:#000;text-align:center;user-select:none;max-width:100%;word-break:break-word;overflow-wrap:break-word;overflow:hidden;"], f => f.fontSize, f => f.fontFamily, f => f.fontWeight, f => f.lineHeight);
 const FontDetails = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__FontDetails",
-  componentId: "sc-1rpaqke-5"
+  componentId: "sc-1rpaqke-6"
 })(["margin-top:8px;background-color:white;font-size:12px;line-height:16px;color:#000;text-align:center;"]);
 const Content$1 = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__Content",
-  componentId: "sc-1rpaqke-6"
+  componentId: "sc-1rpaqke-7"
 })(["::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:", ";border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#9ca3af;}scrollbar-width:thin;scrollbar-color:", " #f1f1f1;"], easyblocksDesignSystem.Colors.black10, easyblocksDesignSystem.Colors.black10);
 const Form$1 = styled__default["default"].form.withConfig({
   displayName: "FontConfigurations__Form",
-  componentId: "sc-1rpaqke-7"
+  componentId: "sc-1rpaqke-8"
 })(["display:flex;flex-direction:column;gap:12px;margin-top:2px;"]);
 const Row = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__Row",
-  componentId: "sc-1rpaqke-8"
+  componentId: "sc-1rpaqke-9"
 })(["display:grid;grid-template-columns:2fr 1fr 2fr 1fr;gap:12px;& > button{justify-content:flex-end;overflow:hidden;box-shadow:0 0 0 1px ", ";cursor:pointer;& > span{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;& > div{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}}}"], easyblocksDesignSystem.Colors.black10);
 const PreviewTextarea = styled__default["default"].textarea.withConfig({
   displayName: "FontConfigurations__PreviewTextarea",
-  componentId: "sc-1rpaqke-9"
+  componentId: "sc-1rpaqke-10"
 })(["border-radius:4px;width:100%;height:17vh;background-color:", ";resize:none;outline:none;padding:1rem;font-family:", ";font-size:", "px;font-weight:", ";line-height:", ";"], easyblocksDesignSystem.Colors.black10, f => f.fontFamily, f => f.fontSize, f => f.fontWeight, f => f.lineHeight);
 const StyledSelect = styled__default["default"](easyblocksDesignSystem.Select).withConfig({
   displayName: "FontConfigurations__StyledSelect",
-  componentId: "sc-1rpaqke-10"
+  componentId: "sc-1rpaqke-11"
 })(["display:flex;flex-direction:column;align-items:flex-end;min-width:0;cursor:pointer;border:1px solid ", ";border-radius:4px;"], easyblocksDesignSystem.Colors.black10);
 const StyledFontWrapper = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__StyledFontWrapper",
-  componentId: "sc-1rpaqke-11"
+  componentId: "sc-1rpaqke-12"
 })([""]);
 const StyleFontTitle = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__StyleFontTitle",
-  componentId: "sc-1rpaqke-12"
+  componentId: "sc-1rpaqke-13"
 })(["color:", ";text-transform:uppercase;margin-bottom:10px;", " font-size:14px;font-weight:500;"], easyblocksDesignSystem.Colors.black40, easyblocksDesignSystem.Fonts.bodyLarge);
 const FontConfigurations = ({
   editorContext,
@@ -3631,6 +3654,7 @@ const FontConfigurations = ({
   const [isLoadingReset, setIsLoadingReset] = React.useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = React.useState(false);
   const [openEditFont, setOpenEditFont] = React.useState(null);
+  const [openConfirmReset, setOpenConfirmReset] = React.useState(false);
   const themeHeadingOptions = {
     id: "theme-heading",
     title: t("theme.heading"),
@@ -3657,6 +3681,9 @@ const FontConfigurations = ({
       id,
       ...fontDetail
     });
+  };
+  const onCloseConfirmReset = () => {
+    setOpenConfirmReset(false);
   };
   const handleFontClose = () => {
     setOpenEditFont(null);
@@ -3744,10 +3771,24 @@ const FontConfigurations = ({
     fontWeight: fontDetail.value?.fontWeight,
     lineHeight: fontDetail.value?.lineHeight
   }, fontDetail.label)), /*#__PURE__*/React__default["default"].createElement(FontDetails, null, [fontDetail.value?.fontFamily?.split(",")[0], fontDetail.value?.fontWeight ? `Font Weight: ${fontDetail.value?.fontWeight}` : null, fontDetail.value?.fontSize ? `${fontDetail.value?.fontSize}` : null, fontDetail.value?.lineHeight ? `${fontDetail.value?.lineHeight}` : null].filter(Boolean).join(", "))))))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
-    isLoading: isLoadingReset,
-    disabled: isLoadingReset,
-    onClick: onReset
-  }, t("theme.font.reset"))), openEditFont ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+    onClick: () => setOpenConfirmReset(true)
+  }, t("theme.font.reset")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+    title: t("theme.font.reset"),
+    isOpen: openConfirmReset,
+    onRequestClose: onCloseConfirmReset,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+      onClick: onCloseConfirmReset
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
+      isLoading: isLoadingReset,
+      disabled: isLoadingReset,
+      onClick: onReset
+    }, t("theme.font.reset")))
+  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    variant: "body",
+    component: "label"
+  }, t("theme.font.reset.confirm")))), openEditFont ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
     width: "30vw",
     maxHeight: "auto",
     title: `${t("theme.font.edit")} ${openEditFont?.label ?? "Font"}`,
