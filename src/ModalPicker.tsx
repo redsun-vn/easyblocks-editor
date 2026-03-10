@@ -103,23 +103,19 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
     }
   };
 
-  const queryLimit = 30;
-  const currentFiltersRef = useRef<string>("");
+  const queryLimit = 50;
 
   const onSearchGroup = (search: string) => {
-    currentFiltersRef.current = "";
     setLoadMode("replace");
-    editorContext.syncTemplateQuery?.({ filters: "", search: search.trim(), page: 1, limit: search !== "" ? queryLimit : 200, mode: "replace" });
+    editorContext.syncTemplateQuery?.({ filters: "", search: search.trim() });
   };
 
   const onFilters = (filters: string) => {
-    currentFiltersRef.current = filters.trim();
     setLoadMode("replace");
-    editorContext.syncTemplateQuery?.({ filters: filters.trim(), search: "", page: 1, limit: 200, mode: "replace" });
+    editorContext.syncTemplateQuery?.({ filters: filters.trim(), search: "", page: 1, limit: filters !== "" ? queryLimit : 200, mode: "replace" });
   };
 
   const onLoadMore = (pageNum: number, groupId: string) => {
-    if (currentFiltersRef.current !== "") return;
     setLoadMode("append");
     const templateItems = editorContext.templates?.items ?? [];
     const templateCount = editorContext.templates?.count;

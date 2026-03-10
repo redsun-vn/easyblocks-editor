@@ -4317,32 +4317,25 @@ const ModalPicker = ({
       onClose();
     }
   };
-  const queryLimit = 30;
-  const currentFiltersRef = React.useRef("");
+  const queryLimit = 50;
   const onSearchGroup = search => {
-    currentFiltersRef.current = "";
     setLoadMode("replace");
     editorContext.syncTemplateQuery?.({
       filters: "",
-      search: search.trim(),
-      page: 1,
-      limit: search !== "" ? queryLimit : 200,
-      mode: "replace"
+      search: search.trim()
     });
   };
   const onFilters = filters => {
-    currentFiltersRef.current = filters.trim();
     setLoadMode("replace");
     editorContext.syncTemplateQuery?.({
       filters: filters.trim(),
       search: "",
       page: 1,
-      limit: 200,
+      limit: filters !== "" ? queryLimit : 200,
       mode: "replace"
     });
   };
   const onLoadMore = (pageNum, groupId) => {
-    if (currentFiltersRef.current !== "") return;
     setLoadMode("append");
     const templateItems = editorContext.templates?.items ?? [];
     const templateCount = editorContext.templates?.count;
