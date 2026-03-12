@@ -66,7 +66,7 @@ const StyledWrapperAddToPage = styled(Typography)<{ disabled: boolean }>`
 `;
 
 const StyledWrapperLabel = styled.div`
-  width: 140px;
+  width: 190px;
 `;
 
 const StyledLabel = styled(Typography)`
@@ -199,7 +199,7 @@ export const EditorGlobalSectionGroupItem = ({
             disabled={!groupItem.entry?._component}
             onClick={onAddToPage}
           >
-            {t("editor.sidebar.globalSections.addToPage")}
+            {t("add")}
           </StyledWrapperAddToPage>
         )}
 

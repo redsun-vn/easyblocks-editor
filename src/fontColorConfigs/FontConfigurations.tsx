@@ -17,6 +17,7 @@ import {
   Modal,
   Select,
   SelectItem,
+  Typography,
   useToaster,
 } from "@redsun-vn/easyblocks-design-system";
 import React, { useState } from "react";
@@ -45,10 +46,21 @@ interface IFont {
 
 const stringKeys = ["fontFamily"];
 
+const StyledButtonGroup = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  margin-top: 14px;
+  gap: 12px;
+`;
+
 const Container = styled.div`
   background-color: #ffffff;
   max-height: 100vh;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 `;
 
 const FontGrid = styled.div`
@@ -209,12 +221,13 @@ export const FontConfigurations = ({
   const [isLoadingReset, setIsLoadingReset] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [openEditFont, setOpenEditFont] = useState<IFont | null>(null);
+  const [openConfirmReset, setOpenConfirmReset] = useState(false);
 
   const themeHeadingOptions = {
     id: "theme-heading",
     title: t("theme.heading"),
     options: Object.entries(fontTokens).filter(([id]) =>
-      id.startsWith("heading")
+      id.startsWith("heading"),
     ),
   };
 
@@ -228,7 +241,7 @@ export const FontConfigurations = ({
     id: "theme-title",
     title: t("theme.title"),
     options: Object.entries(fontTokens).filter(([id]) =>
-      id.startsWith("title")
+      id.startsWith("title"),
     ),
   };
 
@@ -252,6 +265,10 @@ export const FontConfigurations = ({
     });
   };
 
+  const onCloseConfirmReset = () => {
+    setOpenConfirmReset(false);
+  };
+
   const handleFontClose = () => {
     setOpenEditFont(null);
   };
@@ -273,7 +290,7 @@ export const FontConfigurations = ({
   };
 
   const onSubmit = async (
-    event: React.FormEvent<HTMLFormElement> | undefined
+    event: React.FormEvent<HTMLFormElement> | undefined,
   ) => {
     event?.preventDefault();
     if (!openEditFont) {
@@ -299,14 +316,14 @@ export const FontConfigurations = ({
         ([id, value]) => ({
           id,
           ...value,
-        })
+        }),
       );
 
       const colorTokenPayloads = Object.entries(colorTokens).map(
         ([id, value]) => ({
           id,
           ...value,
-        })
+        }),
       );
 
       try {
@@ -330,7 +347,7 @@ export const FontConfigurations = ({
 
   const onChange = (
     id: "fontFamily" | "fontSize" | "fontWeight" | "lineHeight",
-    newValue: string | number
+    newValue: string | number,
   ) => {
     setOpenEditFont((prev) => {
       if (!prev) return prev;
@@ -394,13 +411,36 @@ export const FontConfigurations = ({
           </StyledFontWrapper>
         ))}
 
-        <ButtonDanger
-          isLoading={isLoadingReset}
-          disabled={isLoadingReset}
-          onClick={onReset}
-        >
+        <ButtonDanger onClick={() => setOpenConfirmReset(true)}>
           {t("theme.font.reset")}
         </ButtonDanger>
+
+        {/* Modal confirm reset fonts */}
+        <Modal
+          title={t("theme.font.reset")}
+          isOpen={openConfirmReset}
+          onRequestClose={onCloseConfirmReset}
+          mode="fit"
+          height="auto"
+          endAdornment={
+            <StyledButtonGroup>
+              <ButtonSecondary onClick={onCloseConfirmReset}>
+                {t("cancel")}
+              </ButtonSecondary>
+              <ButtonDanger
+                isLoading={isLoadingReset}
+                disabled={isLoadingReset}
+                onClick={onReset}
+              >
+                {t("theme.font.reset")}
+              </ButtonDanger>
+            </StyledButtonGroup>
+          }
+        >
+          <Typography variant={"body"} component="label">
+            {t("theme.font.reset.confirm")}
+          </Typography>
+        </Modal>
       </Container>
 
       {openEditFont ? (
@@ -431,7 +471,7 @@ export const FontConfigurations = ({
 
                 <StyledSelect
                   value={String(
-                    openEditFont?.value?.fontSize ?? defaultFontSize
+                    openEditFont?.value?.fontSize ?? defaultFontSize,
                   )}
                   onChange={(newFontSize) => {
                     onChange("fontSize", newFontSize);
@@ -446,7 +486,7 @@ export const FontConfigurations = ({
 
                 <StyledSelect
                   value={String(
-                    openEditFont?.value?.fontWeight ?? defaultFontWeight
+                    openEditFont?.value?.fontWeight ?? defaultFontWeight,
                   )}
                   onChange={(newFontWeight) => {
                     onChange("fontWeight", newFontWeight);
@@ -461,7 +501,7 @@ export const FontConfigurations = ({
 
                 <StyledSelect
                   value={String(
-                    openEditFont?.value?.lineHeight ?? defaultLineHeight
+                    openEditFont?.value?.lineHeight ?? defaultLineHeight,
                   )}
                   onChange={(newLineHeight) => {
                     onChange("lineHeight", newLineHeight);
