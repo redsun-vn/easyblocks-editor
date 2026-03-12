@@ -6713,8 +6713,11 @@ async function getTemplates(editorContext, configTemplates = [], query) {
     items: [],
     count: {}
   };
+  const templates = getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates.items);
+  const textSearch = query?.filters?.split("@").find(filter => filter.includes("label:like:"))?.split("label:like:")[1];
+  const templatesFound = textSearch ? templates.filter(template => template.label?.toLowerCase().includes(textSearch.toLowerCase())) : templates;
   return {
-    items: getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates.items),
+    items: templatesFound,
     count: remoteUserDefinedTemplates.count
   };
 }

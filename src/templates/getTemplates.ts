@@ -17,7 +17,7 @@ import { configMap } from "../utils/config/configMap";
 
 function getDefaultTemplateForDefinition(
   def: InternalComponentDefinition,
-  editorContext: EditorContextType
+  editorContext: EditorContextType,
 ): InternalTemplate {
   // Text has different way of building a default config
   const config: NoCodeComponentEntry =
@@ -46,7 +46,7 @@ function getDefaultTokenId(tokens: EditorContextType["theme"][string]) {
 export async function getTemplates(
   editorContext: EditorContextType,
   configTemplates: InternalTemplate[] = [],
-  query?: TemplateQueryType
+  query?: TemplateQueryType,
 ): Promise<{
   items: NonNullable<EditorContextType["templates"]>["items"];
   count: NonNullable<EditorContextType["templates"]>["count"];
@@ -55,12 +55,25 @@ export async function getTemplates(
     ? await editorContext.backend.templates.getAll(query)
     : { items: [], count: {} };
 
+  const templates = getTemplatesInternal(
+    editorContext,
+    configTemplates,
+    remoteUserDefinedTemplates.items,
+  );
+
+  const textSearch = query?.filters
+    ?.split("@")
+    .find((filter) => filter.includes("label:like:"))
+    ?.split("label:like:")[1];
+
+  const templatesFound = textSearch
+    ? templates.filter((template) =>
+        template.label?.toLowerCase().includes(textSearch.toLowerCase()),
+      )
+    : templates;
+
   return {
-    items: getTemplatesInternal(
-      editorContext,
-      configTemplates,
-      remoteUserDefinedTemplates.items
-    ),
+    items: templatesFound,
     count: remoteUserDefinedTemplates.count,
   };
 }
@@ -68,13 +81,13 @@ export async function getTemplates(
 function getNecessaryDefaultTemplates(
   components: InternalComponentDefinition[],
   templates: Template[],
-  editorContext: EditorContextType
+  editorContext: EditorContextType,
 ) {
   const result: InternalTemplate[] = [];
 
   components.forEach((component) => {
     const componentTemplates = templates.filter(
-      (template) => template.entry._component === component.id
+      (template) => template.entry._component === component.id,
     );
     if (componentTemplates.length === 0) {
       result.push(getDefaultTemplateForDefinition(component, editorContext));
@@ -86,12 +99,12 @@ function getNecessaryDefaultTemplates(
 
 function normalizeTextLocales(
   config: NoCodeComponentEntry,
-  editorContext: EditorContextType
+  editorContext: EditorContextType,
 ) {
   return configMap(config, editorContext, ({ value, schemaProp }) => {
     if (schemaProp.type === "text") {
       const firstDefinedValue = Object.values(value.value).filter(
-        (x) => x !== null && x !== undefined
+        (x) => x !== null && x !== undefined,
       )[0];
 
       return {
@@ -102,7 +115,7 @@ function normalizeTextLocales(
       };
     } else if (schemaProp.type === "component-collection-localised") {
       const firstDefinedValue = Object.values(value).filter(
-        (x) => x !== null && x !== undefined
+        (x) => x !== null && x !== undefined,
       )[0];
 
       return {
@@ -117,7 +130,7 @@ function normalizeTextLocales(
 function getTemplatesInternal(
   editorContext: EditorContextType,
   configTemplates: InternalTemplate[],
-  remoteUserDefinedTemplates: UserDefinedTemplate[]
+  remoteUserDefinedTemplates: UserDefinedTemplate[],
 ): Template[] {
   // If a component doesn't have a template, here's one added
   const allBuiltinTemplates = [
@@ -125,7 +138,7 @@ function getTemplatesInternal(
     ...getNecessaryDefaultTemplates(
       editorContext.definitions.components,
       configTemplates,
-      editorContext
+      editorContext,
     ),
   ];
 
@@ -138,7 +151,7 @@ function getTemplatesInternal(
     .filter((template) => {
       const definition = findComponentDefinitionById(
         template.entry._component,
-        editorContext
+        editorContext,
       );
 
       if (!definition || definition.hideTemplates) {
@@ -152,7 +165,7 @@ function getTemplatesInternal(
         ...template,
         entry: normalizeTextLocales(
           normalize({ ...template.entry, _itemProps: {} }, editorContext),
-          editorContext
+          editorContext,
         ),
       };
 
