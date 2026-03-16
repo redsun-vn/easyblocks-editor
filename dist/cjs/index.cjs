@@ -1315,6 +1315,9 @@ const FontCustomFields = ({
   }, {});
   const inputValue = React.useMemo(() => input.value?.value || input.value?.[editorContext.breakpointIndex]?.value || defaultInputValue, [input]);
   const onChange = (key, value, type) => {
+    if (type === "number" && !Number(value)) {
+      return;
+    }
     const newInputValue = {
       ...inputValue,
       [key]: type === "number" ? Number(value) : value.toString()

@@ -163,6 +163,10 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
   );
 
   const onChange = (key: string, value: string | number, type: string) => {
+    if (type === "number" && !Number(value)) {
+      return;
+    }
+
     const newInputValue = {
       ...inputValue,
       [key]: type === "number" ? Number(value) : value.toString(),
