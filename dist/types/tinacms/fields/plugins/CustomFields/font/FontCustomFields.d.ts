@@ -16,6 +16,7 @@ export interface ICustomField {
     inputType: "select" | "text";
     value?: string | number;
     defaultValue?: string | number;
+    allowCustom?: boolean;
 }
 export declare const FontCustomField: ({ customField, onChange, }: {
     type?: "select" | "text";

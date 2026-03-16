@@ -19,8 +19,10 @@ import { Tooltip, TooltipArrow, TooltipBody } from "../../Tooltip";
 import { useTooltip } from "../../useTooltip";
 import { FontCustomFieldInput } from "./FontCustomFieldInput";
 
-interface IFontCustomInputElement
-  extends Omit<TokenFieldProps<TokenValue>, "meta"> {
+interface IFontCustomInputElement extends Omit<
+  TokenFieldProps<TokenValue>,
+  "meta"
+> {
   customValueTextFieldRef?: React.MutableRefObject<HTMLInputElement | null>;
 }
 
@@ -32,6 +34,7 @@ export interface ICustomField {
   inputType: "select" | "text";
   value?: string | number;
   defaultValue?: string | number;
+  allowCustom?: boolean;
 }
 
 const FieldLabel = styled.label`
@@ -69,7 +72,7 @@ export const FontCustomField = ({
       style={{
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center",
+        alignItems: "baseline",
       }}
     >
       <FieldLabel {...triggerProps}>
@@ -118,9 +121,10 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
         key: "fontSize",
         label: t("definition.schema.label.fontSize"),
         type: "number",
-        options: getFontSizes(editorContext),
+        options: getFontSizes(),
         inputType: "select",
         defaultValue: defaultFontSize,
+        allowCustom: true,
       },
       {
         key: "fontWeight",
@@ -137,9 +141,10 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
         options: getLineHeights(),
         inputType: "select",
         defaultValue: defaultLineHeight,
+        allowCustom: true,
       },
     ],
-    []
+    [],
   );
 
   const defaultInputValue = customFields.reduce<
@@ -154,7 +159,7 @@ export const FontCustomFields = ({ input, field }: IFontCustomInputElement) => {
       input.value?.value ||
       input.value?.[editorContext.breakpointIndex]?.value ||
       defaultInputValue,
-    [input]
+    [input],
   );
 
   const onChange = (key: string, value: string | number, type: string) => {

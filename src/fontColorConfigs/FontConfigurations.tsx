@@ -477,7 +477,7 @@ export const FontConfigurations = ({
                     onChange("fontSize", newFontSize);
                   }}
                 >
-                  {getFontSizes(editorContext).map((f) => (
+                  {getFontSizes().map((f) => (
                     <SelectItem key={f.id} value={f.value}>
                       {f.label}
                     </SelectItem>

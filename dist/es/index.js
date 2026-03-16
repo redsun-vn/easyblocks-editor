@@ -1109,12 +1109,52 @@ const ColorCustomFields = ({
   }))));
 };
 
+const Root$1 = styled$1.div.withConfig({
+  displayName: "FontCustomFieldInput__Root",
+  componentId: "sc-122q2iv-0"
+})(["display:flex;flex-direction:column;align-items:flex-end;", ""], ({
+  isCustom
+}) => isCustom && {
+  width: "100%"
+});
 const FontCustomFieldInput = ({
   inputType = "text",
   options = [],
   customField,
   onChange
 }) => {
+  const customValueTextFieldRef = useRef(null);
+  const [inputValue, setInputValue] = useState(customField?.value?.toString() ?? "");
+  const isCustomValue = options.every(option => String(option.value) !== String(inputValue));
+  const [isShowCustomValue, setIsShowCustomValue] = useState(isCustomValue);
+  const shouldShowCustomValueInput = (isCustomValue || isShowCustomValue) && customField.allowCustom;
+  useEffect(() => {
+    setIsShowCustomValue(options.every(option => String(option.value) !== String(customField.value)));
+    setInputValue(customField.value?.toString() ?? "");
+  }, [customField.value]);
+  const customInputElement = shouldShowCustomValueInput ? /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      width: "100%",
+      textAlign: "end"
+    }
+  }, /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      height: 4
+    }
+  }), /*#__PURE__*/React__default.createElement(Input, {
+    value: inputValue,
+    onChange: e => {
+      setInputValue(e.target.value);
+    },
+    onBlur: () => {
+      onChange(customField.key, inputValue, customField.type);
+    },
+    ref: customValueTextFieldRef,
+    style: {
+      width: "100%"
+    },
+    align: "right"
+  })) : null;
   switch (inputType) {
     case "text":
       {
@@ -1128,11 +1168,16 @@ const FontCustomFieldInput = ({
       }
     case "select":
       {
-        return /*#__PURE__*/React__default.createElement(Select, {
-          value: String(customField.value ?? customField.defaultValue),
+        return /*#__PURE__*/React__default.createElement(Root$1, {
+          isCustom: isCustomValue
+        }, /*#__PURE__*/React__default.createElement(Select, {
+          value: isCustomValue || isShowCustomValue ? CUSTOM_OPTION_VALUE : String(customField.value ?? customField.defaultValue),
           onChange: selectedValue => {
             if (selectedValue !== CUSTOM_OPTION_VALUE) {
               onChange(customField.key, selectedValue, customField.type);
+              setInputValue(selectedValue);
+            } else {
+              setIsShowCustomValue(true);
             }
           }
         }, options.map(o => {
@@ -1144,7 +1189,9 @@ const FontCustomFieldInput = ({
               fontFamily: o.value
             }
           }, o.label));
-        }));
+        }), customField?.allowCustom && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(SelectSeparator, null), /*#__PURE__*/React__default.createElement(SelectItem, {
+          value: CUSTOM_OPTION_VALUE
+        }, "Custom"))), customInputElement);
       }
   }
 };
@@ -1172,7 +1219,7 @@ const FontCustomField = ({
     style: {
       display: "flex",
       justifyContent: "space-between",
-      alignItems: "center"
+      alignItems: "baseline"
     }
   }, /*#__PURE__*/React__default.createElement(FieldLabel, triggerProps, /*#__PURE__*/React__default.createElement("span", {
     style: {
@@ -1207,9 +1254,10 @@ const FontCustomFields = ({
     key: "fontSize",
     label: t("definition.schema.label.fontSize"),
     type: "number",
-    options: getFontSizes(editorContext),
+    options: getFontSizes(),
     inputType: "select",
-    defaultValue: defaultFontSize
+    defaultValue: defaultFontSize,
+    allowCustom: true
   }, {
     key: "fontWeight",
     label: t("definition.schema.label.fontWeight"),
@@ -1223,7 +1271,8 @@ const FontCustomFields = ({
     type: "number",
     options: getLineHeights(),
     inputType: "select",
-    defaultValue: defaultLineHeight
+    defaultValue: defaultLineHeight,
+    allowCustom: true
   }], []);
   const defaultInputValue = customFields.reduce((prev, curr) => {
     prev[curr.key] = curr.defaultValue ?? (curr.type === "number" ? 0 : "");
@@ -3780,7 +3829,7 @@ const FontConfigurations = ({
     onChange: newFontSize => {
       onChange("fontSize", newFontSize);
     }
-  }, getFontSizes(editorContext).map(f => /*#__PURE__*/React__default.createElement(SelectItem, {
+  }, getFontSizes().map(f => /*#__PURE__*/React__default.createElement(SelectItem, {
     key: f.id,
     value: f.value
   }, f.label))), /*#__PURE__*/React__default.createElement(StyledSelect, {
