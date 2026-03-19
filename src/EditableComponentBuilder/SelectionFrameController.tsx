@@ -39,10 +39,10 @@ function SelectionFrameController({
     position: "relative",
     display: "grid",
 
-    "&[data-children-selection-disabled=true] *": {
-      pointerEvents: "none !important",
-      userSelect: "none !important",
-    },
+    // "&[data-children-selection-disabled=true] *": {
+    //   pointerEvents: "none !important",
+    //   userSelect: "none !important",
+    // },
 
     "&[data-draggable-active=false]::after": {
       content: `''`,
@@ -59,7 +59,7 @@ function SelectionFrameController({
       userSelect: "none",
       transition: "all 100ms",
       boxShadow: "var(--tina-shadow-big)",
-      zIndex: "var(--tina-z-index-2)",
+      // zIndex: "var(--tina-z-index-2)",
     },
 
     "&[data-active=true]::after": {
@@ -167,8 +167,8 @@ function useUpdateFramePosition({
       dispatch(
         selectionFramePositionChanged(
           nodeRect,
-          window.document.documentElement.getBoundingClientRect()
-        )
+          window.document.documentElement.getBoundingClientRect(),
+        ),
       );
     });
 
@@ -196,7 +196,7 @@ function useUpdateFramePosition({
       });
 
     const closestScrollableElement = node.closest(
-      "[data-easyblocks-scrollable-root]"
+      "[data-easyblocks-scrollable-root]",
     );
 
     closestScrollableElement?.addEventListener(
@@ -204,14 +204,14 @@ function useUpdateFramePosition({
       updateSelectionFramePositionInScrollableContainer,
       {
         passive: true,
-      }
+      },
     );
 
     dispatch(
       selectionFramePositionChanged(
         node.getBoundingClientRect(),
-        closestScrollableElement?.getBoundingClientRect()
-      )
+        closestScrollableElement?.getBoundingClientRect(),
+      ),
     );
 
     return () => {
@@ -219,7 +219,7 @@ function useUpdateFramePosition({
       window.removeEventListener("resize", handleResize);
       closestScrollableElement?.removeEventListener(
         "scroll",
-        updateSelectionFramePositionInScrollableContainer
+        updateSelectionFramePositionInScrollableContainer,
       );
     };
   });

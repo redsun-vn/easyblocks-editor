@@ -9319,10 +9319,11 @@ function SelectionFrameController({
   const wrapperClassName = stitches.css({
     position: "relative",
     display: "grid",
-    "&[data-children-selection-disabled=true] *": {
-      pointerEvents: "none !important",
-      userSelect: "none !important"
-    },
+    // "&[data-children-selection-disabled=true] *": {
+    //   pointerEvents: "none !important",
+    //   userSelect: "none !important",
+    // },
+
     "&[data-draggable-active=false]::after": {
       content: `''`,
       boxSizing: "border-box",
@@ -9337,8 +9338,8 @@ function SelectionFrameController({
       pointerEvents: "none",
       userSelect: "none",
       transition: "all 100ms",
-      boxShadow: "var(--tina-shadow-big)",
-      zIndex: "var(--tina-z-index-2)"
+      boxShadow: "var(--tina-shadow-big)"
+      // zIndex: "var(--tina-z-index-2)",
     },
     "&[data-active=true]::after": {
       opacity: 1
