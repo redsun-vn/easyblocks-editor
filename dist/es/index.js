@@ -14,6 +14,7 @@ import { useTooltipTrigger } from '@react-aria/tooltip';
 import { usePopper } from 'react-popper';
 import * as RadixRadioGroup from '@radix-ui/react-radio-group';
 import debounce from 'lodash/debounce';
+import { debounce as debounce$1 } from 'lodash';
 import { createForm as createForm$1, FORM_ERROR } from 'final-form';
 import arrayMutators from 'final-form-arrays';
 import { useDndContext, useSensor, MouseSensor, DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
@@ -7334,11 +7335,18 @@ const DATA_TRANSFER_FORMAT = "text/x-shopstory";
 function useEditorGlobalKeyboardShortcuts(editorContext) {
   let isDeleting = false;
   let pasteId;
+  const debouncedMoveItemsRef = useRef(debounce$1((actions, fields, direction) => {
+    actions.moveItems(fields, direction);
+  }, 100, {
+    leading: true,
+    trailing: false
+  }));
   useEffect(() => {
     const {
       focussedField: focusedFields,
       actions
     } = editorContext;
+    const debouncedMoveItems = debouncedMoveItemsRef.current;
     function handleKeydown(event) {
       if (isTargetInputElement(event.target)) {
         return;
@@ -7354,9 +7362,9 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
             isDeleting = false;
           }, 2000);
         } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-          actions.moveItems(focusedFields, "top");
+          debouncedMoveItems(actions, focusedFields, "top");
         } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-          actions.moveItems(focusedFields, "bottom");
+          debouncedMoveItems(actions, focusedFields, "bottom");
         } else if (event.key.toUpperCase() === "L") {
           actions.logSelectedItems();
         }
@@ -7416,6 +7424,11 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
       window.document.removeEventListener("paste", handlePaste);
     };
   });
+  useEffect(() => {
+    return () => {
+      debouncedMoveItemsRef.current.cancel();
+    };
+  }, []);
 }
 function isTargetInputElement(target) {
   return isTargetHtmlElement(target) && (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.tagName === "DIV" && target.getAttribute("role") === "textbox");

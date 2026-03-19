@@ -1,6 +1,7 @@
 import { dotNotationGet, preOrderPathComparator } from "@/utils";
 import { duplicateConfig } from "@redsun-vn/easyblocks-core/_internals";
-import { useEffect } from "react";
+import { debounce } from "lodash";
+import { useEffect, useRef } from "react";
 import type { EditorContextType } from "./EditorContext";
 
 const GLOBAL_SHORTCUTS_KEYS = [
@@ -22,8 +23,23 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
   let isDeleting = false;
   let pasteId: string | number | NodeJS.Timeout;
 
+  const debouncedMoveItemsRef = useRef(
+    debounce(
+      (
+        actions: EditorContextType["actions"],
+        fields: Array<string>,
+        direction: "top" | "right" | "bottom" | "left"
+      ) => {
+        actions.moveItems(fields, direction);
+      },
+      100,
+      { leading: true, trailing: false }
+    )
+  );
+
   useEffect(() => {
     const { focussedField: focusedFields, actions } = editorContext;
+    const debouncedMoveItems = debouncedMoveItemsRef.current;
 
     function handleKeydown(event: KeyboardEvent): void {
       if (isTargetInputElement(event.target)) {
@@ -46,9 +62,9 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
             isDeleting = false;
           }, 2000);
         } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-          actions.moveItems(focusedFields, "top");
+          debouncedMoveItems(actions, focusedFields, "top");
         } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-          actions.moveItems(focusedFields, "bottom");
+          debouncedMoveItems(actions, focusedFields, "bottom");
         } else if (event.key.toUpperCase() === "L") {
           actions.logSelectedItems();
         }
@@ -129,6 +145,12 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
       window.document.removeEventListener("paste", handlePaste);
     };
   });
+
+  useEffect(() => {
+    return () => {
+      debouncedMoveItemsRef.current.cancel();
+    };
+  }, []);
 }
 
 function isTargetInputElement(target: EventTarget | null): boolean {

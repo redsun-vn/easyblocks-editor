@@ -17,6 +17,7 @@ var tooltip = require('@react-aria/tooltip');
 var reactPopper = require('react-popper');
 var RadixRadioGroup = require('@radix-ui/react-radio-group');
 var debounce = require('lodash/debounce');
+var lodash = require('lodash');
 var finalForm = require('final-form');
 var arrayMutators = require('final-form-arrays');
 var core = require('@dnd-kit/core');
@@ -7369,11 +7370,18 @@ const DATA_TRANSFER_FORMAT = "text/x-shopstory";
 function useEditorGlobalKeyboardShortcuts(editorContext) {
   let isDeleting = false;
   let pasteId;
+  const debouncedMoveItemsRef = React.useRef(lodash.debounce((actions, fields, direction) => {
+    actions.moveItems(fields, direction);
+  }, 100, {
+    leading: true,
+    trailing: false
+  }));
   React.useEffect(() => {
     const {
       focussedField: focusedFields,
       actions
     } = editorContext;
+    const debouncedMoveItems = debouncedMoveItemsRef.current;
     function handleKeydown(event) {
       if (isTargetInputElement(event.target)) {
         return;
@@ -7389,9 +7397,9 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
             isDeleting = false;
           }, 2000);
         } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-          actions.moveItems(focusedFields, "top");
+          debouncedMoveItems(actions, focusedFields, "top");
         } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-          actions.moveItems(focusedFields, "bottom");
+          debouncedMoveItems(actions, focusedFields, "bottom");
         } else if (event.key.toUpperCase() === "L") {
           actions.logSelectedItems();
         }
@@ -7451,6 +7459,11 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
       window.document.removeEventListener("paste", handlePaste);
     };
   });
+  React.useEffect(() => {
+    return () => {
+      debouncedMoveItemsRef.current.cancel();
+    };
+  }, []);
 }
 function isTargetInputElement(target) {
   return isTargetHtmlElement(target) && (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.tagName === "DIV" && target.getAttribute("role") === "textbox");
