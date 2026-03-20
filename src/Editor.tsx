@@ -1412,6 +1412,7 @@ const EditorContent = ({
                   onEditorHistoryUndo={undo}
                   onEditorHistoryRedo={redo}
                   onSave={saveNow}
+                  isSaving={isSaving}
                   width={iframeSize.width}
                   height={iframeSize.height}
                   transform={iframeSize.transform}

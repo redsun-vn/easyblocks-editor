@@ -12,12 +12,12 @@ var _extends = require('@babel/runtime/helpers/extends');
 var _internals = require('@redsun-vn/easyblocks-core/_internals');
 var throttle = require('lodash.throttle');
 var Modal = require('react-modal');
+var lodash = require('lodash');
 var ReactDOM = require('react-dom');
 var tooltip = require('@react-aria/tooltip');
 var reactPopper = require('react-popper');
 var RadixRadioGroup = require('@radix-ui/react-radio-group');
 var debounce = require('lodash/debounce');
-var lodash = require('lodash');
 var finalForm = require('final-form');
 var arrayMutators = require('final-form-arrays');
 var core = require('@dnd-kit/core');
@@ -242,14 +242,21 @@ function EditorIframe({
   onEditorHistoryRedo,
   onEditorHistoryUndo,
   onSave,
+  isSaving,
   width,
   height,
   transform,
   containerRef
 }) {
   const [isIframeReady, setIframeReady] = React.useState(false);
+  const debouncedSave = lodash.debounce(fn => fn(), 200);
   const handleIframeLoaded = () => {
     setIframeReady(true);
+  };
+  const onKeyDownSave = () => {
+    if (onSave && !isSaving) {
+      debouncedSave(onSave);
+    }
   };
   useWindowKeyDown("z", onEditorHistoryUndo, {
     extraKeys: [ExtraKeys.META_KEY],
@@ -267,11 +274,11 @@ function EditorIframe({
     extraKeys: [ExtraKeys.CTRL_KEY],
     isDisabled: !isIframeReady
   });
-  useWindowKeyDown("s", onSave, {
+  useWindowKeyDown("s", onKeyDownSave, {
     extraKeys: [ExtraKeys.CTRL_KEY],
     isDisabled: !isIframeReady
   });
-  useWindowKeyDown("s", onSave, {
+  useWindowKeyDown("s", onKeyDownSave, {
     extraKeys: [ExtraKeys.META_KEY],
     isDisabled: !isIframeReady
   });
@@ -8571,6 +8578,7 @@ const EditorContent = ({
     onEditorHistoryUndo: undo,
     onEditorHistoryRedo: redo,
     onSave: saveNow,
+    isSaving: isSaving,
     width: iframeSize.width,
     height: iframeSize.height,
     transform: iframeSize.transform,
