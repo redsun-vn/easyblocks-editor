@@ -2,10 +2,13 @@ import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React, { useState } from "react";
 import { styled } from "styled-components";
 import { ExtraKeys, useWindowKeyDown } from "./useWindowKeyDown";
+import { debounce } from "lodash";
 
 interface EditorIframeWrapperProps {
   onEditorHistoryRedo: () => void;
   onEditorHistoryUndo: () => void;
+  onSave?: () => void;
+  isSaving?: boolean;
   width: number;
   height: number;
   transform: string;
@@ -15,15 +18,24 @@ interface EditorIframeWrapperProps {
 function EditorIframe({
   onEditorHistoryRedo,
   onEditorHistoryUndo,
+  onSave,
+  isSaving,
   width,
   height,
   transform,
   containerRef,
 }: EditorIframeWrapperProps) {
   const [isIframeReady, setIframeReady] = useState(false);
+  const debouncedSave = debounce((fn: () => void) => fn(), 200);
 
   const handleIframeLoaded = () => {
     setIframeReady(true);
+  };
+
+  const onKeyDownSave = () => {
+    if (onSave && !isSaving) {
+      debouncedSave(onSave);
+    }
   };
 
   useWindowKeyDown("z", onEditorHistoryUndo, {
@@ -43,6 +55,16 @@ function EditorIframe({
 
   useWindowKeyDown("y", onEditorHistoryRedo, {
     extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady,
+  });
+
+  useWindowKeyDown("s", onKeyDownSave, {
+    extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady,
+  });
+
+  useWindowKeyDown("s", onKeyDownSave, {
+    extraKeys: [ExtraKeys.META_KEY],
     isDisabled: !isIframeReady,
   });
 

@@ -9,12 +9,12 @@ import _extends from '@babel/runtime/helpers/extends';
 import { parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, findComponentDefinition, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
 import throttle from 'lodash.throttle';
 import Modal$1 from 'react-modal';
+import { debounce } from 'lodash';
 import ReactDOM, { createPortal } from 'react-dom';
 import { useTooltipTrigger } from '@react-aria/tooltip';
 import { usePopper } from 'react-popper';
 import * as RadixRadioGroup from '@radix-ui/react-radio-group';
-import debounce from 'lodash/debounce';
-import { debounce as debounce$1 } from 'lodash';
+import debounce$1 from 'lodash/debounce';
 import { createForm as createForm$1, FORM_ERROR } from 'final-form';
 import arrayMutators from 'final-form-arrays';
 import { useDndContext, useSensor, MouseSensor, DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
@@ -206,14 +206,22 @@ const useWindowKeyDown = (key, callback, {
 function EditorIframe({
   onEditorHistoryRedo,
   onEditorHistoryUndo,
+  onSave,
+  isSaving,
   width,
   height,
   transform,
   containerRef
 }) {
   const [isIframeReady, setIframeReady] = useState(false);
+  const debouncedSave = debounce(fn => fn(), 200);
   const handleIframeLoaded = () => {
     setIframeReady(true);
+  };
+  const onKeyDownSave = () => {
+    if (onSave && !isSaving) {
+      debouncedSave(onSave);
+    }
   };
   useWindowKeyDown("z", onEditorHistoryUndo, {
     extraKeys: [ExtraKeys.META_KEY],
@@ -229,6 +237,14 @@ function EditorIframe({
   });
   useWindowKeyDown("y", onEditorHistoryRedo, {
     extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady
+  });
+  useWindowKeyDown("s", onKeyDownSave, {
+    extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady
+  });
+  useWindowKeyDown("s", onKeyDownSave, {
+    extraKeys: [ExtraKeys.META_KEY],
     isDisabled: !isIframeReady
   });
   return /*#__PURE__*/React__default.createElement(IframeContainer, {
@@ -3972,7 +3988,7 @@ const VerticalLine = styled.div.withConfig({
   displayName: "EditorTopBar__VerticalLine",
   componentId: "sc-726nw9-7"
 })(["width:1px;height:20px;background-color:", ";"], Colors.black10);
-const debouncedSave = debounce(fn => fn(), 200);
+const debouncedSave = debounce$1(fn => fn(), 200);
 const EditorTopBar = ({
   name,
   onClose,
@@ -7335,7 +7351,7 @@ const DATA_TRANSFER_FORMAT = "text/x-shopstory";
 function useEditorGlobalKeyboardShortcuts(editorContext) {
   let isDeleting = false;
   let pasteId;
-  const debouncedMoveItemsRef = useRef(debounce$1((actions, fields, direction) => {
+  const debouncedMoveItemsRef = useRef(debounce((actions, fields, direction) => {
     actions.moveItems(fields, direction);
   }, 100, {
     leading: true,
@@ -7638,7 +7654,7 @@ function checkLocalesCorrectness(locales) {
   return true;
 }
 
-const debouncedUpdate = debounce(fn => fn(), 100);
+const debouncedUpdate = debounce$1(fn => fn(), 100);
 const ContentContainer = styled.div.withConfig({
   displayName: "Editor__ContentContainer",
   componentId: "sc-t95yuf-0"
@@ -8526,6 +8542,8 @@ const EditorContent = ({
   }, /*#__PURE__*/React__default.createElement(EditorIframe, {
     onEditorHistoryUndo: undo,
     onEditorHistoryRedo: redo,
+    onSave: saveNow,
+    isSaving: isSaving,
     width: iframeSize.width,
     height: iframeSize.height,
     transform: iframeSize.transform,
