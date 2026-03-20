@@ -6,6 +6,7 @@ import { ExtraKeys, useWindowKeyDown } from "./useWindowKeyDown";
 interface EditorIframeWrapperProps {
   onEditorHistoryRedo: () => void;
   onEditorHistoryUndo: () => void;
+  onSave: () => void;
   width: number;
   height: number;
   transform: string;
@@ -15,6 +16,7 @@ interface EditorIframeWrapperProps {
 function EditorIframe({
   onEditorHistoryRedo,
   onEditorHistoryUndo,
+  onSave,
   width,
   height,
   transform,
@@ -43,6 +45,16 @@ function EditorIframe({
 
   useWindowKeyDown("y", onEditorHistoryRedo, {
     extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady,
+  });
+
+  useWindowKeyDown("s", onSave, {
+    extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady,
+  });
+
+  useWindowKeyDown("s", onSave, {
+    extraKeys: [ExtraKeys.META_KEY],
     isDisabled: !isIframeReady,
   });
 

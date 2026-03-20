@@ -206,6 +206,7 @@ const useWindowKeyDown = (key, callback, {
 function EditorIframe({
   onEditorHistoryRedo,
   onEditorHistoryUndo,
+  onSave,
   width,
   height,
   transform,
@@ -229,6 +230,14 @@ function EditorIframe({
   });
   useWindowKeyDown("y", onEditorHistoryRedo, {
     extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady
+  });
+  useWindowKeyDown("s", onSave, {
+    extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady
+  });
+  useWindowKeyDown("s", onSave, {
+    extraKeys: [ExtraKeys.META_KEY],
     isDisabled: !isIframeReady
   });
   return /*#__PURE__*/React__default.createElement(IframeContainer, {
@@ -8526,6 +8535,7 @@ const EditorContent = ({
   }, /*#__PURE__*/React__default.createElement(EditorIframe, {
     onEditorHistoryUndo: undo,
     onEditorHistoryRedo: redo,
+    onSave: saveNow,
     width: iframeSize.width,
     height: iframeSize.height,
     transform: iframeSize.transform,

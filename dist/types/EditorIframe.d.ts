@@ -2,11 +2,12 @@ import React from "react";
 interface EditorIframeWrapperProps {
     onEditorHistoryRedo: () => void;
     onEditorHistoryUndo: () => void;
+    onSave: () => void;
     width: number;
     height: number;
     transform: string;
     containerRef: React.RefObject<HTMLDivElement>;
 }
-declare function EditorIframe({ onEditorHistoryRedo, onEditorHistoryUndo, width, height, transform, containerRef, }: EditorIframeWrapperProps): React.JSX.Element;
+declare function EditorIframe({ onEditorHistoryRedo, onEditorHistoryUndo, onSave, width, height, transform, containerRef, }: EditorIframeWrapperProps): React.JSX.Element;
 export { EditorIframe };
 //# sourceMappingURL=EditorIframe.d.ts.map
