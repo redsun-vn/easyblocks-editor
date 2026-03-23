@@ -1,6 +1,7 @@
 import {
   ContextParams,
   NoCodeComponentEntry,
+  globalSectionGroups,
 } from "@redsun-vn/easyblocks-core";
 import {
   ButtonGhost,
@@ -15,7 +16,6 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditorContextType, useEditorContext } from "../EditorContext";
-import { globalSectionGroups } from "../editorGlobalSections/EditorGlobalSections";
 import { IMenu, Menu } from "../menu/Menu";
 import {
   BEFORE_ADD_BUTTON_DISPLAY,

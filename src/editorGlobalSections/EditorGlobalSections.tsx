@@ -1,3 +1,4 @@
+import { globalSectionGroups } from "@redsun-vn/easyblocks-core";
 import { Colors, Typography } from "@redsun-vn/easyblocks-design-system";
 import React, { useState } from "react";
 import styled from "styled-components";
@@ -36,11 +37,6 @@ const StyledEditorGlobalSectionsDescription = styled(Typography)`
 const StyledEditorGlobalSectionGroup = styled(Typography)`
   padding: 10px 0px;
 `;
-
-export const globalSectionGroups = [
-  { id: "group-headers", name: "Headers" },
-  { id: "group-footers", name: "Footers" },
-];
 
 export const EditorGlobalSections = ({
   globalSections,

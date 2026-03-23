@@ -1,4 +1,8 @@
-import { ThemeTokenValue, validateColor } from "@redsun-vn/easyblocks-core";
+import {
+  getBrightnessColor,
+  ThemeTokenValue,
+  validateColor,
+} from "@redsun-vn/easyblocks-core";
 import {
   ButtonDanger,
   ButtonPrimary,
@@ -16,7 +20,6 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { EditorContextType } from "../EditorContext";
 import { useTranslation } from "../useTranslation";
-import { getBrightnessColor } from "../utils/colors";
 
 interface IColorConfiguration {
   onConfigChange?: () => Promise<void>;

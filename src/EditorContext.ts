@@ -8,6 +8,7 @@ import {
   IThemeConfig,
   NoCodeComponentEntry,
   Template,
+  TemplateQueryType,
   TokenTypeDefinition,
   TokenTypeWidgetComponentProps,
   Widget,
@@ -42,14 +43,6 @@ export type EditorTokenTypeDefinition = Omit<TokenTypeDefinition, "widgets"> & {
   widget?: Widget & {
     component?: ComponentType<TokenTypeWidgetComponentProps<any>>;
   };
-};
-
-export type TemplateQueryType = {
-  filters?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-  mode?: "replace" | "append";
 };
 
 export type TemplateType = {

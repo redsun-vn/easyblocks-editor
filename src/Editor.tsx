@@ -20,6 +20,7 @@ import {
   NonEmptyRenderableContent,
   TGlobalSectionChange,
   Template,
+  TemplateQueryType,
   ThemeColor,
   ThemeFont,
   TokenTypeWidgetComponentProps,
@@ -49,6 +50,7 @@ import {
 } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors, Fonts, useToaster } from "@redsun-vn/easyblocks-design-system";
 import throttle from "lodash.throttle";
+import debounce from "lodash/debounce";
 import React, {
   ComponentType,
   memo,
@@ -62,11 +64,7 @@ import Modal from "react-modal";
 import { styled } from "styled-components";
 import { ConfigAfterAutoContext } from "./ConfigAfterAutoContext";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
-import {
-  EditorContext,
-  EditorContextType,
-  TemplateQueryType,
-} from "./EditorContext";
+import { EditorContext, EditorContextType } from "./EditorContext";
 import { EditorExternalDataProvider } from "./EditorExternalDataProvider";
 import { EditorIframe } from "./EditorIframe";
 import { EditorSidebar } from "./EditorSidebar";
@@ -102,7 +100,6 @@ import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShort
 import { useEditorHistory } from "./useEditorHistory";
 import { checkLocalesCorrectness } from "./utils/locales/checkLocalesCorrectness";
 import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
-import debounce from "lodash/debounce";
 
 declare global {
   interface Window {

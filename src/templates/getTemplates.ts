@@ -3,6 +3,7 @@ import {
   InternalTemplate,
   NoCodeComponentEntry,
   Template,
+  TemplateQueryType,
   UserDefinedTemplate,
   buildRichTextNoCodeEntry,
   getDefaultLocale,
@@ -12,7 +13,7 @@ import {
   findComponentDefinitionById,
   normalize,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { EditorContextType, TemplateQueryType } from "../EditorContext";
+import { EditorContextType } from "../EditorContext";
 import { configMap } from "../utils/config/configMap";
 
 function getDefaultTemplateForDefinition(

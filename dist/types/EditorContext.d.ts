@@ -1,4 +1,4 @@
-import { Backend, CompiledComponentConfig, Document, ExternalTypeDefinition, InlineTypeDefinition, InlineTypeWidgetComponentProps, IThemeConfig, NoCodeComponentEntry, Template, TokenTypeDefinition, TokenTypeWidgetComponentProps, Widget } from "@redsun-vn/easyblocks-core";
+import { Backend, CompiledComponentConfig, Document, ExternalTypeDefinition, InlineTypeDefinition, InlineTypeWidgetComponentProps, IThemeConfig, NoCodeComponentEntry, Template, TemplateQueryType, TokenTypeDefinition, TokenTypeWidgetComponentProps, Widget } from "@redsun-vn/easyblocks-core";
 import { EditorContextType as BaseEditorContextType, CompilationCache, InternalAnyField } from "@redsun-vn/easyblocks-core/_internals";
 import React, { ComponentType } from "react";
 import { Form } from "./form";
@@ -17,13 +17,6 @@ export type EditorTokenTypeDefinition = Omit<TokenTypeDefinition, "widgets"> & {
     widget?: Widget & {
         component?: ComponentType<TokenTypeWidgetComponentProps<any>>;
     };
-};
-export type TemplateQueryType = {
-    filters?: string;
-    search?: string;
-    page?: number;
-    limit?: number;
-    mode?: "replace" | "append";
 };
 export type TemplateType = {
     query: TemplateQueryType;

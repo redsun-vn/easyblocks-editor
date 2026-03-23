@@ -1,5 +1,5 @@
 "use client";
-import { getExternalReferenceLocationKey, isTrulyResponsiveValue, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, validateColor, isNoCodeComponentOfType, getDefaultLocale, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
+import { getExternalReferenceLocationKey, isTrulyResponsiveValue, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, getBrightnessColor, validateColor, isNoCodeComponentOfType, globalSectionGroups, getDefaultLocale, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, useCallback, useDeferredValue, memo } from 'react';
 import isPropValid from '@emotion/is-prop-valid';
@@ -8,13 +8,13 @@ import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager 
 import _extends from '@babel/runtime/helpers/extends';
 import { parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, findComponentDefinition, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
 import throttle from 'lodash.throttle';
+import debounce$1 from 'lodash/debounce';
 import Modal$1 from 'react-modal';
 import { debounce } from 'lodash';
 import ReactDOM, { createPortal } from 'react-dom';
 import { useTooltipTrigger } from '@react-aria/tooltip';
 import { usePopper } from 'react-popper';
 import * as RadixRadioGroup from '@radix-ui/react-radio-group';
-import debounce$1 from 'lodash/debounce';
 import { createForm as createForm$1, FORM_ERROR } from 'final-form';
 import arrayMutators from 'final-form-arrays';
 import { useDndContext, useSensor, MouseSensor, DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
@@ -3353,18 +3353,6 @@ const EditorSidebar = props => {
   }));
 };
 
-const getBrightnessColor = hex => {
-  // remove "#"
-  hex = hex.replace("#", "");
-
-  // convert hex to r g b
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  return brightness < 128 ? "#ffffff" : "#000000";
-};
-
 const ColorConfigurationsContainer = styled$1.div.withConfig({
   displayName: "ColorConfigurations__ColorConfigurationsContainer",
   componentId: "sc-qln4q1-0"
@@ -5688,13 +5676,6 @@ const StyledEditorGlobalSectionGroup = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
   componentId: "sc-ps3wnb-5"
 })(["padding:10px 0px;"]);
-const globalSectionGroups = [{
-  id: "group-headers",
-  name: "Headers"
-}, {
-  id: "group-footers",
-  name: "Footers"
-}];
 const EditorGlobalSections = ({
   globalSections
 }) => {
@@ -10356,4 +10337,4 @@ function EasyblocksEditor(props) {
   }), selectedWindow === "preview" && /*#__PURE__*/React__default.createElement(PreviewRenderer, props));
 }
 
-export { EasyblocksEditor, EditorContext, getBrightnessColor, globalSectionGroups, useEditorContext };
+export { EasyblocksEditor, EditorContext, useEditorContext };

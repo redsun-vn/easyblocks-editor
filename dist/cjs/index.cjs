@@ -11,13 +11,13 @@ var styled = require('styled-components');
 var _extends = require('@babel/runtime/helpers/extends');
 var _internals = require('@redsun-vn/easyblocks-core/_internals');
 var throttle = require('lodash.throttle');
+var debounce = require('lodash/debounce');
 var Modal = require('react-modal');
 var lodash = require('lodash');
 var ReactDOM = require('react-dom');
 var tooltip = require('@react-aria/tooltip');
 var reactPopper = require('react-popper');
 var RadixRadioGroup = require('@radix-ui/react-radio-group');
-var debounce = require('lodash/debounce');
 var finalForm = require('final-form');
 var arrayMutators = require('final-form-arrays');
 var core = require('@dnd-kit/core');
@@ -50,10 +50,10 @@ var isPropValid__default = /*#__PURE__*/_interopDefaultLegacy(isPropValid);
 var styled__default = /*#__PURE__*/_interopDefaultLegacy(styled);
 var _extends__default = /*#__PURE__*/_interopDefaultLegacy(_extends);
 var throttle__default = /*#__PURE__*/_interopDefaultLegacy(throttle);
+var debounce__default = /*#__PURE__*/_interopDefaultLegacy(debounce);
 var Modal__default = /*#__PURE__*/_interopDefaultLegacy(Modal);
 var ReactDOM__default = /*#__PURE__*/_interopDefaultLegacy(ReactDOM);
 var RadixRadioGroup__namespace = /*#__PURE__*/_interopNamespace(RadixRadioGroup);
-var debounce__default = /*#__PURE__*/_interopDefaultLegacy(debounce);
 var arrayMutators__default = /*#__PURE__*/_interopDefaultLegacy(arrayMutators);
 
 function last(collection) {
@@ -3388,18 +3388,6 @@ const EditorSidebar = props => {
   }));
 };
 
-const getBrightnessColor = hex => {
-  // remove "#"
-  hex = hex.replace("#", "");
-
-  // convert hex to r g b
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  return brightness < 128 ? "#ffffff" : "#000000";
-};
-
 const ColorConfigurationsContainer = styled__default["default"].div.withConfig({
   displayName: "ColorConfigurations__ColorConfigurationsContainer",
   componentId: "sc-qln4q1-0"
@@ -3423,7 +3411,7 @@ const StyledColorCard = styled__default["default"].div.withConfig({
   background
 }) => background, ({
   background
-}) => getBrightnessColor(background));
+}) => easyblocksCore.getBrightnessColor(background));
 const StyledInputWrapper = styled__default["default"].div.withConfig({
   displayName: "ColorConfigurations__StyledInputWrapper",
   componentId: "sc-qln4q1-5"
@@ -5723,20 +5711,13 @@ const StyledEditorGlobalSectionGroup = styled__default["default"](easyblocksDesi
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
   componentId: "sc-ps3wnb-5"
 })(["padding:10px 0px;"]);
-const globalSectionGroups = [{
-  id: "group-headers",
-  name: "Headers"
-}, {
-  id: "group-footers",
-  name: "Footers"
-}];
 const EditorGlobalSections = ({
   globalSections
 }) => {
   const {
     t
   } = useTranslation();
-  const [openedSectionGroups, setOpenedSectionGroups] = React.useState(globalSectionGroups.map(group => group.id));
+  const [openedSectionGroups, setOpenedSectionGroups] = React.useState(easyblocksCore.globalSectionGroups.map(group => group.id));
   const onClickGlobalSectionGroup = sectionId => {
     setOpenedSectionGroups(prev => {
       if (prev.includes(sectionId)) {
@@ -5745,7 +5726,7 @@ const EditorGlobalSections = ({
       return [...prev, sectionId];
     });
   };
-  return /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsTitle, null, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$1, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSections, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsDescription, null, t("editor.sidebar.globalSections.description")), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$1, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionGroup, null, globalSectionGroups.map(globalSectionGroup => /*#__PURE__*/React__default["default"].createElement(EditorGlobalSectionGroup, {
+  return /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsTitle, null, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$1, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSections, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionsDescription, null, t("editor.sidebar.globalSections.description")), /*#__PURE__*/React__default["default"].createElement(HorizontalLine$1, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionGroup, null, easyblocksCore.globalSectionGroups.map(globalSectionGroup => /*#__PURE__*/React__default["default"].createElement(EditorGlobalSectionGroup, {
     key: globalSectionGroup.id,
     openedSectionGroups: openedSectionGroups,
     globalSectionGroup: {
@@ -6419,7 +6400,7 @@ const SelectionMoreActions = ({
   const menus = [{
     id: "set-global",
     label: t("editor.sidebar.globalSections.setGlobal"),
-    children: globalSectionGroups.map(globalSectionGroup => ({
+    children: easyblocksCore.globalSectionGroups.map(globalSectionGroup => ({
       id: globalSectionGroup.id,
       label: globalSectionGroup.name,
       onClick: () => setOpenConfirmGlobalSection({
@@ -10393,6 +10374,4 @@ function EasyblocksEditor(props) {
 
 exports.EasyblocksEditor = EasyblocksEditor;
 exports.EditorContext = EditorContext;
-exports.getBrightnessColor = getBrightnessColor;
-exports.globalSectionGroups = globalSectionGroups;
 exports.useEditorContext = useEditorContext;
