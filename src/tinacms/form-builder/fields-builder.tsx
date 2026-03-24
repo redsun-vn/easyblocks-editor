@@ -107,13 +107,14 @@ export function FieldBuilder({
   isLabelHidden,
 }: FieldBuilderProps) {
   const editorContext = useEditorContext();
+  const { t } = useTranslation();
 
   if (!shouldFieldBeDisplayed(field)) {
     return null;
   }
 
   const fieldComponent = FIELD_COMPONENTS.find(
-    (component) => component.name === (field.component as string)
+    (component) => component.name === (field.component as string),
   );
 
   const { onChange, getValue } = createFieldController({
@@ -126,9 +127,8 @@ export function FieldBuilder({
   const fieldParsed = useMemo(() => {
     let fieldResult = field;
 
-    if (typeof field.label === "object") {
-      field.label =
-        field.label?.[editorContext.contextParams.locale] ?? field.label;
+    if (typeof field.label === "string") {
+      field.label = t(field.label);
     }
 
     return fieldResult;
@@ -284,7 +284,7 @@ export function FieldsBuilder({
 
 function generateFieldKey(
   field: InternalField,
-  breakpointIndex: string | undefined
+  breakpointIndex: string | undefined,
 ) {
   const key = `${toArray(field.name).join("_")}_${field.schemaProp.type}${
     breakpointIndex ? `_${breakpointIndex}` : ""

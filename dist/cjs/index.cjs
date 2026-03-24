@@ -3152,6 +3152,9 @@ function FieldBuilder({
   isLabelHidden
 }) {
   const editorContext = useEditorContext();
+  const {
+    t
+  } = useTranslation();
   if (!shouldFieldBeDisplayed(field)) {
     return null;
   }
@@ -3167,8 +3170,8 @@ function FieldBuilder({
   });
   const fieldParsed = React.useMemo(() => {
     let fieldResult = field;
-    if (typeof field.label === "object") {
-      field.label = field.label?.[editorContext.contextParams.locale] ?? field.label;
+    if (typeof field.label === "string") {
+      field.label = t(field.label);
     }
     return fieldResult;
   }, [field]);
