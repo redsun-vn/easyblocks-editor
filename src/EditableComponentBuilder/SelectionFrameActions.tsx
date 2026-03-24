@@ -11,8 +11,8 @@ import {
   Icons,
   Input,
   Modal,
-  useToaster,
 } from "@redsun-vn/easyblocks-design-system";
+import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditorContextType, useEditorContext } from "../EditorContext";

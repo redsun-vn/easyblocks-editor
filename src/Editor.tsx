@@ -48,7 +48,8 @@ import {
   parsePath,
   traverseComponents,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { Colors, Fonts, useToaster } from "@redsun-vn/easyblocks-design-system";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import throttle from "lodash.throttle";
 import debounce from "lodash/debounce";
 import React, {

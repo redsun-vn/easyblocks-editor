@@ -7,6 +7,7 @@ var easyblocksCore = require('@redsun-vn/easyblocks-core');
 var React = require('react');
 var isPropValid = require('@emotion/is-prop-valid');
 var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
+var Toaster = require('@redsun-vn/easyblocks-design-system/Toaster');
 var styled = require('styled-components');
 var _extends = require('@babel/runtime/helpers/extends');
 var _internals = require('@redsun-vn/easyblocks-core/_internals');
@@ -432,7 +433,7 @@ function SaveAsPicker({
   saveAsEntry,
   setSaveAsEntry
 }) {
-  const toaster = easyblocksDesignSystem.useToaster();
+  const toaster = Toaster.useToaster();
   const {
     t
   } = useTranslation();
@@ -491,7 +492,7 @@ const StyledButtonCopyTemplate = styled.styled(easyblocksDesignSystem.ButtonSeco
 })(["min-width:auto !important;& svg{width:14px !important;height:14px !important;}"]);
 function SidebarFooter(props) {
   const editorContext = useEditorContext();
-  const toaster = easyblocksDesignSystem.useToaster();
+  const toaster = Toaster.useToaster();
   const {
     t
   } = useTranslation();
@@ -3460,7 +3461,7 @@ const ColorConfigurations = ({
   const {
     t
   } = useTranslation();
-  const toaster = easyblocksDesignSystem.useToaster();
+  const toaster = Toaster.useToaster();
   const [openEditColor, setOpenEditColor] = React.useState(null);
   const [isLoadingReset, setIsLoadingReset] = React.useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = React.useState(false);
@@ -3708,7 +3709,7 @@ const FontConfigurations = ({
   const {
     t
   } = useTranslation();
-  const toaster = easyblocksDesignSystem.useToaster();
+  const toaster = Toaster.useToaster();
   const router = new URLSearchParams(window.location.search);
   const themeId = router.get("themeId");
   const [isLoadingReset, setIsLoadingReset] = React.useState(false);
@@ -4741,7 +4742,7 @@ const TemplateModal = props => {
   const [isLoadingEdit, setLoadingEdit] = React.useState(false);
   const [isLoadingDelete, setLoadingDelete] = React.useState(false);
   const [isUploadingFile, setIsUploadingFile] = React.useState(false);
-  const toaster = easyblocksDesignSystem.useToaster();
+  const toaster = Toaster.useToaster();
   const {
     t
   } = useTranslation();
@@ -6370,7 +6371,7 @@ const SelectionMoreActions = ({
   const editorContext = useEditorContext();
   const router = new URLSearchParams(window.location.search);
   const currentDocument = router.get("document") ?? "";
-  const toaster = easyblocksDesignSystem.useToaster();
+  const toaster = Toaster.useToaster();
   const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = React.useState(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const inputRef = React.useRef(null);
@@ -7155,7 +7156,7 @@ function useDataSaver(initialDocument, editorContext) {
   const editorContextRef = React.useRef(editorContext);
   const initialGlobalConfigs = React.useRef(deepClone(editorContextRef.current.globalSections));
   const remoteDocument = React.useRef(initialDocument);
-  const toaster = easyblocksDesignSystem.useToaster();
+  const toaster = Toaster.useToaster();
   const [isSaving, setIsSaving] = React.useState(false);
   const {
     t
@@ -8057,7 +8058,7 @@ const EditorContent = ({
   const [openTemplateModalAction, setOpenTemplateModalAction] = React.useState(undefined);
   const {
     notify
-  } = easyblocksDesignSystem.useToaster();
+  } = Toaster.useToaster();
   const actions = {
     openTemplateModal: setOpenTemplateModalAction,
     notify: message => {
@@ -9144,7 +9145,7 @@ function EasyblocksParent(props) {
     isAdminMode: props.isAdminMode,
     defaultLocale: props.defaultLocale,
     SaveAsPicker: props.SaveAsPicker
-  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toaster, {
+  })), /*#__PURE__*/React__default["default"].createElement(Toaster.Toaster, {
     position: "bottom-left",
     containerStyle: {
       zIndex: 100100

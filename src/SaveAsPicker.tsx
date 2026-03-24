@@ -1,5 +1,5 @@
 import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
-import { useToaster } from "@redsun-vn/easyblocks-design-system";
+import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import React from "react";
 import { SaveAsTemplatePicker } from "./TemplatePicker";
 import { useTranslation } from "./useTranslation";

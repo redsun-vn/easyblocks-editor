@@ -9,9 +9,10 @@ import {
   Colors,
   Fonts,
   Icons,
-  useToaster,
 } from "@redsun-vn/easyblocks-design-system";
+import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import * as React from "react";
+import { useState } from "react";
 import { styled } from "styled-components";
 import { useEditorContext } from "./EditorContext";
 import { pathToCompiledPath } from "./pathToCompiledPath";
@@ -19,7 +20,6 @@ import { SaveAsPicker } from "./SaveAsPicker";
 import { SaveAsTemplatePicker } from "./TemplatePicker";
 import { useTranslation } from "./useTranslation";
 import { copyToClipboard } from "./utils/copyToClipboard";
-import { useState } from "react";
 
 const SidebarFooterContainer = styled.div`
   position: sticky;

@@ -6,8 +6,8 @@ import {
   Input,
   InputFile,
   Modal,
-  useToaster,
 } from "@redsun-vn/easyblocks-design-system";
+import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import React, { MouseEvent, useEffect, useState } from "react";
 import { useEditorContext } from "./EditorContext";
 import {

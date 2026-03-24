@@ -1,6 +1,6 @@
 import { deepClone, deepCompare, sleep } from "@/utils";
 import { Document, NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
-import { useToaster } from "@redsun-vn/easyblocks-design-system";
+import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import { useEffect, useRef, useState } from "react";
 import { EditorContextType } from "./EditorContext";
 import { getTranslation } from "./useTranslation";
