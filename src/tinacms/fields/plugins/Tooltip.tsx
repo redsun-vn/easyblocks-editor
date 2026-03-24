@@ -14,10 +14,12 @@ const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       <div style={{ ...style, zIndex: 100100, top: 5 }} ref={ref} {...rest}>
         {children}
       </div>,
-      document.body
+      document.body,
     );
-  }
+  },
 );
+
+Tooltip.displayName = "Tooltip";
 
 export { Tooltip, TooltipBody, TooltipArrow };
 

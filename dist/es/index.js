@@ -684,6 +684,7 @@ const Tooltip = /*#__PURE__*/forwardRef(({
     ref: ref
   }, rest), children), document.body);
 });
+Tooltip.displayName = "Tooltip";
 const TooltipBody = styled.div.withConfig({
   displayName: "Tooltip__TooltipBody",
   componentId: "sc-tkogle-0"
@@ -1761,6 +1762,7 @@ const SelectColorTokenItem = /*#__PURE__*/forwardRef((props, ref) => {
     stroke: Colors.black100
   })), /*#__PURE__*/React__default.createElement("span", null, props.children)));
 });
+SelectColorTokenItem.displayName = "SelectColorTokenItem";
 
 const RICH_TEXT_PART_CONFIG_PATH_REGEXP = /\.elements\.[a-z(\-_A-Z)?]+\.\d+(\.elements\.\d+){2,3}(\.\{\d+,\d+\})?$/;
 function isConfigPathRichTextPart(configPath) {
@@ -5864,6 +5866,7 @@ const RawEditorLayerGroup = ({
   })));
 };
 const EditorLayerGroup = /*#__PURE__*/React__default.memo(RawEditorLayerGroup);
+EditorLayerGroup.displayName = "EditorLayerGroup";
 
 const EditorLayerDetail = ({
   layers,
@@ -7750,6 +7753,7 @@ const EditorWrapper = /*#__PURE__*/memo(props => {
     initialEntry: initialEntry
   }));
 });
+EditorWrapper.displayName = "EditorWrapper";
 function parseExternalDataId(externalDataId) {
   const [configId, fieldName, breakpointIndex] = externalDataId.split(".");
   return {

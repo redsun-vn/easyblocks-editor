@@ -117,3 +117,4 @@ export const RawEditorLayerGroup = ({
 };
 
 export const EditorLayerGroup = React.memo(RawEditorLayerGroup);
+EditorLayerGroup.displayName = "EditorLayerGroup";

@@ -38,25 +38,27 @@ import { CustomField } from "../CustomFields";
 import { wrapFieldsWithMeta } from "../wrapFieldWithMeta";
 import { ColorFieldPlugin } from "./ColorFieldPlugin";
 
-export interface TokenField<TokenValue extends NonNullish = NonNullish>
-  extends Field {
+export interface TokenField<
+  TokenValue extends NonNullish = NonNullish,
+> extends Field {
   tokens: { [key: string]: ThemeTokenValue<TokenValue> };
   normalizeCustomValue?: (value: string) => any;
   allowCustom?: boolean;
   extraValues?: Array<string | { value: string; label: string }>;
 }
 
-export interface TokenFieldProps<TokenValue extends NonNullish>
-  extends FieldRenderProps<
-    CoreTokenValue | FieldMixedValue,
-    HTMLSelectElement
-  > {
+export interface TokenFieldProps<
+  TokenValue extends NonNullish,
+> extends FieldRenderProps<
+  CoreTokenValue | FieldMixedValue,
+  HTMLSelectElement
+> {
   field: TokenField<TokenValue>;
 }
 
 function extraValuesIncludes(
   extraValues: Array<string | { value: string; label: string }>,
-  value: string
+  value: string,
 ) {
   for (let i = 0; i < extraValues.length; i++) {
     const extraValue = extraValues[i];
@@ -85,7 +87,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
   const extraValues = field.extraValues ?? [];
 
   const [inputValue, setInputValue] = useState(
-    isMixedFieldValue(input.value) ? "" : input.value?.value.toString() ?? ""
+    isMixedFieldValue(input.value) ? "" : (input.value?.value.toString() ?? ""),
   );
 
   const customValueTextFieldRef = useRef<HTMLInputElement | null>(null);
@@ -95,7 +97,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
       const fontTokenLabel = getFontTokenLabel(
         tokenId,
         tokenValue,
-        editorContext
+        editorContext,
       );
 
       return {
@@ -149,9 +151,9 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
         editorContext.breakpointIndex,
         editorContext.devices,
         getDevicesWidths(
-          editorContext.devices
-        ) /** FOR NOW TOKENS ARE RELATIVE TO SCREEN **/
-      ) as string
+          editorContext.devices,
+        ) /** FOR NOW TOKENS ARE RELATIVE TO SCREEN **/,
+      ) as string,
     );
 
   const shouldShowCustomValueInput =
@@ -161,10 +163,10 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
 
   const selectValue = isMixedFieldValue(input.value)
     ? MIXED_VALUE
-    : input.value.tokenId ??
+    : (input.value.tokenId ??
       (isExtraValueSelected
         ? (input.value.value as string)
-        : CUSTOM_OPTION_VALUE);
+        : CUSTOM_OPTION_VALUE));
 
   const onSelectChange = (selectedValue: string) => {
     if (selectedValue === CUSTOM_OPTION_VALUE) {
@@ -187,8 +189,8 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
           editorContext.breakpointIndex,
           editorContext.devices,
           getDevicesWidths(
-            editorContext.devices
-          ) /** FOR NOW TOKENS ARE RELATIVE TO SCREEN **/
+            editorContext.devices,
+          ) /** FOR NOW TOKENS ARE RELATIVE TO SCREEN **/,
         ) as string;
       }
 
@@ -330,22 +332,22 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
 function getFontTokenLabel(
   name: string,
   token: ThemeTokenValue<ThemeFont>,
-  editorContext: EditorContextType
+  editorContext: EditorContextType,
 ) {
   const filledResponsiveFontValue = responsiveValueFill(
     token.value,
     editorContext.devices,
-    getDevicesWidths(editorContext.devices)
+    getDevicesWidths(editorContext.devices),
   );
 
   const currentDeviceFontValue = responsiveValueForceGet(
     filledResponsiveFontValue,
-    editorContext.breakpointIndex
+    editorContext.breakpointIndex,
   );
 
   if (isValidFontTokenValue(currentDeviceFontValue)) {
     return `${token.label ?? name} (${stripPxUnit(
-      currentDeviceFontValue.fontSize
+      currentDeviceFontValue.fontSize,
     )}/${stripPxUnit(currentDeviceFontValue.lineHeight)})`;
   }
 
@@ -427,3 +429,5 @@ const SelectColorTokenItem = forwardRef<
     </SelectItem>
   );
 });
+
+SelectColorTokenItem.displayName = "SelectColorTokenItem";

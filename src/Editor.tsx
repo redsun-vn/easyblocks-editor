@@ -360,6 +360,8 @@ const EditorWrapper = memo(
   },
 );
 
+EditorWrapper.displayName = "EditorWrapper";
+
 type EditorContentProps = EditorProps & {
   compilationContext: CompilationContextType;
   initialDocument: Document | null;
