@@ -17,11 +17,13 @@ import {
   RadixSelectViewport,
   Select,
   SelectSeparator,
+  Typography,
+} from "@redsun-vn/easyblocks-design-system";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/Tooltip";
 import React, { ComponentType, Fragment, ReactNode, useEffect } from "react";
 import { FieldInputProps } from "react-final-form";
 import styled from "styled-components";

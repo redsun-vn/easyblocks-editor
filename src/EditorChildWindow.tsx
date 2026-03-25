@@ -17,7 +17,7 @@ import {
   configTraverse,
   itemMoved,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { TooltipProvider } from "@redsun-vn/easyblocks-design-system";
+import { TooltipProvider } from "@redsun-vn/easyblocks-design-system/Tooltip";
 import React, { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { CanvasRoot } from "./CanvasRoot/CanvasRoot";
@@ -91,7 +91,7 @@ export function EasyblocksCanvas({
 
   const sortableItems = getSortableItems(
     editorContext.form.values,
-    editorContext
+    editorContext,
   );
 
   return (
@@ -105,16 +105,16 @@ export function EasyblocksCanvas({
             onDragStart={(event) => {
               document.documentElement.style.cursor = "grabbing";
               activeDraggedEntryPath.current = dragDataSchema.parse(
-                event.active.data.current
+                event.active.data.current,
               ).path;
               window.parent.editorWindowAPI?.editorContext?.setFocussedField(
-                []
+                [],
               );
             }}
             onDragEnd={(event) => {
               document.documentElement.style.cursor = "";
               const activeData = dragDataSchema.parse(
-                event.active.data.current
+                event.active.data.current,
               );
 
               if (event.over) {
@@ -123,14 +123,14 @@ export function EasyblocksCanvas({
                 if (event.over.id === event.active.id) {
                   // If the dragged item is dropped on itself, we want to refocus the dragged item.
                   window.parent.editorWindowAPI?.editorContext?.setFocussedField(
-                    activeData.path
+                    activeData.path,
                   );
                 } else {
                   const itemMovedEvent = itemMoved({
                     fromPath: activeData.path,
                     toPath: overData.path,
                     placement: ifValidPlacement(
-                      event.over.id.toString().split(".")[1]
+                      event.over.id.toString().split(".")[1],
                     ),
                   });
 
@@ -141,7 +141,7 @@ export function EasyblocksCanvas({
               } else {
                 // If there was no drop target, we want to refocus the dragged item.
                 window.parent.editorWindowAPI?.editorContext?.setFocussedField(
-                  activeData.path
+                  activeData.path,
                 );
               }
             }}
@@ -149,7 +149,7 @@ export function EasyblocksCanvas({
               document.documentElement.style.cursor = "";
               // If the drag was canceled, we want to refocus dragged item.
               window.parent.editorWindowAPI?.editorContext?.setFocussedField(
-                dragDataSchema.parse(event.active.data.current).path
+                dragDataSchema.parse(event.active.data.current).path,
               );
             }}
           >
@@ -178,7 +178,7 @@ export function EasyblocksCanvas({
 
 function getSortableItems(
   rootNoCodeEntry: NoCodeComponentEntry,
-  editorContext: EditorContextType
+  editorContext: EditorContextType,
 ) {
   const sortableItems: Array<string> = [];
 
@@ -194,11 +194,11 @@ function getSortableItems(
 
         sortableItems.push(`${value[0]._id}.before`);
         sortableItems.push(
-          ...(value as Array<NoCodeComponentEntry>).map((v) => v._id)
+          ...(value as Array<NoCodeComponentEntry>).map((v) => v._id),
         );
         sortableItems.push(`${value.at(-1)._id}.after`);
       }
-    }
+    },
   );
 
   return sortableItems;

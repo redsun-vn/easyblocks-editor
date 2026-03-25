@@ -1,12 +1,10 @@
 import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
+import { Colors, Icons, Typography } from "@redsun-vn/easyblocks-design-system";
 import {
-  Colors,
-  Icons,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/Tooltip";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../EditorContext";

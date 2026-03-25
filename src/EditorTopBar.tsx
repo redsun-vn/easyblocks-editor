@@ -9,18 +9,20 @@ import {
   Toggle,
   ToggleGroup,
   ToggleGroupItem,
+  Typography,
+} from "@redsun-vn/easyblocks-design-system";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/Tooltip";
 import debounce from "lodash/debounce";
 import React, { ReactNode, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { EditorHistory } from "./EditorHistory";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
-import { useTranslation } from "./useTranslation";
 import { TLeftSidebar } from "./types";
+import { useTranslation } from "./useTranslation";
 
 export const TOP_BAR_HEIGHT = 40;
 

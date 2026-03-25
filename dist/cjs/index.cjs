@@ -7,6 +7,7 @@ var easyblocksCore = require('@redsun-vn/easyblocks-core');
 var React = require('react');
 var isPropValid = require('@emotion/is-prop-valid');
 var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
+var Tooltip$1 = require('@redsun-vn/easyblocks-design-system/Tooltip');
 var Toaster = require('@redsun-vn/easyblocks-design-system/Toaster');
 var styled = require('styled-components');
 var _extends = require('@babel/runtime/helpers/extends');
@@ -1436,7 +1437,7 @@ const ColorOptions = ({
       key: option.id,
       value: option.id,
       shape: shape
-    }, /*#__PURE__*/React__default["default"].createElement(ItemText, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement("span", {
+    }, /*#__PURE__*/React__default["default"].createElement(ItemText, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement("span", {
       style: {
         display: "flex",
         alignItems: "center",
@@ -1458,7 +1459,7 @@ const ColorOptions = ({
         ...colorStyled,
         border: `1px solid ${easyblocksDesignSystem.Colors.black100}`
       }
-    }))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    }))), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
       color: "white"
     }, color)))));
   });
@@ -4304,16 +4305,16 @@ function DeviceSwitch({
     if (d.hidden) {
       return null;
     }
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Tooltip, {
+    return /*#__PURE__*/React__default["default"].createElement(Tooltip$1.Tooltip, {
       key: d.id
-    }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ToggleGroupItem, {
+    }, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ToggleGroupItem, {
       value: d.id
-    }, DEVICE_ID_TO_ICON[d.id])), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    }, DEVICE_ID_TO_ICON[d.id])), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
       color: "white"
     }, d.label ?? d.id)));
-  }), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ToggleGroupItem, {
+  }), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ToggleGroupItem, {
     value: "fit-screen"
-  }, DEVICE_ID_TO_ICON["fit-screen"])), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, DEVICE_ID_TO_ICON["fit-screen"])), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
     color: "white"
   }, "Fit screen"))));
 }
@@ -5495,7 +5496,7 @@ const EditorGlobalSectionGroupItem = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [openMenu]);
-  return /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionItem, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(StyledWrapperLabel, null, /*#__PURE__*/React__default["default"].createElement(StyledLabel, null, groupItem.label))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  return /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionItem, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(StyledWrapperLabel, null, /*#__PURE__*/React__default["default"].createElement(StyledLabel, null, groupItem.label))), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
     color: "white"
   }, groupItem.label))), /*#__PURE__*/React__default["default"].createElement(StyledWrapperMenu, {
     ref: menuRef
@@ -9118,7 +9119,7 @@ function EasyblocksParent(props) {
     value: () => {
       return document.querySelector("#modalContainer");
     }
-  }, /*#__PURE__*/React__default["default"].createElement(GlobalStyles, null), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.GlobalModalStyles, null), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipProvider, null, /*#__PURE__*/React__default["default"].createElement("div", {
+  }, /*#__PURE__*/React__default["default"].createElement(GlobalStyles, null), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.GlobalModalStyles, null), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipProvider, null, /*#__PURE__*/React__default["default"].createElement("div", {
     id: "modalContainer",
     style: {
       position: "fixed",
@@ -9887,7 +9888,7 @@ function EasyblocksCanvas({
   const sortableItems = getSortableItems(editorContext.form.values, editorContext);
   return /*#__PURE__*/ /* EasyblocksMetadataProvider must be defined in case of nested <Easyblocks /> components are used! */React__default["default"].createElement(_internals.EasyblocksMetadataProvider, {
     meta: meta
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.TooltipProvider, null, /*#__PURE__*/React__default["default"].createElement(CanvasRoot, null, /*#__PURE__*/React__default["default"].createElement(core.DndContext, {
+  }, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipProvider, null, /*#__PURE__*/React__default["default"].createElement(CanvasRoot, null, /*#__PURE__*/React__default["default"].createElement(core.DndContext, {
     sensors: [mouseSensor],
     collisionDetection: customCollisionDetection,
     onDragStart: event => {
