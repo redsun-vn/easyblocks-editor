@@ -1,14 +1,15 @@
-import { BasicRow, Modal } from "@redsun-vn/easyblocks-design-system";
+import { ComponentDefinitionShared } from "@redsun-vn/easyblocks-core";
+import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
+import { BasicRow } from "@redsun-vn/easyblocks-design-system/rows";
 import React, { ChangeEvent, useState } from "react";
 import { useEditorContext } from "./EditorContext";
-import { Template } from "./types";
 import { TemplatePicker, TemplatesDictionary } from "./TemplatePicker";
-import { ComponentDefinitionShared } from "@redsun-vn/easyblocks-core";
+import { Template } from "./types";
 
 function checkQueryForTemplate(
   query: string,
   template: Template,
-  component: ComponentDefinitionShared
+  component: ComponentDefinitionShared,
 ) {
   return `${template.label ?? ""}${component.label ?? component.id}`
     .toLocaleLowerCase()
@@ -36,7 +37,7 @@ export const SearchableSmallPickerModal: TemplatePicker = ({
         trimmedQuery === ""
           ? templates
           : templates.filter((template) =>
-              checkQueryForTemplate(trimmedQuery, template, component)
+              checkQueryForTemplate(trimmedQuery, template, component),
             );
 
       if (filteredTemplates.length > 0) {
@@ -114,7 +115,7 @@ export const SearchableSmallPickerModal: TemplatePicker = ({
                 />
               );
             });
-          }
+          },
         )}
     </Modal>
   );

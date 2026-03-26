@@ -1,21 +1,19 @@
 import { Devices, Locale } from "@redsun-vn/easyblocks-core";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { ButtonGhost } from "@redsun-vn/easyblocks-design-system/buttons";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
+import { Select, SelectItem } from "@redsun-vn/easyblocks-design-system/Select";
+import { Toggle } from "@redsun-vn/easyblocks-design-system/Toggle";
 import {
-  ButtonGhost,
-  Colors,
-  Fonts,
-  Icons,
-  Select,
-  SelectItem,
-  Toggle,
   ToggleGroup,
   ToggleGroupItem,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/ToggleGroup";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@redsun-vn/easyblocks-design-system/Tooltip";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import debounce from "lodash/debounce";
 import React, { ReactNode, useRef, useState } from "react";
 import { styled } from "styled-components";

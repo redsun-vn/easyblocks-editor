@@ -2,7 +2,7 @@ import {
   validateColor,
   type TokenTypeWidgetComponentProps,
 } from "@redsun-vn/easyblocks-core";
-import { Input } from "@redsun-vn/easyblocks-design-system";
+import { Input } from "@redsun-vn/easyblocks-design-system/Input";
 import React, { useState } from "react";
 
 function ColorTokenWidget(props: TokenTypeWidgetComponentProps<string>) {

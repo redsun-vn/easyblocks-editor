@@ -2,11 +2,10 @@ import { Backend, Template } from "@redsun-vn/easyblocks-core";
 import {
   ButtonDanger,
   ButtonPrimary,
-  FormElement,
-  Input,
-  InputFile,
-  Modal,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/buttons";
+import { FormElement } from "@redsun-vn/easyblocks-design-system/FormElement";
+import { Input, InputFile } from "@redsun-vn/easyblocks-design-system/Input";
+import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import React, { MouseEvent, useEffect, useState } from "react";
 import { useEditorContext } from "./EditorContext";

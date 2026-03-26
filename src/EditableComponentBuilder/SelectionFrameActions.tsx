@@ -3,15 +3,15 @@ import {
   NoCodeComponentEntry,
   globalSectionGroups,
 } from "@redsun-vn/easyblocks-core";
+import { Colors } from "@redsun-vn/easyblocks-design-system";
 import {
   ButtonGhost,
   ButtonPrimary,
   ButtonSecondary,
-  Colors,
-  Icons,
-  Input,
-  Modal,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/buttons";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
+import { Input } from "@redsun-vn/easyblocks-design-system/Input";
+import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";

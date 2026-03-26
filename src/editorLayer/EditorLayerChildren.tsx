@@ -1,4 +1,6 @@
-import { Colors, Icons, Typography } from "@redsun-vn/easyblocks-design-system";
+import { Colors } from "@redsun-vn/easyblocks-design-system";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useEffect } from "react";
 import styled from "styled-components";
 import { ILayer } from "../utils/normalizeComponentLayers";

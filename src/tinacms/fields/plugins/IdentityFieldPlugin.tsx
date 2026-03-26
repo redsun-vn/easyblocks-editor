@@ -8,19 +8,17 @@ import {
   findComponentDefinitionById,
   parsePath,
 } from "@redsun-vn/easyblocks-core/_internals";
-import {
-  ButtonGhost,
-  Colors,
-  Icons,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+import { Colors } from "@redsun-vn/easyblocks-design-system";
+import { ButtonGhost } from "@redsun-vn/easyblocks-design-system/buttons";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useContext } from "react";
 import type { FieldRenderProps } from "react-final-form";
 import styled from "styled-components";
 import { useEditorContext } from "../../../EditorContext";
+import { useTranslation } from "../../../useTranslation";
 import { isMixedFieldValue } from "../components/isMixedFieldValue";
 import { PanelContext } from "./BlockFieldPlugin";
-import { useTranslation } from "../../../useTranslation";
 
 interface IdentityFieldProps extends FieldRenderProps<
   NoCodeComponentEntry,

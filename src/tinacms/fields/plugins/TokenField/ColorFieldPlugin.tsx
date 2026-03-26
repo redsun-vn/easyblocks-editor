@@ -3,10 +3,9 @@ import {
   NonNullish,
   TokenTypeWidgetComponentProps,
 } from "@redsun-vn/easyblocks-core";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { ChevronDownIcon } from "@redsun-vn/easyblocks-design-system/radix-ui/ReactIcons";
 import {
-  ChevronDownIcon,
-  Colors,
-  Fonts,
   RadixSelectContent,
   RadixSelectItem,
   RadixSelectItemText,
@@ -15,15 +14,17 @@ import {
   RadixSelectTrigger,
   RadixSelectValue,
   RadixSelectViewport,
+} from "@redsun-vn/easyblocks-design-system/radix-ui/ReactSelect";
+import {
   Select,
   SelectSeparator,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/Select";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@redsun-vn/easyblocks-design-system/Tooltip";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { ComponentType, Fragment, ReactNode, useEffect } from "react";
 import { FieldInputProps } from "react-final-form";
 import styled from "styled-components";

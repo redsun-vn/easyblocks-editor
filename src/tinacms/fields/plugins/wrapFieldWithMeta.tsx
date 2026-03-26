@@ -16,13 +16,10 @@ import {
   InternalField,
   isExternalSchemaProp,
 } from "@redsun-vn/easyblocks-core/_internals";
-import {
-  Fonts,
-  Loader,
-  Select,
-  SelectItem,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+import { Fonts } from "@redsun-vn/easyblocks-design-system";
+import { Loader } from "@redsun-vn/easyblocks-design-system/Loader";
+import { Select, SelectItem } from "@redsun-vn/easyblocks-design-system/Select";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { ReactNode, useState } from "react";
 import { css, styled } from "styled-components";
 import { useConfigAfterAuto } from "../../../ConfigAfterAutoContext";
@@ -49,15 +46,16 @@ type ExtraFieldMetaWrapperFields = {
   isLabelHidden?: boolean;
 };
 
-export interface FieldProps<InputProps extends Record<string, unknown>>
-  extends FieldRenderProps<any, HTMLElement> {
+export interface FieldProps<
+  InputProps extends Record<string, unknown>,
+> extends FieldRenderProps<any, HTMLElement> {
   field: InternalField;
   form: Form;
 }
 
 export type InputFieldType<
   ExtraFieldProps extends Record<string, unknown>,
-  InputProps extends Record<string, unknown>
+  InputProps extends Record<string, unknown>,
 > = Omit<FieldProps<InputProps>, "meta"> &
   ExtraFieldProps &
   ExtraFieldMetaWrapperFields & {
@@ -70,7 +68,7 @@ export type InputFieldType<
 
 export function FieldMetaWrapper<
   ExtraFieldProps extends Record<string, unknown> = Record<string, unknown>,
-  InputProps extends Record<string, unknown> = Record<string, unknown>
+  InputProps extends Record<string, unknown> = Record<string, unknown>,
 >({
   children,
   field,
@@ -92,7 +90,7 @@ export function FieldMetaWrapper<
   } = editorContext;
 
   const isMixedValueSupported = isMixedValueSupportedByComponent(
-    isResponsiveField(field) ? field.subComponent : field.component
+    isResponsiveField(field) ? field.subComponent : field.component,
   );
 
   const isMixedValue = isMixedFieldValue(input.value);
@@ -144,7 +142,7 @@ export function FieldMetaWrapper<
     isExternalSchemaProp(schemaProp, editorContext.types) ||
     (schemaProp.type === "text" && !input.value.id?.startsWith("local."));
   const componentPaths = fieldNames.map((fieldName) =>
-    fieldName[0].split(".").slice(0, -1).join(".")
+    fieldName[0].split(".").slice(0, -1).join("."),
   );
   const fieldValues = fieldNames.map((f) => dotNotationGet(configAfterAuto, f));
   const configs = componentPaths.map((c) => dotNotationGet(configAfterAuto, c));
@@ -159,16 +157,16 @@ export function FieldMetaWrapper<
                 ? responsiveValueFindDeviceWithDefinedValue(
                     input.value,
                     editorContext.breakpointIndex,
-                    editorContext.devices
+                    editorContext.devices,
                   )?.id
-                : undefined
+                : undefined,
             )
-          ]
+          ],
       )
     : undefined;
 
   const currentBreakpointFieldValues = fieldValues.map((v) =>
-    responsiveValueForceGet(v, editorContext.breakpointIndex)
+    responsiveValueForceGet(v, editorContext.breakpointIndex),
   );
 
   const isLoadingExternalValue =
@@ -177,7 +175,7 @@ export function FieldMetaWrapper<
     currentBreakpointFieldValues.every(
       (v) =>
         !isEmptyExternalReference(v) &&
-        !isIdReferenceToDocumentExternalValue(v.id)
+        !isIdReferenceToDocumentExternalValue(v.id),
     );
 
   const getSelectedValue = () => {
@@ -300,7 +298,7 @@ export function FieldMetaWrapper<
                     }
                   }}
                   isRootComponent={fieldNames.some(
-                    (f) => f.split(".").length === 1
+                    (f) => f.split(".").length === 1,
                   )}
                 />
               )}
@@ -385,7 +383,7 @@ function WidgetsSelect({
 }
 
 function isResponsiveField(
-  field: InternalField
+  field: InternalField,
 ): field is ResponsiveFieldDefinition {
   return (
     typeof field.component === "string" && field.component === "responsive2"
@@ -393,7 +391,7 @@ function isResponsiveField(
 }
 
 function isMixedValueSupportedByComponent(
-  component: InternalField["component"]
+  component: InternalField["component"],
 ): boolean {
   if (typeof component === "string") {
     return COMPONENTS_SUPPORTING_MIXED_VALUES.includes(component);
@@ -418,10 +416,10 @@ const TextButton = styled(Typography)`
 
 export function wrapFieldsWithMeta<
   ExtraFieldProps extends Record<string, any> = Record<string, any>,
-  InputProps extends Record<string, any> = Record<string, any>
+  InputProps extends Record<string, any> = Record<string, any>,
 >(
   Field: React.ComponentType<InputFieldType<ExtraFieldProps, InputProps>>,
-  extraProps?: ExtraFieldMetaWrapperFields
+  extraProps?: ExtraFieldMetaWrapperFields,
 ) {
   return (props: InputFieldType<ExtraFieldProps, InputProps>) => {
     return (

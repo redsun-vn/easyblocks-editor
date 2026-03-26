@@ -3,19 +3,17 @@ import {
   ThemeTokenValue,
   validateColor,
 } from "@redsun-vn/easyblocks-core";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
 import {
   ButtonDanger,
   ButtonPrimary,
   ButtonSecondary,
-  ColorPicker,
-  Colors,
-  Fonts,
-  Icons,
-  Input,
-  Modal,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/buttons";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
+import { ColorPicker, Input } from "@redsun-vn/easyblocks-design-system/Input";
+import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useState } from "react";
 import styled from "styled-components";
 import { EditorContextType } from "../EditorContext";

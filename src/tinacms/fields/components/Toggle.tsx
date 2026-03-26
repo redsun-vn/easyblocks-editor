@@ -1,5 +1,5 @@
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
-import { Toggle as DesignSystemToggle } from "@redsun-vn/easyblocks-design-system";
+import { Toggle as DesignSystemToggle } from "@redsun-vn/easyblocks-design-system/Toggle";
 import React, { FC } from "react";
 import { styled } from "styled-components";
 

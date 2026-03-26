@@ -9,9 +9,9 @@ import {
 import {
   GlobalModalStyles,
   ModalContext,
-} from "@redsun-vn/easyblocks-design-system";
-import { TooltipProvider } from "@redsun-vn/easyblocks-design-system/Tooltip";
+} from "@redsun-vn/easyblocks-design-system/modals";
 import { Toaster } from "@redsun-vn/easyblocks-design-system/Toaster";
+import { TooltipProvider } from "@redsun-vn/easyblocks-design-system/Tooltip";
 import React, { ComponentType } from "react";
 import { ShouldForwardProp, StyleSheetManager } from "styled-components";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";

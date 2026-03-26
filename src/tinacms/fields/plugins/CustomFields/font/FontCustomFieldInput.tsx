@@ -1,9 +1,9 @@
+import { Input } from "@redsun-vn/easyblocks-design-system/Input";
 import {
-  Input,
   Select,
   SelectItem,
   SelectSeparator,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/Select";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { CUSTOM_OPTION_VALUE } from "../../../components/constants";

@@ -1,4 +1,5 @@
-import { Colors, Fonts, Modal } from "@redsun-vn/easyblocks-design-system";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
 import React, { useState } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../EditorContext";
@@ -84,15 +85,15 @@ export const FontColorConfigsModal: React.FC<IFontColorConfigsModalProps> = ({
 
   const editorContext = useEditorContext();
   const [activeSidebar, setActiveSidebar] = useState<string>(
-    sidebarContents[0].id
+    sidebarContents[0].id,
   );
 
   const activeTitle = sidebarContents.find(
-    (sidebarContent) => sidebarContent.id === activeSidebar
+    (sidebarContent) => sidebarContent.id === activeSidebar,
   )?.title;
 
   const ActiveContent = sidebarContents.find(
-    (sidebarContent) => sidebarContent.id === activeSidebar
+    (sidebarContent) => sidebarContent.id === activeSidebar,
   )?.content;
 
   return (

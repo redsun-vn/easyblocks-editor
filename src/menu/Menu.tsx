@@ -1,9 +1,7 @@
-import {
-  Colors,
-  Icons,
-  Loader,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+import { Colors } from "@redsun-vn/easyblocks-design-system";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
+import { Loader } from "@redsun-vn/easyblocks-design-system/Loader";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useRef, useState } from "react";
 import styled from "styled-components";
 

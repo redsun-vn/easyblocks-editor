@@ -1,4 +1,5 @@
-import { Colors, Typography } from "@redsun-vn/easyblocks-design-system";
+import { Colors } from "@redsun-vn/easyblocks-design-system";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useDeferredValue, useEffect, useState } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../EditorContext";
@@ -48,7 +49,7 @@ export const EditorLayer: React.FC = () => {
 
   const onClickLayer = (id: string, layer: string, rootParentId?: string) => {
     const editorCanvasIframe = window.document.getElementById(
-      "editor-canvas"
+      "editor-canvas",
     ) as HTMLIFrameElement | undefined;
 
     if (rootParentId) {
@@ -78,7 +79,7 @@ export const EditorLayer: React.FC = () => {
     if (layerId) {
       const targetEditorLayer = document.getElementById("editor-layer");
       const targetComponent = document.getElementById(
-        `sidebar-layer-${layerId}`
+        `sidebar-layer-${layerId}`,
       );
       const top =
         (targetComponent?.getBoundingClientRect()?.top ?? 0) -

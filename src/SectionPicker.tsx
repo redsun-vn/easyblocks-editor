@@ -1,10 +1,7 @@
 import { Template } from "@redsun-vn/easyblocks-core";
-import {
-  ButtonGhostColor,
-  Colors,
-  Fonts,
-  Modal,
-} from "@redsun-vn/easyblocks-design-system";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { ButtonGhostColor } from "@redsun-vn/easyblocks-design-system/buttons";
+import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
 import React, { useRef } from "react";
 import { styled } from "styled-components";
 import { EditorContextType, useEditorContext } from "./EditorContext";

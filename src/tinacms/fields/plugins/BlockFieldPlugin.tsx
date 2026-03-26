@@ -17,15 +17,14 @@ import {
   findComponentDefinition,
   isExternalSchemaProp,
 } from "@redsun-vn/easyblocks-core/_internals";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
 import {
-  ButtonGhost,
-  Colors,
-  Fonts,
-  Icons,
   ThumbnailButton,
   ThumbnailType,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/ThumbnailButton";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
+import { ButtonGhost } from "@redsun-vn/easyblocks-design-system/buttons";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
 import { FormApi } from "final-form";
 import React from "react";
 import ReactDOM from "react-dom";

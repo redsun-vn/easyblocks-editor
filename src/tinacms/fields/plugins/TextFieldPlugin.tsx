@@ -6,7 +6,7 @@ import {
   InternalField,
   useTextValue,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { Input } from "@redsun-vn/easyblocks-design-system";
+import { Input } from "@redsun-vn/easyblocks-design-system/Input";
 import React from "react";
 import { FieldRenderProps } from "react-final-form";
 import { useEditorContext } from "../../../EditorContext";
@@ -32,7 +32,7 @@ function TextField({ input, field, noWrap }: TextFieldProps) {
     editorContext.contextParams.locale,
     editorContext.locales,
     field.placeholder,
-    field.normalize
+    field.normalize,
   );
 
   const isTextSchemaProp = field.schemaProp.type === "text";

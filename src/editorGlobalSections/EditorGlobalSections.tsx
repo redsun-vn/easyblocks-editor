@@ -1,5 +1,6 @@
 import { globalSectionGroups } from "@redsun-vn/easyblocks-core";
-import { Colors, Typography } from "@redsun-vn/easyblocks-design-system";
+import { Colors } from "@redsun-vn/easyblocks-design-system";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useState } from "react";
 import styled from "styled-components";
 import { EditorContextType } from "../EditorContext";

@@ -3,7 +3,7 @@ import {
   Select,
   SelectItem,
   SelectSeparator,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/Select";
 import React from "react";
 import { FieldMixedValue } from "../../../types";
 import { FieldRenderProps } from "../../form-builder";
@@ -23,8 +23,9 @@ interface SelectFieldProps extends InternalField {
   options: (Option | string)[];
 }
 
-export interface SelectFieldComponentProps
-  extends FieldRenderProps<string | FieldMixedValue> {
+export interface SelectFieldComponentProps extends FieldRenderProps<
+  string | FieldMixedValue
+> {
   name: Array<string> | string;
   field: SelectFieldProps;
   disabled?: boolean;
@@ -50,7 +51,7 @@ export const SelectFieldComponent: React.FC<SelectFieldComponentProps> = ({
       },
       {
         isDivider: true,
-      }
+      },
     );
   }
 

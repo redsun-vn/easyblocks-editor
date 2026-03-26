@@ -1,6 +1,7 @@
-import { responsiveValueForceGet } from "@redsun-vn/easyblocks-core";
-import { Colors, Fonts, Icons } from "@redsun-vn/easyblocks-design-system";
 import { dotNotationGet, toArray } from "@/utils";
+import { responsiveValueForceGet } from "@redsun-vn/easyblocks-core";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
 import React from "react";
 import { styled } from "styled-components";
 import { useConfigAfterAuto } from "../../../../ConfigAfterAutoContext";
@@ -35,19 +36,19 @@ const ResponsiveField = (props: ResponsivePluginProps) => {
   const normalizedFieldName = toArray(field.name);
 
   const fieldValues = normalizedFieldName.map((fieldName) =>
-    dotNotationGet(configAfterAuto, fieldName)
+    dotNotationGet(configAfterAuto, fieldName),
   );
 
   const scalarFieldValues = fieldValues.map((fieldValue) => {
     return responsiveValueForceGet(
       // value from auto, so it's safe
       fieldValue,
-      editorContext.breakpointIndex
+      editorContext.breakpointIndex,
     );
   });
 
   const uniqueValues = getUniqueValues(scalarFieldValues, (value) =>
-    typeof value === "object" ? JSON.stringify(value) : value
+    typeof value === "object" ? JSON.stringify(value) : value,
   );
 
   const isMixedValue = uniqueValues.length > 1;

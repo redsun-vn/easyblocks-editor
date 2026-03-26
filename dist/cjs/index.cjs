@@ -6,22 +6,38 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var easyblocksCore = require('@redsun-vn/easyblocks-core');
 var React = require('react');
 var isPropValid = require('@emotion/is-prop-valid');
-var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
-var Tooltip$1 = require('@redsun-vn/easyblocks-design-system/Tooltip');
+var modals = require('@redsun-vn/easyblocks-design-system/modals');
 var Toaster = require('@redsun-vn/easyblocks-design-system/Toaster');
+var Tooltip$1 = require('@redsun-vn/easyblocks-design-system/Tooltip');
 var styled = require('styled-components');
 var _extends = require('@babel/runtime/helpers/extends');
 var _internals = require('@redsun-vn/easyblocks-core/_internals');
+var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
 var throttle = require('lodash.throttle');
 var debounce = require('lodash/debounce');
 var Modal = require('react-modal');
 var lodash = require('lodash');
+var buttons = require('@redsun-vn/easyblocks-design-system/buttons');
+var icons = require('@redsun-vn/easyblocks-design-system/icons');
+var Typography = require('@redsun-vn/easyblocks-design-system/Typography');
+var ThumbnailButton = require('@redsun-vn/easyblocks-design-system/ThumbnailButton');
 var ReactDOM = require('react-dom');
 var tooltip = require('@react-aria/tooltip');
 var reactPopper = require('react-popper');
+var Loader = require('@redsun-vn/easyblocks-design-system/Loader');
+var Select = require('@redsun-vn/easyblocks-design-system/Select');
 var RadixRadioGroup = require('@radix-ui/react-radio-group');
+var Input = require('@redsun-vn/easyblocks-design-system/Input');
+var Toggle$1 = require('@redsun-vn/easyblocks-design-system/Toggle');
+var ToggleButton = require('@redsun-vn/easyblocks-design-system/ToggleButton');
+var Slider$1 = require('@redsun-vn/easyblocks-design-system/Slider');
+var ReactIcons = require('@redsun-vn/easyblocks-design-system/radix-ui/ReactIcons');
+var ReactSelect = require('@redsun-vn/easyblocks-design-system/radix-ui/ReactSelect');
+var ToggleGroup = require('@redsun-vn/easyblocks-design-system/ToggleGroup');
+var FormElement = require('@redsun-vn/easyblocks-design-system/FormElement');
 var finalForm = require('final-form');
 var arrayMutators = require('final-form-arrays');
+var rows = require('@redsun-vn/easyblocks-design-system/rows');
 var core = require('@dnd-kit/core');
 var sortable = require('@dnd-kit/sortable');
 var zod = require('zod');
@@ -487,7 +503,7 @@ const ButtonWrapper = styled.styled.div.withConfig({
   displayName: "SidebarFooter__ButtonWrapper",
   componentId: "sc-17xf0ak-3"
 })(["display:flex;justify-content:end;gap:8px;"]);
-const StyledButtonCopyTemplate = styled.styled(easyblocksDesignSystem.ButtonSecondary).withConfig({
+const StyledButtonCopyTemplate = styled.styled(buttons.ButtonSecondary).withConfig({
   displayName: "SidebarFooter__StyledButtonCopyTemplate",
   componentId: "sc-17xf0ak-4"
 })(["min-width:auto !important;& svg{width:14px !important;height:14px !important;}"]);
@@ -530,8 +546,8 @@ function SidebarFooter(props) {
       toaster.error(t("template.entry.copy.error"));
     }
   };
-  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$5, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
-    icon: easyblocksDesignSystem.Icons.Save1,
+  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$5, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
+    icon: icons.Icons.Save1,
     hideLabel: true,
     onClick: () => {
       editorContext.actions.openTemplateModal({
@@ -544,19 +560,19 @@ function SidebarFooter(props) {
     style: {
       minWidth: "auto"
     }
-  }, t("template.save")), /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
+  }, t("template.save")), /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
     style: {
       minWidth: "auto"
     },
-    icon: easyblocksDesignSystem.Icons.SaveAs,
+    icon: icons.Icons.SaveAs,
     hideLabel: true,
     onClick: () => setSaveAsEntry(value)
   }, t("template.saveAs"))), isAdminMode && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(StyledButtonCopyTemplate, {
-    icon: easyblocksDesignSystem.Icons.Copy,
+    icon: icons.Icons.Copy,
     hideLabel: true,
     onClick: () => onCopy(value)
-  }, t("template.entry.copy")), /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.ButtonSecondary, {
-    icon: easyblocksDesignSystem.Icons.Id,
+  }, t("template.entry.copy")), /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
+    icon: icons.Icons.Id,
     hideLabel: true,
     onClick: () => onCopy(value._id),
     style: {
@@ -587,7 +603,7 @@ const Toggle = ({
     value: checked,
     checked
   };
-  return /*#__PURE__*/React__default["default"].createElement(ToggleFieldWrapper, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toggle, toggleProps));
+  return /*#__PURE__*/React__default["default"].createElement(ToggleFieldWrapper, null, /*#__PURE__*/React__default["default"].createElement(Toggle$1.Toggle, toggleProps));
 };
 const ToggleFieldWrapper = styled.styled.div.withConfig({
   displayName: "Toggle__ToggleFieldWrapper",
@@ -626,7 +642,7 @@ const SelectFieldComponent = ({
   const handleChange = value => {
     onChange(value);
   };
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
+  return /*#__PURE__*/React__default["default"].createElement(Select.Select, {
     value: inputValue,
     onChange: handleChange
   }, normalizedSelectOptions.map(toComponent));
@@ -640,11 +656,11 @@ function toProps(option) {
 }
 function toComponent(option) {
   if ("isDivider" in option) {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectSeparator, {
+    return /*#__PURE__*/React__default["default"].createElement(Select.SelectSeparator, {
       key: "divider"
     });
   }
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  return /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     key: option.value,
     value: option.value,
     isDisabled: option.value === MIXED_VALUE
@@ -669,17 +685,17 @@ const RadioGroup = ({
     };
   };
   const radioOptionsMapped = radioOptions ? radioOptions.map(toProps) : [];
-  return radioOptionsMapped && /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectInline, _extends__default["default"]({}, input, {
+  return radioOptionsMapped && /*#__PURE__*/React__default["default"].createElement(ToggleButton.SelectInline, _extends__default["default"]({}, input, {
     value: toggleButtonValue
   }), radioOptionsMapped.map(option => {
     let Icon = undefined;
-    if (typeof option.icon === "string" && option.icon in easyblocksDesignSystem.Icons) {
-      Icon = easyblocksDesignSystem.Icons[option.icon];
+    if (typeof option.icon === "string" && option.icon in icons.Icons) {
+      Icon = icons.Icons[option.icon];
     }
     if (typeof option.icon === "function") {
       Icon = option.icon;
     }
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ToggleButton, {
+    return /*#__PURE__*/React__default["default"].createElement(ToggleButton.ToggleButton, {
       key: option.value,
       icon: Icon,
       value: option.value,
@@ -694,7 +710,7 @@ const NumberInput = ({
   step,
   min,
   max
-}) => /*#__PURE__*/React__namespace.createElement(easyblocksDesignSystem.Input, {
+}) => /*#__PURE__*/React__namespace.createElement(Input.Input, {
   type: "number"
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
@@ -900,7 +916,7 @@ function FieldMetaWrapper({
     style: {
       marginLeft: "6px"
     }
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Loader, null)), resolvedLayout === "column" && (_internals.isExternalSchemaProp(schemaProp, editorContext.types) || schemaProp.type === "text") && !isMixedValue && /*#__PURE__*/React__default["default"].createElement(WidgetsSelect, {
+  }, /*#__PURE__*/React__default["default"].createElement(Loader.Loader, null)), resolvedLayout === "column" && (_internals.isExternalSchemaProp(schemaProp, editorContext.types) || schemaProp.type === "text") && !isMixedValue && /*#__PURE__*/React__default["default"].createElement(WidgetsSelect, {
     schemaProp: schemaProp,
     value: currentBreakpointFieldValues[0],
     onChange: widgetId => {
@@ -960,14 +976,14 @@ function WidgetsSelect({
   if (availableWidgets.length <= 1) {
     return null;
   }
-  return /*#__PURE__*/React__default["default"].createElement(FieldLabelIconWrapper, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
+  return /*#__PURE__*/React__default["default"].createElement(FieldLabelIconWrapper, null, /*#__PURE__*/React__default["default"].createElement(Select.Select, {
     value: selectedWidgetId,
     onChange: widgetId => {
       setSelectedWidgetId(widgetId);
       onChange(widgetId);
     }
   }, availableWidgets.map(widget => {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+    return /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
       value: widget.id,
       key: widget.id
     }, widget.label ?? widget.id);
@@ -982,7 +998,7 @@ function isMixedValueSupportedByComponent(component) {
   }
   return false;
 }
-const TextButton = styled.styled(easyblocksDesignSystem.Typography).withConfig({
+const TextButton = styled.styled(Typography.Typography).withConfig({
   displayName: "wrapFieldWithMeta__TextButton",
   componentId: "sc-1asy4oy-0"
 })(["padding:0;margin:0;background:transparent;border:0;font-weight:500;&:hover{color:black;cursor:pointer;text-decoration:underline;}"]);
@@ -1094,7 +1110,7 @@ function TextField({
     field: field,
     layout: isTextSchemaProp ? "column" : "row",
     noWrap: noWrap
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, _extends__default["default"]({}, restInputProperties, inputProps, {
+  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, _extends__default["default"]({}, restInputProperties, inputProps, {
     controlSize: "full-width",
     align: !isTextSchemaProp ? "right" : "left",
     withBorder: isTextSchemaProp
@@ -1129,7 +1145,7 @@ const ColorCustomFieldsWrapper = styled__default["default"].div.withConfig({
   displayName: "ColorCustomFields__ColorCustomFieldsWrapper",
   componentId: "sc-83vwfl-1"
 })(["display:flex;justify-content:flex-end;align-items:center;gap:10px;"]);
-const InputStyle = styled__default["default"](easyblocksDesignSystem.InputColor).withConfig({
+const InputStyle = styled__default["default"](Input.InputColor).withConfig({
   displayName: "ColorCustomFields__InputStyle",
   componentId: "sc-83vwfl-2"
 })(["width:100%;height:100%;"]);
@@ -1154,7 +1170,7 @@ const ColorCustomFields = ({
       inputColorRef.current.value = currentValue;
     }
   }, [currentValue]);
-  return /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsStyle, null, /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsWrapper, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  return /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsStyle, null, /*#__PURE__*/React__default["default"].createElement(ColorCustomFieldsWrapper, null, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     ref: inputColorRef,
     defaultValue: currentValue,
     onChange: event => onChange(event.target.value)
@@ -1196,7 +1212,7 @@ const FontCustomFieldInput = ({
     style: {
       height: 4
     }
-  }), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  }), /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     value: inputValue,
     onChange: e => {
       setInputValue(e.target.value);
@@ -1213,7 +1229,7 @@ const FontCustomFieldInput = ({
   switch (inputType) {
     case "text":
       {
-        return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+        return /*#__PURE__*/React__default["default"].createElement(Input.Input, {
           value: customField.value ?? customField.defaultValue,
           onChange: e => {
             onChange(customField.key, e.target.value, customField.type);
@@ -1225,7 +1241,7 @@ const FontCustomFieldInput = ({
       {
         return /*#__PURE__*/React__default["default"].createElement(Root$1, {
           isCustom: isCustomValue
-        }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
+        }, /*#__PURE__*/React__default["default"].createElement(Select.Select, {
           value: isCustomValue || isShowCustomValue ? CUSTOM_OPTION_VALUE : String(customField.value ?? customField.defaultValue),
           onChange: selectedValue => {
             if (selectedValue !== CUSTOM_OPTION_VALUE) {
@@ -1236,7 +1252,7 @@ const FontCustomFieldInput = ({
             }
           }
         }, options.map(o => {
-          return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+          return /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
             key: o.id,
             value: o.value
           }, /*#__PURE__*/React__default["default"].createElement("div", {
@@ -1244,7 +1260,7 @@ const FontCustomFieldInput = ({
               fontFamily: o.value
             }
           }, o.label));
-        }), customField?.allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectSeparator, null), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+        }), customField?.allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(Select.SelectSeparator, null), /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
           value: CUSTOM_OPTION_VALUE
         }, "Custom"))), customInputElement);
       }
@@ -1388,15 +1404,15 @@ const CustomField = ({
   }
 };
 
-const Trigger = styled__default["default"](easyblocksDesignSystem.RadixSelectTrigger).withConfig({
+const Trigger = styled__default["default"](ReactSelect.RadixSelectTrigger).withConfig({
   displayName: "ColorFieldPlugin__Trigger",
   componentId: "sc-19dwflf-0"
 })(["all:unset;display:flex;align-items:center;", ";display:flex;gap:4px;max-width:100%;box-sizing:border-box;height:28px;padding:0 2px 0 6px;border-radius:2px;@media (hover:hover){&:hover{box-shadow:0 0 0 1px ", ";}}"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black10);
-const Content$2 = styled__default["default"](easyblocksDesignSystem.RadixSelectContent).withConfig({
+const Content$2 = styled__default["default"](ReactSelect.RadixSelectContent).withConfig({
   displayName: "ColorFieldPlugin__Content",
   componentId: "sc-19dwflf-1"
 })(["overflow:hidden;background-color:white;border-radius:2px;border:1px solid #ddd;box-shadow:0px 4px 12px #0000001a;padding:4px 0;width:250px;"]);
-const Viewport = styled__default["default"](easyblocksDesignSystem.RadixSelectViewport).withConfig({
+const Viewport = styled__default["default"](ReactSelect.RadixSelectViewport).withConfig({
   displayName: "ColorFieldPlugin__Viewport",
   componentId: "sc-19dwflf-2"
 })(["display:grid;grid-template-columns:", ";padding:", ";max-height:200px;overflow:auto;justify-items:center;justify-content:center;"], ({
@@ -1404,7 +1420,7 @@ const Viewport = styled__default["default"](easyblocksDesignSystem.RadixSelectVi
 }) => `repeat(${shape === "circle" ? "8" : "5"}, ${shape === "circle" ? "30px" : "46px"})`, ({
   shape
 }) => shape === "circle" ? "2px" : "2px 8px");
-const Item = styled__default["default"](easyblocksDesignSystem.RadixSelectItem).withConfig({
+const Item = styled__default["default"](ReactSelect.RadixSelectItem).withConfig({
   displayName: "ColorFieldPlugin__Item",
   componentId: "sc-19dwflf-3"
 })(["position:relative;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transform:scale(1.2);width:8px;height:8px;outline:none;margin:10px;&[data-highlighted]{background-color:#f2f2f2;}&[data-state=\"checked\"]{cursor:pointer;transform:scale(1.4);", ";", ";z-index:1;}@media (hover:hover){&:hover{background-color:transparent;border:none;cursor:pointer;transform:scale(1.4);z-index:2;}}"], ({
@@ -1412,7 +1428,7 @@ const Item = styled__default["default"](easyblocksDesignSystem.RadixSelectItem).
 }) => shape === "circle" ? "box-shadow: 0 0 1px 2px #fff, 0 0 0 4px #7e8796;" : "", ({
   shape
 }) => shape === "circle" ? "border-radius: 100%" : "");
-const ItemText = styled__default["default"](easyblocksDesignSystem.RadixSelectItemText).withConfig({
+const ItemText = styled__default["default"](ReactSelect.RadixSelectItemText).withConfig({
   displayName: "ColorFieldPlugin__ItemText",
   componentId: "sc-19dwflf-4"
 })(["@media (hover:hover){&:hover{border:none;background-color:transparent;}}"]);
@@ -1459,7 +1475,7 @@ const ColorOptions = ({
         ...colorStyled,
         border: `1px solid ${easyblocksDesignSystem.Colors.black100}`
       }
-    }))), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    }))), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
       color: "white"
     }, color)))));
   });
@@ -1513,14 +1529,14 @@ const ColorFieldPlugin = ({
     }
   }, [input]);
   if (type === "grid") {
-    return /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.RadixSelectRoot, {
+    return /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, /*#__PURE__*/React__default["default"].createElement(ReactSelect.RadixSelectRoot, {
       value: selectValue,
       onValueChange: onSelectChange
-    }, /*#__PURE__*/React__default["default"].createElement(Trigger, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.RadixSelectValue, {
+    }, /*#__PURE__*/React__default["default"].createElement(Trigger, null, /*#__PURE__*/React__default["default"].createElement(ReactSelect.RadixSelectValue, {
       placeholder: "Select item"
-    }), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ChevronDownIcon, {
+    }), /*#__PURE__*/React__default["default"].createElement(ReactIcons.ChevronDownIcon, {
       color: easyblocksDesignSystem.Colors.black40
-    })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.RadixSelectPortal, null, /*#__PURE__*/React__default["default"].createElement(Content$2, null, /*#__PURE__*/React__default["default"].createElement(SelectTitle, null, t("theme.colors")), /*#__PURE__*/React__default["default"].createElement(Viewport, {
+    })), /*#__PURE__*/React__default["default"].createElement(ReactSelect.RadixSelectPortal, null, /*#__PURE__*/React__default["default"].createElement(Content$2, null, /*#__PURE__*/React__default["default"].createElement(SelectTitle, null, t("theme.colors")), /*#__PURE__*/React__default["default"].createElement(Viewport, {
       shape: "rectangle"
     }, /*#__PURE__*/React__default["default"].createElement(ColorOptions, {
       options: themeOptions,
@@ -1531,18 +1547,18 @@ const ColorFieldPlugin = ({
     }, /*#__PURE__*/React__default["default"].createElement(ColorOptions, {
       options: myColorOptions,
       field: field
-    })), field?.allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectSeparator, null), /*#__PURE__*/React__default["default"].createElement(SelectColorTokenItem, {
+    })), field?.allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(Select.SelectSeparator, null), /*#__PURE__*/React__default["default"].createElement(SelectColorTokenItem, {
       value: CUSTOM_OPTION_VALUE,
       previewColor: previewColor
     }, "Custom"))))), customInputElement);
   }
-  return /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
+  return /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, /*#__PURE__*/React__default["default"].createElement(Select.Select, {
     value: selectValue,
     onChange: onSelectChange
   }, isMixedFieldValue(input.value) && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(SelectColorTokenItem, {
     value: MIXED_VALUE,
     isDisabled: true
-  }, "Mixed"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectSeparator, null)), /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, options.map(o => {
+  }, "Mixed"), /*#__PURE__*/React__default["default"].createElement(Select.SelectSeparator, null)), /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, options.map(o => {
     return /*#__PURE__*/React__default["default"].createElement(SelectColorTokenItem, {
       key: o.id,
       value: o.id
@@ -1550,7 +1566,7 @@ const ColorFieldPlugin = ({
       ,
       previewColor: field.tokens[o.id]?.value ?? o.id
     }, o.label);
-  }), field?.allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectSeparator, null), /*#__PURE__*/React__default["default"].createElement(SelectColorTokenItem, {
+  }), field?.allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(Select.SelectSeparator, null), /*#__PURE__*/React__default["default"].createElement(SelectColorTokenItem, {
     value: CUSTOM_OPTION_VALUE,
     previewColor: selectValue === CUSTOM_OPTION_VALUE ? input.value.value : undefined
   }, "Custom")))), customInputElement);
@@ -1684,7 +1700,7 @@ function TokenFieldComponent({
   }) : ["fonts", "colors"].includes(tokenTypeDefinition.token) ? /*#__PURE__*/React__default["default"].createElement(CustomField, {
     input: input,
     field: field
-  }) : /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  }) : /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     value: inputValue,
     onChange: e => {
       setInputValue(e.target.value);
@@ -1725,21 +1741,21 @@ function TokenFieldComponent({
   }
   return /*#__PURE__*/React__default["default"].createElement(Root, {
     isCustom: shouldShowCustomValueInput
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
+  }, /*#__PURE__*/React__default["default"].createElement(Select.Select, {
     value: selectValue,
     onChange: onSelectChange
-  }, isMixedFieldValue(input.value) && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  }, isMixedFieldValue(input.value) && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     value: MIXED_VALUE,
     isDisabled: true
-  }, "Mixed"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectSeparator, null)), selectValue === CUSTOM_OPTION_VALUE && !allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  }, "Mixed"), /*#__PURE__*/React__default["default"].createElement(Select.SelectSeparator, null)), selectValue === CUSTOM_OPTION_VALUE && !allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     value: CUSTOM_OPTION_VALUE,
     isDisabled: true
-  }, "Custom"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectSeparator, null)), /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, options.map(o => {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  }, "Custom"), /*#__PURE__*/React__default["default"].createElement(Select.SelectSeparator, null)), /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, options.map(o => {
+    return /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
       key: o.id,
       value: o.id
     }, o.label);
-  }), allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectSeparator, null), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  }), allowCustom && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(Select.SelectSeparator, null), /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     value: CUSTOM_OPTION_VALUE
   }, "Custom")))), customInputElement);
 }
@@ -1774,7 +1790,7 @@ const TokenFieldPlugin = {
   Component: wrapFieldsWithMeta(TokenFieldComponent)
 };
 const SelectColorTokenItem = /*#__PURE__*/React.forwardRef((props, ref) => {
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  return /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     value: props.value,
     isDisabled: props.isDisabled,
     ref: ref
@@ -1936,7 +1952,7 @@ const BlockField = ({
     style: {
       overflow: "hidden"
     }
-  }, triggerProps), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, triggerProps), /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     style: {
       overflow: "hidden",
       textOverflow: "ellipsis"
@@ -1967,7 +1983,7 @@ const BlockField = ({
       flex: "0 0 auto",
       minWidth: 0
     }
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+  }, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     showTooltip: false,
     onClick: () => {
       if (editorContext.focussedField.some(isConfigPathRichTextPart)) {
@@ -1976,9 +1992,9 @@ const BlockField = ({
         actions.removeItems(paths);
       }
     },
-    icon: easyblocksDesignSystem.Icons.Remove,
+    icon: icons.Icons.Remove,
     "aria-label": "Remove"
-  }))), config === null && (isMixed ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ThumbnailButton, {
+  }))), config === null && (isMixed ? /*#__PURE__*/React__default["default"].createElement(ThumbnailButton.ThumbnailButton, {
     label: "Mixed",
     disabled: true
   }) : /*#__PURE__*/React__default["default"].createElement(AddButton$1, {
@@ -2004,7 +2020,7 @@ function AddButton$1({
   const {
     t
   } = useTranslation();
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+  return /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     showTooltip: false,
     style: {
       width: "100%",
@@ -2030,7 +2046,7 @@ function AddButton$1({
       border: `1px dashed ${easyblocksDesignSystem.Colors.black20}`,
       borderRadius: "2px"
     }
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.Add, {
+  }, /*#__PURE__*/React__default["default"].createElement(icons.Icons.Add, {
     size: 16
   })), t("add")));
 }
@@ -2055,7 +2071,7 @@ const SubComponentPanelButton = ({
   } : undefined;
   const thumbnail = sidebarPreview?.thumbnail ?? defaultThumbnail;
   const description = sidebarPreview?.description;
-  return showError ? /*#__PURE__*/React__default["default"].createElement(Error$2, null, label) : /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ThumbnailButton, {
+  return showError ? /*#__PURE__*/React__default["default"].createElement(Error$2, null, label) : /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(ThumbnailButton.ThumbnailButton, {
     onClick: onExpand,
     label: label,
     description: description,
@@ -2216,12 +2232,12 @@ function IdentityField({
       alignItems: "center",
       gap: "2px"
     }
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     style: {
       lineHeight: "14px",
       fontWeight: "700"
     }
-  }, componentDefinition?.label ?? componentDefinition?.id), !isNonChangable && /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ChevronDown, {
+  }, componentDefinition?.label ?? componentDefinition?.id), !isNonChangable && /*#__PURE__*/React__default["default"].createElement(icons.Icons.ChevronDown, {
     size: 16
   }));
   return /*#__PURE__*/React__default["default"].createElement(IdentityFieldContainer, null, /*#__PURE__*/React__default["default"].createElement(IdentityFieldWrapper, null, /*#__PURE__*/React__default["default"].createElement("div", {
@@ -2230,8 +2246,8 @@ function IdentityField({
       alignItems: "center",
       flex: "1 0"
     }
-  }, isWithinNestedPanel && /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.ChevronLeft,
+  }, isWithinNestedPanel && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ChevronLeft,
     onClick: () => {
       panelContext.onClose();
     },
@@ -2242,12 +2258,12 @@ function IdentityField({
     style: {
       padding: "7px 6px"
     }
-  }, titleContent), !isNonChangable && /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+  }, titleContent), !isNonChangable && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     showTooltip: false,
     onClick: handleChangeComponentType
-  }, titleContent), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+  }, titleContent), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     "aria-label": t("delete"),
-    icon: easyblocksDesignSystem.Icons.Remove,
+    icon: icons.Icons.Remove,
     hideLabel: true,
     showTooltip: false,
     onClick: handleRemove,
@@ -2264,7 +2280,7 @@ const IdentityFieldPlugin = {
 };
 
 function MissingWidget(props) {
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, null, "Missing widget for type \"", props.type, "\".");
+  return /*#__PURE__*/React__default["default"].createElement(Typography.Typography, null, "Missing widget for type \"", props.type, "\".");
 }
 
 const ExternalFieldComponent = props => {
@@ -2365,7 +2381,7 @@ function getBasicResourcesOfType(compoundResourceValues, type) {
   });
 }
 function CompoundResourceValueSelect(props) {
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
+  return /*#__PURE__*/React__default["default"].createElement(Select.Select, {
     onChange: value => {
       const selectedOption = JSON.parse(value);
       props.onResourceKeyChange(selectedOption.id, selectedOption.key);
@@ -2376,7 +2392,7 @@ function CompoundResourceValueSelect(props) {
     }) : "",
     placeholder: "Select source..."
   }, props.options.map(r => {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+    return /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
       key: `${r.id}.${r.key}`,
       value: JSON.stringify({
         id: r.id,
@@ -2543,7 +2559,7 @@ const ResponsiveField = props => {
       label
     }) => /*#__PURE__*/React__default["default"].createElement(ResetButton, _extends__default["default"]({
       "aria-label": "Revert to auto"
-    }, triggerProps), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.Reset, null), /*#__PURE__*/React__default["default"].createElement(ResetButtonLabel, null, label), isOpen && /*#__PURE__*/React__default["default"].createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default["default"].createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default["default"].createElement(TooltipBody, null, "Revert to auto"))) : undefined
+    }, triggerProps), /*#__PURE__*/React__default["default"].createElement(icons.Icons.Reset, null), /*#__PURE__*/React__default["default"].createElement(ResetButtonLabel, null, label), isOpen && /*#__PURE__*/React__default["default"].createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default["default"].createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default["default"].createElement(TooltipBody, null, "Revert to auto"))) : undefined
   }), /*#__PURE__*/React__default["default"].createElement("div", {
     style: {
       width: "100%"
@@ -2692,7 +2708,7 @@ const Slider = wrapFieldsWithMeta(({
   input,
   field
 }) => {
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.RangeSlider, _extends__default["default"]({}, input, {
+  return /*#__PURE__*/React__default["default"].createElement(Slider$1.RangeSlider, _extends__default["default"]({}, input, {
     max: field.max,
     min: field.min,
     step: field.step
@@ -3131,7 +3147,7 @@ const EmptyField = () => {
       alignItems: "center",
       gap: 14
     }
-  }, /*#__PURE__*/React__default["default"].createElement(SelectFrameIcon, null), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, /*#__PURE__*/React__default["default"].createElement(SelectFrameIcon, null), /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     style: {
       whiteSpace: "initial",
       textAlign: "center"
@@ -3222,7 +3238,7 @@ function FieldBuilder({
     },
     field: field,
     layout: "column"
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, null, "Unrecognized field type"));
+  }, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, null, "Unrecognized field type"));
 }
 const HorizontalLine$3 = styled.styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
@@ -3423,7 +3439,7 @@ const StyledInputWrapper = styled__default["default"].div.withConfig({
   displayName: "ColorConfigurations__StyledInputWrapper",
   componentId: "sc-qln4q1-5"
 })(["margin-top:10px;"]);
-const StyledInputColor = styled__default["default"](easyblocksDesignSystem.Input).withConfig({
+const StyledInputColor = styled__default["default"](Input.Input).withConfig({
   displayName: "ColorConfigurations__StyledInputColor",
   componentId: "sc-qln4q1-6"
 })(["box-shadow:0 0 0 1px ", ";width:100% !important;border-radius:2px;&:focus{outline:none;}"], easyblocksDesignSystem.Colors.black10);
@@ -3447,7 +3463,7 @@ const ColorCard = ({
   return /*#__PURE__*/React__default["default"].createElement(StyledColorCard, {
     background: themeOption[backgroundColor].value,
     onClick: openModal
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.Pencil, {
+  }, /*#__PURE__*/React__default["default"].createElement(icons.Icons.Pencil, {
     size: 18
   }));
 };
@@ -3592,20 +3608,20 @@ const ColorConfigurations = ({
         ...colorDetail
       })
     })));
-  })))), openEditColor ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  })))), openEditColor ? /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     title: t("theme.colors.edit"),
     isOpen: !!openEditColor,
     mode: "fit",
     onRequestClose: closeEditColor,
     maxHeight: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
       onClick: closeEditColor
-    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
       isLoading: isLoadingEdit,
       disabled: isLoadingEdit || !!colorInputError,
       onClick: onSaveEditColor
     }, t("template.save.default")))
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ColorPicker, {
+  }, /*#__PURE__*/React__default["default"].createElement(Input.ColorPicker, {
     value: openEditColor?.value,
     onChange: onChangeColor
   }), /*#__PURE__*/React__default["default"].createElement(StyledInputWrapper, null, /*#__PURE__*/React__default["default"].createElement(StyledInputColor, {
@@ -3621,25 +3637,25 @@ const ColorConfigurations = ({
       setColor(newColor);
     },
     onKeyDown: onEnterChangeColor
-  }), colorInputError ? /*#__PURE__*/React__default["default"].createElement(StyleColorError, null, colorInputError) : null)) : null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
+  }), colorInputError ? /*#__PURE__*/React__default["default"].createElement(StyleColorError, null, colorInputError) : null)) : null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonDanger, {
     style: {
       width: "fit-content"
     },
     onClick: () => setOpenConfirmReset(true)
-  }, t("theme.colors.reset")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  }, t("theme.colors.reset")), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     title: t("theme.colors.reset"),
     isOpen: openConfirmReset,
     onRequestClose: onCloseConfirmReset,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
       onClick: onCloseConfirmReset
-    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonDanger, {
       isLoading: isLoadingReset,
       disabled: isLoadingReset,
       onClick: onReset
     }, t("theme.colors.reset")))
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     variant: "body",
     component: "label"
   }, t("theme.colors.reset.confirm"))));
@@ -3690,7 +3706,7 @@ const PreviewTextarea = styled__default["default"].textarea.withConfig({
   displayName: "FontConfigurations__PreviewTextarea",
   componentId: "sc-1rpaqke-10"
 })(["border-radius:4px;width:100%;height:17vh;background-color:", ";resize:none;outline:none;padding:1rem;font-family:", ";font-size:", "px;font-weight:", ";line-height:", ";"], easyblocksDesignSystem.Colors.black10, f => f.fontFamily, f => f.fontSize, f => f.fontWeight, f => f.lineHeight);
-const StyledSelect = styled__default["default"](easyblocksDesignSystem.Select).withConfig({
+const StyledSelect = styled__default["default"](Select.Select).withConfig({
   displayName: "FontConfigurations__StyledSelect",
   componentId: "sc-1rpaqke-11"
 })(["display:flex;flex-direction:column;align-items:flex-end;min-width:0;cursor:pointer;border:1px solid ", ";border-radius:4px;"], easyblocksDesignSystem.Colors.black10);
@@ -3834,25 +3850,25 @@ const FontConfigurations = ({
     fontFamily: fontDetail.value?.fontFamily,
     fontWeight: fontDetail.value?.fontWeight,
     lineHeight: fontDetail.value?.lineHeight
-  }, fontDetail.label)), /*#__PURE__*/React__default["default"].createElement(FontDetails, null, [fontDetail.value?.fontFamily?.split(",")[0], fontDetail.value?.fontWeight ? `Font Weight: ${fontDetail.value?.fontWeight}` : null, fontDetail.value?.fontSize ? `${fontDetail.value?.fontSize}` : null, fontDetail.value?.lineHeight ? `${fontDetail.value?.lineHeight}` : null].filter(Boolean).join(", "))))))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
+  }, fontDetail.label)), /*#__PURE__*/React__default["default"].createElement(FontDetails, null, [fontDetail.value?.fontFamily?.split(",")[0], fontDetail.value?.fontWeight ? `Font Weight: ${fontDetail.value?.fontWeight}` : null, fontDetail.value?.fontSize ? `${fontDetail.value?.fontSize}` : null, fontDetail.value?.lineHeight ? `${fontDetail.value?.lineHeight}` : null].filter(Boolean).join(", "))))))), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonDanger, {
     onClick: () => setOpenConfirmReset(true)
-  }, t("theme.font.reset")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  }, t("theme.font.reset")), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     title: t("theme.font.reset"),
     isOpen: openConfirmReset,
     onRequestClose: onCloseConfirmReset,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
       onClick: onCloseConfirmReset
-    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonDanger, {
       isLoading: isLoadingReset,
       disabled: isLoadingReset,
       onClick: onReset
     }, t("theme.font.reset")))
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     variant: "body",
     component: "label"
-  }, t("theme.font.reset.confirm")))), openEditFont ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  }, t("theme.font.reset.confirm")))), openEditFont ? /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     width: "30vw",
     maxHeight: "auto",
     title: `${t("theme.font.edit")} ${openEditFont?.label ?? "Font"}`,
@@ -3867,7 +3883,7 @@ const FontConfigurations = ({
     onChange: newFontFamily => {
       onChange("fontFamily", newFontFamily);
     }
-  }, easyblocksCore.getFontFamilies().map(f => /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  }, easyblocksCore.getFontFamilies().map(f => /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     key: f.id,
     value: f.value
   }, /*#__PURE__*/React__default["default"].createElement("div", {
@@ -3879,7 +3895,7 @@ const FontConfigurations = ({
     onChange: newFontSize => {
       onChange("fontSize", newFontSize);
     }
-  }, easyblocksCore.getFontSizes().map(f => /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  }, easyblocksCore.getFontSizes().map(f => /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     key: f.id,
     value: f.value
   }, f.label))), /*#__PURE__*/React__default["default"].createElement(StyledSelect, {
@@ -3887,7 +3903,7 @@ const FontConfigurations = ({
     onChange: newFontWeight => {
       onChange("fontWeight", newFontWeight);
     }
-  }, easyblocksCore.getFontWeights().map(f => /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  }, easyblocksCore.getFontWeights().map(f => /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     key: f.id,
     value: f.value
   }, f.label))), /*#__PURE__*/React__default["default"].createElement(StyledSelect, {
@@ -3895,7 +3911,7 @@ const FontConfigurations = ({
     onChange: newLineHeight => {
       onChange("lineHeight", newLineHeight);
     }
-  }, easyblocksCore.getLineHeights().map(f => /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  }, easyblocksCore.getLineHeights().map(f => /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     key: f.id,
     value: f.value
   }, f.label)))), /*#__PURE__*/React__default["default"].createElement(PreviewTextarea, {
@@ -3913,9 +3929,9 @@ const FontConfigurations = ({
       marginTop: 8,
       gap: 8
     }
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+  }, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
     onClick: () => handleFontClose()
-  }, t("theme.font.cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+  }, t("theme.font.cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
     isLoading: isLoadingEdit,
     disabled: isLoadingEdit,
     type: "submit"
@@ -3969,7 +3985,7 @@ const FontColorConfigsModal = ({
   const [activeSidebar, setActiveSidebar] = React.useState(sidebarContents[0].id);
   const activeTitle = sidebarContents.find(sidebarContent => sidebarContent.id === activeSidebar)?.title;
   const ActiveContent = sidebarContents.find(sidebarContent => sidebarContent.id === activeSidebar)?.content;
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  return /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     title: activeTitle,
     isOpen: isOpen,
     onRequestClose: onClose,
@@ -4056,8 +4072,8 @@ const EditorTopBar = ({
   };
   return /*#__PURE__*/React__default["default"].createElement(TopBar, {
     ref: headingRef
-  }, /*#__PURE__*/React__default["default"].createElement(TopBarLeft, null, !hideCloseButton && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.Close,
+  }, /*#__PURE__*/React__default["default"].createElement(TopBarLeft, null, !hideCloseButton && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Close,
     hideLabel: true,
     onClick: onClose
   }, "Close"), /*#__PURE__*/React__default["default"].createElement("div", {
@@ -4066,39 +4082,39 @@ const EditorTopBar = ({
       background: easyblocksDesignSystem.Colors.black10,
       width: 1
     }
-  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.Undo,
+  })), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Undo,
     hideLabel: true,
     disabled: editorHistoryInstance.isOldest(),
     onClick: () => {
       onUndo();
     }
-  }, t("editor.sidebar.undo")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.Redo,
+  }, t("editor.sidebar.undo")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Redo,
     hideLabel: true,
     disabled: editorHistoryInstance.isNewest(),
     onClick: () => {
       onRedo();
     }
-  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "(Read-Only)"), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.GlobalSections,
+  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "(Read-Only)"), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.GlobalSections,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("global-sections"),
     style: {
       background: showLeftSidebar === "global-sections" ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.Layers,
+  }, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Layers,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("layers"),
     style: {
       background: showLeftSidebar === "layers" ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.layers")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.ColorAndFonts,
+  }, t("editor.sidebar.layers")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ColorAndFonts,
     hideLabel: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
-  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     style: {
       maxWidth: 150,
       overflow: "hidden",
@@ -4122,10 +4138,10 @@ const EditorTopBar = ({
       gap: "6px",
       alignItems: "center"
     }
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Select, {
+  }, /*#__PURE__*/React__default["default"].createElement(Select.Select, {
     value: locale,
     onChange: locale => onLocaleChange(locale)
-  }, locales.map(l => /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.SelectItem, {
+  }, locales.map(l => /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
     key: l.code,
     value: l.code
   }, /*#__PURE__*/React__default["default"].createElement("div", {
@@ -4139,26 +4155,26 @@ const EditorTopBar = ({
   }, l.icon ? /*#__PURE__*/React__default["default"].createElement(ImageContainer$1, null, /*#__PURE__*/React__default["default"].createElement(Image, {
     src: l.icon,
     alt: l.name
-  })) : null, l.name)))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+  })) : null, l.name)))), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     hideLabel: true,
-    icon: easyblocksDesignSystem.Icons.Save,
+    icon: icons.Icons.Save,
     onClick: onSaveDocument,
     disabled: isSaving,
     isLoading: isSaving
   }, t("topBar.save")), /*#__PURE__*/React__default["default"].createElement("a", {
     href: `/?previewId=${themeId}&shopId=${shopId}`,
     target: "_blank"
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
+  }, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     hideLabel: true,
-    icon: easyblocksDesignSystem.Icons.Preview
-  }, t("topBar.preview"))), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    icon: icons.Icons.Preview
+  }, t("topBar.preview"))), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     variant: "body",
     component: "label",
     htmlFor: "easyblocks-edit-mode-button",
     style: {
       marginLeft: 6
     }
-  }, t("topBar.editMode")), " ", /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Toggle, {
+  }, t("topBar.editMode")), " ", /*#__PURE__*/React__default["default"].createElement(Toggle$1.Toggle, {
     name: "easyblocks-edit-mode-button",
     checked: isEditing,
     onChange: () => {
@@ -4293,7 +4309,7 @@ function DeviceSwitch({
   devices,
   onDeviceChange
 }) {
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ToggleGroup, {
+  return /*#__PURE__*/React__default["default"].createElement(ToggleGroup.ToggleGroup, {
     value: deviceId,
     onChange: deviceId => {
       if (deviceId === "") {
@@ -4307,14 +4323,14 @@ function DeviceSwitch({
     }
     return /*#__PURE__*/React__default["default"].createElement(Tooltip$1.Tooltip, {
       key: d.id
-    }, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ToggleGroupItem, {
+    }, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(ToggleGroup.ToggleGroupItem, {
       value: d.id
-    }, DEVICE_ID_TO_ICON[d.id])), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    }, DEVICE_ID_TO_ICON[d.id])), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
       color: "white"
     }, d.label ?? d.id)));
-  }), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ToggleGroupItem, {
+  }), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(ToggleGroup.ToggleGroupItem, {
     value: "fit-screen"
-  }, DEVICE_ID_TO_ICON["fit-screen"])), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, DEVICE_ID_TO_ICON["fit-screen"])), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     color: "white"
   }, "Fit screen"))));
 }
@@ -4830,7 +4846,7 @@ const TemplateModal = props => {
       setError(null);
     }
   }, [open]);
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  return /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     title: t("template.save.title"),
     isOpen: true,
     onRequestClose: () => {
@@ -4900,10 +4916,10 @@ const TemplateModal = props => {
       gap: "12px",
       marginTop: "8px"
     }
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
+  }, /*#__PURE__*/React__default["default"].createElement(FormElement.FormElement, {
     name: "label",
     label: t("template.save.name")
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     placeholder: t("template.save.name"),
     required: true,
     value: label,
@@ -4915,10 +4931,10 @@ const TemplateModal = props => {
     },
     withBorder: true,
     autoFocus: true
-  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
+  })), /*#__PURE__*/React__default["default"].createElement(FormElement.FormElement, {
     name: "group",
     label: t("template.save.group")
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     placeholder: t("template.save.group"),
     value: group,
     onChange: e => {
@@ -4929,20 +4945,20 @@ const TemplateModal = props => {
     },
     withBorder: true,
     autoFocus: true
-  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
+  })), /*#__PURE__*/React__default["default"].createElement(FormElement.FormElement, {
     name: "thumbnail",
     label: t("template.save.thumbnailLink"),
     position: "start"
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.InputFile, {
+  }, /*#__PURE__*/React__default["default"].createElement(Input.InputFile, {
     src: thumbnail,
     alt: t("template.save.thumbnailLink"),
     onChange: onUploadFile,
     onClearFile: onClearFile,
     isLoading: isUploadingFile
-  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.FormElement, {
+  })), /*#__PURE__*/React__default["default"].createElement(FormElement.FormElement, {
     name: "thumbnailLabel",
     label: t("template.save.thumbnailLabel")
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     placeholder: t("template.save.thumbnailLabel"),
     value: thumbnailLabel,
     onChange: e => {
@@ -4965,7 +4981,7 @@ const TemplateModal = props => {
     style: {
       order: 2
     }
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+  }, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
     type: "submit",
     disabled: !canSend,
     isLoading: isLoadingEdit,
@@ -4976,7 +4992,7 @@ const TemplateModal = props => {
     style: {
       order: 1
     }
-  }, mode === "edit" && /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonDanger, {
+  }, mode === "edit" && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonDanger, {
     onClick: e => {
       e.preventDefault();
       setLoadingDelete(true);
@@ -5368,13 +5384,13 @@ const MenuItem = ({
     onMouseEnter: () => setIsHoverMenu(true),
     onMouseLeave: () => setIsHoverMenu(false),
     onClick: onClickMenu
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     style: {
       cursor: "pointer"
     },
     variant: "body",
     component: "label"
-  }, menu.isLoading ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Loader, null) : menu.label), menu?.children?.length ? /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ChevronRight, {
+  }, menu.isLoading ? /*#__PURE__*/React__default["default"].createElement(Loader.Loader, null) : menu.label), menu?.children?.length ? /*#__PURE__*/React__default["default"].createElement(icons.Icons.ChevronRight, {
     size: 18
   }) : null, isHoverMenu && menu?.children ? /*#__PURE__*/React__default["default"].createElement(Menu, {
     styles: {
@@ -5416,7 +5432,7 @@ const StyledWrapperMenuDialog = styled__default["default"].div.withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledWrapperMenuDialog",
   componentId: "sc-f9npik-4"
 })(["position:absolute;top:20px;right:0px;z-index:1;"]);
-const StyledWrapperAddToPage = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledWrapperAddToPage = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledWrapperAddToPage",
   componentId: "sc-f9npik-5"
 })(["font-weight:500;cursor:pointer;color:", ";", ""], easyblocksDesignSystem.Colors.blue60, ({
@@ -5433,7 +5449,7 @@ const StyledWrapperLabel = styled__default["default"].div.withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledWrapperLabel",
   componentId: "sc-f9npik-6"
 })(["width:190px;"]);
-const StyledLabel = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledLabel = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledLabel",
   componentId: "sc-f9npik-7"
 })(["text-overflow:ellipsis;white-space:nowrap;overflow:hidden;"]);
@@ -5496,18 +5512,18 @@ const EditorGlobalSectionGroupItem = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [openMenu]);
-  return /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionItem, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(StyledWrapperLabel, null, /*#__PURE__*/React__default["default"].createElement(StyledLabel, null, groupItem.label))), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  return /*#__PURE__*/React__default["default"].createElement(StyledEditorGlobalSectionItem, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.Tooltip, null, /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipTrigger, null, /*#__PURE__*/React__default["default"].createElement(StyledWrapperLabel, null, /*#__PURE__*/React__default["default"].createElement(StyledLabel, null, groupItem.label))), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     color: "white"
   }, groupItem.label))), /*#__PURE__*/React__default["default"].createElement(StyledWrapperMenu, {
     ref: menuRef
-  }, isAddedToPage ? /*#__PURE__*/React__default["default"].createElement(StyledWrapperCheckIcon, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.Check, {
+  }, isAddedToPage ? /*#__PURE__*/React__default["default"].createElement(StyledWrapperCheckIcon, null, /*#__PURE__*/React__default["default"].createElement(icons.Icons.Check, {
     size: 16
   })) : /*#__PURE__*/React__default["default"].createElement(StyledWrapperAddToPage, {
     disabled: !groupItem.entry?._component,
     onClick: onAddToPage
   }, t("add")), /*#__PURE__*/React__default["default"].createElement(StyledWrapperThreeDotsIcon, {
     onClick: () => onOpenMenu(groupItem.id)
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ThreeDotsHorizontal, {
+  }, /*#__PURE__*/React__default["default"].createElement(icons.Icons.ThreeDotsHorizontal, {
     size: 16
   })), openMenu && openMenu.entryId === groupItem.id ? /*#__PURE__*/React__default["default"].createElement(StyledWrapperMenuDialog, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
     menus: [{
@@ -5538,17 +5554,17 @@ const HorizontalLine$2 = styled__default["default"].div.withConfig({
   displayName: "EditorGlobalSectionGroup__HorizontalLine",
   componentId: "sc-1eald7c-0"
 })(["height:1px;margin-top:-1px;background-color:", ";margin:4px 10px;"], easyblocksDesignSystem.Colors.black10);
-const StyledWrapperChevronIcon$1 = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledWrapperChevronIcon$1 = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorGlobalSectionGroup__StyledWrapperChevronIcon",
   componentId: "sc-1eald7c-1"
 })(["transition:transform 0.2s ease;", ""], ({
   isOpen
 }) => `transform: rotate(${isOpen ? 180 : 0}deg);`);
-const StyledEditorGlobalSectionGroups = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorGlobalSectionGroups = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorGlobalSectionGroup__StyledEditorGlobalSectionGroups",
   componentId: "sc-1eald7c-2"
 })(["display:flex;align-items:center;justify-content:space-between;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;"]);
-const StyledEditorGlobalSectionsLabel = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorGlobalSectionsLabel = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorGlobalSectionGroup__StyledEditorGlobalSectionsLabel",
   componentId: "sc-1eald7c-3"
 })(["display:block;font-weight:700;max-width:240px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;cursor:pointer;"]);
@@ -5638,7 +5654,7 @@ const EditorGlobalSectionGroup = ({
     component: "label"
   }, globalSectionGroup.group.name, ` (${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`), /*#__PURE__*/React__default["default"].createElement(StyledWrapperChevronIcon$1, {
     isOpen: isExpandedGroups
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ChevronDown, {
+  }, /*#__PURE__*/React__default["default"].createElement(icons.Icons.ChevronDown, {
     size: 22
   }))), isExpandedGroups ? globalSectionGroup.groupItem?.orders?.map(entryId => {
     const entryValue = globalSectionGroup.groupItem.entities[entryId];
@@ -5654,36 +5670,36 @@ const EditorGlobalSectionGroup = ({
       setOpenDeleteConfirm: setOpenDeleteConfirm,
       setOpenEditSection: setOpenEditSection
     });
-  }) : null, isExpandedGroups && globalSectionGroup.groupItem?.orders?.length ? /*#__PURE__*/React__default["default"].createElement(HorizontalLine$2, null) : null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  }) : null, isExpandedGroups && globalSectionGroup.groupItem?.orders?.length ? /*#__PURE__*/React__default["default"].createElement(HorizontalLine$2, null) : null, /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     title: `${t("delete")} (${openDeleteConfirm?.sectionName})`,
     isOpen: openDeleteConfirm !== null,
     onRequestClose: onCloseConfirm,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
       onClick: onCloseConfirm
-    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
       isLoading: isLoading,
       disabled: isLoading,
       onClick: onConfirmDeleteSection
     }, t("template.delete.default")))
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+  }, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     variant: "body",
     component: "label"
-  }, t("editor.sidebar.globalSections.delete.confirm"))), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  }, t("editor.sidebar.globalSections.delete.confirm"))), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     title: t("rename"),
     isOpen: openEditSection !== null,
     onRequestClose: onCloseEditSection,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
       onClick: onCloseEditSection
-    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
       isLoading: isLoading,
       disabled: isLoading,
       onClick: onEditSection
     }, t("rename")))
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     defaultValue: openEditSection?.label,
     ref: inputRef,
     withBorder: true,
@@ -5706,15 +5722,15 @@ const StyledEditorGlobalSections = styled__default["default"].div.withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSections",
   componentId: "sc-ps3wnb-2"
 })(["height:100%;overflow-x:auto;padding-top:0px;padding-bottom:16px;"]);
-const StyledEditorGlobalSectionsTitle = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorGlobalSectionsTitle = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionsTitle",
   componentId: "sc-ps3wnb-3"
 })(["line-height:14px;font-weight:700;padding:17px 12px;"]);
-const StyledEditorGlobalSectionsDescription = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorGlobalSectionsDescription = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionsDescription",
   componentId: "sc-ps3wnb-4"
 })(["padding:20px 12px;"]);
-const StyledEditorGlobalSectionGroup = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorGlobalSectionGroup = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
   componentId: "sc-ps3wnb-5"
 })(["padding:10px 0px;"]);
@@ -5779,7 +5795,7 @@ const normalizeComponentLayers = (components, prefix = "data", _rootParentId) =>
   return [];
 };
 
-const StyledEditorLayerLabel$1 = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorLayerLabel$1 = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorLayerChildren__StyledEditorLayerLabel",
   componentId: "sc-1v3iddr-0"
 })(["display:block;cursor:pointer;", ""], ({
@@ -5787,7 +5803,7 @@ const StyledEditorLayerLabel$1 = styled__default["default"](easyblocksDesignSyst
 }) => `
     font-weight: ${isFocus ? 700 : 400};
   `);
-const StyledEditorLayerComponent$1 = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorLayerComponent$1 = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorLayerChildren__StyledEditorLayerComponent",
   componentId: "sc-1v3iddr-1"
 })(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
@@ -5810,7 +5826,7 @@ const EditorLayerChildren = ({
     id: `sidebar-layer-${layer.id}`,
     onClick: () => onClickLayer(layer.id, layer.path, layer.rootParentId),
     isFocus: currentLayer === layer.path
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.LayerChildren, {
+  }, /*#__PURE__*/React__default["default"].createElement(icons.Icons.LayerChildren, {
     size: 18
   }), /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerLabel$1, {
     isFocus: currentLayer === layer.path,
@@ -5819,7 +5835,7 @@ const EditorLayerChildren = ({
   }, layer.component));
 };
 
-const StyledEditorLayerLabel = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorLayerLabel = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorLayerGroup__StyledEditorLayerLabel",
   componentId: "sc-p2lu63-0"
 })(["display:block;cursor:pointer;", ""], ({
@@ -5827,7 +5843,7 @@ const StyledEditorLayerLabel = styled__default["default"](easyblocksDesignSystem
 }) => `
     font-weight: ${isFocus ? 700 : 400};
   `);
-const StyledEditorLayerComponent = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorLayerComponent = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorLayerGroup__StyledEditorLayerComponent",
   componentId: "sc-p2lu63-1"
 })(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
@@ -5835,7 +5851,7 @@ const StyledEditorLayerComponent = styled__default["default"](easyblocksDesignSy
 }) => `
     background: ${isFocus ? easyblocksDesignSystem.Colors.black10 : "transparent"};
   `, easyblocksDesignSystem.Colors.black10);
-const StyledWrapperChevronIcon = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledWrapperChevronIcon = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorLayerGroup__StyledWrapperChevronIcon",
   componentId: "sc-p2lu63-2"
 })(["transition:transform 0.2s ease;", ""], ({
@@ -5884,9 +5900,9 @@ const RawEditorLayerGroup = ({
     isFocus: isFocus
   }, /*#__PURE__*/React__default["default"].createElement(StyledWrapperChevronIcon, {
     isOpen: openedLayer
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.ChevronDown, {
+  }, /*#__PURE__*/React__default["default"].createElement(icons.Icons.ChevronDown, {
     size: 16
-  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Icons.LayerGroup, {
+  })), /*#__PURE__*/React__default["default"].createElement(icons.Icons.LayerGroup, {
     size: 18
   }), /*#__PURE__*/React__default["default"].createElement(StyledEditorLayerLabel, {
     isFocus: isFocus,
@@ -5942,7 +5958,7 @@ const StyledEditorLayer = styled__default["default"].div.withConfig({
   displayName: "EditorLayer__StyledEditorLayer",
   componentId: "sc-vnm02d-2"
 })(["overflow-x:auto;padding-top:20px;padding-bottom:16px;"]);
-const StyledEditorLayerTitle = styled__default["default"](easyblocksDesignSystem.Typography).withConfig({
+const StyledEditorLayerTitle = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorLayer__StyledEditorLayerTitle",
   componentId: "sc-vnm02d-3"
 })(["line-height:14px;font-weight:700;padding:17px 12px;"]);
@@ -6471,20 +6487,20 @@ const SelectionMoreActions = ({
       top: "40px",
       left: "80%"
     }
-  })), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  })), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     title: t("editor.sidebar.globalSections.setGlobal.enterName"),
     isOpen: !!openConfirmGlobalSection,
     onRequestClose: onClose,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
       onClick: onClose
-    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonPrimary, {
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
       isLoading: isLoading,
       disabled: isLoading,
       onClick: onConfirmSetGlobalSection
     }, t("template.save.default")))
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     ref: inputRef,
     withBorder: true,
     style: {
@@ -6508,24 +6524,24 @@ const SelectionFrameActions = ({
   const [showMore, setShowMore] = React.useState(false);
   return /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsContainer, {
     onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.Duplicate,
+  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Duplicate,
     hideLabel: true,
     onClick: () => actions.duplicateItems(focussedField)
-  }, t("duplicate")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.Trash,
+  }, t("duplicate")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Trash,
     hideLabel: true,
     onClick: () => actions.removeItems(focussedField)
-  }, t("delete")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.ArrowUp,
+  }, t("delete")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ArrowUp,
     hideLabel: true,
     onClick: () => actions.moveItems(focussedField, "top")
-  }, t("up")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.ArrowDown,
+  }, t("up")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ArrowDown,
     hideLabel: true,
     onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("down")), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhost, {
-    icon: easyblocksDesignSystem.Icons.ThreeDotsHorizontal,
+  }, t("down")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ThreeDotsHorizontal,
     showTooltip: false,
     hideLabel: true,
     onClick: () => setShowMore(prev => !prev)
@@ -8739,7 +8755,7 @@ const SearchableSmallPickerModal = ({
       onClose(template);
     }
   };
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  return /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     mode: "center-small",
     isOpen: isOpen,
     onRequestClose: () => {
@@ -8766,7 +8782,7 @@ const SearchableSmallPickerModal = ({
       const title = isOnlyOne ? componentLabel : templateLabel;
       const thumbnail = template.thumbnail ?? component.thumbnail;
       const description = isOnlyOne ? undefined : componentLabel;
-      return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.BasicRow, {
+      return /*#__PURE__*/React__default["default"].createElement(rows.BasicRow, {
         key: template.id,
         title: title,
         description: description,
@@ -8884,7 +8900,7 @@ const SectionCard = ({
     clipRule: "evenodd",
     d: "M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM3 3H13V13H3L3 3Z",
     fill: easyblocksDesignSystem.Colors.black20
-  })))), /*#__PURE__*/React__default["default"].createElement(CardFooter, null, /*#__PURE__*/React__default["default"].createElement(CardLabelContainer, null, /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, template.label && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(CardLabelTemplateName, null, template.label)))), /*#__PURE__*/React__default["default"].createElement("div", null), template.isUserDefined && !editorContext.readOnly && /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ButtonGhostColor, {
+  })))), /*#__PURE__*/React__default["default"].createElement(CardFooter, null, /*#__PURE__*/React__default["default"].createElement(CardLabelContainer, null, /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, template.label && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(CardLabelTemplateName, null, template.label)))), /*#__PURE__*/React__default["default"].createElement("div", null), template.isUserDefined && !editorContext.readOnly && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhostColor, {
     className: "editButton",
     onClick: () => {
       editorContext.actions.openTemplateModal({
@@ -8936,7 +8952,7 @@ const SectionPickerModal = ({
       onClose(template);
     }
   };
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Modal, {
+  return /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
     noPadding: true,
     title: "Pick section",
     isOpen: isOpen,
@@ -8989,7 +9005,7 @@ const SectionPickerModal = ({
 
 function ColorTokenWidget(props) {
   const [inputValue, setInputValue] = React.useState(props.value);
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  return /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     value: inputValue,
     onChange: e => {
       setInputValue(e.target.value);
@@ -9016,7 +9032,7 @@ function DocumentDataWidgetComponent({
   path
 }) {
   if (id !== null && typeof id !== "string") {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    return /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
       style: {
         whiteSpace: "normal"
       }
@@ -9052,7 +9068,7 @@ function DocumentDataWidgetComponent({
     });
   }
   if (!documentCompoundResources.length) {
-    return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Typography, {
+    return /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
       style: {
         whiteSpace: "normal"
       }
@@ -9075,7 +9091,7 @@ function DocumentDataWidgetComponent({
 
 function SpaceTokenWidget(props) {
   const [inputValue, setInputValue] = React.useState(props.value);
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  return /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     value: inputValue,
     onChange: e => {
       setInputValue(e.target.value);
@@ -9115,11 +9131,11 @@ function EasyblocksParent(props) {
   return /*#__PURE__*/React__default["default"].createElement(styled.StyleSheetManager, {
     shouldForwardProp: shouldForwardProp,
     enableVendorPrefixes: true
-  }, /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.ModalContext.Provider, {
+  }, /*#__PURE__*/React__default["default"].createElement(modals.ModalContext.Provider, {
     value: () => {
       return document.querySelector("#modalContainer");
     }
-  }, /*#__PURE__*/React__default["default"].createElement(GlobalStyles, null), /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.GlobalModalStyles, null), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipProvider, null, /*#__PURE__*/React__default["default"].createElement("div", {
+  }, /*#__PURE__*/React__default["default"].createElement(GlobalStyles, null), /*#__PURE__*/React__default["default"].createElement(modals.GlobalModalStyles, null), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipProvider, null, /*#__PURE__*/React__default["default"].createElement("div", {
     id: "modalContainer",
     style: {
       position: "fixed",
@@ -10283,7 +10299,7 @@ function DebugUrlWidget(props) {
       setValue(props.value);
     }
   });
-  return /*#__PURE__*/React__default["default"].createElement(easyblocksDesignSystem.Input, {
+  return /*#__PURE__*/React__default["default"].createElement(Input.Input, {
     value: value,
     onChange: event => {
       setActive(true);

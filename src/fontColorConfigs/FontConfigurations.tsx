@@ -8,18 +8,16 @@ import {
   getFontWeights,
   getLineHeights,
 } from "@redsun-vn/easyblocks-core";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
 import {
   ButtonDanger,
   ButtonPrimary,
   ButtonSecondary,
-  Colors,
-  Fonts,
-  Modal,
-  Select,
-  SelectItem,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/buttons";
+import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
+import { Select, SelectItem } from "@redsun-vn/easyblocks-design-system/Select";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useState } from "react";
 import styled from "styled-components";
 import { EditorContextType } from "../EditorContext";

@@ -4,12 +4,9 @@ import {
   findComponentDefinition,
   stripRichTextPartSelection,
 } from "@redsun-vn/easyblocks-core/_internals";
-import {
-  ButtonSecondary,
-  Colors,
-  Fonts,
-  Icons,
-} from "@redsun-vn/easyblocks-design-system";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { ButtonSecondary } from "@redsun-vn/easyblocks-design-system/buttons";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import * as React from "react";
 import { useState } from "react";

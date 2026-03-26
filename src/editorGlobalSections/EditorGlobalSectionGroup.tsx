@@ -1,13 +1,13 @@
 import { IThemeConfig, NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
+import { Colors } from "@redsun-vn/easyblocks-design-system";
 import {
   ButtonPrimary,
   ButtonSecondary,
-  Colors,
-  Icons,
-  Input,
-  Modal,
-  Typography,
-} from "@redsun-vn/easyblocks-design-system";
+} from "@redsun-vn/easyblocks-design-system/buttons";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
+import { Input } from "@redsun-vn/easyblocks-design-system/Input";
+import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../EditorContext";

@@ -1,11 +1,11 @@
+import { assertDefined, dotNotationGet } from "@/utils";
 import {
   getExternalReferenceLocationKey,
   isResolvedCompoundExternalDataValue,
   type ExternalDataCompoundResourceResolvedResult,
 } from "@redsun-vn/easyblocks-core";
 import { findComponentDefinitionById } from "@redsun-vn/easyblocks-core/_internals";
-import { Typography } from "@redsun-vn/easyblocks-design-system";
-import { assertDefined, dotNotationGet } from "@/utils";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React from "react";
 import {
   CompoundResourceValueSelect,
@@ -37,7 +37,7 @@ function DocumentDataWidgetComponent({
   const schema = editorContext.rootComponent.rootParams;
 
   const documentExternalLocationKeys = assertDefined(schema).map((s: any) =>
-    getExternalReferenceLocationKey("$", s.prop)
+    getExternalReferenceLocationKey("$", s.prop),
   );
 
   const documentCompoundResources = Object.entries(externalData).filter<
@@ -47,21 +47,21 @@ function DocumentDataWidgetComponent({
     return (
       documentExternalLocationKeys.includes(externalId) &&
       isResolvedCompoundExternalDataValue(
-        externalDataValue as ExternalDataCompoundResourceResolvedResult
+        externalDataValue as ExternalDataCompoundResourceResolvedResult,
       )
     );
   });
 
   const entry = dotNotationGet(
     editorContext.form.values,
-    path.slice(0, path.lastIndexOf("."))
+    path.slice(0, path.lastIndexOf(".")),
   );
   const definition = findComponentDefinitionById(
     entry._component,
-    editorContext
+    editorContext,
   );
   const schemaProp = definition!.schema.find(
-    (s) => s.prop === path.split(".").pop()
+    (s) => s.prop === path.split(".").pop(),
   )!;
 
   const options = documentCompoundResources.flatMap(
@@ -70,8 +70,8 @@ function DocumentDataWidgetComponent({
         (r) => {
           const resourceSchemaProp = assertDefined(
             schema?.find(
-              (s: { prop: string }) => s.prop === externalId.split(".")[1]
-            )
+              (s: { prop: string }) => s.prop === externalId.split(".")[1],
+            ),
           );
 
           return {
@@ -81,8 +81,8 @@ function DocumentDataWidgetComponent({
               r.label ?? r.key
             }`,
           };
-        }
-      )
+        },
+      ),
   );
 
   if (options.length === 1 && !id && path) {

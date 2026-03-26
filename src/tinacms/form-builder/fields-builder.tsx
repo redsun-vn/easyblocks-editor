@@ -1,10 +1,12 @@
 import { toArray } from "@/utils";
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
-import { Colors, Fonts, Typography } from "@redsun-vn/easyblocks-design-system";
+import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useContext, useMemo } from "react";
 import { styled } from "styled-components";
 import { useEditorContext } from "../../EditorContext";
 import { Form } from "../../form";
+import { useTranslation } from "../../useTranslation";
 import {
   BlockFieldPlugin,
   ExternalFieldPlugin,
@@ -25,7 +27,6 @@ import { LocalFieldPlugin } from "../fields/plugins/LocalFIeld";
 import { PositionFieldPlugin } from "../fields/plugins/PositionFieldPlugin";
 import { FieldPlugin } from "./field-plugin";
 import { createFieldController } from "./utils/createFieldController";
-import { useTranslation } from "../../useTranslation";
 
 export interface FieldBuilderProps {
   form: Form;
