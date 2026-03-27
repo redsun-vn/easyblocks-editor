@@ -74,45 +74,6 @@ var ReactDOM__default = /*#__PURE__*/_interopDefaultLegacy(ReactDOM);
 var RadixRadioGroup__namespace = /*#__PURE__*/_interopNamespace(RadixRadioGroup);
 var arrayMutators__default = /*#__PURE__*/_interopDefaultLegacy(arrayMutators);
 
-function last(collection) {
-  return collection[collection.length - 1];
-}
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-function toArray(scalarOrCollection) {
-  if (Array.isArray(scalarOrCollection)) {
-    return scalarOrCollection;
-  }
-  return [scalarOrCollection];
-}
-
-const takeNumbers = path => path.split(".").map(x => parseInt(x, 10)).filter(x => !Number.isNaN(x));
-const preOrderPathComparator = (direction = "ascending") => (pathA, pathB) => {
-  const order = direction === "ascending" ? 1 : -1;
-  const numbersA = takeNumbers(pathA);
-  const numbersB = takeNumbers(pathB);
-  const numberALength = numbersA.length;
-  const numberBLength = numbersB.length;
-  if (numberALength === 0 || numberBLength === 0) {
-    throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
-  }
-  const shorterLength = Math.min(numberALength, numberBLength);
-  let index = 0;
-  while (index < shorterLength) {
-    const valueA = numbersA[index];
-    const valueB = numbersB[index];
-    if (valueA !== valueB) {
-      return order * Math.sign(valueA - valueB);
-    }
-    index++;
-  }
-  return order * Math.sign(numberBLength - numberALength);
-};
-
-function includesAny(a, b) {
-  return a.some(i => b.includes(i));
-}
-
 function deepClone(source) {
   return JSON.parse(JSON.stringify(source));
 }
@@ -156,18 +117,156 @@ function useForceRerender() {
   };
 }
 
+function checkLocalesCorrectness(locales) {
+  if (locales.length === 0) {
+    throw new Error("Locales array can't be empty");
+  }
+  const defaultLocales = locales.filter(l => l.isDefault);
+  if (defaultLocales.length === 0) {
+    throw new Error("One locale must be set as default, you didn't set any");
+  }
+  if (defaultLocales.length > 1) {
+    throw new Error("Only one locale must be set as default, you set more than one");
+  }
+  const defaultLocale = defaultLocales[0];
+  if (defaultLocale.fallback) {
+    throw new Error("Default locale can't have fallback");
+  }
+
+  // Check for incorrect fallbacks
+  locales.forEach(locale => {
+    if (locale.fallback) {
+      const fallback = locales.find(x => x.code === locale.fallback);
+      if (!fallback) {
+        throw new Error(`Locale ${locale} has a fallback ${locale.fallback} which doesn't exist in the locales list.`);
+      }
+    }
+    // If there is no fallback, then we treat default locale as a fallback!
+  });
+
+  // Let's check for circulars
+  locales.forEach(locale => {
+    const localeChain = [];
+    let currentLocale = locale;
+    do {
+      localeChain.push(currentLocale.code);
+      const fallbackId = currentLocale.fallback ?? easyblocksCore.getDefaultLocale(locales).code;
+
+      // If we got to the default locale then we're fine
+      if (fallbackId === easyblocksCore.getDefaultLocale(locales).code) {
+        break;
+      }
+
+      // If fallbackId does already exists in localeChain then it means we have circular!
+      if (localeChain.includes(fallbackId)) {
+        throw new Error(`There is circular reference in locales: ${[...localeChain, fallbackId].join(",")}`);
+      }
+      currentLocale = locales.find(x => x.code === fallbackId);
+    } while (true);
+  });
+  return true;
+}
+
+/**
+ * Traverses recursively the config tree (similar to traverseConfig) but behaves like "Array.map". It returns new tree with elements mapped to new ones.
+ * Responsive values are mapped "per breakpoint", it smells a bit, maybe in the future we'll have to apply some flag to have option whether we want to disassemble responsives or not.
+ */
+
+function configMapArray(configArray, context, callback, prefix) {
+  /**
+   * Why this?
+   *
+   * Sometimes you might need configMap for config that have not yet been normalized. Such config still can be considered correct if it has a component that have a new schema property. Example of this is mergeSingleLocaleConfigsIntoConfig.
+   */
+  if (configArray === undefined) {
+    return;
+  }
+  if (!Array.isArray(configArray)) {
+    return;
+  }
+  return configArray.map((x, index) => configMapInternal(x, context, callback, `${prefix}.${index}`));
+}
+function configMap(config, context, callback) {
+  return configMapInternal(config, context, callback, "");
+}
+function configMapInternal(config, context, callback, prefix) {
+  const componentDefinition = _internals.findComponentDefinition(config, context);
+  const result = {
+    ...config
+  };
+  if (!componentDefinition) {
+    return result;
+  }
+  prefix = prefix === undefined || prefix === "" ? "" : `${prefix}.`;
+  componentDefinition.schema.forEach(schemaProp => {
+    if (schemaProp.type === "component-collection-localised") {
+      if (config[schemaProp.prop] === undefined) {
+        return;
+      }
+      result[schemaProp.prop] = {};
+      for (const locale in config[schemaProp.prop]) {
+        if (locale === "__fallback") {
+          continue;
+        }
+        result[schemaProp.prop][locale] = configMapArray(config[schemaProp.prop][locale], context, callback, `${prefix}${schemaProp.prop}.${locale}`);
+      }
+      result[schemaProp.prop] = callback({
+        value: result[schemaProp.prop],
+        path: `${prefix}${schemaProp.prop}`,
+        schemaProp
+      });
+    } else if (schemaProp.type === "component" || schemaProp.type === "component-collection") {
+      result[schemaProp.prop] = configMapArray(config[schemaProp.prop], context, callback, `${prefix}${schemaProp.prop}`);
+      result[schemaProp.prop] = callback({
+        value: result[schemaProp.prop],
+        path: `${prefix}${schemaProp.prop}`,
+        schemaProp
+      });
+    } else {
+      if (easyblocksCore.isTrulyResponsiveValue(result[schemaProp.prop])) {
+        const mappedVal = {
+          $res: true
+        };
+        for (const key in result[schemaProp.prop]) {
+          if (key === "$res") {
+            continue;
+          }
+          mappedVal[key] = callback({
+            value: result[schemaProp.prop][key],
+            schemaProp,
+            path: `${prefix}${schemaProp.prop}.${key}`
+          });
+        }
+        result[schemaProp.prop] = mappedVal;
+      } else {
+        result[schemaProp.prop] = callback({
+          value: result[schemaProp.prop],
+          schemaProp,
+          path: `${prefix}${schemaProp.prop}`
+        });
+      }
+    }
+  });
+  return result;
+}
+
+function removeLocalizedFlag(config, context) {
+  return configMap(config, context, ({
+    value,
+    schemaProp
+  }) => {
+    if (schemaProp.type === "text" && value?.id.startsWith("local.") || schemaProp.type === "component-collection-localised") {
+      delete value.__localized;
+    }
+    return value;
+  });
+}
+
 function dotNotationGet(obj, path) {
   if (path === "") {
     return obj;
   }
   return path.split(".").reduce((acc, curVal) => acc && acc[curVal], obj);
-}
-
-function serialize(value) {
-  if (value instanceof Error) {
-    return JSON.parse(JSON.stringify(value, Object.getOwnPropertyNames(value)));
-  }
-  return JSON.parse(JSON.stringify(value));
 }
 
 function sleep(ms) {
@@ -181,13 +280,6 @@ function uniqueId() {
     return v.toString(16);
   });
   return id;
-}
-
-function assertDefined(value, message) {
-  if (value === undefined) {
-    throw new Error(message ?? "Value is undefined");
-  }
-  return value;
 }
 
 const ConfigAfterAutoContext = /*#__PURE__*/React__default["default"].createContext(null);
@@ -587,6 +679,14 @@ function SidebarFooter(props) {
     setSaveAsEntry: setSaveAsEntry,
     Component: props.SaveAsPicker
   }) : null);
+}
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+function toArray(scalarOrCollection) {
+  if (Array.isArray(scalarOrCollection)) {
+    return scalarOrCollection;
+  }
+  return [scalarOrCollection];
 }
 
 const Toggle = ({
@@ -1819,6 +1919,10 @@ SelectColorTokenItem.displayName = "SelectColorTokenItem";
 const RICH_TEXT_PART_CONFIG_PATH_REGEXP = /\.elements\.[a-z(\-_A-Z)?]+\.\d+(\.elements\.\d+){2,3}(\.\{\d+,\d+\})?$/;
 function isConfigPathRichTextPart(configPath) {
   return RICH_TEXT_PART_CONFIG_PATH_REGEXP.test(configPath);
+}
+
+function last(collection) {
+  return collection[collection.length - 1];
 }
 
 /**
@@ -5015,6 +5119,29 @@ const TemplateModal = props => {
   }, t("template.delete.default")))))));
 };
 
+const takeNumbers = path => path.split(".").map(x => parseInt(x, 10)).filter(x => !Number.isNaN(x));
+const preOrderPathComparator = (direction = "ascending") => (pathA, pathB) => {
+  const order = direction === "ascending" ? 1 : -1;
+  const numbersA = takeNumbers(pathA);
+  const numbersB = takeNumbers(pathB);
+  const numberALength = numbersA.length;
+  const numberBLength = numbersB.length;
+  if (numberALength === 0 || numberBLength === 0) {
+    throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
+  }
+  const shorterLength = Math.min(numberALength, numberBLength);
+  let index = 0;
+  while (index < shorterLength) {
+    const valueA = numbersA[index];
+    const valueB = numbersB[index];
+    if (valueA !== valueB) {
+      return order * Math.sign(valueA - valueB);
+    }
+    index++;
+  }
+  return order * Math.sign(numberBLength - numberALength);
+};
+
 function duplicateItem(form, {
   name,
   sourceIndex,
@@ -6012,6 +6139,10 @@ const EditorLayer = () => {
   }) : null));
 };
 
+function includesAny(a, b) {
+  return a.some(i => b.includes(i));
+}
+
 function reconcile({
   context,
   templateId,
@@ -6180,6 +6311,187 @@ const BEFORE_ADD_BUTTON_LEFT = editorVariable("before-add-button-left");
 const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
 const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
 const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
+
+const SelectionFrameActionsContainer = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
+  componentId: "sc-1fta8jo-0"
+})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, easyblocksDesignSystem.Colors.white);
+const SelectionFrameActionsGroupButtons = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
+  componentId: "sc-1fta8jo-1"
+})(["display:flex;gap:2px;"]);
+const StyledButtonGroup = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__StyledButtonGroup",
+  componentId: "sc-1fta8jo-2"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const StyledMenu = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__StyledMenu",
+  componentId: "sc-1fta8jo-3"
+})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
+const SelectionMoreActions = ({
+  t
+}) => {
+  const editorContext = useEditorContext();
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+  const toaster = Toaster.useToaster();
+  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const inputRef = React.useRef(null);
+  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
+  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
+  const onRemoveGlobalSection = () => {
+    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
+    const groupName = currentSection?.[0];
+    if (groupName) {
+      setIsLoading(true);
+      editorContext.onGlobalSectionChange?.({
+        mode: "update",
+        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
+        label: currentSection?.[1].entities[currentEntry._id].label,
+        groupName,
+        entry: currentEntry
+      }).then(() => {
+        toaster.success(t("editor.sidebar.globalSections.removeGlobal.success"));
+        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
+          ...currentEntry,
+          _id: uniqueId()
+        });
+      }).catch(reason => {
+        toaster.error(reason);
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    }
+  };
+  const menus = [{
+    id: "set-global",
+    label: t("editor.sidebar.globalSections.setGlobal"),
+    children: easyblocksCore.globalSectionGroups.map(globalSectionGroup => ({
+      id: globalSectionGroup.id,
+      label: globalSectionGroup.name,
+      onClick: () => setOpenConfirmGlobalSection({
+        groupName: globalSectionGroup.name
+      })
+    })),
+    isHidden: isAddedToPage
+  }, {
+    id: "remove-global",
+    label: t("editor.sidebar.globalSections.removeGlobal"),
+    isLoading,
+    isHidden: !isAddedToPage,
+    onClick: onRemoveGlobalSection
+  }];
+  const onClose = () => {
+    if (!isLoading) {
+      setOpenConfirmGlobalSection(null);
+    }
+  };
+  const onConfirmSetGlobalSection = () => {
+    if (!inputRef?.current?.value) {
+      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
+      return;
+    }
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      groupName: openConfirmGlobalSection?.groupName ?? "",
+      label: inputRef?.current?.value,
+      entry: currentEntry
+    }).then(() => {
+      setIsLoading(false);
+      toaster.success(t("editor.sidebar.globalSections.setGlobal.success"));
+      onClose();
+    }).catch(reason => {
+      setIsLoading(false);
+      toaster.error(reason);
+    });
+  };
+  const onEnter = e => {
+    if (e.code === "Enter" || e.code === "NumpadEnter") {
+      e.preventDefault();
+      e.stopPropagation();
+      onConfirmSetGlobalSection();
+    }
+  };
+  React.useEffect(() => {
+    if (openConfirmGlobalSection?.groupName) {
+      queueMicrotask(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [openConfirmGlobalSection]);
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
+    menus: menus,
+    styles: {
+      top: "40px",
+      left: "80%"
+    }
+  })), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
+    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
+    isOpen: !!openConfirmGlobalSection,
+    onRequestClose: onClose,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
+      onClick: onClose
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
+      isLoading: isLoading,
+      disabled: isLoading,
+      onClick: onConfirmSetGlobalSection
+    }, t("template.save.default")))
+  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
+    ref: inputRef,
+    withBorder: true,
+    style: {
+      width: 300
+    },
+    onKeyDown: onEnter
+  })));
+};
+const SelectionFrameActions = ({
+  focussedField,
+  actions,
+  translationFiles,
+  contextParams
+}) => {
+  const {
+    t
+  } = getTranslation({
+    translationFiles,
+    contextParams
+  });
+  const [showMore, setShowMore] = React.useState(false);
+  return /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsContainer, {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Duplicate,
+    hideLabel: true,
+    onClick: () => actions.duplicateItems(focussedField)
+  }, t("duplicate")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Trash,
+    hideLabel: true,
+    onClick: () => actions.removeItems(focussedField)
+  }, t("delete")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ArrowUp,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "top")
+  }, t("up")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ArrowDown,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "bottom")
+  }, t("down")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ThreeDotsHorizontal,
+    showTooltip: false,
+    hideLabel: true,
+    onClick: () => setShowMore(prev => !prev)
+  })), showMore ? /*#__PURE__*/React__default["default"].createElement(SelectionMoreActions, {
+    t: t
+  }) : null);
+};
 
 function AddButton({
   position,
@@ -6369,187 +6681,6 @@ function isButtonWithinViewport(target, viewport) {
   return target.top >= 0 && target.top <= viewport.height && target.left >= 0 && target.left <= viewport.width;
 }
 
-const SelectionFrameActionsContainer = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
-  componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, easyblocksDesignSystem.Colors.white);
-const SelectionFrameActionsGroupButtons = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
-  componentId: "sc-1fta8jo-1"
-})(["display:flex;gap:2px;"]);
-const StyledButtonGroup = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__StyledButtonGroup",
-  componentId: "sc-1fta8jo-2"
-})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
-const StyledMenu = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__StyledMenu",
-  componentId: "sc-1fta8jo-3"
-})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
-const SelectionMoreActions = ({
-  t
-}) => {
-  const editorContext = useEditorContext();
-  const router = new URLSearchParams(window.location.search);
-  const currentDocument = router.get("document") ?? "";
-  const toaster = Toaster.useToaster();
-  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = React.useState(null);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const inputRef = React.useRef(null);
-  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
-  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
-  const onRemoveGlobalSection = () => {
-    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
-    const groupName = currentSection?.[0];
-    if (groupName) {
-      setIsLoading(true);
-      editorContext.onGlobalSectionChange?.({
-        mode: "update",
-        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
-        label: currentSection?.[1].entities[currentEntry._id].label,
-        groupName,
-        entry: currentEntry
-      }).then(() => {
-        toaster.success(t("editor.sidebar.globalSections.removeGlobal.success"));
-        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
-          ...currentEntry,
-          _id: uniqueId()
-        });
-      }).catch(reason => {
-        toaster.error(reason);
-      }).finally(() => {
-        setIsLoading(false);
-      });
-    }
-  };
-  const menus = [{
-    id: "set-global",
-    label: t("editor.sidebar.globalSections.setGlobal"),
-    children: easyblocksCore.globalSectionGroups.map(globalSectionGroup => ({
-      id: globalSectionGroup.id,
-      label: globalSectionGroup.name,
-      onClick: () => setOpenConfirmGlobalSection({
-        groupName: globalSectionGroup.name
-      })
-    })),
-    isHidden: isAddedToPage
-  }, {
-    id: "remove-global",
-    label: t("editor.sidebar.globalSections.removeGlobal"),
-    isLoading,
-    isHidden: !isAddedToPage,
-    onClick: onRemoveGlobalSection
-  }];
-  const onClose = () => {
-    if (!isLoading) {
-      setOpenConfirmGlobalSection(null);
-    }
-  };
-  const onConfirmSetGlobalSection = () => {
-    if (!inputRef?.current?.value) {
-      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
-      return;
-    }
-    if (isLoading) {
-      return;
-    }
-    setIsLoading(true);
-    editorContext.onGlobalSectionChange?.({
-      mode: "update",
-      groupName: openConfirmGlobalSection?.groupName ?? "",
-      label: inputRef?.current?.value,
-      entry: currentEntry
-    }).then(() => {
-      setIsLoading(false);
-      toaster.success(t("editor.sidebar.globalSections.setGlobal.success"));
-      onClose();
-    }).catch(reason => {
-      setIsLoading(false);
-      toaster.error(reason);
-    });
-  };
-  const onEnter = e => {
-    if (e.code === "Enter" || e.code === "NumpadEnter") {
-      e.preventDefault();
-      e.stopPropagation();
-      onConfirmSetGlobalSection();
-    }
-  };
-  React.useEffect(() => {
-    if (openConfirmGlobalSection?.groupName) {
-      queueMicrotask(() => {
-        inputRef.current?.focus();
-      });
-    }
-  }, [openConfirmGlobalSection]);
-  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
-    menus: menus,
-    styles: {
-      top: "40px",
-      left: "80%"
-    }
-  })), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
-    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
-    isOpen: !!openConfirmGlobalSection,
-    onRequestClose: onClose,
-    mode: "fit",
-    height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
-      onClick: onClose
-    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
-      isLoading: isLoading,
-      disabled: isLoading,
-      onClick: onConfirmSetGlobalSection
-    }, t("template.save.default")))
-  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
-    ref: inputRef,
-    withBorder: true,
-    style: {
-      width: 300
-    },
-    onKeyDown: onEnter
-  })));
-};
-const SelectionFrameActions = ({
-  focussedField,
-  actions,
-  translationFiles,
-  contextParams
-}) => {
-  const {
-    t
-  } = getTranslation({
-    translationFiles,
-    contextParams
-  });
-  const [showMore, setShowMore] = React.useState(false);
-  return /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsContainer, {
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.Duplicate,
-    hideLabel: true,
-    onClick: () => actions.duplicateItems(focussedField)
-  }, t("duplicate")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.Trash,
-    hideLabel: true,
-    onClick: () => actions.removeItems(focussedField)
-  }, t("delete")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.ArrowUp,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "top")
-  }, t("up")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.ArrowDown,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("down")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.ThreeDotsHorizontal,
-    showTooltip: false,
-    hideLabel: true,
-    onClick: () => setShowMore(prev => !prev)
-  })), showMore ? /*#__PURE__*/React__default["default"].createElement(SelectionMoreActions, {
-    t: t
-  }) : null);
-};
-
 function SelectionFrame({
   width,
   height,
@@ -6678,89 +6809,6 @@ function isAddingEnabledForSelectedFields(focusedFields, editorContext) {
   } else {
     return false;
   }
-}
-
-/**
- * Traverses recursively the config tree (similar to traverseConfig) but behaves like "Array.map". It returns new tree with elements mapped to new ones.
- * Responsive values are mapped "per breakpoint", it smells a bit, maybe in the future we'll have to apply some flag to have option whether we want to disassemble responsives or not.
- */
-
-function configMapArray(configArray, context, callback, prefix) {
-  /**
-   * Why this?
-   *
-   * Sometimes you might need configMap for config that have not yet been normalized. Such config still can be considered correct if it has a component that have a new schema property. Example of this is mergeSingleLocaleConfigsIntoConfig.
-   */
-  if (configArray === undefined) {
-    return;
-  }
-  if (!Array.isArray(configArray)) {
-    return;
-  }
-  return configArray.map((x, index) => configMapInternal(x, context, callback, `${prefix}.${index}`));
-}
-function configMap(config, context, callback) {
-  return configMapInternal(config, context, callback, "");
-}
-function configMapInternal(config, context, callback, prefix) {
-  const componentDefinition = _internals.findComponentDefinition(config, context);
-  const result = {
-    ...config
-  };
-  if (!componentDefinition) {
-    return result;
-  }
-  prefix = prefix === undefined || prefix === "" ? "" : `${prefix}.`;
-  componentDefinition.schema.forEach(schemaProp => {
-    if (schemaProp.type === "component-collection-localised") {
-      if (config[schemaProp.prop] === undefined) {
-        return;
-      }
-      result[schemaProp.prop] = {};
-      for (const locale in config[schemaProp.prop]) {
-        if (locale === "__fallback") {
-          continue;
-        }
-        result[schemaProp.prop][locale] = configMapArray(config[schemaProp.prop][locale], context, callback, `${prefix}${schemaProp.prop}.${locale}`);
-      }
-      result[schemaProp.prop] = callback({
-        value: result[schemaProp.prop],
-        path: `${prefix}${schemaProp.prop}`,
-        schemaProp
-      });
-    } else if (schemaProp.type === "component" || schemaProp.type === "component-collection") {
-      result[schemaProp.prop] = configMapArray(config[schemaProp.prop], context, callback, `${prefix}${schemaProp.prop}`);
-      result[schemaProp.prop] = callback({
-        value: result[schemaProp.prop],
-        path: `${prefix}${schemaProp.prop}`,
-        schemaProp
-      });
-    } else {
-      if (easyblocksCore.isTrulyResponsiveValue(result[schemaProp.prop])) {
-        const mappedVal = {
-          $res: true
-        };
-        for (const key in result[schemaProp.prop]) {
-          if (key === "$res") {
-            continue;
-          }
-          mappedVal[key] = callback({
-            value: result[schemaProp.prop][key],
-            schemaProp,
-            path: `${prefix}${schemaProp.prop}.${key}`
-          });
-        }
-        result[schemaProp.prop] = mappedVal;
-      } else {
-        result[schemaProp.prop] = callback({
-          value: result[schemaProp.prop],
-          schemaProp,
-          path: `${prefix}${schemaProp.prop}`
-        });
-      }
-    }
-  });
-  return result;
 }
 
 function getDefaultTemplateForDefinition(def, editorContext) {
@@ -7149,18 +7197,6 @@ function addLocalizedFlag(config, context) {
         __localized: true,
         ...value
       };
-    }
-    return value;
-  });
-}
-
-function removeLocalizedFlag(config, context) {
-  return configMap(config, context, ({
-    value,
-    schemaProp
-  }) => {
-    if (schemaProp.type === "text" && value?.id.startsWith("local.") || schemaProp.type === "component-collection-localised") {
-      delete value.__localized;
     }
     return value;
   });
@@ -7642,56 +7678,6 @@ function useEditorHistory({
     undo,
     editorHistoryInstance: editorHistory
   };
-}
-
-function checkLocalesCorrectness(locales) {
-  if (locales.length === 0) {
-    throw new Error("Locales array can't be empty");
-  }
-  const defaultLocales = locales.filter(l => l.isDefault);
-  if (defaultLocales.length === 0) {
-    throw new Error("One locale must be set as default, you didn't set any");
-  }
-  if (defaultLocales.length > 1) {
-    throw new Error("Only one locale must be set as default, you set more than one");
-  }
-  const defaultLocale = defaultLocales[0];
-  if (defaultLocale.fallback) {
-    throw new Error("Default locale can't have fallback");
-  }
-
-  // Check for incorrect fallbacks
-  locales.forEach(locale => {
-    if (locale.fallback) {
-      const fallback = locales.find(x => x.code === locale.fallback);
-      if (!fallback) {
-        throw new Error(`Locale ${locale} has a fallback ${locale.fallback} which doesn't exist in the locales list.`);
-      }
-    }
-    // If there is no fallback, then we treat default locale as a fallback!
-  });
-
-  // Let's check for circulars
-  locales.forEach(locale => {
-    const localeChain = [];
-    let currentLocale = locale;
-    do {
-      localeChain.push(currentLocale.code);
-      const fallbackId = currentLocale.fallback ?? easyblocksCore.getDefaultLocale(locales).code;
-
-      // If we got to the default locale then we're fine
-      if (fallbackId === easyblocksCore.getDefaultLocale(locales).code) {
-        break;
-      }
-
-      // If fallbackId does already exists in localeChain then it means we have circular!
-      if (localeChain.includes(fallbackId)) {
-        throw new Error(`There is circular reference in locales: ${[...localeChain, fallbackId].join(",")}`);
-      }
-      currentLocale = locales.find(x => x.code === fallbackId);
-    } while (true);
-  });
-  return true;
 }
 
 const debouncedUpdate = debounce__default["default"](fn => fn(), 100);
@@ -9025,6 +9011,13 @@ function ColorTokenWidget(props) {
   });
 }
 
+function assertDefined(value, message) {
+  if (value === undefined) {
+    throw new Error(message ?? "Value is undefined");
+  }
+  return value;
+}
+
 function DocumentDataWidgetComponent({
   id,
   onChange,
@@ -9981,6 +9974,13 @@ function ifValidPlacement(value) {
     return value;
   }
   return;
+}
+
+function serialize(value) {
+  if (value instanceof Error) {
+    return JSON.parse(JSON.stringify(value, Object.getOwnPropertyNames(value)));
+  }
+  return JSON.parse(JSON.stringify(value));
 }
 
 const PreviewRenderer = props => {

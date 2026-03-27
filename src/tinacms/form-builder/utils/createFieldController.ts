@@ -1,3 +1,8 @@
+import { EditorContextType } from "@/EditorContext";
+import { last } from "@/utils/array/last";
+import { toArray } from "@/utils/array/toArray";
+import { isConfigPathRichTextPart } from "@/utils/isConfigPathRichTextPart";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import {
   getDevicesWidths,
   getFallbackLocaleForLocale,
@@ -16,10 +21,7 @@ import {
   richTextChangedEvent,
   traverseComponents,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { dotNotationGet, last, toArray } from "@/utils";
-import { EditorContextType } from "../../../EditorContext";
 import { getUniqueValues } from "../../fields/components/getUniqueValues";
-import { isConfigPathRichTextPart } from "../../../utils/isConfigPathRichTextPart";
 
 // "any" here is on purpose (although doesn't make sense from TS perspective).
 // It suggests that in onChange you can pass event OR any value. It's a bit confusing and should be cleaned up in the future.
@@ -62,7 +64,7 @@ function createFieldController({
         newValue.length !== normalizedFieldName.length
       ) {
         throw new Error(
-          "onChange in multiple param mode was given wrong number of values"
+          "onChange in multiple param mode was given wrong number of values",
         );
       }
 
@@ -76,11 +78,11 @@ function createFieldController({
 
         if (templateId === "@easyblocks/rich-text-part") {
           const schemaPropNameToUpdate = last(
-            normalizedFieldName[0].split(".")
+            normalizedFieldName[0].split("."),
           );
 
           const canvasIframe = document.getElementById(
-            "editor-canvas"
+            "editor-canvas",
           ) as HTMLIFrameElement | null;
 
           if (canvasIframe === null || canvasIframe.contentWindow === null) {
@@ -89,7 +91,7 @@ function createFieldController({
 
           if (extraNewValues.length > 0) {
             const parsedValues = (newValue as Array<any>).map((value) =>
-              parse(getValue(value), normalizedFieldName[0], field)
+              parse(getValue(value), normalizedFieldName[0], field),
             );
 
             canvasIframe.contentWindow.postMessage(
@@ -98,13 +100,13 @@ function createFieldController({
                 schemaProp: field.schemaProp,
                 values: parsedValues,
               }),
-              "*"
+              "*",
             );
           } else {
             const parsedValue = parse(
               getValue(newValue),
               normalizedFieldName[0],
-              field
+              field,
             );
 
             canvasIframe.contentWindow.postMessage(
@@ -113,7 +115,7 @@ function createFieldController({
                 schemaProp: field.schemaProp,
                 values: [parsedValue],
               }),
-              "*"
+              "*",
             );
           }
 
@@ -140,7 +142,7 @@ function createFieldController({
               : true)
           ) {
             const isInputValueValid = customTypeDefinition.validate(
-              inputValue.value
+              inputValue.value,
             );
 
             if (!isInputValueValid) {
@@ -154,12 +156,12 @@ function createFieldController({
           if (hasLocaleToken(path)) {
             const currentLocaleFieldName = replaceLocaleToken(
               path,
-              contextParams.locale
+              contextParams.locale,
             );
 
             const currentLocaleValue = dotNotationGet(
               form.values,
-              currentLocaleFieldName
+              currentLocaleFieldName,
             );
 
             parsedValue = parse(inputValue, currentLocaleFieldName, field);
@@ -168,7 +170,7 @@ function createFieldController({
             if (currentLocaleValue === undefined) {
               const fallbackLocale = getFallbackLocaleForLocale(
                 contextParams.locale,
-                locales
+                locales,
               )!;
 
               const fieldNameSegments = path.split(".");
@@ -180,20 +182,20 @@ function createFieldController({
 
               const fallbackLocaleFieldName = replaceLocaleToken(
                 localisedConfigPath,
-                fallbackLocale
+                fallbackLocale,
               );
 
               const localeConfigPath = replaceLocaleToken(
                 localisedConfigPath,
-                contextParams.locale
+                contextParams.locale,
               );
 
               form.change(
                 localeConfigPath,
                 duplicateConfig(
                   dotNotationGet(form.values, fallbackLocaleFieldName),
-                  editorContext
-                )
+                  editorContext,
+                ),
               );
             }
 
@@ -217,11 +219,11 @@ function createFieldController({
 
           const parentDefinition = findComponentDefinitionById(
             templateId,
-            editorContext
+            editorContext,
           )!;
           const config = dotNotationGet(
             editorContext.form.values,
-            componentPath
+            componentPath,
           );
 
           if (parentDefinition && parentDefinition.change) {
@@ -240,7 +242,7 @@ function createFieldController({
                   val,
                   editorContext.breakpointIndex,
                   editorContext.devices,
-                  getDevicesWidths(editorContext.devices)
+                  getDevicesWidths(editorContext.devices),
                 );
             });
 
@@ -277,7 +279,7 @@ function createFieldController({
               if (isTrulyResponsiveValue(config[schemaProp.prop])) {
                 form.change(
                   `${pathPrefix}.${editorContext.breakpointIndex}`,
-                  result[schemaProp.prop]
+                  result[schemaProp.prop],
                 );
               } else {
                 form.change(`${pathPrefix}`, result[schemaProp.prop]);
@@ -300,7 +302,7 @@ function createFieldController({
         if (hasLocaleToken(fieldName)) {
           const resolvedFieldName = replaceLocaleToken(
             fieldName,
-            editorContext.contextParams.locale
+            editorContext.contextParams.locale,
           );
 
           const fieldValue = dotNotationGet(form.values, resolvedFieldName);
@@ -311,17 +313,17 @@ function createFieldController({
 
           const fallbackLocale = getFallbackLocaleForLocale(
             editorContext.contextParams.locale,
-            editorContext.locales
+            editorContext.locales,
           )!;
 
           const resolvedFieldFallbackName = replaceLocaleToken(
             fieldName,
-            fallbackLocale
+            fallbackLocale,
           );
 
           const fieldFallbackValue = dotNotationGet(
             form.values,
-            resolvedFieldFallbackName
+            resolvedFieldFallbackName,
           );
 
           return fieldFallbackValue;
@@ -333,13 +335,13 @@ function createFieldController({
       const uniqueFieldValues = getUniqueValues(fieldValues, (fieldValue) => {
         const { getHash } = getSchemaDefinition(
           field.schemaProp,
-          editorContext
+          editorContext,
         );
 
         return getHash(
           fieldValue,
           editorContext.breakpointIndex,
-          editorContext.devices
+          editorContext.devices,
         );
       });
 
@@ -364,7 +366,7 @@ function replaceLocaleToken(configPath: string, locale: string) {
 }
 
 function getValue(
-  eventOrValue: React.ChangeEvent<HTMLSelectElement | HTMLInputElement> | any
+  eventOrValue: React.ChangeEvent<HTMLSelectElement | HTMLInputElement> | any,
 ) {
   // Event of course has more properties or methods, but for this case
   // checking only for `currentTarget` is sufficient
@@ -390,7 +392,7 @@ function getValue(
 type CacheInvalidator = (
   cache: CompilationCache,
   changedPath: string,
-  context: EditorContextType
+  context: EditorContextType,
 ) => Array<string>;
 
 // $richText and @easyblocks/rich-text-part uses a lot of portals to display correct fields within sidebar
@@ -400,12 +402,12 @@ type CacheInvalidator = (
 const richTextCacheInvalidator: CacheInvalidator = (
   cache,
   changedPath,
-  context
+  context,
 ) => {
   const cacheKeysToRemove: Array<string> = [];
   const { templateId, fieldName, parent } = parsePath(
     changedPath,
-    context.form
+    context.form,
   );
 
   const isRichTextOrRichTextAncestorComponent =
@@ -419,7 +421,7 @@ const richTextCacheInvalidator: CacheInvalidator = (
         : findPathOfFirstAncestorOfType(
             changedPath,
             "@easyblocks/rich-text",
-            context.form
+            context.form,
           );
 
     const richTextConfig = dotNotationGet(context.form.values, richTextPath);
@@ -443,7 +445,7 @@ function invalidateCache(changedPath: string, context: EditorContextType) {
   const cacheKeysToRemove = new Set(
     cacheInvalidators.flatMap((invalidator) => {
       return invalidator(context.compilationCache, changedPath, context);
-    })
+    }),
   );
 
   cacheKeysToRemove.forEach((cacheKey) => {

@@ -1,7 +1,8 @@
+import { includesAny } from "@/utils/array/includesAny";
 import {
   ComponentCollectionSchemaProp,
-  NoCodeComponentEntry,
   ComponentSchemaProp,
+  NoCodeComponentEntry,
   SchemaProp,
 } from "@redsun-vn/easyblocks-core";
 import {
@@ -9,7 +10,6 @@ import {
   duplicateConfig,
   findComponentDefinition,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { includesAny } from "@/utils";
 import { Form } from "../form";
 import { normalizeToStringArray } from "../normalizeToStringArray";
 import { reconcile } from "./reconcile";

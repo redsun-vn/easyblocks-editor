@@ -1,3 +1,4 @@
+import { toArray } from "@/utils/array/toArray";
 import { useDndContext } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { PlaceholderAppearance } from "@redsun-vn/easyblocks-core";
@@ -6,7 +7,6 @@ import {
   useEasyblocksMetadata,
 } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
-import { toArray } from "@/utils";
 import React from "react";
 import { EditorContextType } from "./EditorContext";
 
@@ -118,7 +118,7 @@ type TypePlaceholderComponentBuilderProps = {
 };
 
 export default function TypePlaceholder(
-  props: TypePlaceholderComponentBuilderProps
+  props: TypePlaceholderComponentBuilderProps,
 ) {
   const { form } =
     (window.parent.editorWindowAPI?.editorContext as EditorContextType) || {};
@@ -131,7 +131,7 @@ export default function TypePlaceholder(
 
   const draggedComponentDefinition = draggedEntryPathParseResult
     ? meta.vars.definitions.components.find(
-        (c) => c.id === draggedEntryPathParseResult.templateId
+        (c) => c.id === draggedEntryPathParseResult.templateId,
       )
     : null;
 

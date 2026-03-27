@@ -1,5 +1,5 @@
+import { deepClone } from "@/utils/deepClone";
 import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
-import { deepClone } from "@/utils";
 
 /**
  * Outputs comparable config that is FULL COPY of config

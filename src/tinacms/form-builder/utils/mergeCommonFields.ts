@@ -1,9 +1,9 @@
+import { last } from "@/utils/array/last";
 import { SchemaProp } from "@redsun-vn/easyblocks-core";
 import {
   InternalComponentDefinition,
   InternalField,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { last } from "@/utils";
 import { getUniqueValues } from "../../fields/components/getUniqueValues";
 
 export interface MergeCommonFieldsParameters {
@@ -34,7 +34,7 @@ function mergeCommonFields({
     }
 
     const fieldDefinitionIds = visibleFields.map(
-      (field) => getFieldSchemaWithDefinition(field).definition.id
+      (field) => getFieldSchemaWithDefinition(field).definition.id,
     );
 
     /**
@@ -67,15 +67,18 @@ function mergeCommonFields({
 }
 
 function groupFieldsByPropertyName(
-  fields: Array<InternalField>
+  fields: Array<InternalField>,
 ): Record<string, Array<InternalField>> {
-  return fields.reduce((repeatedFields, field) => {
-    const currentFieldPropertyName = getPropertyName(field.schemaProp.prop);
-    const fields = repeatedFields[currentFieldPropertyName];
-    repeatedFields[currentFieldPropertyName] =
-      fields !== undefined ? [...fields, field] : [field];
-    return repeatedFields;
-  }, {} as Record<string, Array<InternalField>>);
+  return fields.reduce(
+    (repeatedFields, field) => {
+      const currentFieldPropertyName = getPropertyName(field.schemaProp.prop);
+      const fields = repeatedFields[currentFieldPropertyName];
+      repeatedFields[currentFieldPropertyName] =
+        fields !== undefined ? [...fields, field] : [field];
+      return repeatedFields;
+    },
+    {} as Record<string, Array<InternalField>>,
+  );
 }
 
 function getPropertyName(fieldName: string): string {

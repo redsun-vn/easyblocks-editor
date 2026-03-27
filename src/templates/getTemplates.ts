@@ -1,4 +1,4 @@
-import { uniqueId } from "@/utils";
+import { uniqueId } from "@/utils/uniqueId";
 import {
   InternalTemplate,
   NoCodeComponentEntry,

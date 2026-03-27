@@ -1,12 +1,14 @@
-import { deepClone, deepCompare, sleep } from "@/utils";
+import { EditorContextType } from "@/EditorContext";
+import { getTranslation } from "@/useTranslation";
+import { getConfigSnapshot } from "@/utils/config/getConfigSnapshot";
+import { deepClone } from "@/utils/deepClone";
+import { deepCompare } from "@/utils/deepCompare";
+import { addLocalizedFlag } from "@/utils/locales/addLocalizedFlag";
+import { removeLocalizedFlag } from "@/utils/locales/removeLocalizedFlag";
+import { sleep } from "@/utils/sleep";
 import { Document, NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import { useEffect, useRef, useState } from "react";
-import { EditorContextType } from "./EditorContext";
-import { getTranslation } from "./useTranslation";
-import { getConfigSnapshot } from "./utils/config/getConfigSnapshot";
-import { addLocalizedFlag } from "./utils/locales/addLocalizedFlag";
-import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
 
 /**
  * useDataSaver works in a realm of SINGLE CONFIG.

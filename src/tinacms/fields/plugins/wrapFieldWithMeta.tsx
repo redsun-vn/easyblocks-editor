@@ -1,4 +1,13 @@
-import { dotNotationGet, toArray, uniqueId } from "@/utils";
+import { useConfigAfterAuto } from "@/ConfigAfterAutoContext";
+import {
+  EditorExternalTypeDefinition,
+  useEditorContext,
+} from "@/EditorContext";
+import { useEditorExternalData } from "@/EditorExternalDataProvider";
+import { Form } from "@/form";
+import { toArray } from "@/utils/array/toArray";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
+import { uniqueId } from "@/utils/uniqueId";
 import {
   ExternalReference,
   ExternalSchemaProp,
@@ -22,13 +31,6 @@ import { Select, SelectItem } from "@redsun-vn/easyblocks-design-system/Select";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { ReactNode, useState } from "react";
 import { css, styled } from "styled-components";
-import { useConfigAfterAuto } from "../../../ConfigAfterAutoContext";
-import {
-  EditorExternalTypeDefinition,
-  useEditorContext,
-} from "../../../EditorContext";
-import { useEditorExternalData } from "../../../EditorExternalDataProvider";
-import { Form } from "../../../form";
 import { FieldRenderProps } from "../../form-builder";
 import {
   COMPONENTS_SUPPORTING_MIXED_VALUES,

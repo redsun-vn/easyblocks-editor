@@ -1,4 +1,4 @@
-import { dotNotationGet } from "@/utils";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import {
   ComponentSchemaProp,
   NoCodeComponentEntry,
@@ -9,7 +9,7 @@ import {
   findComponentDefinition,
   normalize,
 } from "@redsun-vn/easyblocks-core/_internals";
-import React, { FC, useRef, useState } from "react";
+import React, { FC, useState } from "react";
 import { useEditorContext } from "./EditorContext";
 import { TemplatePicker, TemplatesDictionary } from "./TemplatePicker";
 import { OpenComponentPickerConfig } from "./types";

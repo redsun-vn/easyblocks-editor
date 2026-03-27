@@ -1,4 +1,4 @@
-import { useForceRerender } from "@/utils";
+import { useForceRerender } from "@/utils/hooks/useForceRerender";
 import {
   CollisionDetection,
   DndContext,

@@ -1,6 +1,6 @@
+import { Form } from "@/form";
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
 import React, { ReactNode } from "react";
-import { Form } from "../../../form";
 import { FieldRenderProps } from "../../form-builder";
 type ExtraFieldMetaWrapperFields = {
     layout?: "column" | "row";

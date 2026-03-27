@@ -1,7 +1,10 @@
+import { last } from "@/utils/array/last";
+import { preOrderPathComparator } from "@/utils/array/preOrderPathComparator";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import {
-  NoCodeComponentEntry,
   ComponentSchemaProp,
   isNoCodeComponentOfType,
+  NoCodeComponentEntry,
 } from "@redsun-vn/easyblocks-core";
 import {
   CompilationContextType,
@@ -9,7 +12,6 @@ import {
   findComponentDefinitionById,
   parsePath,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { dotNotationGet, last, preOrderPathComparator } from "@/utils";
 import { EditorContextType } from "./EditorContext";
 import { Form } from "./form";
 import { ResolveDestination } from "./paste/destinationResolver";

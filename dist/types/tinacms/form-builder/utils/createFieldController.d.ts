@@ -1,5 +1,5 @@
+import { EditorContextType } from "@/EditorContext";
 import { InternalAnyTinaField, InternalField } from "@redsun-vn/easyblocks-core/_internals";
-import { EditorContextType } from "../../../EditorContext";
 type FieldValue = React.ChangeEvent<HTMLSelectElement | HTMLInputElement> | any;
 declare function createFieldController({ field, editorContext, format, parse, }: {
     field: InternalField;

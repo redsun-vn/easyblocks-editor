@@ -1,4 +1,4 @@
-import { dotNotationGet } from "@/utils";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import { CompiledComponentConfig } from "@redsun-vn/easyblocks-core";
 import { Fonts } from "@redsun-vn/easyblocks-design-system";
 import React from "react";

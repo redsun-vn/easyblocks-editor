@@ -1,6 +1,6 @@
+import { ActionsType } from "@/types";
 import { ContextParams } from "@redsun-vn/easyblocks-core";
 import React from "react";
-import { ActionsType } from "../types";
 interface ISelectionFrameActionsProps {
     focussedField: string[];
     actions: ActionsType;

@@ -1,4 +1,4 @@
-import { dotNotationGet } from "@/utils";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import {
   findComponentDefinition,

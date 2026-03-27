@@ -1,4 +1,5 @@
-import { dotNotationGet, preOrderPathComparator } from "@/utils";
+import { preOrderPathComparator } from "@/utils/array/preOrderPathComparator";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import { duplicateConfig } from "@redsun-vn/easyblocks-core/_internals";
 import { debounce } from "lodash";
 import { useEffect, useRef } from "react";
@@ -28,13 +29,13 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
       (
         actions: EditorContextType["actions"],
         fields: Array<string>,
-        direction: "top" | "right" | "bottom" | "left"
+        direction: "top" | "right" | "bottom" | "left",
       ) => {
         actions.moveItems(fields, direction);
       },
       100,
-      { leading: true, trailing: false }
-    )
+      { leading: true, trailing: false },
+    ),
   );
 
   useEffect(() => {
@@ -86,7 +87,7 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
       event.preventDefault();
       event.clipboardData?.setData(
         DATA_TRANSFER_FORMAT,
-        JSON.stringify(configs)
+        JSON.stringify(configs),
       );
     }
 
@@ -100,7 +101,7 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
       event.preventDefault();
       event.clipboardData?.setData(
         DATA_TRANSFER_FORMAT,
-        JSON.stringify(configs)
+        JSON.stringify(configs),
       );
 
       actions.removeItems(focusedFields);
@@ -162,7 +163,7 @@ function isTargetInputElement(target: EventTarget | null): boolean {
 }
 
 function isTargetHtmlElement(
-  element: EventTarget | null
+  element: EventTarget | null,
 ): element is HTMLElement {
   return element !== null;
 }

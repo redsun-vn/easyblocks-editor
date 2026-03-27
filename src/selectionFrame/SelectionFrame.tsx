@@ -1,17 +1,22 @@
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import {
   CompiledShopstoryComponentConfig,
   EditingInfoBase,
 } from "@redsun-vn/easyblocks-core";
 import {
-  SelectionFramePositionChangedEvent,
   findComponentDefinitionById,
   isSchemaPropCollection,
   parsePath,
+  SelectionFramePositionChangedEvent,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { dotNotationGet } from "@/utils";
 import React, { useLayoutEffect } from "react";
+import { SelectionFrameActions } from "../EditableComponentBuilder/SelectionFrameActions";
 import { EditorContextType, useEditorContext } from "../EditorContext";
 import { pathToCompiledPath } from "../pathToCompiledPath";
+import {
+  isConfigPathRichTextPart,
+  RICH_TEXT_PART_CONFIG_PATH_REGEXP,
+} from "../utils/isConfigPathRichTextPart";
 import { AddButton } from "./AddButton";
 import { FrameWrapper, Wrapper } from "./SelectionFrame.styles";
 import { calculateAddButtonsProperties } from "./calculateAddButtonProperties";
@@ -23,11 +28,6 @@ import {
   BEFORE_ADD_BUTTON_LEFT,
   BEFORE_ADD_BUTTON_TOP,
 } from "./cssVariables";
-import {
-  isConfigPathRichTextPart,
-  RICH_TEXT_PART_CONFIG_PATH_REGEXP,
-} from "../utils/isConfigPathRichTextPart";
-import { SelectionFrameActions } from "../EditableComponentBuilder/SelectionFrameActions";
 
 type SelectionFrameProps = {
   width: number;

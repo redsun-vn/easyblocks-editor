@@ -1,4 +1,5 @@
-import { dotNotationGet, toArray } from "@/utils";
+import { toArray } from "@/utils/array/toArray";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import { responsiveValueForceGet } from "@redsun-vn/easyblocks-core";
 import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
 import { Icons } from "@redsun-vn/easyblocks-design-system/icons";

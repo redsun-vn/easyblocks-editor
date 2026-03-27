@@ -1,3 +1,14 @@
+import { EditorContextType, useEditorContext } from "@/EditorContext";
+import { IMenu, Menu } from "@/menu/Menu";
+import {
+  BEFORE_ADD_BUTTON_DISPLAY,
+  BEFORE_ADD_BUTTON_LEFT,
+  BEFORE_ADD_BUTTON_TOP,
+} from "@/selectionFrame/cssVariables";
+import { ActionsType } from "@/types";
+import { getTranslation } from "@/useTranslation";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
+import { uniqueId } from "@/utils/uniqueId";
 import {
   ContextParams,
   NoCodeComponentEntry,
@@ -15,17 +26,6 @@ import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { EditorContextType, useEditorContext } from "../EditorContext";
-import { IMenu, Menu } from "../menu/Menu";
-import {
-  BEFORE_ADD_BUTTON_DISPLAY,
-  BEFORE_ADD_BUTTON_LEFT,
-  BEFORE_ADD_BUTTON_TOP,
-} from "../selectionFrame/cssVariables";
-import { ActionsType } from "../types";
-import { getTranslation } from "../useTranslation";
-import { uniqueId } from "../utils";
-import { dotNotationGet } from "../utils/object/dotNotationGet";
 
 interface ISelectionFrameActionsProps {
   focussedField: string[];

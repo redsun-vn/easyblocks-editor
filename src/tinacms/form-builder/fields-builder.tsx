@@ -1,4 +1,4 @@
-import { toArray } from "@/utils";
+import { toArray } from "@/utils/array/toArray";
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";

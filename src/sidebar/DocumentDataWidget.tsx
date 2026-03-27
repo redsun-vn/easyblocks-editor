@@ -1,4 +1,5 @@
-import { assertDefined, dotNotationGet } from "@/utils";
+import { assertDefined } from "@/utils/assert";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import {
   getExternalReferenceLocationKey,
   isResolvedCompoundExternalDataValue,

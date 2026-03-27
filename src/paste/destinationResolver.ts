@@ -1,3 +1,4 @@
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import { SchemaProp } from "@redsun-vn/easyblocks-core";
 import {
   CompilationContextType,
@@ -6,7 +7,6 @@ import {
   findComponentDefinitionById,
   parsePath,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { dotNotationGet } from "@/utils";
 import { Form } from "../form";
 import { insertCommand } from "./insert";
 
@@ -21,11 +21,11 @@ export type ResolveDestination = ReturnType<typeof destinationResolver>;
 function getSchema(path: PathInfo, context: CompilationContextType) {
   const parentDefinition = findComponentDefinitionById(
     path.parent?.templateId ?? "",
-    context
+    context,
   );
 
   const schema = (parentDefinition?.schema ?? []).find(
-    (s) => s.prop === path.parent?.fieldName
+    (s) => s.prop === path.parent?.fieldName,
   );
 
   return schema;
@@ -74,7 +74,7 @@ function destinationResolver({
 
       const definition = findComponentDefinitionById(
         parsed.templateId ?? "",
-        context
+        context,
       );
 
       if (!definition) {
@@ -123,7 +123,7 @@ function destinationResolver({
           pathsQueue.push(
             ...Array.from(Array(slotValues.length).keys())
               .map((idx) => `${slotPath}.${idx}`)
-              .reverse()
+              .reverse(),
           );
         }
       }

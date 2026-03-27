@@ -1,11 +1,11 @@
-import {
-  deepClone,
-  deepCompare,
-  dotNotationGet,
-  sleep,
-  uniqueId,
-  useForceRerender,
-} from "@/utils";
+import { deepClone } from "@/utils/deepClone";
+import { deepCompare } from "@/utils/deepCompare";
+import { useForceRerender } from "@/utils/hooks/useForceRerender";
+import { checkLocalesCorrectness } from "@/utils/locales/checkLocalesCorrectness";
+import { removeLocalizedFlag } from "@/utils/locales/removeLocalizedFlag";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
+import { sleep } from "@/utils/sleep";
+import { uniqueId } from "@/utils/uniqueId";
 import {
   CompilationCache,
   CompilationMetadata,
@@ -99,8 +99,6 @@ import {
 import { useDataSaver } from "./useDataSaver";
 import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShortcuts";
 import { useEditorHistory } from "./useEditorHistory";
-import { checkLocalesCorrectness } from "./utils/locales/checkLocalesCorrectness";
-import { removeLocalizedFlag } from "./utils/locales/removeLocalizedFlag";
 
 declare global {
   interface Window {

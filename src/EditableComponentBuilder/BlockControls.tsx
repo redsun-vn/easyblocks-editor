@@ -1,4 +1,4 @@
-import { toArray } from "@/utils";
+import { toArray } from "@/utils/array/toArray";
 import { useDndContext } from "@dnd-kit/core";
 import {
   horizontalListSortingStrategy,
@@ -66,12 +66,12 @@ export function BlocksControls({
     .includes(path);
 
   const isChildComponentActive = focussedField.some((focusedField: string) =>
-    focusedField.startsWith(path)
+    focusedField.startsWith(path),
   );
 
   const entryPathParseResult = parsePath(path, form);
   const entryComponentDefinition = meta.vars.definitions.components.find(
-    (c) => c.id === entryPathParseResult.parent!.templateId
+    (c) => c.id === entryPathParseResult.parent!.templateId,
   );
 
   // component` could be draggable, but right now we only support collections.
@@ -79,11 +79,11 @@ export function BlocksControls({
     entryComponentDefinition!.schema.some(
       (s) =>
         s.prop === entryPathParseResult.parent!.fieldName &&
-        s.type === "component"
+        s.type === "component",
     );
 
   const isAncestorComponentActive = focussedField.some((f: string) =>
-    entryPathParseResult.parent!.path.startsWith(f)
+    entryPathParseResult.parent!.path.startsWith(f),
   );
 
   const isMultiSelection = focussedField.length > 1;
@@ -100,7 +100,7 @@ export function BlocksControls({
 
   const draggedComponentDefinition = draggedEntryPathParseResult
     ? meta.vars.definitions.components.find(
-        (c) => c.id === draggedEntryPathParseResult.templateId
+        (c) => c.id === draggedEntryPathParseResult.templateId,
       )
     : null;
 
@@ -175,7 +175,7 @@ export function BlocksControls({
       if (isMultipleSelection) {
         if (focussedField.includes(path)) {
           const result = focussedField.filter(
-            (fieldName: string) => fieldName !== path
+            (fieldName: string) => fieldName !== path,
           );
 
           if (result.length > 0) {
@@ -247,12 +247,12 @@ export function BlocksControls({
 }
 
 function getAllowedComponentTypes(
-  componentDefinition: SerializedRenderableComponentDefinition
+  componentDefinition: SerializedRenderableComponentDefinition,
 ) {
   const collectionSchemaProps =
     componentDefinition.schema.filter<ComponentCollectionSchemaProp>(
       (s): s is ComponentCollectionSchemaProp =>
-        s.type === "component-collection"
+        s.type === "component-collection",
     );
 
   const allowedComponentTypes = collectionSchemaProps.flatMap((s) => s.accepts);

@@ -1,4 +1,5 @@
-import { dotNotationGet, toArray } from "@/utils";
+import { toArray } from "@/utils/array/toArray";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import {
   ExternalReference,
   FetchCompoundResourceResultValues,
