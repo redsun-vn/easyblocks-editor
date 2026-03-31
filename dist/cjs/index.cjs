@@ -977,6 +977,9 @@ function FieldMetaWrapper({
   const currentBreakpointFieldValues = fieldValues.map(v => easyblocksCore.responsiveValueForceGet(v, editorContext.breakpointIndex));
   const isLoadingExternalValue = isExternalField && externalValues?.length === 0 && currentBreakpointFieldValues.every(v => !easyblocksCore.isEmptyExternalReference(v) && !easyblocksCore.isIdReferenceToDocumentExternalValue(v.id));
   const getSelectedValue = () => {
+    if (input.value === undefined || input.value === null) {
+      return CUSTOM_OPTION_VALUE;
+    }
     if (isMixedFieldValue(input.value)) {
       return MIXED_VALUE;
     }

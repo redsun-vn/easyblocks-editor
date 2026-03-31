@@ -181,6 +181,10 @@ export function FieldMetaWrapper<
     );
 
   const getSelectedValue = () => {
+    if (input.value === undefined || input.value === null) {
+      return CUSTOM_OPTION_VALUE;
+    }
+
     if (isMixedFieldValue(input.value)) {
       return MIXED_VALUE;
     }
