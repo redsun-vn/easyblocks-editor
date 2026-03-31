@@ -942,6 +942,9 @@ function FieldMetaWrapper({
   const currentBreakpointFieldValues = fieldValues.map(v => responsiveValueForceGet(v, editorContext.breakpointIndex));
   const isLoadingExternalValue = isExternalField && externalValues?.length === 0 && currentBreakpointFieldValues.every(v => !isEmptyExternalReference(v) && !isIdReferenceToDocumentExternalValue(v.id));
   const getSelectedValue = () => {
+    if (input.value === undefined || input.value === null) {
+      return CUSTOM_OPTION_VALUE;
+    }
     if (isMixedFieldValue(input.value)) {
       return MIXED_VALUE;
     }
