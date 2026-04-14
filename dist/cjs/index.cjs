@@ -10351,7 +10351,9 @@ function EasyblocksEditor(props) {
     setSelectedWindow("parent");
   };
   React.useEffect(() => {
-    easyblocksCore.loadGoogleFonts();
+    easyblocksCore.loadGoogleFonts({
+      editor: true
+    });
     if (parseQueryParams().preview) {
       setSelectedWindow("preview");
       return;
