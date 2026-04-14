@@ -25,7 +25,7 @@ export function EasyblocksEditor(props: EasyblocksEditorProps) {
   };
 
   useEffect(() => {
-    loadGoogleFonts();
+    loadGoogleFonts({ editor: true });
 
     if (parseQueryParams().preview) {
       setSelectedWindow("preview");
