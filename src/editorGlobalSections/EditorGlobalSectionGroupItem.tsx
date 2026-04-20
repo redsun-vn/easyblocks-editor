@@ -50,7 +50,7 @@ const StyledWrapperMenuDialog = styled.div`
 const StyledWrapperAddToPage = styled(Typography)<{ disabled: boolean }>`
   font-weight: 500;
   cursor: pointer;
-  color: ${Colors.blue60};
+  color: ${Colors.blue60} !important;
 
   ${({ disabled }) =>
     disabled

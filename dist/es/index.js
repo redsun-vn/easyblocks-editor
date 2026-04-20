@@ -5530,7 +5530,7 @@ const StyledWrapperMenuDialog = styled$1.div.withConfig({
 const StyledWrapperAddToPage = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledWrapperAddToPage",
   componentId: "sc-f9npik-5"
-})(["font-weight:500;cursor:pointer;color:", ";", ""], Colors.blue60, ({
+})(["font-weight:500;cursor:pointer;color:", " !important;", ""], Colors.blue60, ({
   disabled
 }) => disabled ? `
     cursor: not-allowed;

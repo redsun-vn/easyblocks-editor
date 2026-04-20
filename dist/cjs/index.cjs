@@ -5565,7 +5565,7 @@ const StyledWrapperMenuDialog = styled__default["default"].div.withConfig({
 const StyledWrapperAddToPage = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorGlobalSectionGroupItem__StyledWrapperAddToPage",
   componentId: "sc-f9npik-5"
-})(["font-weight:500;cursor:pointer;color:", ";", ""], easyblocksDesignSystem.Colors.blue60, ({
+})(["font-weight:500;cursor:pointer;color:", " !important;", ""], easyblocksDesignSystem.Colors.blue60, ({
   disabled
 }) => disabled ? `
     cursor: not-allowed;
