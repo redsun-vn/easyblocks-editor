@@ -7475,16 +7475,22 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
         return;
       }
       const configs = getConfigsToCopy(focusedFields, editorContext);
+      const json = JSON.stringify(configs);
       event.preventDefault();
-      event.clipboardData?.setData(DATA_TRANSFER_FORMAT, JSON.stringify(configs));
+      // Custom MIME for in-editor paste fidelity; text/plain so OS clipboard
+      // surfaces the JSON to external apps.
+      event.clipboardData?.setData(DATA_TRANSFER_FORMAT, json);
+      event.clipboardData?.setData("text/plain", json);
     }
     function handleCut(event) {
       if (!canHandleCopyPaste(focusedFields, event)) {
         return;
       }
       const configs = getConfigsToCopy(focusedFields, editorContext);
+      const json = JSON.stringify(configs);
       event.preventDefault();
-      event.clipboardData?.setData(DATA_TRANSFER_FORMAT, JSON.stringify(configs));
+      event.clipboardData?.setData(DATA_TRANSFER_FORMAT, json);
+      event.clipboardData?.setData("text/plain", json);
       actions.removeItems(focusedFields);
     }
     function handlePaste(event) {
