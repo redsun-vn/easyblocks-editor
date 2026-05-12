@@ -1,11 +1,16 @@
 import { EditorContextType, useEditorContext } from "./EditorContext";
 
+const fallbackTranslation = "en-US";
+
 export const getTranslation = (editorContext: EditorContextType) => {
   const { translationFiles = {}, contextParams } = editorContext;
   const { locale } = contextParams;
 
   const t = (key: string) => {
-    return translationFiles[locale][key] ?? key;
+    const files = translationFiles[locale]
+      ? translationFiles[locale]
+      : translationFiles[fallbackTranslation];
+    return files?.[key] ?? key;
   };
 
   return {
@@ -18,7 +23,10 @@ export const useTranslation = () => {
   const { locale } = contextParams;
 
   const t = (key: string) => {
-    return translationFiles[locale][key] ?? key;
+    const files = translationFiles[locale]
+      ? translationFiles[locale]
+      : translationFiles[fallbackTranslation];
+    return files?.[key] ?? key;
   };
 
   return {

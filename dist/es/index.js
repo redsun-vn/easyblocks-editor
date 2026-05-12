@@ -471,6 +471,7 @@ function internalBuildTinaFields(path, editorContext, fieldsFilter) {
   return [...nonAnalyticsFields, ...analyticsFields];
 }
 
+const fallbackTranslation = "en-US";
 const getTranslation = editorContext => {
   const {
     translationFiles = {},
@@ -480,7 +481,8 @@ const getTranslation = editorContext => {
     locale
   } = contextParams;
   const t = key => {
-    return translationFiles[locale][key] ?? key;
+    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
+    return files?.[key] ?? key;
   };
   return {
     t
@@ -495,7 +497,8 @@ const useTranslation = () => {
     locale
   } = contextParams;
   const t = key => {
-    return translationFiles[locale][key] ?? key;
+    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
+    return files?.[key] ?? key;
   };
   return {
     t
