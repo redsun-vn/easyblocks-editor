@@ -79,10 +79,10 @@ const TopBarCenter = styled.div`
   transform: translate(-50%, -50%);
 `;
 
-const ImageContainer = styled.div`
+const FlagContainer = styled.div`
   position: relative;
-  width: 20px;
-  height: 20px;
+  transform: scale(1.5);
+  margin: 0 4px;
 `;
 
 const Image = styled.img`
@@ -278,11 +278,7 @@ export const EditorTopBar: React.FC<{
                     gap: 4,
                   }}
                 >
-                  {l.icon ? (
-                    <ImageContainer>
-                      <Image src={l.icon} alt={l.name} />
-                    </ImageContainer>
-                  ) : null}
+                  {l.icon ? <FlagContainer>{l.icon}</FlagContainer> : null}
                   {l.name}
                 </div>
               </SelectItem>

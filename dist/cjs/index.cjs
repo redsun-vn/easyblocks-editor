@@ -4129,11 +4129,11 @@ const TopBarCenter = styled.styled.div.withConfig({
   displayName: "EditorTopBar__TopBarCenter",
   componentId: "sc-726nw9-4"
 })(["position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"]);
-const ImageContainer$1 = styled.styled.div.withConfig({
-  displayName: "EditorTopBar__ImageContainer",
+const FlagContainer = styled.styled.div.withConfig({
+  displayName: "EditorTopBar__FlagContainer",
   componentId: "sc-726nw9-5"
-})(["position:relative;width:20px;height:20px;"]);
-const Image = styled.styled.img.withConfig({
+})(["position:relative;transform:scale(1.5);margin:0 4px;"]);
+styled.styled.img.withConfig({
   displayName: "EditorTopBar__Image",
   componentId: "sc-726nw9-6"
 })(["width:100%;height:100%;object-fit:contain;"]);
@@ -4259,10 +4259,7 @@ const EditorTopBar = ({
       cursor: "pointer",
       gap: 4
     }
-  }, l.icon ? /*#__PURE__*/React__default["default"].createElement(ImageContainer$1, null, /*#__PURE__*/React__default["default"].createElement(Image, {
-    src: l.icon,
-    alt: l.name
-  })) : null, l.name)))), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, l.icon ? /*#__PURE__*/React__default["default"].createElement(FlagContainer, null, l.icon) : null, l.name)))), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     hideLabel: true,
     icon: icons.Icons.Save,
     onClick: onSaveDocument,
