@@ -7749,7 +7749,7 @@ const EditorWrapper = /*#__PURE__*/memo(props => {
     throw new Error("Required property Config.locales is empty");
   }
   checkLocalesCorrectness(props.config.locales); // very important to check locales correctness, circular references etc. Other functions
-  const locale = props.locale ?? getDefaultLocale(props.config.locales).code;
+  const locale = getDefaultLocale(props.config.locales).code ?? props.locale;
   const rootTemplateEntry = props.rootTemplateId ? props.config.templates?.find(t => t.id === props.rootTemplateId)?.entry : null;
   const rootComponentId = props.document ? props.document.entry._component : rootTemplateEntry?._component ?? props.rootComponentId;
   const compilationContext = createCompilationContext(props.config, {

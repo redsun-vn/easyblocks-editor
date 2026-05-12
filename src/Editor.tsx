@@ -318,7 +318,7 @@ const EditorWrapper = memo(
     }
 
     checkLocalesCorrectness(props.config.locales); // very important to check locales correctness, circular references etc. Other functions
-    const locale = props.locale ?? getDefaultLocale(props.config.locales).code;
+    const locale = getDefaultLocale(props.config.locales).code ?? props.locale;
 
     const rootTemplateEntry = props.rootTemplateId
       ? props.config.templates?.find((t) => t.id === props.rootTemplateId)
