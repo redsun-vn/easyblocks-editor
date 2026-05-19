@@ -1743,9 +1743,9 @@ function TokenFieldComponent({
       label: `(removed) ${input.value.tokenId}`
     });
   }
-  const isExtraValueSelected = !isMixedFieldValue(input.value) && !input.value.tokenId && extraValuesIncludes(extraValues, easyblocksCore.responsiveValueGetDefinedValue(input.value.value, editorContext.breakpointIndex, editorContext.devices, easyblocksCore.getDevicesWidths(editorContext.devices) /** FOR NOW TOKENS ARE RELATIVE TO SCREEN **/));
-  const shouldShowCustomValueInput = !isMixedFieldValue(input.value) && !(input.value.tokenId || isExtraValueSelected) && allowCustom;
-  const selectValue = isMixedFieldValue(input.value) ? MIXED_VALUE : input.value.tokenId ?? (isExtraValueSelected ? input.value.value : CUSTOM_OPTION_VALUE);
+  const isExtraValueSelected = !isMixedFieldValue(input.value) && !input.value?.tokenId && extraValuesIncludes(extraValues, easyblocksCore.responsiveValueGetDefinedValue(input.value.value, editorContext.breakpointIndex, editorContext.devices, easyblocksCore.getDevicesWidths(editorContext.devices) /** FOR NOW TOKENS ARE RELATIVE TO SCREEN **/));
+  const shouldShowCustomValueInput = !isMixedFieldValue(input.value) && !(input.value?.tokenId || isExtraValueSelected) && allowCustom;
+  const selectValue = isMixedFieldValue(input.value) ? MIXED_VALUE : input.value?.tokenId ?? (isExtraValueSelected ? input.value.value : CUSTOM_OPTION_VALUE);
   const onSelectChange = selectedValue => {
     if (selectedValue === CUSTOM_OPTION_VALUE) {
       if (isMixedFieldValue(input.value)) {

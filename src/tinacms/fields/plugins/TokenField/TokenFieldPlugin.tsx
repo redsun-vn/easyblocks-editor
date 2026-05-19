@@ -143,7 +143,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
 
   const isExtraValueSelected =
     !isMixedFieldValue(input.value) &&
-    !input.value.tokenId &&
+    !input.value?.tokenId &&
     extraValuesIncludes(
       extraValues,
       responsiveValueGetDefinedValue(
@@ -158,12 +158,12 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
 
   const shouldShowCustomValueInput =
     !isMixedFieldValue(input.value) &&
-    !(input.value.tokenId || isExtraValueSelected) &&
+    !(input.value?.tokenId || isExtraValueSelected) &&
     allowCustom;
 
   const selectValue = isMixedFieldValue(input.value)
     ? MIXED_VALUE
-    : (input.value.tokenId ??
+    : (input.value?.tokenId ??
       (isExtraValueSelected
         ? (input.value.value as string)
         : CUSTOM_OPTION_VALUE));
