@@ -259,7 +259,7 @@ export function useDataSaver(
       onTickRef.current().finally(() => {
         inProgress.current = false;
       });
-    }, 5000);
+    }, 60000);
 
     return () => {
       clearInterval(interval);

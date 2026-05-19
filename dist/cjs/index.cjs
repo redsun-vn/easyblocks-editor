@@ -7387,7 +7387,7 @@ function useDataSaver(initialDocument, editorContext) {
       onTickRef.current().finally(() => {
         inProgress.current = false;
       });
-    }, 5000);
+    }, 60000);
     return () => {
       clearInterval(interval);
     };
