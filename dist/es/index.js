@@ -1702,7 +1702,7 @@ function TokenFieldComponent({
   }
 
   // If token exist but is removed from a theme -> let's add special option for this
-  if (!isMixedFieldValue(input.value) && typeof input.value.tokenId === "string" && !field.tokens[input.value.tokenId]) {
+  if (!isMixedFieldValue(input.value) && typeof input.value?.tokenId === "string" && !field.tokens[input.value?.tokenId]) {
     options.unshift({
       id: input.value.tokenId,
       label: `(removed) ${input.value.tokenId}`
