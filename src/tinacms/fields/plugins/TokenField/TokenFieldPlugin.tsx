@@ -147,7 +147,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
     extraValuesIncludes(
       extraValues,
       responsiveValueGetDefinedValue(
-        input.value.value,
+        input.value?.value,
         editorContext.breakpointIndex,
         editorContext.devices,
         getDevicesWidths(
@@ -165,7 +165,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
     ? MIXED_VALUE
     : (input.value?.tokenId ??
       (isExtraValueSelected
-        ? (input.value.value as string)
+        ? (input.value?.value as string)
         : CUSTOM_OPTION_VALUE));
 
   const onSelectChange = (selectedValue: string) => {
@@ -262,7 +262,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
   useEffect(() => {
     const value = (
       input.value as Exclude<(typeof input)["value"], FieldMixedValue>
-    ).value;
+    )?.value;
     if (value) {
       setInputValue(value);
     }
