@@ -21,6 +21,7 @@ import { EditorHistory } from "./EditorHistory";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
 import { TLeftSidebar } from "./types";
 import { useTranslation } from "./useTranslation";
+import { getFlagUrl } from "./utils/getFlagSvgUrl";
 
 export const TOP_BAR_HEIGHT = 40;
 
@@ -79,10 +80,10 @@ const TopBarCenter = styled.div`
   transform: translate(-50%, -50%);
 `;
 
-const FlagContainer = styled.div`
+const ImageContainer = styled.div`
   position: relative;
-  transform: scale(1.5);
-  margin: 0 4px;
+  width: 20px;
+  height: 20px;
 `;
 
 const Image = styled.img`
@@ -278,7 +279,11 @@ export const EditorTopBar: React.FC<{
                     gap: 4,
                   }}
                 >
-                  {l.icon ? <FlagContainer>{l.icon}</FlagContainer> : null}
+                  {l.code ? (
+                    <ImageContainer>
+                      <Image src={getFlagUrl(l.code)} alt={l.name} />
+                    </ImageContainer>
+                  ) : null}
                   {l.name}
                 </div>
               </SelectItem>
