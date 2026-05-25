@@ -2,7 +2,7 @@ import { toArray } from "@/utils/array/toArray";
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { styled } from "styled-components";
 import { useEditorContext } from "../../EditorContext";
 import { Form } from "../../form";
@@ -27,6 +27,8 @@ import { LocalFieldPlugin } from "../fields/plugins/LocalFIeld";
 import { PositionFieldPlugin } from "../fields/plugins/PositionFieldPlugin";
 import { FieldPlugin } from "./field-plugin";
 import { createFieldController } from "./utils/createFieldController";
+
+export type SidebarTab = "styles" | "data" | "animation";
 
 export interface FieldBuilderProps {
   form: Form;
@@ -190,6 +192,42 @@ export function FieldBuilder({
   );
 }
 
+
+const tabs: Array<{ id: SidebarTab; label: string }> = [
+  { id: "styles", label: "Styles" },
+  { id: "data", label: "Data" },
+  { id: "animation", label: "Animation" },
+];
+
+const TabsBar = styled.div`
+  display: flex;
+  gap: 2px;
+  padding: 6px 10px;
+  background: ${Colors.black5};
+  border-radius: 8px;
+  margin: 10px 12px 4px;
+`;
+
+const TabButton = styled.button<{ $active: boolean }>`
+  flex: 1;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: ${(p) => (p.$active ? "600" : "400")};
+  background: ${(p) => (p.$active ? Colors.white : "transparent")};
+  color: black;
+  box-shadow: ${(p) =>
+    p.$active ? "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)" : "none"};
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover {
+    background: ${Colors.white};
+  }
+`;
+
 export interface FieldsBuilderProps {
   form: Form;
   fields: InternalField[];
@@ -209,10 +247,21 @@ export function FieldsBuilder({
 }: FieldsBuilderProps) {
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
+  const [activeTab, setActiveTab] = useState<SidebarTab>("styles");
+
+  const hasTabs = fields.some((f) => f.component !== "identity" && f.component !== null);
+
+  const visibleFields = hasTabs
+    ? fields.filter((f) => {
+      const fieldTab: SidebarTab = (f.schemaProp as any)?.tab ?? "styles";
+      return fieldTab === activeTab;
+    })
+    : fields;
+
   const grouped: Record<string, Array<InternalField>> = {};
   const ungrouped: Array<InternalField> = [];
 
-  fields.forEach((field) => {
+  visibleFields.forEach((field) => {
     if (!shouldFieldBeDisplayed(field)) {
       return;
     }
@@ -244,6 +293,20 @@ export function FieldsBuilder({
           <FieldBuilder field={identityField} form={form} />
           {horizontalLine}
         </React.Fragment>
+      )}
+
+      {hasTabs && !isEmptyField && (
+        <TabsBar>
+          {tabs.map((tab) => (
+            <TabButton
+              key={tab.id}
+              $active={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </TabButton>
+          ))}
+        </TabsBar>
       )}
 
       {isEmptyField ? <EmptyField /> : null}

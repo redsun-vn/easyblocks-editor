@@ -702,6 +702,7 @@ const EditorContent = ({
   const [showLeftSidebar, setShowLeftSidebar] = useState<TLeftSidebar | null>(
     null,
   );
+  const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(
     compilationContext.contextParams.locale,
   );
@@ -731,6 +732,7 @@ const EditorContent = ({
 
   const handleSetEditing = useCallback(() => {
     compilationCache.current.clear();
+    if (isEditing) setRightSidebarOpen(false);
     setEditing(!isEditing);
   }, [isEditing]);
 
@@ -1385,6 +1387,14 @@ const EditorContent = ({
               readOnly={editorContext.readOnly}
               showLeftSidebar={showLeftSidebar}
               onShowLeftSidebar={onShowLeftSidebar}
+              isRightSidebarOpen={isRightSidebarOpen || focussedField.length > 0}
+              onToggleRightSidebar={() => {
+                if (focussedField.length > 0) {
+                  setFocussedField([]);
+                } else {
+                  setRightSidebarOpen((prev) => !prev);
+                }
+              }}
             />
             <SidebarAndContentContainer height={appHeight}>
               {showLeftSidebar && isEditMode && (
@@ -1424,7 +1434,7 @@ const EditorContent = ({
                   />
                 )}
               </ContentContainer>
-              {isEditMode && (
+              {isEditMode && (isRightSidebarOpen || focussedField.length > 0) && (
                 <SidebarContainer ref={sidebarNodeRef}>
                   <EditorSidebar
                     focussedField={focussedField}

@@ -122,6 +122,8 @@ export const EditorTopBar: React.FC<{
   readOnly: boolean;
   showLeftSidebar: TLeftSidebar | null;
   onShowLeftSidebar: (sidebarName: TLeftSidebar | null) => void;
+  isRightSidebarOpen: boolean;
+  onToggleRightSidebar: () => void;
 }> = ({
   name,
   onClose,
@@ -143,6 +145,8 @@ export const EditorTopBar: React.FC<{
   readOnly,
   showLeftSidebar,
   onShowLeftSidebar,
+  isRightSidebarOpen,
+  onToggleRightSidebar,
 }) => {
   const headingRef = useRef<HTMLDivElement>(null);
   const router = new URLSearchParams(window.location.search);
@@ -228,6 +232,17 @@ export const EditorTopBar: React.FC<{
           onClick={() => setIsOpenConfigs((prev) => !prev)}
         >
           {t("editor.sidebar.configurations")}
+        </ButtonGhost>
+
+        <ButtonGhost
+          icon={Icons.Pencil}
+          hideLabel
+          onClick={() => onToggleRightSidebar()}
+          style={{
+            background: isRightSidebarOpen ? Colors.black10 : "transparent",
+          }}
+        >
+          {t("editor.sidebar.properties")}
         </ButtonGhost>
 
         <Typography
