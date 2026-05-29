@@ -666,18 +666,18 @@ function SidebarFooter(props) {
     icon: icons.Icons.Copy,
     hideLabel: true,
     onClick: () => onCopy(value)
-  }, t("template.entry.copy")), /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
+  }, t("template.entry.copy")), value._master && /*#__PURE__*/React__namespace.createElement("div", {
+    style: {
+      paddingTop: 16
+    }
+  }, "Master: ", value._master)), /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
     icon: icons.Icons.Id,
     hideLabel: true,
     onClick: () => onCopy(value._id),
     style: {
       minWidth: "auto"
     }
-  }, t("template.id.copy")), value._master && /*#__PURE__*/React__namespace.createElement("div", {
-    style: {
-      paddingTop: 16
-    }
-  }, "Master: ", value._master))) : null), props.SaveAsPicker ? /*#__PURE__*/React__namespace.createElement(SaveAsPicker, {
+  }, t("template.id.copy"))) : null), props.SaveAsPicker ? /*#__PURE__*/React__namespace.createElement(SaveAsPicker, {
     saveAsEntry: saveAsEntry,
     setSaveAsEntry: setSaveAsEntry,
     Component: props.SaveAsPicker

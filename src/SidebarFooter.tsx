@@ -147,19 +147,19 @@ export function SidebarFooter(props: {
                 >
                   {t("template.entry.copy")}
                 </StyledButtonCopyTemplate>
-                <ButtonSecondary
-                  icon={Icons.Id}
-                  hideLabel
-                  onClick={() => onCopy(value._id)}
-                  style={{ minWidth: "auto" }}
-                >
-                  {t("template.id.copy")}
-                </ButtonSecondary>
                 {value._master && (
                   <div style={{ paddingTop: 16 }}>Master: {value._master}</div>
                 )}
               </>
             )}
+            <ButtonSecondary
+              icon={Icons.Id}
+              hideLabel
+              onClick={() => onCopy(value._id)}
+              style={{ minWidth: "auto" }}
+            >
+              {t("template.id.copy")}
+            </ButtonSecondary>
           </ButtonWrapper>
         ) : null}
       </IdWrapper>
