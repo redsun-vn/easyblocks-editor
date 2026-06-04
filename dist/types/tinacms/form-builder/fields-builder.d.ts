@@ -1,6 +1,7 @@
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
 import React from "react";
 import { Form } from "../../form";
+export type SidebarTab = "styles" | "data" | "animation";
 export interface FieldBuilderProps {
     form: Form;
     field: InternalField;

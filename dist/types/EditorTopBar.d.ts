@@ -25,5 +25,7 @@ export declare const EditorTopBar: React.FC<{
     readOnly: boolean;
     showLeftSidebar: TLeftSidebar | null;
     onShowLeftSidebar: (sidebarName: TLeftSidebar | null) => void;
+    isRightSidebarOpen: boolean;
+    onToggleRightSidebar: () => void;
 }>;
 //# sourceMappingURL=EditorTopBar.d.ts.map

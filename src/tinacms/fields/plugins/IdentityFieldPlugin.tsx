@@ -172,7 +172,9 @@ function IdentityField({ input, field }: IdentityFieldProps) {
             icon={Icons.Remove}
             hideLabel
             showTooltip={false}
-            onClick={handleRemove}
+            onClick={() => {
+              editorContext.setFocussedField([]);
+            }}
             style={{
               marginLeft: "auto",
               opacity: isNonRemovable ? 0 : 1,

@@ -2295,12 +2295,6 @@ function IdentityField({
       editorContext.actions.replaceItems(configPaths, selectedConfig);
     });
   }
-  function handleRemove() {
-    if (isNonRemovable) {
-      return;
-    }
-    editorContext.actions.removeItems(configPaths);
-  }
   const titleContent = /*#__PURE__*/React__default.createElement("div", {
     style: {
       display: "flex",
@@ -2341,7 +2335,9 @@ function IdentityField({
     icon: Icons.Remove,
     hideLabel: true,
     showTooltip: false,
-    onClick: handleRemove,
+    onClick: () => {
+      editorContext.setFocussedField([]);
+    },
     style: {
       marginLeft: "auto",
       opacity: isNonRemovable ? 0 : 1,
@@ -3315,9 +3311,27 @@ function FieldBuilder({
     layout: "column"
   }, /*#__PURE__*/React__default.createElement(Typography, null, "Unrecognized field type"));
 }
+const tabs = [{
+  id: "styles",
+  label: "Styles"
+}, {
+  id: "data",
+  label: "Data"
+}, {
+  id: "animation",
+  label: "Animation"
+}];
+const TabsBar = styled.div.withConfig({
+  displayName: "fields-builder__TabsBar",
+  componentId: "sc-ignixa-0"
+})(["display:flex;gap:2px;padding:6px 10px;background:", ";border-radius:8px;margin:10px 12px 4px;"], Colors.black5);
+const TabButton = styled.button.withConfig({
+  displayName: "fields-builder__TabButton",
+  componentId: "sc-ignixa-1"
+})(["flex:1;padding:5px 8px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:", ";background:", ";color:black;box-shadow:", ";transition:all 0.15s ease;white-space:nowrap;&:hover{background:", ";}"], p => p.$active ? "600" : "400", p => p.$active ? Colors.white : "transparent", p => p.$active ? "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)" : "none", Colors.white);
 const HorizontalLine$3 = styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
-  componentId: "sc-ignixa-0"
+  componentId: "sc-ignixa-2"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
 function FieldsBuilder({
   form,
@@ -3326,9 +3340,15 @@ function FieldsBuilder({
 }) {
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
+  const [activeTab, setActiveTab] = useState("styles");
+  const hasTabs = fields.some(f => f.component !== "identity" && f.component !== null);
+  const visibleFields = hasTabs ? fields.filter(f => {
+    const fieldTab = f.schemaProp?.tab ?? "styles";
+    return fieldTab === activeTab;
+  }) : fields;
   const grouped = {};
   const ungrouped = [];
-  fields.forEach(field => {
+  visibleFields.forEach(field => {
     if (!shouldFieldBeDisplayed(field)) {
       return;
     }
@@ -3348,7 +3368,11 @@ function FieldsBuilder({
   return /*#__PURE__*/React__default.createElement(FieldsGroup, null, identityField !== undefined && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(FieldBuilder, {
     field: identityField,
     form: form
-  }), horizontalLine), isEmptyField ? /*#__PURE__*/React__default.createElement(EmptyField, null) : null, Object.keys(grouped).map(groupName => /*#__PURE__*/React__default.createElement("div", {
+  }), horizontalLine), hasTabs && !isEmptyField && /*#__PURE__*/React__default.createElement(TabsBar, null, tabs.map(tab => /*#__PURE__*/React__default.createElement(TabButton, {
+    key: tab.id,
+    $active: activeTab === tab.id,
+    onClick: () => setActiveTab(tab.id)
+  }, tab.label))), isEmptyField ? /*#__PURE__*/React__default.createElement(EmptyField, null) : null, Object.keys(grouped).map(groupName => /*#__PURE__*/React__default.createElement("div", {
     key: groupName
   }, /*#__PURE__*/React__default.createElement(FieldsGroupLabel, null, groupName), grouped[groupName].map((field, index, fields) => /*#__PURE__*/React__default.createElement(FieldWrapper, {
     key: generateFieldKey(field, breakpointIndex),
@@ -3372,15 +3396,15 @@ function generateFieldKey(field, breakpointIndex) {
 }
 const FieldWrapper = styled.div.withConfig({
   displayName: "fields-builder__FieldWrapper",
-  componentId: "sc-ignixa-1"
+  componentId: "sc-ignixa-3"
 })(["margin-bottom:", ";"], props => props.isLast ? "8px" : 0);
 const FieldsGroupLabel = styled.div.withConfig({
   displayName: "fields-builder__FieldsGroupLabel",
-  componentId: "sc-ignixa-2"
+  componentId: "sc-ignixa-4"
 })(["display:flex;align-items:center;padding:20px 16px 10px 16px;", ";color:#000;"], Fonts.label);
 const FieldsGroup = styled.div.withConfig({
   displayName: "fields-builder__FieldsGroup",
-  componentId: "sc-ignixa-3"
+  componentId: "sc-ignixa-5"
 })(["position:relative;display:block;width:100%;padding:0;white-space:nowrap;overflow:unset;"]);
 
 const theme = css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Roboto\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
@@ -4147,7 +4171,9 @@ const EditorTopBar = ({
   hideCloseButton,
   readOnly,
   showLeftSidebar,
-  onShowLeftSidebar
+  onShowLeftSidebar,
+  isRightSidebarOpen,
+  onToggleRightSidebar
 }) => {
   const headingRef = useRef(null);
   const router = new URLSearchParams(window.location.search);
@@ -4206,7 +4232,14 @@ const EditorTopBar = ({
     icon: Icons.ColorAndFonts,
     hideLabel: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
-  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default.createElement(Typography, {
+  }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Pencil,
+    hideLabel: true,
+    onClick: () => onToggleRightSidebar(),
+    style: {
+      background: isRightSidebarOpen ? Colors.black10 : "transparent"
+    }
+  }, t("editor.sidebar.properties")), /*#__PURE__*/React__default.createElement(Typography, {
     style: {
       maxWidth: 150,
       overflow: "hidden",
@@ -8009,6 +8042,7 @@ const EditorContent = ({
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
   const [showLeftSidebar, setShowLeftSidebar] = useState(null);
+  const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(compilationContext.contextParams.locale);
   const prevLocale = useRef("");
   const [componentPickerData, setComponentPickerData] = useState(undefined);
@@ -8025,6 +8059,7 @@ const EditorContent = ({
   }, [currentLocale, isEditing]);
   const handleSetEditing = useCallback(() => {
     compilationCache.current.clear();
+    if (isEditing) setRightSidebarOpen(false);
     setEditing(!isEditing);
   }, [isEditing]);
   const closeComponentPickerModal = config => {
@@ -8547,7 +8582,15 @@ const EditorContent = ({
     hideCloseButton: props.config.hideCloseButton ?? false,
     readOnly: editorContext.readOnly,
     showLeftSidebar: showLeftSidebar,
-    onShowLeftSidebar: onShowLeftSidebar
+    onShowLeftSidebar: onShowLeftSidebar,
+    isRightSidebarOpen: isRightSidebarOpen || focussedField.length > 0,
+    onToggleRightSidebar: () => {
+      if (focussedField.length > 0) {
+        setFocussedField([]);
+      } else {
+        setRightSidebarOpen(prev => !prev);
+      }
+    }
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
     height: appHeight
   }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default.createElement(SidebarContainer, {
@@ -8573,7 +8616,7 @@ const EditorContent = ({
     width: iframeSize.width,
     height: iframeSize.height,
     transform: iframeSize.transform
-  })), isEditMode && /*#__PURE__*/React__default.createElement(SidebarContainer, {
+  })), isEditMode && (isRightSidebarOpen || focussedField.length > 0) && /*#__PURE__*/React__default.createElement(SidebarContainer, {
     ref: sidebarNodeRef
   }, /*#__PURE__*/React__default.createElement(EditorSidebar, {
     focussedField: focussedField,
