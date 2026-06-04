@@ -3356,23 +3356,35 @@ const tabs = [{
   id: "animation",
   label: "Animation"
 }];
+
+// Underline-style tab bar (flat text buttons sitting on a baseline track).
 const TabsBar = styled.styled.div.withConfig({
   displayName: "fields-builder__TabsBar",
   componentId: "sc-ignixa-0"
-})(["display:flex;gap:2px;padding:6px 10px;background:", ";border-radius:8px;margin:10px 12px 4px;"], easyblocksDesignSystem.Colors.black5);
+})(["display:flex;justify-content:space-between;border-bottom:1px solid ", ";"], easyblocksDesignSystem.Colors.black10);
+
+// Active tab: faint Colors.black5 underline + bold/dark text so it stays
+// distinguishable even though the underline color is subtle.
 const TabButton = styled.styled.button.withConfig({
   displayName: "fields-builder__TabButton",
   componentId: "sc-ignixa-1"
-})(["flex:1;padding:5px 8px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:", ";background:", ";color:black;box-shadow:", ";transition:all 0.15s ease;white-space:nowrap;&:hover{background:", ";}"], p => p.$active ? "600" : "400", p => p.$active ? easyblocksDesignSystem.Colors.white : "transparent", p => p.$active ? "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)" : "none", easyblocksDesignSystem.Colors.white);
+})(["padding:8px 16px;margin-bottom:-1px;border:none;border-bottom:2px solid ", ";background:transparent;cursor:pointer;font-size:12px;font-weight:", ";color:", ";transition:all 0.15s ease;white-space:nowrap;&:hover{color:black;}"], p => p.$active ? easyblocksDesignSystem.Colors.black500 : "transparent", p => p.$active ? "600" : "400", p => p.$active ? "black" : easyblocksDesignSystem.Colors.black40);
+const NoData = styled.styled(Typography.Typography).withConfig({
+  displayName: "fields-builder__NoData",
+  componentId: "sc-ignixa-2"
+})(["padding:20px 16px;"]);
 const HorizontalLine$3 = styled.styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
-  componentId: "sc-ignixa-2"
+  componentId: "sc-ignixa-3"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
 function FieldsBuilder({
   form,
   fields,
   isEmptyField = false
 }) {
+  const {
+    t
+  } = useTranslation();
   const editorContext = useEditorContext();
   const panelContext = React.useContext(PanelContext);
   const [activeTab, setActiveTab] = React.useState("styles");
@@ -3423,7 +3435,9 @@ function FieldsBuilder({
     field: field,
     form: form,
     isLabelHidden: field.schemaProp.isLabelHidden
-  }))), !isEmptyField ? horizontalLine : null);
+  }))), !Object.keys(grouped).length && !ungrouped.length && !isEmptyField ? /*#__PURE__*/React__default["default"].createElement(NoData, {
+    variant: "body"
+  }, t("noData"), "!") : /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null), !isEmptyField ? horizontalLine : null);
 }
 function generateFieldKey(field, breakpointIndex) {
   const key = `${toArray(field.name).join("_")}_${field.schemaProp.type}${breakpointIndex ? `_${breakpointIndex}` : ""}`;
@@ -3431,15 +3445,15 @@ function generateFieldKey(field, breakpointIndex) {
 }
 const FieldWrapper = styled.styled.div.withConfig({
   displayName: "fields-builder__FieldWrapper",
-  componentId: "sc-ignixa-3"
+  componentId: "sc-ignixa-4"
 })(["margin-bottom:", ";"], props => props.isLast ? "8px" : 0);
 const FieldsGroupLabel = styled.styled.div.withConfig({
   displayName: "fields-builder__FieldsGroupLabel",
-  componentId: "sc-ignixa-4"
+  componentId: "sc-ignixa-5"
 })(["display:flex;align-items:center;padding:20px 16px 10px 16px;", ";color:#000;"], easyblocksDesignSystem.Fonts.label);
 const FieldsGroup = styled.styled.div.withConfig({
   displayName: "fields-builder__FieldsGroup",
-  componentId: "sc-ignixa-5"
+  componentId: "sc-ignixa-6"
 })(["position:relative;display:block;width:100%;padding:0;white-space:nowrap;overflow:unset;"]);
 
 const theme = styled.css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Roboto\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
@@ -4207,8 +4221,8 @@ const EditorTopBar = ({
   readOnly,
   showLeftSidebar,
   onShowLeftSidebar,
-  isRightSidebarOpen,
-  onToggleRightSidebar
+  showRightSidebar,
+  onShowRightSidebar
 }) => {
   const headingRef = React.useRef(null);
   const router = new URLSearchParams(window.location.search);
@@ -4268,11 +4282,11 @@ const EditorTopBar = ({
     hideLabel: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
   }, t("editor.sidebar.configurations")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.Pencil,
+    icon: icons.Icons.PencilLine,
     hideLabel: true,
-    onClick: () => onToggleRightSidebar(),
+    onClick: () => onShowRightSidebar(),
     style: {
-      background: isRightSidebarOpen ? easyblocksDesignSystem.Colors.black10 : "transparent"
+      background: showRightSidebar ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
   }, t("editor.sidebar.properties")), /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     style: {
@@ -8618,8 +8632,8 @@ const EditorContent = ({
     readOnly: editorContext.readOnly,
     showLeftSidebar: showLeftSidebar,
     onShowLeftSidebar: onShowLeftSidebar,
-    isRightSidebarOpen: isRightSidebarOpen || focussedField.length > 0,
-    onToggleRightSidebar: () => {
+    showRightSidebar: isRightSidebarOpen || focussedField.length > 0,
+    onShowRightSidebar: () => {
       if (focussedField.length > 0) {
         setFocussedField([]);
       } else {

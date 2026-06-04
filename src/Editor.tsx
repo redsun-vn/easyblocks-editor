@@ -1387,8 +1387,8 @@ const EditorContent = ({
               readOnly={editorContext.readOnly}
               showLeftSidebar={showLeftSidebar}
               onShowLeftSidebar={onShowLeftSidebar}
-              isRightSidebarOpen={isRightSidebarOpen || focussedField.length > 0}
-              onToggleRightSidebar={() => {
+              showRightSidebar={isRightSidebarOpen || focussedField.length > 0}
+              onShowRightSidebar={() => {
                 if (focussedField.length > 0) {
                   setFocussedField([]);
                 } else {
@@ -1434,15 +1434,16 @@ const EditorContent = ({
                   />
                 )}
               </ContentContainer>
-              {isEditMode && (isRightSidebarOpen || focussedField.length > 0) && (
-                <SidebarContainer ref={sidebarNodeRef}>
-                  <EditorSidebar
-                    focussedField={focussedField}
-                    form={form}
-                    SaveAsPicker={SaveAsPicker}
-                  />
-                </SidebarContainer>
-              )}
+              {isEditMode &&
+                (isRightSidebarOpen || focussedField.length > 0) && (
+                  <SidebarContainer ref={sidebarNodeRef}>
+                    <EditorSidebar
+                      focussedField={focussedField}
+                      form={form}
+                      SaveAsPicker={SaveAsPicker}
+                    />
+                  </SidebarContainer>
+                )}
               {componentPickerData && (
                 <ModalPicker
                   onClose={closeComponentPickerModal}

@@ -1,4 +1,5 @@
 import { toArray } from "@/utils/array/toArray";
+import { TTabSchemaProp } from "@redsun-vn/easyblocks-core";
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
@@ -27,8 +28,6 @@ import { LocalFieldPlugin } from "../fields/plugins/LocalFIeld";
 import { PositionFieldPlugin } from "../fields/plugins/PositionFieldPlugin";
 import { FieldPlugin } from "./field-plugin";
 import { createFieldController } from "./utils/createFieldController";
-
-export type SidebarTab = "styles" | "data" | "animation";
 
 export interface FieldBuilderProps {
   form: Form;
@@ -192,40 +191,42 @@ export function FieldBuilder({
   );
 }
 
-
-const tabs: Array<{ id: SidebarTab; label: string }> = [
+const tabs: Array<{ id: TTabSchemaProp; label: string }> = [
   { id: "styles", label: "Styles" },
   { id: "data", label: "Data" },
   { id: "animation", label: "Animation" },
 ];
 
+// Underline-style tab bar (flat text buttons sitting on a baseline track).
 const TabsBar = styled.div`
   display: flex;
-  gap: 2px;
-  padding: 6px 10px;
-  background: ${Colors.black5};
-  border-radius: 8px;
-  margin: 10px 12px 4px;
+  justify-content: space-between;
+  border-bottom: 1px solid ${Colors.black10};
 `;
 
+// Active tab: faint Colors.black5 underline + bold/dark text so it stays
+// distinguishable even though the underline color is subtle.
 const TabButton = styled.button<{ $active: boolean }>`
-  flex: 1;
-  padding: 5px 8px;
+  padding: 8px 16px;
+  margin-bottom: -1px;
   border: none;
-  border-radius: 6px;
+  border-bottom: 2px solid
+    ${(p) => (p.$active ? Colors.black500 : "transparent")};
+  background: transparent;
   cursor: pointer;
   font-size: 12px;
   font-weight: ${(p) => (p.$active ? "600" : "400")};
-  background: ${(p) => (p.$active ? Colors.white : "transparent")};
-  color: black;
-  box-shadow: ${(p) =>
-    p.$active ? "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)" : "none"};
+  color: ${(p) => (p.$active ? "black" : Colors.black40)};
   transition: all 0.15s ease;
   white-space: nowrap;
 
   &:hover {
-    background: ${Colors.white};
+    color: black;
   }
+`;
+
+const NoData = styled(Typography)`
+  padding: 20px 16px;
 `;
 
 export interface FieldsBuilderProps {
@@ -245,17 +246,20 @@ export function FieldsBuilder({
   fields,
   isEmptyField = false,
 }: FieldsBuilderProps) {
+  const { t } = useTranslation();
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
-  const [activeTab, setActiveTab] = useState<SidebarTab>("styles");
+  const [activeTab, setActiveTab] = useState<TTabSchemaProp>("styles");
 
-  const hasTabs = fields.some((f) => f.component !== "identity" && f.component !== null);
+  const hasTabs = fields.some(
+    (f) => f.component !== "identity" && f.component !== null,
+  );
 
   const visibleFields = hasTabs
     ? fields.filter((f) => {
-      const fieldTab: SidebarTab = (f.schemaProp as any)?.tab ?? "styles";
-      return fieldTab === activeTab;
-    })
+        const fieldTab: TTabSchemaProp = f.schemaProp?.tab ?? "styles";
+        return fieldTab === activeTab;
+      })
     : fields;
 
   const grouped: Record<string, Array<InternalField>> = {};
@@ -341,6 +345,12 @@ export function FieldsBuilder({
           />
         </FieldWrapper>
       ))}
+
+      {!Object.keys(grouped).length && !ungrouped.length && !isEmptyField ? (
+        <NoData variant="body">{t("noData")}!</NoData>
+      ) : (
+        <></>
+      )}
       {!isEmptyField ? horizontalLine : null}
     </FieldsGroup>
   );
