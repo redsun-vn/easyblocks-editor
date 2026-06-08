@@ -1,4 +1,5 @@
 import { ComponentDefinitionShared, NoCodeComponentEntry, Template } from "@redsun-vn/easyblocks-core";
+import { TEasyblocksEditorMode } from "./types";
 export type TemplatesDictionary = {
     [componentId: string]: {
         component: ComponentDefinitionShared & {
@@ -17,6 +18,7 @@ export type TemplatePickerProps = {
     onFilters?: (filters: string) => void;
     onLoadMore?: (page: number, groupId: string) => Promise<void> | void;
     mode?: string;
+    editorMode: TEasyblocksEditorMode;
     loadMode?: "replace" | "append";
 };
 export type TemplatePicker<T = Record<never, never>> = React.FC<TemplatePickerProps & T>;

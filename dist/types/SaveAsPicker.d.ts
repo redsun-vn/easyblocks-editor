@@ -1,7 +1,9 @@
 import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import React from "react";
 import { SaveAsTemplatePicker } from "./TemplatePicker";
-export declare function SaveAsPicker({ Component, saveAsEntry, setSaveAsEntry, }: {
+import { TEasyblocksEditorMode } from "./types";
+export declare function SaveAsPicker({ mode, Component, saveAsEntry, setSaveAsEntry, }: {
+    mode: TEasyblocksEditorMode;
     Component: SaveAsTemplatePicker;
     saveAsEntry: NoCodeComponentEntry | null;
     setSaveAsEntry: React.Dispatch<React.SetStateAction<NoCodeComponentEntry | null>>;

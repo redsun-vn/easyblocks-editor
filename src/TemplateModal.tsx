@@ -12,6 +12,7 @@ import { useEditorContext } from "./EditorContext";
 import {
   OpenTemplateModalAction,
   OpenTemplateModalActionCreate,
+  TEasyblocksEditorMode,
 } from "./types";
 import { useTranslation } from "./useTranslation";
 
@@ -19,7 +20,7 @@ type TemplateModalProps = {
   action: OpenTemplateModalAction;
   onClose: () => void;
   backend: Backend;
-  isAdminMode?: boolean;
+  mode: TEasyblocksEditorMode;
 };
 
 export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
@@ -89,7 +90,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
       return;
     }
 
-    if (props.isAdminMode && !userId) {
+    if (props.mode && !userId) {
       toaster.notify(t("error.userId.notFound"));
       return;
     }

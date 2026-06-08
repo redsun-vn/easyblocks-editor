@@ -2,6 +2,7 @@ import { Config, FetchOutputResources, InlineTypeWidgetComponentProps, TGlobalSe
 import React, { ComponentType } from "react";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
 import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
+import { TEasyblocksEditorMode } from "./types";
 type EasyblocksParentProps = {
     config: Config;
     externalData: FetchOutputResources;
@@ -11,7 +12,7 @@ type EasyblocksParentProps = {
     widgets?: Record<string, ComponentType<WidgetComponentProps<any>> | ComponentType<InlineTypeWidgetComponentProps<any>>>;
     components?: Record<string, ComponentType<any>>;
     pickers?: Record<string, TemplatePicker>;
-    isAdminMode?: boolean;
+    mode: TEasyblocksEditorMode;
     defaultLocale?: string;
     SaveAsPicker?: SaveAsTemplatePicker;
 };

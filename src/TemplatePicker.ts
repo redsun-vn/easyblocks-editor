@@ -3,6 +3,7 @@ import {
   NoCodeComponentEntry,
   Template,
 } from "@redsun-vn/easyblocks-core";
+import { TEasyblocksEditorMode } from "./types";
 
 export type TemplatesDictionary = {
   [componentId: string]: {
@@ -21,6 +22,7 @@ export type TemplatePickerProps = {
   onFilters?: (filters: string) => void;
   onLoadMore?: (page: number, groupId: string) => Promise<void> | void;
   mode?: string;
+  editorMode: TEasyblocksEditorMode;
   loadMode?: "replace" | "append";
 };
 

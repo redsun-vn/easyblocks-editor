@@ -3,6 +3,7 @@ import React, { ComponentType } from "react";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
 import { EditorContextType } from "./EditorContext";
 import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
+import { TEasyblocksEditorMode } from "./types";
 declare global {
     interface Window {
         editorWindowAPI?: {
@@ -19,7 +20,7 @@ type EditorProps = {
     config: Config;
     locale?: string;
     readOnly: boolean;
-    isAdminMode?: boolean;
+    mode: TEasyblocksEditorMode;
     defaultLocale?: string;
     documentId: string | null;
     rootComponentId: string | null;

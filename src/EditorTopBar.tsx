@@ -19,7 +19,7 @@ import React, { ReactNode, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { EditorHistory } from "./EditorHistory";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
-import { TLeftSidebar } from "./types";
+import { TEasyblocksEditorMode, TLeftSidebar } from "./types";
 import { useTranslation } from "./useTranslation";
 import { getFlagUrl } from "./utils/getFlagSvgUrl";
 
@@ -124,6 +124,7 @@ export const EditorTopBar: React.FC<{
   onShowLeftSidebar: (sidebarName: TLeftSidebar | null) => void;
   showRightSidebar: boolean;
   onShowRightSidebar: () => void;
+  editorMode: TEasyblocksEditorMode;
 }> = ({
   name,
   onClose,
@@ -147,6 +148,7 @@ export const EditorTopBar: React.FC<{
   onShowLeftSidebar,
   showRightSidebar,
   onShowRightSidebar,
+  editorMode,
 }) => {
   const headingRef = useRef<HTMLDivElement>(null);
   const router = new URLSearchParams(window.location.search);
@@ -154,6 +156,8 @@ export const EditorTopBar: React.FC<{
   const shopId = router.get("shopId");
   const { t } = useTranslation();
   const [isOpenConfigs, setIsOpenConfigs] = useState(false);
+
+  const isAdminTemplate = editorMode === "admin-template";
 
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
@@ -200,19 +204,21 @@ export const EditorTopBar: React.FC<{
 
         {readOnly && <Label>(Read-Only)</Label>}
 
-        <ButtonGhost
-          icon={Icons.GlobalSections}
-          hideLabel
-          onClick={() => onShowLeftSidebar("global-sections")}
-          style={{
-            background:
-              showLeftSidebar === "global-sections"
-                ? Colors.black10
-                : "transparent",
-          }}
-        >
-          {t("editor.sidebar.globalSections")}
-        </ButtonGhost>
+        {!isAdminTemplate && (
+          <ButtonGhost
+            icon={Icons.GlobalSections}
+            hideLabel
+            onClick={() => onShowLeftSidebar("global-sections")}
+            style={{
+              background:
+                showLeftSidebar === "global-sections"
+                  ? Colors.black10
+                  : "transparent",
+            }}
+          >
+            {t("editor.sidebar.globalSections")}
+          </ButtonGhost>
+        )}
 
         <ButtonGhost
           icon={Icons.Layers}
@@ -226,13 +232,15 @@ export const EditorTopBar: React.FC<{
           {t("editor.sidebar.layers")}
         </ButtonGhost>
 
-        <ButtonGhost
-          icon={Icons.ColorAndFonts}
-          hideLabel
-          onClick={() => setIsOpenConfigs((prev) => !prev)}
-        >
-          {t("editor.sidebar.configurations")}
-        </ButtonGhost>
+        {!isAdminTemplate && (
+          <ButtonGhost
+            icon={Icons.ColorAndFonts}
+            hideLabel
+            onClick={() => setIsOpenConfigs((prev) => !prev)}
+          >
+            {t("editor.sidebar.configurations")}
+          </ButtonGhost>
+        )}
 
         <ButtonGhost
           icon={Icons.PencilLine}
@@ -313,11 +321,13 @@ export const EditorTopBar: React.FC<{
           >
             {t("topBar.save")}
           </ButtonGhost>
-          <a href={`/?previewId=${themeId}&shopId=${shopId}`} target="_blank">
-            <ButtonGhost hideLabel icon={Icons.Preview}>
-              {t("topBar.preview")}
-            </ButtonGhost>
-          </a>
+          {!isAdminTemplate && (
+            <a href={`/?previewId=${themeId}&shopId=${shopId}`} target="_blank">
+              <ButtonGhost hideLabel icon={Icons.Preview}>
+                {t("topBar.preview")}
+              </ButtonGhost>
+            </a>
+          )}
           <VerticalLine />
           <Typography
             variant={"body"}

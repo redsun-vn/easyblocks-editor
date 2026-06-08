@@ -94,6 +94,7 @@ import {
   ActionsType,
   OpenComponentPickerConfig,
   OpenTemplateModalAction,
+  TEasyblocksEditorMode,
   TLeftSidebar,
 } from "./types";
 import { useDataSaver } from "./useDataSaver";
@@ -192,7 +193,7 @@ type EditorProps = {
   config: Config;
   locale?: string;
   readOnly: boolean;
-  isAdminMode?: boolean;
+  mode: TEasyblocksEditorMode;
   defaultLocale?: string;
   documentId: string | null;
   rootComponentId: string | null;
@@ -667,7 +668,7 @@ const EditorContent = ({
   initialDocument,
   initialEntry,
   externalData,
-  isAdminMode = false,
+  mode,
   defaultLocale,
   onConfigChange,
   SaveAsPicker,
@@ -1048,7 +1049,7 @@ const EditorContent = ({
     },
     backend: props.config.backend,
     types: editorTypes,
-    isAdminMode,
+    mode,
     isFetchingTemplates,
     templates,
     syncTemplateQuery,
@@ -1312,6 +1313,7 @@ const EditorContent = ({
   const { saveNow, isSaving, isDirty } = useDataSaver(
     initialDocument,
     editorContext,
+    mode,
   );
 
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
@@ -1395,6 +1397,7 @@ const EditorContent = ({
                   setRightSidebarOpen((prev) => !prev);
                 }
               }}
+              editorMode={mode}
             />
             <SidebarAndContentContainer height={appHeight}>
               {showLeftSidebar && isEditMode && (
@@ -1449,13 +1452,14 @@ const EditorContent = ({
                   onClose={closeComponentPickerModal}
                   config={componentPickerData.config}
                   pickers={props.pickers}
+                  editorMode={mode}
                 />
               )}
             </SidebarAndContentContainer>
 
             {openTemplateModalAction && (
               <TemplateModal
-                isAdminMode={isAdminMode}
+                mode={mode}
                 action={openTemplateModalAction}
                 onClose={() => {
                   setOpenTemplateModalAction(undefined);

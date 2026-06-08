@@ -506,6 +506,7 @@ const useTranslation = () => {
 };
 
 function SaveAsPicker({
+  mode,
   Component,
   saveAsEntry,
   setSaveAsEntry
@@ -519,7 +520,8 @@ function SaveAsPicker({
     saveAsEntry: saveAsEntry,
     onClose: () => setSaveAsEntry(null),
     onSuccess: () => toaster.success(t("template.entry.saveAs.success")),
-    onError: () => toaster.error(t("template.entry.saveAs.error"))
+    onError: () => toaster.error(t("template.entry.saveAs.error")),
+    editorMode: mode
   });
 }
 
@@ -575,7 +577,7 @@ function SidebarFooter(props) {
   } = useTranslation();
   const {
     form,
-    isAdminMode
+    mode
   } = editorContext;
   const [saveAsEntry, setSaveAsEntry] = useState(null);
   if (props.paths.length === 0) {
@@ -606,7 +608,7 @@ function SidebarFooter(props) {
       toaster.error(t("template.entry.copy.error"));
     }
   };
-  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$5, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate || isAdminMode ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ButtonSecondary, {
+  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$5, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate && mode !== "admin" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ButtonSecondary, {
     icon: Icons.Save1,
     hideLabel: true,
     onClick: () => {
@@ -627,7 +629,7 @@ function SidebarFooter(props) {
     icon: Icons.SaveAs,
     hideLabel: true,
     onClick: () => setSaveAsEntry(value)
-  }, t("template.saveAs"))), isAdminMode && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(StyledButtonCopyTemplate, {
+  }, t("template.saveAs"))), mode !== "user" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(StyledButtonCopyTemplate, {
     icon: Icons.Copy,
     hideLabel: true,
     onClick: () => onCopy(value)
@@ -645,7 +647,8 @@ function SidebarFooter(props) {
   }, t("template.id.copy"))) : null), props.SaveAsPicker ? /*#__PURE__*/React.createElement(SaveAsPicker, {
     saveAsEntry: saveAsEntry,
     setSaveAsEntry: setSaveAsEntry,
-    Component: props.SaveAsPicker
+    Component: props.SaveAsPicker,
+    mode: mode
   }) : null);
 }
 
@@ -4187,7 +4190,8 @@ const EditorTopBar = ({
   showLeftSidebar,
   onShowLeftSidebar,
   showRightSidebar,
-  onShowRightSidebar
+  onShowRightSidebar,
+  editorMode
 }) => {
   const headingRef = useRef(null);
   const router = new URLSearchParams(window.location.search);
@@ -4197,6 +4201,7 @@ const EditorTopBar = ({
     t
   } = useTranslation();
   const [isOpenConfigs, setIsOpenConfigs] = useState(false);
+  const isAdminTemplate = editorMode === "admin-template";
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
       debouncedSave(_onSaveDocument);
@@ -4228,7 +4233,7 @@ const EditorTopBar = ({
     onClick: () => {
       onRedo();
     }
-  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default.createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "(Read-Only)"), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default.createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "(Read-Only)"), !isAdminTemplate && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.GlobalSections,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("global-sections"),
@@ -4242,7 +4247,7 @@ const EditorTopBar = ({
     style: {
       background: showLeftSidebar === "layers" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.layers")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.layers")), !isAdminTemplate && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.ColorAndFonts,
     hideLabel: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
@@ -4300,7 +4305,7 @@ const EditorTopBar = ({
     onClick: onSaveDocument,
     disabled: isSaving,
     isLoading: isSaving
-  }, t("topBar.save")), /*#__PURE__*/React__default.createElement("a", {
+  }, t("topBar.save")), !isAdminTemplate && /*#__PURE__*/React__default.createElement("a", {
     href: `/?previewId=${themeId}&shopId=${shopId}`,
     target: "_blank"
   }, /*#__PURE__*/React__default.createElement(ButtonGhost, {
@@ -4591,7 +4596,7 @@ const ModalPicker = ({
       filters: filters.trim(),
       search: "",
       page: 1,
-      limit: filters ? queryLimit : 200,
+      limit: filters ? queryLimit : 100,
       mode: "replace"
     });
   };
@@ -4620,7 +4625,8 @@ const ModalPicker = ({
     onLoadMore,
     templates: templatesDictionary,
     templateCount: editorContext.templates?.count,
-    mode: picker
+    mode: picker,
+    editorMode: "admin"
   }) : /*#__PURE__*/React__default.createElement("div", null, "Unknown picker: ", picker);
 };
 
@@ -4950,7 +4956,7 @@ const TemplateModal = props => {
       toaster.notify(t("error.file.notFound"));
       return;
     }
-    if (props.isAdminMode && !userId) {
+    if (props.mode && !userId) {
       toaster.notify(t("error.userId.notFound"));
       return;
     }
@@ -7243,7 +7249,7 @@ function addLocalizedFlag(config, context) {
  * Data saver will use this document as a starting point. It can be `null` if there is no document yet.
  * Data saver will perform first save when any local change is detected.
  */
-function useDataSaver(initialDocument, editorContext) {
+function useDataSaver(initialDocument, editorContext, editorMode) {
   const editorContextRef = useRef(editorContext);
   const initialGlobalConfigs = useRef(deepClone(editorContextRef.current.globalSections));
   const remoteDocument = useRef(initialDocument);
@@ -7266,6 +7272,9 @@ function useDataSaver(initialDocument, editorContext) {
     const localConfigSnapshot = getConfigSnapshot(localConfig);
     const previousConfig = remoteDocument.current ? remoteDocument.current.entry : initialConfigInCaseOfMissingDocument;
     const previousConfigSnapshot = getConfigSnapshot(previousConfig);
+    if (editorMode === "admin-template") {
+      return deepCompare(localConfigSnapshot, previousConfigSnapshot);
+    }
     return deepCompare(localConfigSnapshot, previousConfigSnapshot) && deepCompare(initialGlobalConfigs?.current ?? {}, editorContextRef.current.globalSections ?? {});
   };
   const onTick = async ({
@@ -7357,9 +7366,11 @@ function useDataSaver(initialDocument, editorContext) {
               version: remoteDocument.current.version
             }, themeId));
             if (mode === "force" && editorContextRef.current.backend.themes) {
-              updatedPromises.push(editorContextRef.current.backend.themes?.syncConfig({
-                themeId
-              }));
+              if (editorMode !== "admin-template") {
+                updatedPromises.push(editorContextRef.current.backend.themes?.syncConfig({
+                  themeId
+                }));
+              }
               initialGlobalConfigs.current = deepClone(editorContextRef.current.globalSections);
             }
             const [_updatedDocument, _updateThemeSuccess] = await Promise.all(updatedPromises);
@@ -7371,10 +7382,12 @@ function useDataSaver(initialDocument, editorContext) {
             } else if (!updatedDocument?.id) {
               toaster.error(t("topBar.save.error"));
             }
-            if (mode === "force" && updateThemeSuccess) {
-              toaster.success(t("editor.sidebar.globalSections.save.success"));
-            } else if (mode === "force" && !updateThemeSuccess) {
-              toaster.error(t("editor.sidebar.globalSections.save.error"));
+            if (editorMode !== "admin-template") {
+              if (mode === "force" && updateThemeSuccess) {
+                toaster.success(t("editor.sidebar.globalSections.save.success"));
+              } else if (mode === "force" && !updateThemeSuccess) {
+                toaster.error(t("editor.sidebar.globalSections.save.error"));
+              }
             }
             remoteDocument.current.entry = localConfigSnapshot;
             await runSaveCallback();
@@ -8032,7 +8045,7 @@ const EditorContent = ({
   initialDocument,
   initialEntry,
   externalData,
-  isAdminMode = false,
+  mode,
   defaultLocale,
   onConfigChange,
   SaveAsPicker,
@@ -8359,7 +8372,7 @@ const EditorContent = ({
     },
     backend: props.config.backend,
     types: editorTypes,
-    isAdminMode,
+    mode,
     isFetchingTemplates,
     templates,
     syncTemplateQuery,
@@ -8529,7 +8542,7 @@ const EditorContent = ({
     saveNow,
     isSaving,
     isDirty
-  } = useDataSaver(initialDocument, editorContext);
+  } = useDataSaver(initialDocument, editorContext, mode);
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
 
   // const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -8604,7 +8617,8 @@ const EditorContent = ({
       } else {
         setRightSidebarOpen(prev => !prev);
       }
-    }
+    },
+    editorMode: mode
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
     height: appHeight
   }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default.createElement(SidebarContainer, {
@@ -8639,9 +8653,10 @@ const EditorContent = ({
   })), componentPickerData && /*#__PURE__*/React__default.createElement(ModalPicker, {
     onClose: closeComponentPickerModal,
     config: componentPickerData.config,
-    pickers: props.pickers
+    pickers: props.pickers,
+    editorMode: mode
   })), openTemplateModalAction && /*#__PURE__*/React__default.createElement(TemplateModal, {
-    isAdminMode: isAdminMode,
+    mode: mode,
     action: openTemplateModalAction,
     onClose: () => {
       setOpenTemplateModalAction(undefined);
@@ -9207,7 +9222,7 @@ function EasyblocksParent(props) {
       ...builinPickers,
       ...props.pickers
     },
-    isAdminMode: props.isAdminMode,
+    mode: props.mode,
     defaultLocale: props.defaultLocale,
     SaveAsPicker: props.SaveAsPicker
   })), /*#__PURE__*/React__default.createElement(Toaster, {
@@ -10442,7 +10457,7 @@ function EasyblocksEditor(props) {
     widgets: props.widgets,
     components: props.components,
     pickers: props.pickers,
-    isAdminMode: props.isAdminMode,
+    mode: props.mode,
     defaultLocale: props.defaultLocale,
     SaveAsPicker: props.SaveAsPicker
   }), selectedWindow === "child" && /*#__PURE__*/React__default.createElement(EasyblocksCanvas, {

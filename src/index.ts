@@ -7,4 +7,4 @@ export type {
   TemplatePickerProps,
   TemplatesDictionary,
 } from "./TemplatePicker";
-export type { EditorWindowAPI } from "./types";
+export type { EditorWindowAPI, TEasyblocksEditorMode } from "./types";

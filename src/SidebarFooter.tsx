@@ -58,7 +58,7 @@ export function SidebarFooter(props: {
   const editorContext = useEditorContext();
   const toaster = useToaster();
   const { t } = useTranslation();
-  const { form, isAdminMode } = editorContext;
+  const { form, mode } = editorContext;
   const [saveAsEntry, setSaveAsEntry] = useState<NoCodeComponentEntry | null>(
     null,
   );
@@ -109,9 +109,9 @@ export function SidebarFooter(props: {
     <SidebarFooterContainer>
       <HorizontalLine />
       <IdWrapper>
-        {showSaveAsTemplate || isAdminMode ? (
+        {showSaveAsTemplate ? (
           <ButtonWrapper>
-            {showSaveAsTemplate && (
+            {showSaveAsTemplate && mode !== "admin" && (
               <>
                 <ButtonSecondary
                   icon={Icons.Save1}
@@ -138,7 +138,7 @@ export function SidebarFooter(props: {
                 </ButtonSecondary>
               </>
             )}
-            {isAdminMode && (
+            {mode !== "user" && (
               <>
                 <StyledButtonCopyTemplate
                   icon={Icons.Copy}
@@ -169,6 +169,7 @@ export function SidebarFooter(props: {
           saveAsEntry={saveAsEntry}
           setSaveAsEntry={setSaveAsEntry}
           Component={props.SaveAsPicker}
+          mode={mode}
         />
       ) : null}
     </SidebarFooterContainer>

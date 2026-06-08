@@ -3,12 +3,13 @@ import {
   ContextParams,
   ExternalData,
   InlineTypeWidgetComponentProps,
-  TGlobalSectionChange,
   RequestedExternalData,
+  TGlobalSectionChange,
   WidgetComponentProps,
 } from "@redsun-vn/easyblocks-core";
 import React, { ComponentType } from "react";
 import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
+import { TEasyblocksEditorMode } from "./types";
 
 export type ExternalDataChangeHandler = (
   externalData: RequestedExternalData,
@@ -29,7 +30,7 @@ export type EasyblocksEditorProps = {
   >;
   pickers?: Record<string, TemplatePicker>;
   __debug?: boolean;
-  isAdminMode?: boolean;
+  mode: TEasyblocksEditorMode;
   defaultLocale?: string;
   SaveAsPicker?: SaveAsTemplatePicker;
 };

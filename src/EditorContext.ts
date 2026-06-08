@@ -20,7 +20,11 @@ import {
 } from "@redsun-vn/easyblocks-core/_internals";
 import React, { ComponentType, useContext } from "react";
 import { Form } from "./form";
-import { ActionsType, InternalWidgetComponentProps } from "./types";
+import {
+  ActionsType,
+  InternalWidgetComponentProps,
+  TEasyblocksEditorMode,
+} from "./types";
 
 export type EditorExternalTypeDefinition = Omit<
   ExternalTypeDefinition,
@@ -73,7 +77,7 @@ export type EditorContextType = Omit<
   compiledComponentConfig?: CompiledComponentConfig;
   configAfterAuto?: NoCodeComponentEntry;
   compilationCache: CompilationCache;
-  isAdminMode: boolean;
+  mode: TEasyblocksEditorMode;
   readOnly: boolean;
   disableCustomTemplates: boolean;
   types: Record<

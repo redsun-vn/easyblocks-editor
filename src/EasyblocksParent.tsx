@@ -24,6 +24,7 @@ import { DocumentDataWidgetComponent } from "./sidebar/DocumentDataWidget";
 import { SpaceTokenWidget } from "./sidebar/SpaceTokenWidget";
 import { SaveAsTemplatePicker, TemplatePicker } from "./TemplatePicker";
 import { GlobalStyles } from "./tinacms/styles";
+import { TEasyblocksEditorMode } from "./types";
 
 type EasyblocksParentProps = {
   config: Config;
@@ -38,7 +39,7 @@ type EasyblocksParentProps = {
   >;
   components?: Record<string, ComponentType<any>>;
   pickers?: Record<string, TemplatePicker>;
-  isAdminMode?: boolean;
+  mode: TEasyblocksEditorMode;
   defaultLocale?: string;
   SaveAsPicker?: SaveAsTemplatePicker;
 };
@@ -104,7 +105,7 @@ export function EasyblocksParent(props: EasyblocksParentProps) {
               ...builinPickers,
               ...props.pickers,
             }}
-            isAdminMode={props.isAdminMode}
+            mode={props.mode}
             defaultLocale={props.defaultLocale}
             SaveAsPicker={props.SaveAsPicker}
           />

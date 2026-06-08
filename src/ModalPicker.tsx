@@ -12,13 +12,14 @@ import {
 import React, { FC, useState } from "react";
 import { useEditorContext } from "./EditorContext";
 import { TemplatePicker, TemplatesDictionary } from "./TemplatePicker";
-import { OpenComponentPickerConfig } from "./types";
+import { OpenComponentPickerConfig, TEasyblocksEditorMode } from "./types";
 import { unrollAcceptsFieldIntoComponents } from "./unrollAcceptsFieldIntoComponents";
 
 type ModalProps = {
   config: OpenComponentPickerConfig;
   onClose: (config?: NoCodeComponentEntry) => void;
   pickers?: Record<string, TemplatePicker>;
+  editorMode: TEasyblocksEditorMode;
 };
 
 export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
@@ -116,7 +117,7 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
       filters: filters.trim(),
       search: "",
       page: 1,
-      limit: filters ? queryLimit : 200,
+      limit: filters ? queryLimit : 100,
       mode: "replace",
     });
   };
@@ -160,6 +161,7 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
       templates: templatesDictionary,
       templateCount: editorContext.templates?.count,
       mode: picker,
+      editorMode: "admin",
     })
   ) : (
     <div>Unknown picker: {picker}</div>

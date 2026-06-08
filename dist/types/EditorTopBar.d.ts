@@ -1,7 +1,7 @@
 import { Devices, Locale } from "@redsun-vn/easyblocks-core";
 import React from "react";
 import { EditorHistory } from "./EditorHistory";
-import { TLeftSidebar } from "./types";
+import { TEasyblocksEditorMode, TLeftSidebar } from "./types";
 export declare const TOP_BAR_HEIGHT = 40;
 export declare const EditorTopBar: React.FC<{
     name?: string;
@@ -27,5 +27,6 @@ export declare const EditorTopBar: React.FC<{
     onShowLeftSidebar: (sidebarName: TLeftSidebar | null) => void;
     showRightSidebar: boolean;
     onShowRightSidebar: () => void;
+    editorMode: TEasyblocksEditorMode;
 }>;
 //# sourceMappingURL=EditorTopBar.d.ts.map

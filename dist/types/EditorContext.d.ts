@@ -2,7 +2,7 @@ import { Backend, CompiledComponentConfig, Document, ExternalTypeDefinition, Inl
 import { EditorContextType as BaseEditorContextType, CompilationCache, InternalAnyField } from "@redsun-vn/easyblocks-core/_internals";
 import React, { ComponentType } from "react";
 import { Form } from "./form";
-import { ActionsType, InternalWidgetComponentProps } from "./types";
+import { ActionsType, InternalWidgetComponentProps, TEasyblocksEditorMode } from "./types";
 export type EditorExternalTypeDefinition = Omit<ExternalTypeDefinition, "widgets"> & {
     widgets: Array<Widget & {
         component?: ComponentType<InternalWidgetComponentProps>;
@@ -45,7 +45,7 @@ export type EditorContextType = Omit<BaseEditorContextType, "types" | "templates
     compiledComponentConfig?: CompiledComponentConfig;
     configAfterAuto?: NoCodeComponentEntry;
     compilationCache: CompilationCache;
-    isAdminMode: boolean;
+    mode: TEasyblocksEditorMode;
     readOnly: boolean;
     disableCustomTemplates: boolean;
     types: Record<string, EditorExternalTypeDefinition | EditorInlineTypeDefinition | EditorTokenTypeDefinition>;

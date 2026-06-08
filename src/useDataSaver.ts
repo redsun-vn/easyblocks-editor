@@ -9,6 +9,7 @@ import { sleep } from "@/utils/sleep";
 import { Document, NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import { useEffect, useRef, useState } from "react";
+import { TEasyblocksEditorMode } from "./types";
 
 /**
  * useDataSaver works in a realm of SINGLE CONFIG.
@@ -19,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 export function useDataSaver(
   initialDocument: Document | null,
   editorContext: EditorContextType,
+  editorMode: TEasyblocksEditorMode,
 ) {
   const editorContextRef = useRef(editorContext);
   const initialGlobalConfigs = useRef<
@@ -49,6 +51,10 @@ export function useDataSaver(
       ? remoteDocument.current.entry
       : initialConfigInCaseOfMissingDocument;
     const previousConfigSnapshot = getConfigSnapshot(previousConfig);
+
+    if (editorMode === "admin-template") {
+      return deepCompare(localConfigSnapshot, previousConfigSnapshot);
+    }
 
     return (
       deepCompare(localConfigSnapshot, previousConfigSnapshot) &&
@@ -182,11 +188,13 @@ export function useDataSaver(
             );
 
             if (mode === "force" && editorContextRef.current.backend.themes) {
-              updatedPromises.push(
-                editorContextRef.current.backend.themes?.syncConfig({
-                  themeId,
-                }),
-              );
+              if (editorMode !== "admin-template") {
+                updatedPromises.push(
+                  editorContextRef.current.backend.themes?.syncConfig({
+                    themeId,
+                  }),
+                );
+              }
 
               initialGlobalConfigs.current = deepClone(
                 editorContextRef.current.globalSections,
@@ -206,10 +214,14 @@ export function useDataSaver(
               toaster.error(t("topBar.save.error"));
             }
 
-            if (mode === "force" && updateThemeSuccess) {
-              toaster.success(t("editor.sidebar.globalSections.save.success"));
-            } else if (mode === "force" && !updateThemeSuccess) {
-              toaster.error(t("editor.sidebar.globalSections.save.error"));
+            if (editorMode !== "admin-template") {
+              if (mode === "force" && updateThemeSuccess) {
+                toaster.success(
+                  t("editor.sidebar.globalSections.save.success"),
+                );
+              } else if (mode === "force" && !updateThemeSuccess) {
+                toaster.error(t("editor.sidebar.globalSections.save.error"));
+              }
             }
 
             remoteDocument.current.entry = localConfigSnapshot;

@@ -44,7 +44,7 @@ const testCompilationContext = createTestCompilationContext();
 export const testEditorContext: EditorContextType = {
   ...testCompilationContext,
   syncTemplates: () => {},
-  isAdminMode: false,
+  mode: "admin",
   breakpointIndex: "b1",
   // Removed as it is not part of EditorContextType
   devices: testDevices,
