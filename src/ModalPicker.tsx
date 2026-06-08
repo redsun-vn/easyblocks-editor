@@ -22,7 +22,12 @@ type ModalProps = {
   editorMode: TEasyblocksEditorMode;
 };
 
-export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
+export const ModalPicker: FC<ModalProps> = ({
+  config,
+  onClose,
+  pickers,
+  editorMode,
+}) => {
   const editorContext = useEditorContext();
   const { form } = editorContext;
   const [loadMode, setLoadMode] = useState<"replace" | "append">("replace");
@@ -161,7 +166,7 @@ export const ModalPicker: FC<ModalProps> = ({ config, onClose, pickers }) => {
       templates: templatesDictionary,
       templateCount: editorContext.templates?.count,
       mode: picker,
-      editorMode: "admin",
+      editorMode,
     })
   ) : (
     <div>Unknown picker: {picker}</div>

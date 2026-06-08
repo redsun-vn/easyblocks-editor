@@ -4565,7 +4565,8 @@ function unrollAcceptsFieldIntoComponents(accepts, editorContext) {
 const ModalPicker = ({
   config,
   onClose,
-  pickers
+  pickers,
+  editorMode
 }) => {
   const editorContext = useEditorContext();
   const {
@@ -4661,7 +4662,7 @@ const ModalPicker = ({
     templates: templatesDictionary,
     templateCount: editorContext.templates?.count,
     mode: picker,
-    editorMode: "admin"
+    editorMode
   }) : /*#__PURE__*/React__default["default"].createElement("div", null, "Unknown picker: ", picker);
 };
 
