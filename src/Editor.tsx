@@ -1434,6 +1434,7 @@ const EditorContent = ({
                     width={iframeSize.width}
                     height={iframeSize.height}
                     transform={iframeSize.transform}
+                    editorMode={mode}
                   />
                 )}
               </ContentContainer>

@@ -15,7 +15,7 @@ import {
 } from "@redsun-vn/easyblocks-design-system/Tooltip";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import debounce from "lodash/debounce";
-import React, { ReactNode, useRef, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { EditorHistory } from "./EditorHistory";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
@@ -344,6 +344,7 @@ export const EditorTopBar: React.FC<{
               onIsEditingChange();
             }}
           />
+          <div style={{ width: editorMode === "admin-template" ? 30 : 0 }} />
         </div>
       </TopBarRight>
     </TopBar>

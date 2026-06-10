@@ -13,6 +13,7 @@ import React, { useLayoutEffect } from "react";
 import { SelectionFrameActions } from "../EditableComponentBuilder/SelectionFrameActions";
 import { EditorContextType, useEditorContext } from "../EditorContext";
 import { pathToCompiledPath } from "../pathToCompiledPath";
+import { TEasyblocksEditorMode } from "../types";
 import {
   isConfigPathRichTextPart,
   RICH_TEXT_PART_CONFIG_PATH_REGEXP,
@@ -33,9 +34,15 @@ type SelectionFrameProps = {
   width: number;
   height: number;
   transform: string;
+  editorMode: TEasyblocksEditorMode;
 };
 
-function SelectionFrame({ width, height, transform }: SelectionFrameProps) {
+function SelectionFrame({
+  width,
+  height,
+  transform,
+  editorMode,
+}: SelectionFrameProps) {
   const editorContext = useEditorContext();
   const {
     focussedField,
@@ -167,6 +174,7 @@ function SelectionFrame({ width, height, transform }: SelectionFrameProps) {
             focussedField={focussedField}
             translationFiles={translationFiles}
             contextParams={contextParams}
+            editorMode={editorMode}
           />
         ) : null}
       </FrameWrapper>

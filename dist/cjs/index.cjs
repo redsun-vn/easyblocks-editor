@@ -4359,6 +4359,10 @@ const EditorTopBar = ({
     onChange: () => {
       onIsEditingChange();
     }
+  }), /*#__PURE__*/React__default["default"].createElement("div", {
+    style: {
+      width: editorMode === "admin-template" ? 30 : 0
+    }
   }))));
 };
 const DEVICE_ID_TO_ICON = {
@@ -6533,7 +6537,8 @@ const SelectionFrameActions = ({
   focussedField,
   actions,
   translationFiles,
-  contextParams
+  contextParams,
+  editorMode
 }) => {
   const {
     t
@@ -6560,12 +6565,12 @@ const SelectionFrameActions = ({
     icon: icons.Icons.ArrowDown,
     hideLabel: true,
     onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("down")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, t("down")), editorMode !== "admin-template" && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     icon: icons.Icons.ThreeDotsHorizontal,
     showTooltip: false,
     hideLabel: true,
     onClick: () => setShowMore(prev => !prev)
-  })), showMore ? /*#__PURE__*/React__default["default"].createElement(SelectionMoreActions, {
+  })), editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default["default"].createElement(SelectionMoreActions, {
     t: t
   }) : null);
 };
@@ -6761,7 +6766,8 @@ function isButtonWithinViewport(target, viewport) {
 function SelectionFrame({
   width,
   height,
-  transform
+  transform,
+  editorMode
 }) {
   const editorContext = useEditorContext();
   const {
@@ -6846,7 +6852,8 @@ function SelectionFrame({
     actions: actions,
     focussedField: focussedField,
     translationFiles: translationFiles,
-    contextParams: contextParams
+    contextParams: contextParams,
+    editorMode: editorMode
   }) : null));
 }
 function updateAddButtons(direction, targetElementRect, viewport, containerElementRect) {
@@ -8679,7 +8686,8 @@ const EditorContent = ({
   }), isEditMode && /*#__PURE__*/React__default["default"].createElement(SelectionFrame, {
     width: iframeSize.width,
     height: iframeSize.height,
-    transform: iframeSize.transform
+    transform: iframeSize.transform,
+    editorMode: mode
   })), isEditMode && (isRightSidebarOpen || focussedField.length > 0) && /*#__PURE__*/React__default["default"].createElement(SidebarContainer, {
     ref: sidebarNodeRef
   }, /*#__PURE__*/React__default["default"].createElement(EditorSidebar, {

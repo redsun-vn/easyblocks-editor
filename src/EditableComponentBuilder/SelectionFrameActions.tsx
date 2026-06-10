@@ -5,7 +5,7 @@ import {
   BEFORE_ADD_BUTTON_LEFT,
   BEFORE_ADD_BUTTON_TOP,
 } from "@/selectionFrame/cssVariables";
-import { ActionsType } from "@/types";
+import { ActionsType, TEasyblocksEditorMode } from "@/types";
 import { getTranslation } from "@/useTranslation";
 import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import { uniqueId } from "@/utils/uniqueId";
@@ -32,6 +32,7 @@ interface ISelectionFrameActionsProps {
   actions: ActionsType;
   translationFiles: { [key: string]: any };
   contextParams: ContextParams;
+  editorMode: TEasyblocksEditorMode;
 }
 
 const SelectionFrameActionsContainer = styled.div`
@@ -245,6 +246,7 @@ export const SelectionFrameActions = ({
   actions,
   translationFiles,
   contextParams,
+  editorMode,
 }: ISelectionFrameActionsProps) => {
   const { t } = getTranslation({
     translationFiles,
@@ -284,15 +286,19 @@ export const SelectionFrameActions = ({
           {t("down")}
         </ButtonGhost>
 
-        <ButtonGhost
-          icon={Icons.ThreeDotsHorizontal}
-          showTooltip={false}
-          hideLabel
-          onClick={() => setShowMore((prev) => !prev)}
-        />
+        {editorMode !== "admin-template" && (
+          <ButtonGhost
+            icon={Icons.ThreeDotsHorizontal}
+            showTooltip={false}
+            hideLabel
+            onClick={() => setShowMore((prev) => !prev)}
+          />
+        )}
       </SelectionFrameActionsGroupButtons>
 
-      {showMore ? <SelectionMoreActions t={t} /> : null}
+      {editorMode !== "admin-template" && showMore ? (
+        <SelectionMoreActions t={t} />
+      ) : null}
     </SelectionFrameActionsContainer>
   );
 };
