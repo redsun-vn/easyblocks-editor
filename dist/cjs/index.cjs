@@ -643,7 +643,10 @@ function SidebarFooter(props) {
       toaster.error(t("template.entry.copy.error"));
     }
   };
-  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$5, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && mode !== "admin" && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
+  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$5, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate &&
+  /*#__PURE__*/
+  // {showSaveAsTemplate && mode !== "admin" && (
+  React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
     icon: icons.Icons.Save1,
     hideLabel: true,
     onClick: () => {

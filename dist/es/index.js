@@ -608,7 +608,10 @@ function SidebarFooter(props) {
       toaster.error(t("template.entry.copy.error"));
     }
   };
-  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$5, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate && mode !== "admin" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ButtonSecondary, {
+  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$5, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate &&
+  /*#__PURE__*/
+  // {showSaveAsTemplate && mode !== "admin" && (
+  React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ButtonSecondary, {
     icon: Icons.Save1,
     hideLabel: true,
     onClick: () => {
