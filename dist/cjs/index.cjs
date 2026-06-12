@@ -4588,6 +4588,7 @@ const ModalPicker = ({
   const componentTypes = config.componentTypes ?? schemaProp.accepts;
   const localComponents = unrollAcceptsFieldIntoComponents(componentTypes, editorContext);
   let templatesDictionary = undefined;
+  let templatesDictionaryCount = editorContext.templates?.count;
   if (editorContext.templates) {
     templatesDictionary = {};
     localComponents.forEach(localComponent => {
@@ -4597,7 +4598,26 @@ const ModalPicker = ({
       };
       editorContext.templates.items.forEach(remoteTemplate => {
         if (localComponent.id === remoteTemplate.entry._component) {
-          templatesDictionary[localComponent.id].templates.push(remoteTemplate);
+          // For local components are visible & remote templates
+          if (!remoteTemplate.isUserDefined && localComponent.visible !== false || remoteTemplate.isUserDefined) {
+            templatesDictionary[localComponent.id].templates.push(remoteTemplate);
+          } else {
+            if (!templatesDictionaryCount) {
+              templatesDictionaryCount = {};
+            }
+            if (!templatesDictionaryCount[localComponent.id]) {
+              templatesDictionaryCount[localComponent.id] = {
+                matchedCount: 0,
+                total: 0
+              };
+            }
+            const {
+              matchedCount = 0,
+              total = 0
+            } = templatesDictionaryCount[localComponent.id] ?? {};
+            templatesDictionaryCount[localComponent.id].matchedCount = matchedCount <= 0 ? 0 : matchedCount - 1;
+            templatesDictionaryCount[localComponent.id].total = total <= 0 ? 0 : total - 1;
+          }
         }
       });
       if (templatesDictionary[localComponent.id].templates.length === 0) {
@@ -4667,7 +4687,7 @@ const ModalPicker = ({
     onFilters,
     onLoadMore,
     templates: templatesDictionary,
-    templateCount: editorContext.templates?.count,
+    templateCount: templatesDictionaryCount,
     mode: picker,
     editorMode
   }) : /*#__PURE__*/React__default["default"].createElement("div", null, "Unknown picker: ", picker);

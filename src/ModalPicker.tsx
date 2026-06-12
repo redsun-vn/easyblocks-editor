@@ -52,6 +52,15 @@ export const ModalPicker: FC<ModalProps> = ({
   );
 
   let templatesDictionary: TemplatesDictionary | undefined = undefined;
+  let templatesDictionaryCount:
+    | Record<
+        string,
+        {
+          matchedCount: number;
+          total: number;
+        }
+      >
+    | undefined = editorContext.templates?.count;
 
   if (editorContext.templates) {
     templatesDictionary = {};
@@ -64,9 +73,35 @@ export const ModalPicker: FC<ModalProps> = ({
 
       editorContext.templates!.items!.forEach((remoteTemplate) => {
         if (localComponent.id === remoteTemplate.entry._component) {
-          templatesDictionary![localComponent.id].templates.push(
-            remoteTemplate,
-          );
+          // For local components are visible & remote templates
+          if (
+            (!remoteTemplate.isUserDefined &&
+              localComponent.visible !== false) ||
+            remoteTemplate.isUserDefined
+          ) {
+            templatesDictionary![localComponent.id].templates.push(
+              remoteTemplate,
+            );
+          } else {
+            if (!templatesDictionaryCount) {
+              templatesDictionaryCount = {};
+            }
+
+            if (!templatesDictionaryCount[localComponent.id]) {
+              templatesDictionaryCount[localComponent.id] = {
+                matchedCount: 0,
+                total: 0,
+              };
+            }
+
+            const { matchedCount = 0, total = 0 } =
+              templatesDictionaryCount[localComponent.id] ?? {};
+            templatesDictionaryCount[localComponent.id].matchedCount =
+              matchedCount <= 0 ? 0 : matchedCount - 1;
+
+            templatesDictionaryCount[localComponent.id].total =
+              total <= 0 ? 0 : total - 1;
+          }
         }
       });
 
@@ -164,7 +199,7 @@ export const ModalPicker: FC<ModalProps> = ({
       onFilters,
       onLoadMore,
       templates: templatesDictionary,
-      templateCount: editorContext.templates?.count,
+      templateCount: templatesDictionaryCount,
       mode: picker,
       editorMode,
     })
