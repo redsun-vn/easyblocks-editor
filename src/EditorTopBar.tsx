@@ -290,45 +290,53 @@ export const EditorTopBar: React.FC<{
             alignItems: "center",
           }}
         >
-          <Select value={locale} onChange={(locale) => onLocaleChange(locale)}>
-            {locales.map((l) => (
-              <SelectItem key={l.code} value={l.code}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    gap: 4,
-                  }}
-                >
-                  {l.code ? (
-                    <ImageContainer>
-                      <Image src={getFlagUrl(l.code)} alt={l.name} />
-                    </ImageContainer>
-                  ) : null}
-                  {l.name}
-                </div>
-              </SelectItem>
-            ))}
-          </Select>
-          <ButtonGhost
-            hideLabel
-            icon={Icons.Save}
-            onClick={onSaveDocument}
-            disabled={isSaving}
-            isLoading={isSaving}
-          >
-            {t("topBar.save")}
-          </ButtonGhost>
           {!isAdminTemplate && (
-            <a href={`/?previewId=${themeId}&shopId=${shopId}`} target="_blank">
-              <ButtonGhost hideLabel icon={Icons.Preview}>
-                {t("topBar.preview")}
+            <>
+              <Select
+                value={locale}
+                onChange={(locale) => onLocaleChange(locale)}
+              >
+                {locales.map((l) => (
+                  <SelectItem key={l.code} value={l.code}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        gap: 4,
+                      }}
+                    >
+                      {l.code ? (
+                        <ImageContainer>
+                          <Image src={getFlagUrl(l.code)} alt={l.name} />
+                        </ImageContainer>
+                      ) : null}
+                      {l.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </Select>
+              <ButtonGhost
+                hideLabel
+                icon={Icons.Save}
+                onClick={onSaveDocument}
+                disabled={isSaving}
+                isLoading={isSaving}
+              >
+                {t("topBar.save")}
               </ButtonGhost>
-            </a>
+              <a
+                href={`/?previewId=${themeId}&shopId=${shopId}`}
+                target="_blank"
+              >
+                <ButtonGhost hideLabel icon={Icons.Preview}>
+                  {t("topBar.preview")}
+                </ButtonGhost>
+              </a>
+              <VerticalLine />
+            </>
           )}
-          <VerticalLine />
           <Typography
             variant={"body"}
             component="label"

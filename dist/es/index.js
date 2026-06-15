@@ -4285,7 +4285,7 @@ const EditorTopBar = ({
       gap: "6px",
       alignItems: "center"
     }
-  }, /*#__PURE__*/React__default.createElement(Select, {
+  }, !isAdminTemplate && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(Select, {
     value: locale,
     onChange: locale => onLocaleChange(locale)
   }, locales.map(l => /*#__PURE__*/React__default.createElement(SelectItem, {
@@ -4308,13 +4308,13 @@ const EditorTopBar = ({
     onClick: onSaveDocument,
     disabled: isSaving,
     isLoading: isSaving
-  }, t("topBar.save")), !isAdminTemplate && /*#__PURE__*/React__default.createElement("a", {
+  }, t("topBar.save")), /*#__PURE__*/React__default.createElement("a", {
     href: `/?previewId=${themeId}&shopId=${shopId}`,
     target: "_blank"
   }, /*#__PURE__*/React__default.createElement(ButtonGhost, {
     hideLabel: true,
     icon: Icons.Preview
-  }, t("topBar.preview"))), /*#__PURE__*/React__default.createElement(VerticalLine, null), /*#__PURE__*/React__default.createElement(Typography, {
+  }, t("topBar.preview"))), /*#__PURE__*/React__default.createElement(VerticalLine, null)), /*#__PURE__*/React__default.createElement(Typography, {
     variant: "body",
     component: "label",
     htmlFor: "easyblocks-edit-mode-button",

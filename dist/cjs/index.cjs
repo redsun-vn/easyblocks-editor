@@ -4320,7 +4320,7 @@ const EditorTopBar = ({
       gap: "6px",
       alignItems: "center"
     }
-  }, /*#__PURE__*/React__default["default"].createElement(Select.Select, {
+  }, !isAdminTemplate && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(Select.Select, {
     value: locale,
     onChange: locale => onLocaleChange(locale)
   }, locales.map(l => /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
@@ -4343,13 +4343,13 @@ const EditorTopBar = ({
     onClick: onSaveDocument,
     disabled: isSaving,
     isLoading: isSaving
-  }, t("topBar.save")), !isAdminTemplate && /*#__PURE__*/React__default["default"].createElement("a", {
+  }, t("topBar.save")), /*#__PURE__*/React__default["default"].createElement("a", {
     href: `/?previewId=${themeId}&shopId=${shopId}`,
     target: "_blank"
   }, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     hideLabel: true,
     icon: icons.Icons.Preview
-  }, t("topBar.preview"))), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
+  }, t("topBar.preview"))), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null)), /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     variant: "body",
     component: "label",
     htmlFor: "easyblocks-edit-mode-button",
