@@ -37,6 +37,7 @@ function getDefaultTemplateForDefinition(
     label: def.label ?? def.id,
     entry: config,
     isUserDefined: false,
+    group: def.group,
   };
 }
 

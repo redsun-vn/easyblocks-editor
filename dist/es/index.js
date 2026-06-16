@@ -6896,7 +6896,8 @@ function getDefaultTemplateForDefinition(def, editorContext) {
     id: `${def.id}_default`,
     label: def.label ?? def.id,
     entry: config,
-    isUserDefined: false
+    isUserDefined: false,
+    group: def.group
   };
 }
 function getDefaultTokenId(tokens) {
@@ -9426,8 +9427,6 @@ function SelectionFrameController({
   path
 }) {
   const [node, setNode] = useState(null);
-  // const [isDoubleClick, setIsDoubleClick] = useState(false);
-
   useUpdateFramePosition({
     node,
     isDisabled: !isActive
@@ -9436,8 +9435,6 @@ function SelectionFrameController({
   const wrapperClassName = stitches.css({
     position: "relative",
     display: "grid",
-    // Only applied after a double-click (data attribute below) so children
-    // become non-interactive; single click leaves descendants fully interactive.
     "&[data-children-selection-disabled=true] *": {
       pointerEvents: "none !important",
       userSelect: "none !important"
@@ -9459,11 +9456,6 @@ function SelectionFrameController({
       boxShadow: "var(--tina-shadow-big)",
       zIndex: "var(--tina-z-index-2)"
     },
-    // While locked via double-click, lift the selection border above nested
-    // content so the outline stays visible (not clipped by child elements).
-    // "&[data-children-interaction-disabled=false]::after": {
-    // },
-
     "&[data-active=true]::after": {
       opacity: 1
     },
@@ -9511,9 +9503,7 @@ function SelectionFrameController({
   });
   return /*#__PURE__*/React__default.createElement("div", _extends({
     "data-active": isActive,
-    "data-children-selection-disabled": isChildrenSelectionDisabled
-    // data-children-interaction-disabled={!isDoubleClick}
-    ,
+    "data-children-selection-disabled": isChildrenSelectionDisabled,
     "data-draggable-dragging": sortable.active !== null,
     "data-draggable-over": sortable.isOver,
     "data-draggable-active": sortable.active !== null && sortable.active?.id === id,
@@ -9523,7 +9513,6 @@ function SelectionFrameController({
       sortable.setNodeRef(node);
     },
     onClick: onSelect
-    // onDoubleClick={() => setIsDoubleClick(true)}
   }, sortable.attributes, sortable.listeners), children);
 }
 function useUpdateFramePosition({
