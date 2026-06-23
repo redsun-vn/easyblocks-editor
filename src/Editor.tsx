@@ -702,7 +702,7 @@ const EditorContent = ({
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
   const [showLeftSidebar, setShowLeftSidebar] = useState<TLeftSidebar | null>(
-    "sections",
+    null,
   );
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(
@@ -1299,6 +1299,12 @@ const EditorContent = ({
   }, []);
 
   useEffect(() => {
+    if (mode !== "admin-template") {
+      setShowLeftSidebar("sections");
+    }
+  }, []);
+
+  useEffect(() => {
     const isSameConfig = deepCompare(
       configAfterAutoRef.current ?? {},
       configAfterAuto,
@@ -1406,9 +1412,7 @@ const EditorContent = ({
             <SidebarAndContentContainer height={appHeight}>
               {showLeftSidebar && isEditMode && (
                 <EditorLeftSidebar
-                  showLeftSidebar={
-                    mode === "admin-template" ? null : showLeftSidebar
-                  }
+                  showLeftSidebar={showLeftSidebar}
                   globalSections={props.config.globalSections}
                   sidebarNodeRef={leftSidebarNodeRef}
                 />

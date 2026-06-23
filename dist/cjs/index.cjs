@@ -8647,7 +8647,7 @@ const EditorContent = ({
 
   const compilationCache = React.useRef(new easyblocksCore.CompilationCache());
   const [isEditing, setEditing] = React.useState(true);
-  const [showLeftSidebar, setShowLeftSidebar] = React.useState("sections");
+  const [showLeftSidebar, setShowLeftSidebar] = React.useState(null);
   const [isRightSidebarOpen, setRightSidebarOpen] = React.useState(false);
   const [currentLocale, setCurrentLocale] = React.useState(compilationContext.contextParams.locale);
   const prevLocale = React.useRef("");
@@ -9112,6 +9112,11 @@ const EditorContent = ({
     return () => window.removeEventListener("message", handleEditorEvents);
   }, []);
   React.useEffect(() => {
+    if (mode !== "admin-template") {
+      setShowLeftSidebar("sections");
+    }
+  }, []);
+  React.useEffect(() => {
     const isSameConfig = deepCompare(configAfterAutoRef.current ?? {}, configAfterAuto);
     if (!isSameConfig && configAfterAuto?._component === "StandardPage") {
       configAfterAutoRef.current = deepClone(configAfterAuto);
@@ -9204,7 +9209,7 @@ const EditorContent = ({
   }), /*#__PURE__*/React__default["default"].createElement(SidebarAndContentContainer, {
     height: appHeight
   }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default["default"].createElement(EditorLeftSidebar, {
-    showLeftSidebar: mode === "admin-template" ? null : showLeftSidebar,
+    showLeftSidebar: showLeftSidebar,
     globalSections: props.config.globalSections,
     sidebarNodeRef: leftSidebarNodeRef
   }), /*#__PURE__*/React__default["default"].createElement(ContentContainer, {
