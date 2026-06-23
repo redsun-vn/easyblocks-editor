@@ -102,7 +102,7 @@ export const EditorLeftSidebar = ({
         };
       }
     }
-  }, [showLeftSidebar]);
+  }, [showLeftSidebar, globalSections]);
 
   return (
     <StyledEditorLeftSidebarRoot

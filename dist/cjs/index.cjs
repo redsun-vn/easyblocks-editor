@@ -8304,7 +8304,7 @@ const EditorLeftSidebar = ({
           };
         }
     }
-  }, [showLeftSidebar]);
+  }, [showLeftSidebar, globalSections]);
   return /*#__PURE__*/React__default["default"].createElement(StyledEditorLeftSidebarRoot, {
     id: sidebarConfig.id,
     width: sidebarConfig.width,
