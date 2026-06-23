@@ -1,0 +1,1 @@
+{"version":3,"file":"EditorSectionItem.d.ts","sourceRoot":"","sources":["../../../../src/editorSidebar/editorSections/EditorSectionItem.tsx"],"names":[],"mappings":"AACA,OAAO,KAAK,MAAM,OAAO,CAAC;AAsB1B,eAAO,MAAM,iBAAiB,GAAI,wCAK/B;IACD,EAAE,EAAE,MAAM,CAAC;IACX,OAAO,EAAE,OAAO,CAAC;IACjB,IAAI,EAAE,MAAM,CAAC;IACb,cAAc,EAAE,CAAC,EAAE,EAAE,MAAM,KAAK,IAAI,CAAC;CACtC,sBAsBA,CAAC"}

@@ -115,6 +115,6 @@ export type InternalWidgetComponentProps = Omit<
   path: string;
 };
 
-export type TLeftSidebar = "global-sections" | "layers";
+export type TLeftSidebar = "global-sections" | "layers" | "sections";
 
 export type TEasyblocksEditorMode = "admin" | "admin-template" | "user";

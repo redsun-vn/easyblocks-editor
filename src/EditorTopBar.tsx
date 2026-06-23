@@ -205,19 +205,34 @@ export const EditorTopBar: React.FC<{
         {readOnly && <Label>(Read-Only)</Label>}
 
         {!isAdminTemplate && (
-          <ButtonGhost
-            icon={Icons.GlobalSections}
-            hideLabel
-            onClick={() => onShowLeftSidebar("global-sections")}
-            style={{
-              background:
-                showLeftSidebar === "global-sections"
-                  ? Colors.black10
-                  : "transparent",
-            }}
-          >
-            {t("editor.sidebar.globalSections")}
-          </ButtonGhost>
+          <>
+            <ButtonGhost
+              icon={Icons.Section}
+              hideLabel
+              onClick={() => onShowLeftSidebar("sections")}
+              style={{
+                background:
+                  showLeftSidebar === "sections"
+                    ? Colors.black10
+                    : "transparent",
+              }}
+            >
+              {t("editor.sidebar.blocksAndSections")}
+            </ButtonGhost>
+            <ButtonGhost
+              icon={Icons.GlobalSections}
+              hideLabel
+              onClick={() => onShowLeftSidebar("global-sections")}
+              style={{
+                background:
+                  showLeftSidebar === "global-sections"
+                    ? Colors.black10
+                    : "transparent",
+              }}
+            >
+              {t("editor.sidebar.globalSections")}
+            </ButtonGhost>
+          </>
         )}
 
         <ButtonGhost

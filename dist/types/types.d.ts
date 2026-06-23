@@ -83,7 +83,7 @@ export type InternalWidgetComponentProps = Omit<WidgetComponentProps, "onChange"
     resourceKey?: string;
     path: string;
 };
-export type TLeftSidebar = "global-sections" | "layers";
+export type TLeftSidebar = "global-sections" | "layers" | "sections";
 export type TEasyblocksEditorMode = "admin" | "admin-template" | "user";
 export {};
 //# sourceMappingURL=types.d.ts.map

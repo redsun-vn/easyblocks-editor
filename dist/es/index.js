@@ -32,6 +32,7 @@ import { ChevronDownIcon } from '@redsun-vn/easyblocks-design-system/radix-ui/Re
 import { RadixSelectTrigger, RadixSelectContent, RadixSelectViewport, RadixSelectItem, RadixSelectItemText, RadixSelectRoot, RadixSelectValue, RadixSelectPortal } from '@redsun-vn/easyblocks-design-system/radix-ui/ReactSelect';
 import { ToggleGroup, ToggleGroupItem } from '@redsun-vn/easyblocks-design-system/ToggleGroup';
 import { FormElement } from '@redsun-vn/easyblocks-design-system/FormElement';
+import { AccordionGroup } from '@redsun-vn/easyblocks-design-system/AccordionGroup';
 import { createForm as createForm$1, FORM_ERROR } from 'final-form';
 import arrayMutators from 'final-form-arrays';
 import { BasicRow } from '@redsun-vn/easyblocks-design-system/rows';
@@ -553,7 +554,7 @@ const SidebarFooterContainer = styled.div.withConfig({
   displayName: "SidebarFooter__SidebarFooterContainer",
   componentId: "sc-17xf0ak-0"
 })(["position:sticky;bottom:0;background:", ";"], Colors.white);
-const HorizontalLine$5 = styled.div.withConfig({
+const HorizontalLine$4 = styled.div.withConfig({
   displayName: "SidebarFooter__HorizontalLine",
   componentId: "sc-17xf0ak-1"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
@@ -608,7 +609,7 @@ function SidebarFooter(props) {
       toaster.error(t("template.entry.copy.error"));
     }
   };
-  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$5, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate &&
+  return /*#__PURE__*/React.createElement(SidebarFooterContainer, null, /*#__PURE__*/React.createElement(HorizontalLine$4, null), /*#__PURE__*/React.createElement(IdWrapper, null, showSaveAsTemplate ? /*#__PURE__*/React.createElement(ButtonWrapper, null, showSaveAsTemplate &&
   /*#__PURE__*/
   // {showSaveAsTemplate && mode !== "admin" && (
   React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ButtonSecondary, {
@@ -2248,7 +2249,7 @@ const GroupPanel = styled.div.withConfig({
         transform: translate3d(100%, 0, 0);
       `);
 
-const HorizontalLine$4 = styled$1.div.withConfig({
+const HorizontalLine$3 = styled$1.div.withConfig({
   displayName: "IdentityFieldPlugin__HorizontalLine",
   componentId: "sc-ayv92b-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
@@ -2349,7 +2350,7 @@ function IdentityField({
       opacity: isNonRemovable ? 0 : 1,
       pointerEvents: isNonRemovable ? "none" : "auto"
     }
-  }, t("delete")))), /*#__PURE__*/React__default.createElement(HorizontalLine$4, null));
+  }, t("delete")))), /*#__PURE__*/React__default.createElement(HorizontalLine$3, null));
 }
 const IdentityFieldPlugin = {
   name: "identity",
@@ -3344,7 +3345,7 @@ const NoData = styled(Typography).withConfig({
   displayName: "fields-builder__NoData",
   componentId: "sc-ignixa-2"
 })(["padding:20px 16px;"]);
-const HorizontalLine$3 = styled.div.withConfig({
+const HorizontalLine$2 = styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
   componentId: "sc-ignixa-3"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
@@ -3380,7 +3381,7 @@ function FieldsBuilder({
       ungrouped.push(field);
     }
   });
-  const horizontalLine = /*#__PURE__*/React__default.createElement(HorizontalLine$3, null);
+  const horizontalLine = /*#__PURE__*/React__default.createElement(HorizontalLine$2, null);
   const identityField = fields.find(field => field.component === "identity");
   const breakpointIndex = panelContext ? editorContext.breakpointIndex : undefined;
   return /*#__PURE__*/React__default.createElement(FieldsGroup, null, identityField !== undefined && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(FieldBuilder, {
@@ -4236,14 +4237,21 @@ const EditorTopBar = ({
     onClick: () => {
       onRedo();
     }
-  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default.createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "(Read-Only)"), !isAdminTemplate && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default.createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "(Read-Only)"), !isAdminTemplate && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Section,
+    hideLabel: true,
+    onClick: () => onShowLeftSidebar("sections"),
+    style: {
+      background: showLeftSidebar === "sections" ? Colors.black10 : "transparent"
+    }
+  }, t("editor.sidebar.blocksAndSections")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.GlobalSections,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("global-sections"),
     style: {
       background: showLeftSidebar === "global-sections" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.globalSections"))), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Layers,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("layers"),
@@ -4620,19 +4628,22 @@ const ModalPicker = ({
   };
   const onFilters = filters => {
     setLoadMode("replace");
-    editorContext.syncTemplateQuery?.({
+    const query = {
       filters: filters.trim(),
       search: "",
       page: 1,
-      limit: filters ? queryLimit : 100,
       mode: "replace"
-    });
+    };
+    if (filters) {
+      query.limit = queryLimit;
+    }
+    editorContext.syncTemplateQuery?.(query);
   };
   const onLoadMore = (page, groupId) => {
     setLoadMode("append");
     const templateItems = editorContext.templates?.items ?? [];
     const templateCount = editorContext.templates?.count;
-    const totalAvailable = templateCount?.[groupId.trim()]?.total ?? 0;
+    const totalAvailable = templateCount?.[groupId.trim()]?.matchedCount ?? 0;
     if (!totalAvailable) return;
     const templateItemFilterLength = templateItems ? Object.values(templateItems).filter(item => item.group === groupId.trim()).length : 0;
     const hasNextPage = !!templateCount && totalAvailable > 0 && templateItemFilterLength < totalAvailable;
@@ -5551,663 +5562,6 @@ function takeLastOfEachParent(where) {
   return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
 }
 
-const SelectionMoreActionsContainer = styled$1.div.withConfig({
-  displayName: "Menu__SelectionMoreActionsContainer",
-  componentId: "sc-7fauqp-0"
-})(["", " border-radius:4px;box-shadow:var(--tina-shadow-big);width:max-content;background:", ";pointer-events:all;"], ({
-  styles
-}) => `
-    position: ${styles?.top && styles?.left ? "absolute" : "unset"};
-    top: ${styles?.top ?? "unset"};
-    left: ${styles?.left ?? "unset"};
-  `, Colors.white);
-const SelectionMoreActionsGroupButtons = styled$1.div.withConfig({
-  displayName: "Menu__SelectionMoreActionsGroupButtons",
-  componentId: "sc-7fauqp-1"
-})(["height:36px;position:relative;padding:0px 16px;display:flex;align-items:center;gap:2px;cursor:pointer;&:hover{background:", ";}"], Colors.black10);
-const MenuItem = ({
-  menu
-}) => {
-  const [isHoverMenu, setIsHoverMenu] = useState(false);
-  const menuItemRef = useRef(null);
-  const onClickMenu = () => {
-    if (!menu.isLoading) {
-      return !menu?.children?.length ? menu?.onClick?.() : undefined;
-    }
-  };
-  return /*#__PURE__*/React__default.createElement(SelectionMoreActionsGroupButtons, {
-    ref: menuItemRef,
-    onMouseEnter: () => setIsHoverMenu(true),
-    onMouseLeave: () => setIsHoverMenu(false),
-    onClick: onClickMenu
-  }, /*#__PURE__*/React__default.createElement(Typography, {
-    style: {
-      cursor: "pointer"
-    },
-    variant: "body",
-    component: "label"
-  }, menu.isLoading ? /*#__PURE__*/React__default.createElement(Loader, null) : menu.label), menu?.children?.length ? /*#__PURE__*/React__default.createElement(Icons.ChevronRight, {
-    size: 18
-  }) : null, isHoverMenu && menu?.children ? /*#__PURE__*/React__default.createElement(Menu, {
-    styles: {
-      top: "0px",
-      left: `${menuItemRef.current?.offsetWidth ?? 0}px`
-    },
-    menus: menu.children
-  }) : null);
-};
-const Menu = ({
-  menus,
-  styles
-}) => {
-  return /*#__PURE__*/React__default.createElement(SelectionMoreActionsContainer, {
-    styles: styles
-  }, menus.filter(menu => !menu.isHidden).map(menu => /*#__PURE__*/React__default.createElement(MenuItem, {
-    key: menu.id,
-    menu: menu
-  })));
-};
-
-const StyledEditorGlobalSectionItem = styled$1.div.withConfig({
-  displayName: "EditorGlobalSectionGroupItem__StyledEditorGlobalSectionItem",
-  componentId: "sc-f9npik-0"
-})(["display:flex;align-items:center;justify-content:space-between;padding:0px 10px 0px 16px;height:38px;"]);
-const StyledWrapperMenu = styled$1.div.withConfig({
-  displayName: "EditorGlobalSectionGroupItem__StyledWrapperMenu",
-  componentId: "sc-f9npik-1"
-})(["position:relative;display:flex;align-items:center;gap:4px;"]);
-const StyledWrapperCheckIcon = styled$1.div.withConfig({
-  displayName: "EditorGlobalSectionGroupItem__StyledWrapperCheckIcon",
-  componentId: "sc-f9npik-2"
-})(["cursor:pointer;"]);
-const StyledWrapperThreeDotsIcon = styled$1.div.withConfig({
-  displayName: "EditorGlobalSectionGroupItem__StyledWrapperThreeDotsIcon",
-  componentId: "sc-f9npik-3"
-})(["cursor:pointer;&:hover{transform:scale(1.2);}"]);
-const StyledWrapperMenuDialog = styled$1.div.withConfig({
-  displayName: "EditorGlobalSectionGroupItem__StyledWrapperMenuDialog",
-  componentId: "sc-f9npik-4"
-})(["position:absolute;top:20px;right:0px;z-index:1;"]);
-const StyledWrapperAddToPage = styled$1(Typography).withConfig({
-  displayName: "EditorGlobalSectionGroupItem__StyledWrapperAddToPage",
-  componentId: "sc-f9npik-5"
-})(["font-weight:500;cursor:pointer;color:", " !important;", ""], Colors.blue60, ({
-  disabled
-}) => disabled ? `
-    cursor: not-allowed;
-    user-select: none;
-    opacity: 0.7;
-    ` : `
-      &:hover {
-        color: ${Colors.blue50};
-      }`);
-const StyledWrapperLabel = styled$1.div.withConfig({
-  displayName: "EditorGlobalSectionGroupItem__StyledWrapperLabel",
-  componentId: "sc-f9npik-6"
-})(["width:190px;"]);
-const StyledLabel = styled$1(Typography).withConfig({
-  displayName: "EditorGlobalSectionGroupItem__StyledLabel",
-  componentId: "sc-f9npik-7"
-})(["text-overflow:ellipsis;white-space:nowrap;overflow:hidden;"]);
-const EditorGlobalSectionGroupItem = ({
-  group,
-  groupItem,
-  setOpenDeleteConfirm,
-  setOpenEditSection
-}) => {
-  const editorContext = useEditorContext();
-  const router = new URLSearchParams(window.location.search);
-  const currentDocument = router.get("document") ?? "";
-  const {
-    t
-  } = useTranslation();
-  const menuRef = useRef(null);
-  const [openMenu, setOpenMenu] = useState(null);
-  const isAddedToPage = groupItem.pages.includes(currentDocument);
-  const onOpenMenu = entryId => {
-    setOpenMenu({
-      entryId
-    });
-  };
-  const onCloseMenu = () => {
-    setOpenMenu(null);
-  };
-  const onAddToPage = () => {
-    const targetEntry = groupItem.entry;
-    if (targetEntry?._component && Object.keys(targetEntry).length) {
-      let index = 0;
-      switch (group.name) {
-        case "Headers":
-          {
-            index = 0;
-            break;
-          }
-        case "Footers":
-          {
-            index = (editorContext.compiledComponentConfig?.components.data.length ?? 0) + 1;
-            break;
-          }
-      }
-      editorContext.actions.insertItem({
-        index,
-        block: targetEntry,
-        name: "data",
-        keepId: true
-      });
-    }
-  };
-  useEffect(() => {
-    const modalContainer = document.getElementById("modalContainer");
-    const handleClickOutside = event => {
-      if (menuRef.current && !menuRef.current.contains(event.target) && !modalContainer?.contains(event.target) && openMenu?.entryId) {
-        onCloseMenu();
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [openMenu]);
-  return /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionItem, null, /*#__PURE__*/React__default.createElement(Tooltip$1, null, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(StyledWrapperLabel, null, /*#__PURE__*/React__default.createElement(StyledLabel, null, groupItem.label))), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
-    color: "white"
-  }, groupItem.label))), /*#__PURE__*/React__default.createElement(StyledWrapperMenu, {
-    ref: menuRef
-  }, isAddedToPage ? /*#__PURE__*/React__default.createElement(StyledWrapperCheckIcon, null, /*#__PURE__*/React__default.createElement(Icons.Check, {
-    size: 16
-  })) : /*#__PURE__*/React__default.createElement(StyledWrapperAddToPage, {
-    disabled: !groupItem.entry?._component,
-    onClick: onAddToPage
-  }, t("add")), /*#__PURE__*/React__default.createElement(StyledWrapperThreeDotsIcon, {
-    onClick: () => onOpenMenu(groupItem.id)
-  }, /*#__PURE__*/React__default.createElement(Icons.ThreeDotsHorizontal, {
-    size: 16
-  })), openMenu && openMenu.entryId === groupItem.id ? /*#__PURE__*/React__default.createElement(StyledWrapperMenuDialog, null, /*#__PURE__*/React__default.createElement(Menu, {
-    menus: [{
-      id: `delete-section-${groupItem.id}`,
-      label: t("delete"),
-      onClick: () => {
-        setOpenDeleteConfirm({
-          entryId: groupItem.id,
-          sectionName: groupItem.label,
-          groupName: group.name
-        });
-      }
-    }, {
-      id: `rename-section-${groupItem.id}`,
-      label: t("rename"),
-      onClick: () => {
-        setOpenEditSection({
-          label: groupItem.label,
-          entry: groupItem.entry,
-          groupName: group.name
-        });
-      }
-    }]
-  })) : null));
-};
-
-const HorizontalLine$2 = styled$1.div.withConfig({
-  displayName: "EditorGlobalSectionGroup__HorizontalLine",
-  componentId: "sc-1eald7c-0"
-})(["height:1px;margin-top:-1px;background-color:", ";margin:4px 10px;"], Colors.black10);
-const StyledWrapperChevronIcon$1 = styled$1(Typography).withConfig({
-  displayName: "EditorGlobalSectionGroup__StyledWrapperChevronIcon",
-  componentId: "sc-1eald7c-1"
-})(["transition:transform 0.2s ease;", ""], ({
-  isOpen
-}) => `transform: rotate(${isOpen ? 180 : 0}deg);`);
-const StyledEditorGlobalSectionGroups = styled$1(Typography).withConfig({
-  displayName: "EditorGlobalSectionGroup__StyledEditorGlobalSectionGroups",
-  componentId: "sc-1eald7c-2"
-})(["display:flex;align-items:center;justify-content:space-between;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;"]);
-const StyledEditorGlobalSectionsLabel = styled$1(Typography).withConfig({
-  displayName: "EditorGlobalSectionGroup__StyledEditorGlobalSectionsLabel",
-  componentId: "sc-1eald7c-3"
-})(["display:block;font-weight:700;max-width:240px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;cursor:pointer;"]);
-const StyledButtonGroup$1 = styled$1.div.withConfig({
-  displayName: "EditorGlobalSectionGroup__StyledButtonGroup",
-  componentId: "sc-1eald7c-4"
-})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
-const EditorGlobalSectionGroup = ({
-  globalSectionGroup,
-  openedSectionGroups,
-  onClickGlobalSectionGroup
-}) => {
-  const editorContext = useEditorContext();
-  const inputRef = useRef(null);
-  const {
-    t
-  } = useTranslation();
-  const isExpandedGroups = openedSectionGroups.includes(globalSectionGroup.group.id);
-  const [isLoading, setIsLoading] = useState(false);
-  const [openDeleteConfirm, setOpenDeleteConfirm] = useState(null);
-  const [openEditSection, setOpenEditSection] = useState(null);
-  const onCloseConfirm = () => {
-    if (!isLoading) {
-      setOpenDeleteConfirm(null);
-    }
-  };
-  const onCloseEditSection = () => {
-    if (!isLoading) {
-      setOpenEditSection(null);
-    }
-  };
-  const onConfirmDeleteSection = () => {
-    if (isLoading) {
-      return;
-    }
-    setIsLoading(true);
-    editorContext.onGlobalSectionChange?.({
-      mode: "delete",
-      groupName: openDeleteConfirm?.groupName ?? "",
-      entry: {
-        _id: openDeleteConfirm?.entryId ?? "",
-        _component: ""
-      }
-    }).then(() => {
-      setIsLoading(false);
-      onCloseConfirm();
-    }).catch(() => {
-      setIsLoading(false);
-    });
-  };
-  const onEditSection = () => {
-    if (isLoading || !inputRef?.current?.value) {
-      return;
-    }
-    setIsLoading(true);
-    editorContext.onGlobalSectionChange?.({
-      mode: "update",
-      ...openEditSection,
-      groupName: openEditSection?.groupName ?? "",
-      label: inputRef.current.value
-    }).then(() => {
-      setIsLoading(false);
-      onCloseEditSection();
-    }).catch(() => {
-      setIsLoading(false);
-    });
-  };
-  const onEnter = e => {
-    if (e.code === "Enter" || e.code === "NumpadEnter") {
-      e.preventDefault();
-      e.stopPropagation();
-      onEditSection();
-    }
-  };
-  useEffect(() => {
-    if (openEditSection?.groupName) {
-      queueMicrotask(() => {
-        inputRef.current?.focus();
-      });
-    }
-  }, [openEditSection]);
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionGroups, {
-    id: globalSectionGroup.group.id,
-    onClick: () => onClickGlobalSectionGroup(globalSectionGroup.group.id)
-  }, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsLabel, {
-    variant: "body",
-    component: "label"
-  }, globalSectionGroup.group.name, ` (${Object.keys(globalSectionGroup.groupItem?.orders ?? {}).length})`), /*#__PURE__*/React__default.createElement(StyledWrapperChevronIcon$1, {
-    isOpen: isExpandedGroups
-  }, /*#__PURE__*/React__default.createElement(Icons.ChevronDown, {
-    size: 22
-  }))), isExpandedGroups ? globalSectionGroup.groupItem?.orders?.map(entryId => {
-    const entryValue = globalSectionGroup.groupItem.entities[entryId];
-    return /*#__PURE__*/React__default.createElement(EditorGlobalSectionGroupItem, {
-      group: globalSectionGroup.group,
-      groupItem: {
-        id: entryId,
-        entry: entryValue.entry,
-        component: entryValue?.entry?._component ?? "",
-        label: entryValue.label,
-        pages: entryValue.pages
-      },
-      setOpenDeleteConfirm: setOpenDeleteConfirm,
-      setOpenEditSection: setOpenEditSection
-    });
-  }) : null, isExpandedGroups && globalSectionGroup.groupItem?.orders?.length ? /*#__PURE__*/React__default.createElement(HorizontalLine$2, null) : null, /*#__PURE__*/React__default.createElement(Modal, {
-    title: `${t("delete")} (${openDeleteConfirm?.sectionName})`,
-    isOpen: openDeleteConfirm !== null,
-    onRequestClose: onCloseConfirm,
-    mode: "fit",
-    height: "auto",
-    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
-      onClick: onCloseConfirm
-    }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
-      isLoading: isLoading,
-      disabled: isLoading,
-      onClick: onConfirmDeleteSection
-    }, t("template.delete.default")))
-  }, /*#__PURE__*/React__default.createElement(Typography, {
-    variant: "body",
-    component: "label"
-  }, t("editor.sidebar.globalSections.delete.confirm"))), /*#__PURE__*/React__default.createElement(Modal, {
-    title: t("rename"),
-    isOpen: openEditSection !== null,
-    onRequestClose: onCloseEditSection,
-    mode: "fit",
-    height: "auto",
-    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
-      onClick: onCloseEditSection
-    }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
-      isLoading: isLoading,
-      disabled: isLoading,
-      onClick: onEditSection
-    }, t("rename")))
-  }, /*#__PURE__*/React__default.createElement(Input, {
-    defaultValue: openEditSection?.label,
-    ref: inputRef,
-    withBorder: true,
-    style: {
-      width: 300
-    },
-    onKeyDown: onEnter
-  })));
-};
-
-const HorizontalLine$1 = styled$1.div.withConfig({
-  displayName: "EditorGlobalSections__HorizontalLine",
-  componentId: "sc-ps3wnb-0"
-})(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
-const StyledEditorGlobalSectionsRoot = styled$1.div.withConfig({
-  displayName: "EditorGlobalSections__StyledEditorGlobalSectionsRoot",
-  componentId: "sc-ps3wnb-1"
-})(["overflow-x:hidden;height:100%;"]);
-const StyledEditorGlobalSections = styled$1.div.withConfig({
-  displayName: "EditorGlobalSections__StyledEditorGlobalSections",
-  componentId: "sc-ps3wnb-2"
-})(["height:100%;overflow-x:auto;padding-top:0px;padding-bottom:16px;"]);
-const StyledEditorGlobalSectionsTitle = styled$1(Typography).withConfig({
-  displayName: "EditorGlobalSections__StyledEditorGlobalSectionsTitle",
-  componentId: "sc-ps3wnb-3"
-})(["line-height:14px;font-weight:700;padding:17px 12px;"]);
-const StyledEditorGlobalSectionsDescription = styled$1(Typography).withConfig({
-  displayName: "EditorGlobalSections__StyledEditorGlobalSectionsDescription",
-  componentId: "sc-ps3wnb-4"
-})(["padding:20px 12px;"]);
-const StyledEditorGlobalSectionGroup = styled$1(Typography).withConfig({
-  displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
-  componentId: "sc-ps3wnb-5"
-})(["padding:10px 0px;"]);
-const EditorGlobalSections = ({
-  globalSections
-}) => {
-  const {
-    t
-  } = useTranslation();
-  const [openedSectionGroups, setOpenedSectionGroups] = useState(globalSectionGroups.map(group => group.id));
-  const onClickGlobalSectionGroup = sectionId => {
-    setOpenedSectionGroups(prev => {
-      if (prev.includes(sectionId)) {
-        return prev.filter(s => s !== sectionId);
-      }
-      return [...prev, sectionId];
-    });
-  };
-  return /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsRoot, null, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsTitle, null, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default.createElement(HorizontalLine$1, null), /*#__PURE__*/React__default.createElement(StyledEditorGlobalSections, null, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsDescription, null, t("editor.sidebar.globalSections.description")), /*#__PURE__*/React__default.createElement(HorizontalLine$1, null), /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionGroup, null, globalSectionGroups.map(globalSectionGroup => /*#__PURE__*/React__default.createElement(EditorGlobalSectionGroup, {
-    key: globalSectionGroup.id,
-    openedSectionGroups: openedSectionGroups,
-    globalSectionGroup: {
-      group: globalSectionGroup,
-      groupItem: globalSections?.[globalSectionGroup.name] ?? {
-        orders: [],
-        entities: {}
-      }
-    },
-    onClickGlobalSectionGroup: () => onClickGlobalSectionGroup(globalSectionGroup.id)
-  })))));
-};
-
-/**
- * Outputs comparable config that is FULL COPY of config
- */
-function getConfigSnapshot(config) {
-  const strippedConfig = deepClone(config);
-  return strippedConfig;
-}
-
-const normalizeComponentLayers = (components, prefix = "data", _rootParentId) => {
-  if (Array.isArray(components)) {
-    return components.map((component, layer) => {
-      const path = `${prefix}.${layer}`;
-      const rootParentId = _rootParentId || component._id;
-      return {
-        id: component._id,
-        component: component._component,
-        path,
-        rootParentId,
-        children: normalizeComponentLayers(component, path, rootParentId)
-      };
-    });
-  }
-  if (!Array.isArray(components) && typeof components === "object") {
-    return Object.entries(components).filter(([_, componentValue]) => Array.isArray(componentValue) && componentValue.length).map(([componentName, componentValue]) => {
-      const path = `${prefix}.${componentName}`;
-      const rootParentId = _rootParentId || componentValue._id;
-      return normalizeComponentLayers(componentValue, path, rootParentId);
-    }).flat();
-  }
-  return [];
-};
-
-const StyledEditorLayerLabel$1 = styled$1(Typography).withConfig({
-  displayName: "EditorLayerChildren__StyledEditorLayerLabel",
-  componentId: "sc-1v3iddr-0"
-})(["display:block;cursor:pointer;", ""], ({
-  isFocus
-}) => `
-    font-weight: ${isFocus ? 700 : 400};
-  `);
-const StyledEditorLayerComponent$1 = styled$1(Typography).withConfig({
-  displayName: "EditorLayerChildren__StyledEditorLayerComponent",
-  componentId: "sc-1v3iddr-1"
-})(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
-  isFocus
-}) => `
-    background: ${isFocus ? Colors.black10 : "transparent"};
-  `, Colors.black10);
-const EditorLayerChildren = ({
-  layer,
-  currentLayer,
-  onClickLayer,
-  onFocusLayer
-}) => {
-  useEffect(() => {
-    if (currentLayer === layer.path) {
-      onFocusLayer?.(layer.id);
-    }
-  }, [currentLayer]);
-  return /*#__PURE__*/React__default.createElement(StyledEditorLayerComponent$1, {
-    id: `sidebar-layer-${layer.id}`,
-    onClick: () => onClickLayer(layer.id, layer.path, layer.rootParentId),
-    isFocus: currentLayer === layer.path
-  }, /*#__PURE__*/React__default.createElement(Icons.LayerChildren, {
-    size: 18
-  }), /*#__PURE__*/React__default.createElement(StyledEditorLayerLabel$1, {
-    isFocus: currentLayer === layer.path,
-    variant: "body",
-    component: "label"
-  }, layer.component));
-};
-
-const StyledEditorLayerLabel = styled$1(Typography).withConfig({
-  displayName: "EditorLayerGroup__StyledEditorLayerLabel",
-  componentId: "sc-p2lu63-0"
-})(["display:block;cursor:pointer;", ""], ({
-  isFocus
-}) => `
-    font-weight: ${isFocus ? 700 : 400};
-  `);
-const StyledEditorLayerComponent = styled$1(Typography).withConfig({
-  displayName: "EditorLayerGroup__StyledEditorLayerComponent",
-  componentId: "sc-p2lu63-1"
-})(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
-  isFocus
-}) => `
-    background: ${isFocus ? Colors.black10 : "transparent"};
-  `, Colors.black10);
-const StyledWrapperChevronIcon = styled$1(Typography).withConfig({
-  displayName: "EditorLayerGroup__StyledWrapperChevronIcon",
-  componentId: "sc-p2lu63-2"
-})(["transition:transform 0.2s ease;", ""], ({
-  isOpen
-}) => `transform: rotate(${isOpen ? 180 : 0}deg);`);
-const StyledWrapperEditorLayerDetail = styled$1.div.withConfig({
-  displayName: "EditorLayerGroup__StyledWrapperEditorLayerDetail",
-  componentId: "sc-p2lu63-3"
-})(["padding-left:18px;", ""], ({
-  isOpen
-}) => `
-    height: ${isOpen ? "100%" : "0%"}; 
-    display: ${isOpen ? "block" : "none"};
-    `);
-const RawEditorLayerGroup = ({
-  layer,
-  currentLayer,
-  onClickLayer,
-  onFocusLayer
-}) => {
-  const [openedLayer, setOpenedLayer] = React__default.useState(false);
-  const expandClickRef = useRef(false);
-  const isFocus = currentLayer === layer.path;
-  const onExpandLayer = useCallback(() => {
-    expandClickRef.current = true;
-    onClickLayer(layer.id, layer.path, layer.rootParentId);
-    setOpenedLayer(prev => !prev);
-  }, [layer.path, onClickLayer]);
-  useEffect(() => {
-    if (!currentLayer) {
-      return;
-    }
-    if (currentLayer === layer.path) {
-      onFocusLayer?.(layer.id);
-    }
-    if (expandClickRef.current) {
-      expandClickRef.current = false;
-      return;
-    }
-    const shouldOpen = currentLayer.length >= layer.path.length && currentLayer.startsWith(layer.path);
-    shouldOpen ? setOpenedLayer(shouldOpen) : null;
-  }, [currentLayer, layer.path, layer.id]);
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledEditorLayerComponent, {
-    id: `sidebar-layer-${layer.id}`,
-    onClick: onExpandLayer,
-    isFocus: isFocus
-  }, /*#__PURE__*/React__default.createElement(StyledWrapperChevronIcon, {
-    isOpen: openedLayer
-  }, /*#__PURE__*/React__default.createElement(Icons.ChevronDown, {
-    size: 16
-  })), /*#__PURE__*/React__default.createElement(Icons.LayerGroup, {
-    size: 18
-  }), /*#__PURE__*/React__default.createElement(StyledEditorLayerLabel, {
-    isFocus: isFocus,
-    variant: "body",
-    component: "label"
-  }, layer.component)), /*#__PURE__*/React__default.createElement(StyledWrapperEditorLayerDetail, {
-    isOpen: openedLayer
-  }, /*#__PURE__*/React__default.createElement(EditorLayerDetail, {
-    onFocusLayer: onFocusLayer,
-    currentLayer: currentLayer,
-    onClickLayer: onClickLayer,
-    layers: layer.children
-  })));
-};
-const EditorLayerGroup = /*#__PURE__*/React__default.memo(RawEditorLayerGroup);
-EditorLayerGroup.displayName = "EditorLayerGroup";
-
-const EditorLayerDetail = ({
-  layers,
-  currentLayer,
-  onClickLayer,
-  onFocusLayer
-}) => {
-  return layers.map(layer => {
-    if (layer.children.length) {
-      return /*#__PURE__*/React__default.createElement(EditorLayerGroup, {
-        currentLayer: currentLayer,
-        onClickLayer: (id, path, rootParentId) => onClickLayer?.(id, path, rootParentId),
-        onFocusLayer: layerId => onFocusLayer?.(layerId),
-        layer: layer,
-        key: layer.id
-      });
-    }
-    return /*#__PURE__*/React__default.createElement(EditorLayerChildren, {
-      currentLayer: currentLayer,
-      onClickLayer: (id, path, rootParentId) => onClickLayer?.(id, path, rootParentId),
-      onFocusLayer: layerId => onFocusLayer?.(layerId),
-      layer: layer,
-      key: layer.id
-    });
-  });
-};
-
-const HorizontalLine = styled$1.div.withConfig({
-  displayName: "EditorLayer__HorizontalLine",
-  componentId: "sc-vnm02d-0"
-})(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
-const StyledEditorLayerRoot = styled$1.div.withConfig({
-  displayName: "EditorLayer__StyledEditorLayerRoot",
-  componentId: "sc-vnm02d-1"
-})(["overflow-x:hidden;"]);
-const StyledEditorLayer = styled$1.div.withConfig({
-  displayName: "EditorLayer__StyledEditorLayer",
-  componentId: "sc-vnm02d-2"
-})(["overflow-x:auto;padding-top:20px;padding-bottom:16px;"]);
-const StyledEditorLayerTitle = styled$1(Typography).withConfig({
-  displayName: "EditorLayer__StyledEditorLayerTitle",
-  componentId: "sc-vnm02d-3"
-})(["line-height:14px;font-weight:700;padding:17px 12px;"]);
-const EditorLayer = () => {
-  const editorContext = useEditorContext();
-  const {
-    t
-  } = useTranslation();
-  const [layers, setLayers] = useState();
-  const deferredLayers = useDeferredValue(layers);
-  const deferredCurrentLayer = useDeferredValue(editorContext.focussedField[0]);
-  const initLayers = async () => {
-    const localConfig = editorContext.form.values;
-    const localConfigSnapshot = getConfigSnapshot(localConfig);
-    setLayers(normalizeComponentLayers(localConfigSnapshot.data));
-  };
-  const onClickLayer = (id, layer, rootParentId) => {
-    const editorCanvasIframe = window.document.getElementById("editor-canvas");
-    if (rootParentId) {
-      const parentTargetComponent = editorCanvasIframe?.contentDocument?.getElementById(rootParentId);
-      const childTargetComponent = editorCanvasIframe?.contentDocument?.getElementById(id);
-      const parentRectTop = parentTargetComponent?.getBoundingClientRect()?.top ?? 0;
-      const childRectTop = childTargetComponent?.getBoundingClientRect()?.top ?? 0;
-      const top = (rootParentId === id ? parentRectTop : parentRectTop + childRectTop) + (editorCanvasIframe?.contentWindow?.scrollY ?? 0);
-      editorCanvasIframe?.contentWindow?.scrollTo({
-        top,
-        behavior: "smooth"
-      });
-    }
-    editorContext.setFocussedField(layer);
-  };
-  const onFocusLayer = layerId => {
-    if (layerId) {
-      const targetEditorLayer = document.getElementById("editor-layer");
-      const targetComponent = document.getElementById(`sidebar-layer-${layerId}`);
-      const top = (targetComponent?.getBoundingClientRect()?.top ?? 0) - (targetEditorLayer?.getBoundingClientRect()?.top ?? 0) + (targetEditorLayer?.scrollTop ?? 0);
-      targetEditorLayer?.scrollTo({
-        top,
-        behavior: "smooth"
-      });
-    }
-  };
-  useEffect(() => {
-    initLayers();
-  }, [editorContext.form.values]);
-  return /*#__PURE__*/React__default.createElement(StyledEditorLayerRoot, null, /*#__PURE__*/React__default.createElement(StyledEditorLayerTitle, null, t("editor.sidebar.layers")), /*#__PURE__*/React__default.createElement(HorizontalLine, null), /*#__PURE__*/React__default.createElement(StyledEditorLayer, null, deferredLayers ? /*#__PURE__*/React__default.createElement(EditorLayerDetail, {
-    onFocusLayer: onFocusLayer,
-    currentLayer: deferredCurrentLayer,
-    onClickLayer: onClickLayer,
-    layers: deferredLayers
-  }) : null));
-};
-
 function includesAny(a, b) {
   return a.some(i => b.includes(i));
 }
@@ -6371,6 +5725,63 @@ function pasteManager() {
   };
 }
 
+const SelectionMoreActionsContainer = styled$1.div.withConfig({
+  displayName: "Menu__SelectionMoreActionsContainer",
+  componentId: "sc-7fauqp-0"
+})(["", " border-radius:4px;box-shadow:var(--tina-shadow-big);width:max-content;background:", ";pointer-events:all;"], ({
+  styles
+}) => `
+    position: ${styles?.top && styles?.left ? "absolute" : "unset"};
+    top: ${styles?.top ?? "unset"};
+    left: ${styles?.left ?? "unset"};
+  `, Colors.white);
+const SelectionMoreActionsGroupButtons = styled$1.div.withConfig({
+  displayName: "Menu__SelectionMoreActionsGroupButtons",
+  componentId: "sc-7fauqp-1"
+})(["height:36px;position:relative;padding:0px 16px;display:flex;align-items:center;gap:2px;cursor:pointer;&:hover{background:", ";}"], Colors.black10);
+const MenuItem = ({
+  menu
+}) => {
+  const [isHoverMenu, setIsHoverMenu] = useState(false);
+  const menuItemRef = useRef(null);
+  const onClickMenu = () => {
+    if (!menu.isLoading) {
+      return !menu?.children?.length ? menu?.onClick?.() : undefined;
+    }
+  };
+  return /*#__PURE__*/React__default.createElement(SelectionMoreActionsGroupButtons, {
+    ref: menuItemRef,
+    onMouseEnter: () => setIsHoverMenu(true),
+    onMouseLeave: () => setIsHoverMenu(false),
+    onClick: onClickMenu
+  }, /*#__PURE__*/React__default.createElement(Typography, {
+    style: {
+      cursor: "pointer"
+    },
+    variant: "body",
+    component: "label"
+  }, menu.isLoading ? /*#__PURE__*/React__default.createElement(Loader, null) : menu.label), menu?.children?.length ? /*#__PURE__*/React__default.createElement(Icons.ChevronRight, {
+    size: 18
+  }) : null, isHoverMenu && menu?.children ? /*#__PURE__*/React__default.createElement(Menu, {
+    styles: {
+      top: "0px",
+      left: `${menuItemRef.current?.offsetWidth ?? 0}px`
+    },
+    menus: menu.children
+  }) : null);
+};
+const Menu = ({
+  menus,
+  styles
+}) => {
+  return /*#__PURE__*/React__default.createElement(SelectionMoreActionsContainer, {
+    styles: styles
+  }, menus.filter(menu => !menu.isHidden).map(menu => /*#__PURE__*/React__default.createElement(MenuItem, {
+    key: menu.id,
+    menu: menu
+  })));
+};
+
 function editorVariable(name) {
   return `--shopstory-editor-${name}`;
 }
@@ -6389,7 +5800,7 @@ const SelectionFrameActionsGroupButtons = styled$1.div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
   componentId: "sc-1fta8jo-1"
 })(["display:flex;gap:2px;"]);
-const StyledButtonGroup = styled$1.div.withConfig({
+const StyledButtonGroup$1 = styled$1.div.withConfig({
   displayName: "SelectionFrameActions__StyledButtonGroup",
   componentId: "sc-1fta8jo-2"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
@@ -6505,7 +5916,7 @@ const SelectionMoreActions = ({
     onRequestClose: onClose,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
       onClick: onClose
     }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
       isLoading: isLoading,
@@ -7260,6 +6671,14 @@ function useUpdateFormValues(form, values) {
   }, [form, values]);
 }
 
+/**
+ * Outputs comparable config that is FULL COPY of config
+ */
+function getConfigSnapshot(config) {
+  const strippedConfig = deepClone(config);
+  return strippedConfig;
+}
+
 function addLocalizedFlag(config, context) {
   return configMap(config, context, ({
     value,
@@ -7766,6 +7185,1099 @@ function useEditorHistory({
   };
 }
 
+const StyledEditorGlobalSectionItem = styled$1.div.withConfig({
+  displayName: "EditorGlobalSectionItem__StyledEditorGlobalSectionItem",
+  componentId: "sc-5k1508-0"
+})(["display:flex;align-items:center;justify-content:space-between;padding:0px 10px 0px 16px;height:38px;"]);
+const StyledWrapperMenu = styled$1.div.withConfig({
+  displayName: "EditorGlobalSectionItem__StyledWrapperMenu",
+  componentId: "sc-5k1508-1"
+})(["position:relative;display:flex;align-items:center;gap:4px;"]);
+const StyledWrapperCheckIcon = styled$1.div.withConfig({
+  displayName: "EditorGlobalSectionItem__StyledWrapperCheckIcon",
+  componentId: "sc-5k1508-2"
+})(["cursor:pointer;"]);
+const StyledWrapperThreeDotsIcon = styled$1.div.withConfig({
+  displayName: "EditorGlobalSectionItem__StyledWrapperThreeDotsIcon",
+  componentId: "sc-5k1508-3"
+})(["cursor:pointer;&:hover{transform:scale(1.2);}"]);
+const StyledWrapperMenuDialog = styled$1.div.withConfig({
+  displayName: "EditorGlobalSectionItem__StyledWrapperMenuDialog",
+  componentId: "sc-5k1508-4"
+})(["position:absolute;top:20px;right:0px;z-index:1;"]);
+const StyledWrapperAddToPage = styled$1(Typography).withConfig({
+  displayName: "EditorGlobalSectionItem__StyledWrapperAddToPage",
+  componentId: "sc-5k1508-5"
+})(["font-weight:500;cursor:pointer;color:", " !important;", ""], Colors.blue60, ({
+  disabled
+}) => disabled ? `
+    cursor: not-allowed;
+    user-select: none;
+    opacity: 0.7;
+    ` : `
+      &:hover {
+        color: ${Colors.blue50};
+      }`);
+const StyledWrapperLabel = styled$1.div.withConfig({
+  displayName: "EditorGlobalSectionItem__StyledWrapperLabel",
+  componentId: "sc-5k1508-6"
+})(["width:190px;"]);
+const StyledLabel$1 = styled$1(Typography).withConfig({
+  displayName: "EditorGlobalSectionItem__StyledLabel",
+  componentId: "sc-5k1508-7"
+})(["text-overflow:ellipsis;white-space:nowrap;overflow:hidden;"]);
+const EditorGlobalSectionItem = ({
+  group,
+  groupItem,
+  setOpenDeleteConfirm,
+  setOpenEditSection
+}) => {
+  const editorContext = useEditorContext();
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+  const {
+    t
+  } = useTranslation();
+  const menuRef = useRef(null);
+  const [openMenu, setOpenMenu] = useState(null);
+  const isAddedToPage = groupItem.pages.includes(currentDocument);
+  const onOpenMenu = entryId => {
+    setOpenMenu({
+      entryId
+    });
+  };
+  const onCloseMenu = () => {
+    setOpenMenu(null);
+  };
+  const onAddToPage = () => {
+    const targetEntry = groupItem.entry;
+    if (targetEntry?._component && Object.keys(targetEntry).length) {
+      let index = 0;
+      switch (group.name) {
+        case "Headers":
+          {
+            index = 0;
+            break;
+          }
+        case "Footers":
+          {
+            index = (editorContext.compiledComponentConfig?.components.data.length ?? 0) + 1;
+            break;
+          }
+      }
+      editorContext.actions.insertItem({
+        index,
+        block: targetEntry,
+        name: "data",
+        keepId: true
+      });
+    }
+  };
+  useEffect(() => {
+    const modalContainer = document.getElementById("modalContainer");
+    const handleClickOutside = event => {
+      if (menuRef.current && !menuRef.current.contains(event.target) && !modalContainer?.contains(event.target) && openMenu?.entryId) {
+        onCloseMenu();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenu]);
+  return /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionItem, null, /*#__PURE__*/React__default.createElement(Tooltip$1, null, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(StyledWrapperLabel, null, /*#__PURE__*/React__default.createElement(StyledLabel$1, null, groupItem.label))), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
+    color: "white"
+  }, groupItem.label))), /*#__PURE__*/React__default.createElement(StyledWrapperMenu, {
+    ref: menuRef
+  }, isAddedToPage ? /*#__PURE__*/React__default.createElement(StyledWrapperCheckIcon, null, /*#__PURE__*/React__default.createElement(Icons.Check, {
+    size: 16
+  })) : /*#__PURE__*/React__default.createElement(StyledWrapperAddToPage, {
+    disabled: !groupItem.entry?._component,
+    onClick: onAddToPage
+  }, t("add")), /*#__PURE__*/React__default.createElement(StyledWrapperThreeDotsIcon, {
+    onClick: () => onOpenMenu(groupItem.id)
+  }, /*#__PURE__*/React__default.createElement(Icons.ThreeDotsHorizontal, {
+    size: 16
+  })), openMenu && openMenu.entryId === groupItem.id ? /*#__PURE__*/React__default.createElement(StyledWrapperMenuDialog, null, /*#__PURE__*/React__default.createElement(Menu, {
+    menus: [{
+      id: `delete-section-${groupItem.id}`,
+      label: t("delete"),
+      onClick: () => {
+        setOpenDeleteConfirm({
+          entryId: groupItem.id,
+          sectionName: groupItem.label,
+          groupName: group.name
+        });
+      }
+    }, {
+      id: `rename-section-${groupItem.id}`,
+      label: t("rename"),
+      onClick: () => {
+        setOpenEditSection({
+          label: groupItem.label,
+          entry: groupItem.entry,
+          groupName: group.name
+        });
+      }
+    }]
+  })) : null));
+};
+
+const HorizontalLine$1 = styled$1.div.withConfig({
+  displayName: "EditorGlobalSections__HorizontalLine",
+  componentId: "sc-1fxbds7-0"
+})(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
+const StyledEditorGlobalSectionsDescription = styled$1(Typography).withConfig({
+  displayName: "EditorGlobalSections__StyledEditorGlobalSectionsDescription",
+  componentId: "sc-1fxbds7-1"
+})(["padding-bottom:20px;padding-left:12px;padding-right:12px;"]);
+const StyledEditorGlobalSectionGroup = styled$1(Typography).withConfig({
+  displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
+  componentId: "sc-1fxbds7-2"
+})(["padding:10px 0px;"]);
+const StyledButtonGroup = styled$1.div.withConfig({
+  displayName: "EditorGlobalSections__StyledButtonGroup",
+  componentId: "sc-1fxbds7-3"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const EditorGlobalSections = ({
+  globalSections
+}) => {
+  const {
+    t
+  } = useTranslation();
+  const editorContext = useEditorContext();
+  const inputRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [openDeleteConfirm, setOpenDeleteConfirm] = useState(null);
+  const [openEditSection, setOpenEditSection] = useState(null);
+  const onCloseConfirm = () => {
+    if (!isLoading) {
+      setOpenDeleteConfirm(null);
+    }
+  };
+  const onCloseEditSection = () => {
+    if (!isLoading) {
+      setOpenEditSection(null);
+    }
+  };
+  const onConfirmDeleteSection = () => {
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "delete",
+      groupName: openDeleteConfirm?.groupName ?? "",
+      entry: {
+        _id: openDeleteConfirm?.entryId ?? "",
+        _component: ""
+      }
+    }).then(() => {
+      setIsLoading(false);
+      onCloseConfirm();
+    }).catch(() => {
+      setIsLoading(false);
+    });
+  };
+  const onEditSection = () => {
+    if (isLoading || !inputRef?.current?.value) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      ...openEditSection,
+      groupName: openEditSection?.groupName ?? "",
+      label: inputRef.current.value
+    }).then(() => {
+      setIsLoading(false);
+      onCloseEditSection();
+    }).catch(() => {
+      setIsLoading(false);
+    });
+  };
+  const onEnter = e => {
+    if (e.code === "Enter" || e.code === "NumpadEnter") {
+      e.preventDefault();
+      e.stopPropagation();
+      onEditSection();
+    }
+  };
+  useEffect(() => {
+    if (openEditSection?.groupName) {
+      queueMicrotask(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [openEditSection]);
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionsDescription, null, t("editor.sidebar.globalSections.description")), /*#__PURE__*/React__default.createElement(HorizontalLine$1, null), /*#__PURE__*/React__default.createElement(StyledEditorGlobalSectionGroup, null, globalSectionGroups.map(globalSectionGroup => {
+    const globalSectionGroupItem = globalSections?.[globalSectionGroup.name];
+    return /*#__PURE__*/React__default.createElement(AccordionGroup, {
+      key: globalSectionGroup.id,
+      id: globalSectionGroup.id,
+      title: globalSectionGroup.name,
+      subTitle: ` (${Object.keys(globalSectionGroupItem?.orders ?? {}).length})`
+    }, globalSectionGroupItem?.orders?.map(entryId => {
+      const entryValue = globalSectionGroupItem.entities[entryId];
+      return /*#__PURE__*/React__default.createElement(EditorGlobalSectionItem, {
+        group: globalSectionGroup,
+        groupItem: {
+          id: entryId,
+          entry: entryValue.entry,
+          component: entryValue?.entry?._component ?? "",
+          label: entryValue.label,
+          pages: entryValue.pages
+        },
+        setOpenDeleteConfirm: setOpenDeleteConfirm,
+        setOpenEditSection: setOpenEditSection
+      });
+    }), /*#__PURE__*/React__default.createElement(Modal, {
+      title: `${t("delete")} (${openDeleteConfirm?.sectionName})`,
+      isOpen: openDeleteConfirm !== null,
+      onRequestClose: onCloseConfirm,
+      mode: "fit",
+      height: "auto",
+      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+        onClick: onCloseConfirm
+      }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+        isLoading: isLoading,
+        disabled: isLoading,
+        onClick: onConfirmDeleteSection
+      }, t("template.delete.default")))
+    }, /*#__PURE__*/React__default.createElement(Typography, {
+      variant: "body",
+      component: "label"
+    }, t("editor.sidebar.globalSections.delete.confirm"))), /*#__PURE__*/React__default.createElement(Modal, {
+      title: t("rename"),
+      isOpen: openEditSection !== null,
+      onRequestClose: onCloseEditSection,
+      mode: "fit",
+      height: "auto",
+      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+        onClick: onCloseEditSection
+      }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+        isLoading: isLoading,
+        disabled: isLoading,
+        onClick: onEditSection
+      }, t("rename")))
+    }, /*#__PURE__*/React__default.createElement(Input, {
+      defaultValue: openEditSection?.label,
+      ref: inputRef,
+      withBorder: true,
+      style: {
+        width: 300
+      },
+      onKeyDown: onEnter
+    })));
+  })));
+};
+
+const normalizeComponentLayers = (components, prefix = "data", _rootParentId) => {
+  if (Array.isArray(components)) {
+    return components.map((component, layer) => {
+      const path = `${prefix}.${layer}`;
+      const rootParentId = _rootParentId || component._id;
+      return {
+        id: component._id,
+        component: component._component,
+        path,
+        rootParentId,
+        children: normalizeComponentLayers(component, path, rootParentId)
+      };
+    });
+  }
+  if (!Array.isArray(components) && typeof components === "object") {
+    return Object.entries(components).filter(([_, componentValue]) => Array.isArray(componentValue) && componentValue.length).map(([componentName, componentValue]) => {
+      const path = `${prefix}.${componentName}`;
+      const rootParentId = _rootParentId || componentValue._id;
+      return normalizeComponentLayers(componentValue, path, rootParentId);
+    }).flat();
+  }
+  return [];
+};
+
+const StyledEditorLayerLabel$1 = styled$1(Typography).withConfig({
+  displayName: "EditorLayerChildren__StyledEditorLayerLabel",
+  componentId: "sc-1ntcvip-0"
+})(["display:block;cursor:pointer;", ""], ({
+  isFocus
+}) => `
+    font-weight: ${isFocus ? 700 : 400};
+  `);
+const StyledEditorLayerComponent$1 = styled$1(Typography).withConfig({
+  displayName: "EditorLayerChildren__StyledEditorLayerComponent",
+  componentId: "sc-1ntcvip-1"
+})(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+  isFocus
+}) => `
+    background: ${isFocus ? Colors.black10 : "transparent"};
+  `, Colors.black10);
+const EditorLayerChildren = ({
+  layer,
+  currentLayer,
+  onClickLayer,
+  onFocusLayer
+}) => {
+  useEffect(() => {
+    if (currentLayer === layer.path) {
+      onFocusLayer?.(layer.id);
+    }
+  }, [currentLayer]);
+  return /*#__PURE__*/React__default.createElement(StyledEditorLayerComponent$1, {
+    id: `sidebar-layer-${layer.id}`,
+    onClick: () => onClickLayer(layer.id, layer.path, layer.rootParentId),
+    isFocus: currentLayer === layer.path
+  }, /*#__PURE__*/React__default.createElement(Icons.LayerChildren, {
+    size: 18
+  }), /*#__PURE__*/React__default.createElement(StyledEditorLayerLabel$1, {
+    isFocus: currentLayer === layer.path,
+    variant: "body",
+    component: "label"
+  }, layer.component));
+};
+
+const StyledEditorLayerLabel = styled$1(Typography).withConfig({
+  displayName: "EditorLayerGroup__StyledEditorLayerLabel",
+  componentId: "sc-1n61cll-0"
+})(["display:block;cursor:pointer;", ""], ({
+  isFocus
+}) => `
+    font-weight: ${isFocus ? 700 : 400};
+  `);
+const StyledEditorLayerComponent = styled$1(Typography).withConfig({
+  displayName: "EditorLayerGroup__StyledEditorLayerComponent",
+  componentId: "sc-1n61cll-1"
+})(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
+  isFocus
+}) => `
+    background: ${isFocus ? Colors.black10 : "transparent"};
+  `, Colors.black10);
+const StyledWrapperChevronIcon = styled$1(Typography).withConfig({
+  displayName: "EditorLayerGroup__StyledWrapperChevronIcon",
+  componentId: "sc-1n61cll-2"
+})(["transition:transform 0.2s ease;", ""], ({
+  isOpen
+}) => `transform: rotate(${isOpen ? 180 : 0}deg);`);
+const StyledWrapperEditorLayerDetail = styled$1.div.withConfig({
+  displayName: "EditorLayerGroup__StyledWrapperEditorLayerDetail",
+  componentId: "sc-1n61cll-3"
+})(["padding-left:18px;", ""], ({
+  isOpen
+}) => `
+    height: ${isOpen ? "100%" : "0%"}; 
+    display: ${isOpen ? "block" : "none"};
+    `);
+const RawEditorLayerGroup = ({
+  layer,
+  currentLayer,
+  onClickLayer,
+  onFocusLayer
+}) => {
+  const [openedLayer, setOpenedLayer] = React__default.useState(false);
+  const expandClickRef = useRef(false);
+  const isFocus = currentLayer === layer.path;
+  const onExpandLayer = useCallback(() => {
+    expandClickRef.current = true;
+    onClickLayer(layer.id, layer.path, layer.rootParentId);
+    setOpenedLayer(prev => !prev);
+  }, [layer.path, onClickLayer]);
+  useEffect(() => {
+    if (!currentLayer) {
+      return;
+    }
+    if (currentLayer === layer.path) {
+      onFocusLayer?.(layer.id);
+    }
+    if (expandClickRef.current) {
+      expandClickRef.current = false;
+      return;
+    }
+    const shouldOpen = currentLayer.length >= layer.path.length && currentLayer.startsWith(layer.path);
+    shouldOpen ? setOpenedLayer(shouldOpen) : null;
+  }, [currentLayer, layer.path, layer.id]);
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledEditorLayerComponent, {
+    id: `sidebar-layer-${layer.id}`,
+    onClick: onExpandLayer,
+    isFocus: isFocus
+  }, /*#__PURE__*/React__default.createElement(StyledWrapperChevronIcon, {
+    isOpen: openedLayer
+  }, /*#__PURE__*/React__default.createElement(Icons.ChevronDown, {
+    size: 16
+  })), /*#__PURE__*/React__default.createElement(Icons.LayerGroup, {
+    size: 18
+  }), /*#__PURE__*/React__default.createElement(StyledEditorLayerLabel, {
+    isFocus: isFocus,
+    variant: "body",
+    component: "label"
+  }, layer.component)), /*#__PURE__*/React__default.createElement(StyledWrapperEditorLayerDetail, {
+    isOpen: openedLayer
+  }, /*#__PURE__*/React__default.createElement(EditorLayerDetail, {
+    onFocusLayer: onFocusLayer,
+    currentLayer: currentLayer,
+    onClickLayer: onClickLayer,
+    layers: layer.children
+  })));
+};
+const EditorLayerGroup = /*#__PURE__*/React__default.memo(RawEditorLayerGroup);
+EditorLayerGroup.displayName = "EditorLayerGroup";
+
+const EditorLayerDetail = ({
+  layers,
+  currentLayer,
+  onClickLayer,
+  onFocusLayer
+}) => {
+  return layers.map(layer => {
+    if (layer.children.length) {
+      return /*#__PURE__*/React__default.createElement(EditorLayerGroup, {
+        currentLayer: currentLayer,
+        onClickLayer: (id, path, rootParentId) => onClickLayer?.(id, path, rootParentId),
+        onFocusLayer: layerId => onFocusLayer?.(layerId),
+        layer: layer,
+        key: layer.id
+      });
+    }
+    return /*#__PURE__*/React__default.createElement(EditorLayerChildren, {
+      currentLayer: currentLayer,
+      onClickLayer: (id, path, rootParentId) => onClickLayer?.(id, path, rootParentId),
+      onFocusLayer: layerId => onFocusLayer?.(layerId),
+      layer: layer,
+      key: layer.id
+    });
+  });
+};
+
+const EditorLayer = () => {
+  const editorContext = useEditorContext();
+  const [layers, setLayers] = useState();
+  const deferredLayers = useDeferredValue(layers);
+  const deferredCurrentLayer = useDeferredValue(editorContext.focussedField[0]);
+  const initLayers = async () => {
+    const localConfig = editorContext.form.values;
+    const localConfigSnapshot = getConfigSnapshot(localConfig);
+    setLayers(normalizeComponentLayers(localConfigSnapshot.data));
+  };
+  const onClickLayer = (id, layer, rootParentId) => {
+    const editorCanvasIframe = window.document.getElementById("editor-canvas");
+    if (rootParentId) {
+      const parentTargetComponent = editorCanvasIframe?.contentDocument?.getElementById(rootParentId);
+      const childTargetComponent = editorCanvasIframe?.contentDocument?.getElementById(id);
+      const parentRectTop = parentTargetComponent?.getBoundingClientRect()?.top ?? 0;
+      const childRectTop = childTargetComponent?.getBoundingClientRect()?.top ?? 0;
+      const top = (rootParentId === id ? parentRectTop : parentRectTop + childRectTop) + (editorCanvasIframe?.contentWindow?.scrollY ?? 0);
+      editorCanvasIframe?.contentWindow?.scrollTo({
+        top,
+        behavior: "smooth"
+      });
+    }
+    editorContext.setFocussedField(layer);
+  };
+  const onFocusLayer = layerId => {
+    if (layerId) {
+      const targetEditorLayer = document.getElementById("editor-layers");
+      const targetComponent = document.getElementById(`sidebar-layer-${layerId}`);
+      const top = (targetComponent?.getBoundingClientRect()?.top ?? 0) - (targetEditorLayer?.getBoundingClientRect()?.top ?? 0) + (targetEditorLayer?.scrollTop ?? 0);
+      targetEditorLayer?.scrollTo({
+        top,
+        behavior: "smooth"
+      });
+    }
+  };
+  useEffect(() => {
+    initLayers();
+  }, [editorContext.form.values]);
+  return deferredLayers ? /*#__PURE__*/React__default.createElement(EditorLayerDetail, {
+    onFocusLayer: onFocusLayer,
+    currentLayer: deferredCurrentLayer,
+    onClickLayer: onClickLayer,
+    layers: deferredLayers
+  }) : null;
+};
+
+// Single template card shown in the section drawer gallery.
+// Preview box renders the template thumbnail when available, otherwise
+// falls back to the centered label text (e.g. "Empty Banner Section").
+const StyledCard$1 = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawerCard__StyledCard",
+  componentId: "sc-1g9htdu-0"
+})(["display:flex;flex-direction:column;gap:8px;cursor:", ";"], ({
+  isLoading
+}) => isLoading ? "default" : "pointer");
+const StyledPreview$1 = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawerCard__StyledPreview",
+  componentId: "sc-1g9htdu-1"
+})(["position:relative;width:100%;aspect-ratio:16 / 10;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;border-radius:2px;background:", ";color:", ";overflow:hidden;box-sizing:border-box;", ":hover &{outline:2px solid ", ";}"], Colors.black10, Colors.black500, StyledCard$1, Colors.blue50);
+
+// Centered spinner shown over the preview box while the section is being added.
+const StyledLoadingOverlay = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawerCard__StyledLoadingOverlay",
+  componentId: "sc-1g9htdu-2"
+})(["position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.6);"]);
+const StyledThumbnail = styled$1.img.withConfig({
+  displayName: "EditorSectionDrawerCard__StyledThumbnail",
+  componentId: "sc-1g9htdu-3"
+})(["width:100%;height:100%;object-fit:cover;"]);
+const StyledLabel = styled$1(Typography).withConfig({
+  displayName: "EditorSectionDrawerCard__StyledLabel",
+  componentId: "sc-1g9htdu-4"
+})(["font-weight:700;text-align:center !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
+const EditorSectionDrawerCard = ({
+  template,
+  onClick,
+  isLoading
+}) => {
+  const label = template.label ?? template.template?.id ?? "";
+  const thumbnail = template.template?.thumbnail;
+  return /*#__PURE__*/React__default.createElement(StyledCard$1, {
+    onClick: onClick,
+    title: label,
+    isLoading: isLoading
+  }, /*#__PURE__*/React__default.createElement(StyledPreview$1, null, thumbnail ? /*#__PURE__*/React__default.createElement(StyledThumbnail, {
+    src: thumbnail,
+    alt: label
+  }) : /*#__PURE__*/React__default.createElement(Typography, {
+    variant: "body"
+  }, label), isLoading ? /*#__PURE__*/React__default.createElement(StyledLoadingOverlay, null, /*#__PURE__*/React__default.createElement(Loader, null)) : null), /*#__PURE__*/React__default.createElement(StyledLabel, {
+    variant: "body"
+  }, label));
+};
+
+// Loading placeholder for the section drawer gallery: a title bar on top and a
+// 4-column grid of card skeletons (preview rect + label pill below).
+const SKELETON_CARDS = 6;
+const pulse$1 = keyframes(["0%,100%{opacity:1;}50%{opacity:0.4;}"]);
+const StyledRoot = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawerSkeleton__StyledRoot",
+  componentId: "sc-1lbe0dn-0"
+})(["display:flex;flex-direction:column;gap:16px;animation:", " 1.2s ease-in-out infinite;"], pulse$1);
+const StyledGrid$1 = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawerSkeleton__StyledGrid",
+  componentId: "sc-1lbe0dn-1"
+})(["display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px;"]);
+const StyledCard = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawerSkeleton__StyledCard",
+  componentId: "sc-1lbe0dn-2"
+})(["display:flex;flex-direction:column;gap:8px;align-items:center;"]);
+const StyledPreview = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawerSkeleton__StyledPreview",
+  componentId: "sc-1lbe0dn-3"
+})(["width:100%;aspect-ratio:16 / 10;border-radius:6px;background:", ";"], Colors.black10);
+const StyledPill = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawerSkeleton__StyledPill",
+  componentId: "sc-1lbe0dn-4"
+})(["width:70%;height:12px;border-radius:6px;background:", ";"], Colors.black10);
+const EditorSectionDrawerSkeleton = () => /*#__PURE__*/React__default.createElement(StyledRoot, null, /*#__PURE__*/React__default.createElement(StyledGrid$1, null, Array.from({
+  length: SKELETON_CARDS
+}).map((_, index) => /*#__PURE__*/React__default.createElement(StyledCard, {
+  key: index
+}, /*#__PURE__*/React__default.createElement(StyledPreview, null), /*#__PURE__*/React__default.createElement(StyledPill, null)))));
+
+// Trigger load-more when scrolled within this many px of the bottom.
+const SCROLL_THRESHOLD = 80;
+const DRAWER_WIDTH = 600;
+const StyledEditorSectionDrawer = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawer__StyledEditorSectionDrawer",
+  componentId: "sc-bycoqx-0"
+})(["position:absolute;top:47px;left:198px;width:", "px;max-height:calc(100vh - 120px);overflow-x:hidden;overflow-y:auto;padding:16px;background:", ";border:1px solid ", ";box-shadow:var(--tina-shadow-big);z-index:var(--tina-z-index-5);border-top-right-radius:2px;border-bottom-right-radius:2px;"], DRAWER_WIDTH, Colors.white, Colors.black100);
+const StyledGrid = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawer__StyledGrid",
+  componentId: "sc-bycoqx-1"
+})(["display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px;"]);
+const StyledLoadMore = styled$1.div.withConfig({
+  displayName: "EditorSectionDrawer__StyledLoadMore",
+  componentId: "sc-bycoqx-2"
+})(["display:flex;justify-content:center;padding:16px 0 4px;"]);
+const EditorSectionDrawer = ({
+  templates,
+  isFetching,
+  isLoadingMore,
+  hasMore,
+  onLoadMore,
+  onAddTemplate,
+  containerRef
+}) => {
+  const {
+    t
+  } = useTranslation();
+  const [loadingId, setLoadingId] = useState(null);
+  const handleAdd = (template, id) => {
+    if (loadingId) return; // ignore re-clicks during the brief add operation
+    setLoadingId(id);
+    requestAnimationFrame(() => {
+      onAddTemplate(template);
+      setLoadingId(null);
+    });
+  };
+
+  // Infinite scroll: load the next page when scrolled near the bottom.
+  const handleScroll = event => {
+    if (!hasMore || isLoadingMore || !onLoadMore) return;
+    const el = event.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD) {
+      onLoadMore();
+    }
+  };
+  if (isFetching) {
+    return /*#__PURE__*/React__default.createElement(StyledEditorSectionDrawer, {
+      ref: containerRef
+    }, /*#__PURE__*/React__default.createElement(EditorSectionDrawerSkeleton, null));
+  }
+  if (!templates.length) {
+    return /*#__PURE__*/React__default.createElement(StyledEditorSectionDrawer, {
+      ref: containerRef
+    }, /*#__PURE__*/React__default.createElement(Typography, {
+      variant: "body"
+    }, t("noData"), "!"));
+  }
+  return /*#__PURE__*/React__default.createElement(StyledEditorSectionDrawer, {
+    ref: containerRef,
+    onScroll: handleScroll
+  }, /*#__PURE__*/React__default.createElement(StyledGrid, null, templates.map(template => {
+    const id = template.template?.id ?? template.id;
+    return /*#__PURE__*/React__default.createElement(EditorSectionDrawerCard, {
+      key: id,
+      template: template,
+      isLoading: loadingId === id,
+      onClick: () => handleAdd(template, id)
+    });
+  })), isLoadingMore ? /*#__PURE__*/React__default.createElement(StyledLoadMore, null, /*#__PURE__*/React__default.createElement(Loader, null)) : null);
+};
+
+const StyledEditorSectionName = styled$1.div.withConfig({
+  displayName: "EditorSectionItem__StyledEditorSectionName",
+  componentId: "sc-1li16rj-0"
+})(["font-size:var(--tina-font-size-0);display:block;max-width:240px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;cursor:pointer;border-radius:2px;padding:4px;", ""], ({
+  hovered
+}) => `${hovered ? `background: ${Colors.black10};` : ""}`);
+const EditorSectionItem = ({
+  id,
+  name,
+  hovered,
+  onHoverSection
+}) => {
+  const {
+    isOpen,
+    tooltipProps,
+    triggerProps,
+    arrowProps
+  } = useTooltip();
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledEditorSectionName, _extends({
+    id: id,
+    hovered: hovered,
+    onMouseEnter: () => onHoverSection(id)
+  }, triggerProps), name), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, name)));
+};
+
+const SKELETON_ROWS = 20;
+const pulse = keyframes(["0%,100%{opacity:1;}50%{opacity:0.4;}"]);
+const SkeletonBar = styled$1.div.withConfig({
+  displayName: "EditorSectionsSkeleton__SkeletonBar",
+  componentId: "sc-1kea448-0"
+})(["padding-top:4px;padding-left:4px;height:26px;border-radius:2px;background-color:", ";animation:", " 1.2s ease-in-out infinite;"], Colors.black10, pulse);
+
+// Shared loading placeholder for the editor section lists.
+// Single source of truth — imported by EditorSectionGroup and EditorSectionCard.
+const EditorSectionsSkeleton = () => /*#__PURE__*/React__default.createElement(React__default.Fragment, null, Array.from({
+  length: SKELETON_ROWS
+}).map((_, index) => /*#__PURE__*/React__default.createElement(SkeletonBar, {
+  key: index
+})));
+
+const EditorSectionGroup = ({
+  sectionGroups,
+  isFetchingRemoteGroup,
+  hoveredSection,
+  onHoverSection
+}) => {
+  const {
+    t
+  } = useTranslation();
+
+  // The group list loads once from the count API; show the skeleton until then.
+  if (isFetchingRemoteGroup) {
+    return /*#__PURE__*/React__default.createElement(EditorSectionsSkeleton, null);
+  }
+  return sectionGroups.length ? sectionGroups.map(currentSectionGroup => /*#__PURE__*/React__default.createElement(EditorSectionItem, {
+    key: currentSectionGroup,
+    id: currentSectionGroup,
+    name: currentSectionGroup,
+    hovered: hoveredSection === currentSectionGroup,
+    onHoverSection: onHoverSection
+  })) : /*#__PURE__*/React__default.createElement(Typography, {
+    variant: "body",
+    style: {
+      paddingLeft: 4
+    }
+  }, t("noData"), "!");
+};
+
+// A single section template (flattened, group layer removed). Shared by the
+// left list, the drawer gallery and the drawer card.
+
+const TITLE_HEIGHT = 50;
+const PADDING_TOP_HEIGHT = 20;
+// Page size for the per-group remote template fetch (infinite scroll).
+const TEMPLATES_LIMIT = 30;
+
+// Accumulated remote templates for a group plus its paging cursor.
+
+const StyledEditorSectionGroup = styled$1.div.withConfig({
+  displayName: "EditorSections__StyledEditorSectionGroup",
+  componentId: "sc-1nr6ndr-0"
+})(["padding-left:12px;padding-right:12px;overflow-y:auto;max-height:calc( 100vh - ", "px );"], TOP_BAR_HEIGHT + TITLE_HEIGHT + PADDING_TOP_HEIGHT);
+const EditorSections = () => {
+  const editorContext = useEditorContext();
+  const toaster = useToaster();
+  const {
+    t
+  } = useTranslation();
+  const [hoveredSection, setHoveredSection] = useState("");
+  // Drawer is closed until the user hovers a section; click-outside closes it.
+  const [isOpen, setIsOpen] = useState(false);
+  const sectionListRef = useRef(null);
+  const drawerRef = useRef(null);
+  // Remote groups loaded from the count API; loading flag for that call.
+  const [remoteGroups, setRemoteGroups] = useState([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
+  // Remote templates fetched per group (paged), cached so a re-hover doesn't
+  // refetch. `isFetching` = first page; `isLoadingMore` = subsequent pages.
+  const [remoteByGroup, setRemoteByGroup] = useState({});
+  const [isFetching, setIsFetching] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Map raw API templates to the shape the drawer/card consume.
+  const mapRemoteItems = useCallback(items => items.map(tpl => {
+    const definition = findComponentDefinitionById(tpl.entry._component, editorContext);
+    return {
+      ...definition,
+      ...tpl,
+      group: tpl.group,
+      template: tpl
+    };
+  }), [editorContext]);
+
+  // Local components: the components the root "data" field accepts. Sync.
+  const localComponents = useMemo(() => {
+    const schemaProp = findComponentDefinition(editorContext.form.values, editorContext)?.schema.find(x => x.prop === "data");
+    return unrollAcceptsFieldIntoComponents(schemaProp?.accepts, editorContext);
+  }, [editorContext.form.values, editorContext.definitions]);
+
+  // Local groups: the .group values of the accepted components.
+  const localGroups = useMemo(() => {
+    const groups = new Set();
+    localComponents.forEach(component => {
+      if (component.visible === false) return;
+      groups.add(component.group || "others");
+    });
+    return [...groups];
+  }, [localComponents]);
+
+  // Local-definition templates for the hovered group (default "Empty X"
+  // templates built from the accepted components). Available synchronously.
+  const localTemplates = useMemo(() => {
+    if (!hoveredSection) return [];
+    return localComponents.filter(component => component.visible !== false && (component.group || "others") === hoveredSection).map(component => {
+      const template = getDefaultTemplateForDefinition(component, editorContext);
+      return {
+        ...component,
+        group: component.group,
+        template
+      };
+    });
+  }, [hoveredSection, localComponents]);
+
+  // Remote groups from the templates `count` API (keys are group names).
+  // Count-only call (items ignored).
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingGroups(true);
+    editorContext.backend.templates.getAll({
+      limit: 1
+    }).then(res => {
+      if (cancelled) return;
+      const count = res.count ?? {};
+      setRemoteGroups(Object.keys(count).filter(group => (count[group]?.matchedCount ?? 0) > 0));
+    }).finally(() => {
+      if (!cancelled) setIsLoadingGroups(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [editorContext.backend]);
+
+  // Left list = local groups merged with remote groups, deduped and sorted.
+  const sectionGroups = useMemo(() => [...new Set([...localGroups, ...remoteGroups])].sort(), [localGroups, remoteGroups]);
+
+  // Smoothly scroll the editor canvas to a component by its config id. The
+  // canvas renders asynchronously after insert, so poll briefly for the node.
+  const scrollCanvasToComponent = useCallback(id => {
+    let attempts = 0;
+    const maxAttempts = 20;
+    const tryScroll = () => {
+      const iframe = document.getElementById("editor-canvas");
+      const node = iframe?.contentDocument?.getElementById(id);
+      if (node && iframe?.contentWindow) {
+        const top = node.getBoundingClientRect().top + iframe.contentWindow.scrollY;
+        iframe.contentWindow.scrollTo({
+          top,
+          behavior: "smooth"
+        });
+        return;
+      }
+      if (attempts < maxAttempts) {
+        attempts += 1;
+        setTimeout(tryScroll, 50);
+      }
+    };
+    tryScroll();
+  }, []);
+
+  // Insert the picked template into the root "data" collection (appended at
+  // the end). No keepId, so fresh ids are generated and a template can be
+  // added multiple times. Used by the drawer cards only.
+  const onAddTemplate = useCallback(template => {
+    const entry = template.template?.entry;
+    if (!entry) {
+      toaster.error(t("editor.sidebar.blocksAndSections.add.error"));
+      return;
+    }
+
+    // Raw API entries aren't normalized; normalize the picked entry before insert.
+    const normalizedEntry = normalize({
+      ...entry,
+      _itemProps: {}
+    }, editorContext);
+    editorContext.actions.insertItem({
+      name: "data",
+      index: editorContext.compiledComponentConfig?.components.data.length ?? 0,
+      block: normalizedEntry
+    });
+    toaster.success(t("editor.sidebar.blocksAndSections.add.success"));
+
+    // The new section is appended at the end; scroll the canvas to it.
+    const data = editorContext.form.values?.data ?? [];
+    const newId = data[data.length - 1]?._id;
+    if (newId) scrollCanvasToComponent(newId);
+  }, [editorContext, scrollCanvasToComponent]);
+  useEffect(() => {
+    if (sectionGroups.length) {
+      setHoveredSection(sectionGroups[0]);
+    }
+  }, []);
+
+  // Hovering a section selects it and opens the drawer.
+  const handleHoverSection = useCallback(id => {
+    setHoveredSection(id);
+    setIsOpen(true);
+  }, []);
+
+  // Close the drawer when clicking outside both the section list and the drawer.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = event => {
+      const target = event.target;
+      const insideList = sectionListRef.current?.contains(target);
+      const insideDrawer = drawerRef.current?.contains(target);
+      if (!insideList && !insideDrawer) {
+        setIsOpen(false);
+      }
+    };
+
+    // Clicks inside the editor canvas (an iframe) don't bubble to the parent
+    // document, so listen inside it too. Any canvas click closes the drawer.
+    const closeOnIframeClick = () => setIsOpen(false);
+    const canvasIframe = document.getElementById("editor-canvas");
+    const canvasDoc = canvasIframe?.contentDocument;
+    document.addEventListener("mousedown", handleClickOutside);
+    canvasDoc?.addEventListener("mousedown", closeOnIframeClick, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      canvasDoc?.removeEventListener("mousedown", closeOnIframeClick, true);
+    };
+  }, [isOpen]);
+
+  // Fetch the hovered group's first page of remote templates (server-side
+  // group filter). Cached per group so re-hovering is instant.
+  useEffect(() => {
+    if (!hoveredSection || remoteByGroup[hoveredSection]) return;
+    const group = hoveredSection;
+    let cancelled = false;
+    setIsFetching(true);
+    editorContext.backend.templates.getAll({
+      filters: `group.keyword:eq:${group}`,
+      page: 1,
+      limit: TEMPLATES_LIMIT
+    }).then(res => {
+      if (cancelled) return;
+      const items = mapRemoteItems(res.items ?? []);
+      const total = res.count?.[group]?.matchedCount ?? items.length;
+      setRemoteByGroup(prev => ({
+        ...prev,
+        [group]: {
+          items,
+          page: 1,
+          total
+        }
+      }));
+    }).finally(() => {
+      if (!cancelled) setIsFetching(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [hoveredSection]);
+
+  // Whether the hovered group has more remote templates to load (remote only;
+  // local templates aren't paginated).
+  const hasMore = useMemo(() => {
+    const state = remoteByGroup[hoveredSection];
+    return !!state && state.items.length < state.total;
+  }, [remoteByGroup, hoveredSection]);
+
+  // Load the next page of remote templates for the hovered group (infinite
+  // scroll). Appends to the existing items.
+  const onLoadMore = useCallback(() => {
+    const group = hoveredSection;
+    const state = remoteByGroup[group];
+    if (!group || !state || isFetching || isLoadingMore) return;
+    if (state.items.length >= state.total) return;
+    const nextPage = state.page + 1;
+    setIsLoadingMore(true);
+    editorContext.backend.templates.getAll({
+      filters: `group.keyword:eq:${group}`,
+      page: nextPage,
+      limit: TEMPLATES_LIMIT
+    }).then(res => {
+      const more = mapRemoteItems(res.items ?? []);
+      setRemoteByGroup(prev => {
+        const existing = prev[group]?.items ?? [];
+        const total = res.count?.[group]?.matchedCount ?? prev[group]?.total ?? 0;
+        return {
+          ...prev,
+          [group]: {
+            items: [...existing, ...more],
+            page: nextPage,
+            total
+          }
+        };
+      });
+    }).finally(() => setIsLoadingMore(false));
+  }, [hoveredSection, remoteByGroup, isFetching, isLoadingMore, mapRemoteItems, editorContext]);
+
+  // Drawer = local-definition templates merged with remote ones, deduped by
+  // template id. Local shows immediately; remote appends when fetched.
+  const drawerTemplates = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    [...localTemplates, ...(remoteByGroup[hoveredSection]?.items ?? [])].forEach(template => {
+      const id = template.template?.id ?? template.id;
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        result.push(template);
+      }
+    });
+    return result;
+  }, [localTemplates, remoteByGroup, hoveredSection]);
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledEditorSectionGroup, {
+    ref: sectionListRef
+  }, /*#__PURE__*/React__default.createElement(EditorSectionGroup, {
+    isFetchingRemoteGroup: isLoadingGroups && sectionGroups.length === 0,
+    sectionGroups: sectionGroups,
+    hoveredSection: hoveredSection,
+    onHoverSection: handleHoverSection
+  })), isOpen && hoveredSection ? /*#__PURE__*/React__default.createElement(EditorSectionDrawer, {
+    templates: drawerTemplates,
+    isFetching: isFetching && drawerTemplates.length === 0,
+    isLoadingMore: isLoadingMore,
+    hasMore: hasMore,
+    onLoadMore: onLoadMore,
+    onAddTemplate: onAddTemplate,
+    containerRef: drawerRef
+  }) : null);
+};
+
+const StyledEditorLeftSidebarRoot = styled$1.div.withConfig({
+  displayName: "EditorLeftSidebar__StyledEditorLeftSidebarRoot",
+  componentId: "sc-16mpetx-0"
+})(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;", " > *{box-sizing:border-box;}"], ({
+  width = "240px"
+}) => `flex: 0 0 ${width};`, Colors.white, Colors.black100, Colors.black100, ({
+  enableScroll = true
+}) => enableScroll ? `overflow-y: auto;` : "");
+const StyledEditorLeftSidebarTitle = styled$1(Typography).withConfig({
+  displayName: "EditorLeftSidebar__StyledEditorLeftSidebarTitle",
+  componentId: "sc-16mpetx-1"
+})(["line-height:14px;font-weight:700;padding:17px 12px;"]);
+const HorizontalLine = styled$1.div.withConfig({
+  displayName: "EditorLeftSidebar__HorizontalLine",
+  componentId: "sc-16mpetx-2"
+})(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
+const StyledEditorLeftSidebarGroup = styled$1.div.withConfig({
+  displayName: "EditorLeftSidebar__StyledEditorLeftSidebarGroup",
+  componentId: "sc-16mpetx-3"
+})(["padding-top:20px;padding-bottom:20px;> div{min-height:0;}"]);
+const EditorLeftSidebar = ({
+  showLeftSidebar,
+  globalSections,
+  sidebarNodeRef
+}) => {
+  const {
+    t
+  } = useTranslation();
+  const sidebarConfig = useMemo(() => {
+    switch (showLeftSidebar) {
+      case "global-sections":
+        {
+          return {
+            id: "editor-global-sections",
+            title: t("editor.sidebar.globalSections"),
+            width: "280px",
+            enableScroll: true,
+            Component: /*#__PURE__*/React__default.createElement(EditorGlobalSections, {
+              globalSections: globalSections
+            })
+          };
+        }
+      case "layers":
+        {
+          return {
+            id: "editor-layers",
+            title: t("editor.sidebar.layers"),
+            width: "280px",
+            enableScroll: true,
+            Component: /*#__PURE__*/React__default.createElement(EditorLayer, null)
+          };
+        }
+      case "sections":
+        {
+          return {
+            id: "editor-sections",
+            title: t("editor.sidebar.blocksAndSections"),
+            width: "200px",
+            enableScroll: false,
+            Component: /*#__PURE__*/React__default.createElement(EditorSections, null)
+          };
+        }
+      default:
+        {
+          return {
+            id: "no-config",
+            title: "",
+            enableScroll: true,
+            width: "280px",
+            Component: null
+          };
+        }
+    }
+  }, [showLeftSidebar]);
+  return /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarRoot, {
+    id: sidebarConfig.id,
+    width: sidebarConfig.width,
+    enableScroll: sidebarConfig.enableScroll,
+    ref: sidebarNodeRef
+  }, /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarTitle, null, sidebarConfig.title), /*#__PURE__*/React__default.createElement(HorizontalLine, null), /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarGroup, null, sidebarConfig.Component));
+};
+
 const debouncedUpdate = debounce$1(fn => fn(), 100);
 const ContentContainer = styled.div.withConfig({
   displayName: "Editor__ContentContainer",
@@ -7778,7 +8290,7 @@ const SidebarAndContentContainer = styled.div.withConfig({
 const SidebarContainer = styled.div.withConfig({
   displayName: "Editor__SidebarContainer",
   componentId: "sc-t95yuf-2"
-})(["", " background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}overflow-y:auto;"], ({
+})(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
   width = "240px"
 }) => `flex: 0 0 ${width};`, Colors.white, Colors.black100, Colors.black100);
 const DataSaverRoot = styled.div.withConfig({
@@ -8100,7 +8612,7 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
-  const [showLeftSidebar, setShowLeftSidebar] = useState(null);
+  const [showLeftSidebar, setShowLeftSidebar] = useState("sections");
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(compilationContext.contextParams.locale);
   const prevLocale = useRef("");
@@ -8126,6 +8638,9 @@ const EditorContent = ({
     componentPickerData.promiseResolve(config);
   };
   const sidebarNodeRef = useRef(null);
+  // Separate ref for the left sidebar so it doesn't collide with the right
+  // sidebar (both can be mounted at the same time).
+  const leftSidebarNodeRef = useRef(null);
   const [editableData, form] = useForm({
     id: "easyblocks-editor",
     label: "Edit entry",
@@ -8653,13 +9168,11 @@ const EditorContent = ({
     editorMode: mode
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
     height: appHeight
-  }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default.createElement(SidebarContainer, {
-    id: "editor-layer",
-    width: "280px",
-    ref: sidebarNodeRef
-  }, showLeftSidebar === "global-sections" ? /*#__PURE__*/React__default.createElement(EditorGlobalSections, {
-    globalSections: props.config.globalSections
-  }) : null, showLeftSidebar === "layers" ? /*#__PURE__*/React__default.createElement(EditorLayer, null) : null), /*#__PURE__*/React__default.createElement(ContentContainer, {
+  }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default.createElement(EditorLeftSidebar, {
+    showLeftSidebar: showLeftSidebar,
+    globalSections: props.config.globalSections,
+    sidebarNodeRef: leftSidebarNodeRef
+  }), /*#__PURE__*/React__default.createElement(ContentContainer, {
     onClick: () => {
       setFocussedField([]);
     }
@@ -9435,10 +9948,11 @@ function SelectionFrameController({
   const wrapperClassName = stitches.css({
     position: "relative",
     display: "grid",
-    "&[data-children-selection-disabled=true] *": {
-      pointerEvents: "none !important",
-      userSelect: "none !important"
-    },
+    // "&[data-children-selection-disabled=true] *": {
+    //   pointerEvents: "none !important",
+    //   userSelect: "none !important",
+    // },
+
     "&[data-draggable-active=false]::after": {
       content: `''`,
       boxSizing: "border-box",
@@ -9453,8 +9967,8 @@ function SelectionFrameController({
       pointerEvents: "none",
       userSelect: "none",
       transition: "all 100ms",
-      boxShadow: "var(--tina-shadow-big)",
-      zIndex: "var(--tina-z-index-2)"
+      boxShadow: "var(--tina-shadow-big)"
+      // zIndex: "var(--tina-z-index-2)",
     },
     "&[data-active=true]::after": {
       opacity: 1

@@ -3,6 +3,7 @@ import {
   ComponentSchemaProp,
   NoCodeComponentEntry,
   Template,
+  TemplateQueryType,
 } from "@redsun-vn/easyblocks-core";
 import {
   duplicateConfig,
@@ -153,13 +154,19 @@ export const ModalPicker: FC<ModalProps> = ({
 
   const onFilters = (filters: string) => {
     setLoadMode("replace");
-    editorContext.syncTemplateQuery?.({
+
+    const query: TemplateQueryType = {
       filters: filters.trim(),
       search: "",
       page: 1,
-      limit: filters ? queryLimit : 100,
       mode: "replace",
-    });
+    };
+
+    if (filters) {
+      query.limit = queryLimit;
+    }
+
+    editorContext.syncTemplateQuery?.(query);
   };
 
   const onLoadMore = (page: number, groupId: string) => {
@@ -167,7 +174,7 @@ export const ModalPicker: FC<ModalProps> = ({
     const templateItems = editorContext.templates?.items ?? [];
     const templateCount = editorContext.templates?.count;
 
-    const totalAvailable = templateCount?.[groupId.trim()]?.total ?? 0;
+    const totalAvailable = templateCount?.[groupId.trim()]?.matchedCount ?? 0;
     if (!totalAvailable) return;
 
     const templateItemFilterLength = templateItems

@@ -16,7 +16,7 @@ import {
 import { EditorContextType } from "../EditorContext";
 import { configMap } from "../utils/config/configMap";
 
-function getDefaultTemplateForDefinition(
+export function getDefaultTemplateForDefinition(
   def: InternalComponentDefinition,
   editorContext: EditorContextType,
 ): InternalTemplate {

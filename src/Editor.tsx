@@ -82,8 +82,9 @@ import {
   removeItems,
   replaceItems,
 } from "./editorActions";
-import { EditorGlobalSections } from "./editorGlobalSections/EditorGlobalSections";
-import { EditorLayer } from "./editorLayer/EditorLayer";
+import { EditorGlobalSections } from "./editorSidebar/editorGlobalSections/EditorGlobalSections";
+import { EditorLayer } from "./editorSidebar/editorLayer/EditorLayer";
+import { EditorSections } from "./editorSidebar/editorSections/EditorSections";
 import { Form } from "./form";
 import { destinationResolver } from "./paste/destinationResolver";
 import { pasteManager } from "./paste/manager";
@@ -100,6 +101,7 @@ import {
 import { useDataSaver } from "./useDataSaver";
 import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShortcuts";
 import { useEditorHistory } from "./useEditorHistory";
+import { EditorLeftSidebar } from "./editorSidebar/EditorLeftSidebar";
 
 declare global {
   interface Window {
@@ -134,6 +136,7 @@ const SidebarAndContentContainer = styled.div<{ height: "100vh" | "100%" }>`
 
 const SidebarContainer = styled.div<{ width?: string }>`
   ${({ width = "240px" }) => `flex: 0 0 ${width};`}
+  position: relative;
   background: ${Colors.white};
   border-left: 1px solid ${Colors.black100};
   border-right: 1px solid ${Colors.black100};
@@ -142,8 +145,6 @@ const SidebarContainer = styled.div<{ width?: string }>`
   > * {
     box-sizing: border-box;
   }
-
-  overflow-y: auto;
 `;
 
 const DataSaverRoot = styled.div`
@@ -701,7 +702,7 @@ const EditorContent = ({
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
   const [showLeftSidebar, setShowLeftSidebar] = useState<TLeftSidebar | null>(
-    null,
+    "sections",
   );
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(
@@ -743,6 +744,9 @@ const EditorContent = ({
   };
 
   const sidebarNodeRef = useRef<HTMLDivElement | null>(null);
+  // Separate ref for the left sidebar so it doesn't collide with the right
+  // sidebar (both can be mounted at the same time).
+  const leftSidebarNodeRef = useRef<HTMLDivElement | null>(null);
 
   const [editableData, form] = useForm({
     id: "easyblocks-editor",
@@ -1401,18 +1405,11 @@ const EditorContent = ({
             />
             <SidebarAndContentContainer height={appHeight}>
               {showLeftSidebar && isEditMode && (
-                <SidebarContainer
-                  id="editor-layer"
-                  width="280px"
-                  ref={sidebarNodeRef}
-                >
-                  {showLeftSidebar === "global-sections" ? (
-                    <EditorGlobalSections
-                      globalSections={props.config.globalSections}
-                    />
-                  ) : null}
-                  {showLeftSidebar === "layers" ? <EditorLayer /> : null}
-                </SidebarContainer>
+                <EditorLeftSidebar
+                  showLeftSidebar={showLeftSidebar}
+                  globalSections={props.config.globalSections}
+                  sidebarNodeRef={leftSidebarNodeRef}
+                />
               )}
               <ContentContainer
                 onClick={() => {
