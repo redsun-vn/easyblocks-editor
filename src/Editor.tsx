@@ -1406,7 +1406,9 @@ const EditorContent = ({
             <SidebarAndContentContainer height={appHeight}>
               {showLeftSidebar && isEditMode && (
                 <EditorLeftSidebar
-                  showLeftSidebar={showLeftSidebar}
+                  showLeftSidebar={
+                    mode === "admin-template" ? null : showLeftSidebar
+                  }
                   globalSections={props.config.globalSections}
                   sidebarNodeRef={leftSidebarNodeRef}
                 />

@@ -8269,7 +8269,7 @@ const EditorLeftSidebar = ({
           };
         }
     }
-  }, [showLeftSidebar, globalSections]);
+  }, [showLeftSidebar]);
   return /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarRoot, {
     id: sidebarConfig.id,
     width: sidebarConfig.width,
@@ -9169,7 +9169,7 @@ const EditorContent = ({
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
     height: appHeight
   }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default.createElement(EditorLeftSidebar, {
-    showLeftSidebar: showLeftSidebar,
+    showLeftSidebar: mode === "admin-template" ? null : showLeftSidebar,
     globalSections: props.config.globalSections,
     sidebarNodeRef: leftSidebarNodeRef
   }), /*#__PURE__*/React__default.createElement(ContentContainer, {
