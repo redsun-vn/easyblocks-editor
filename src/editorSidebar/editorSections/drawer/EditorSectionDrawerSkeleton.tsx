@@ -2,8 +2,9 @@ import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React from "react";
 import styled, { keyframes } from "styled-components";
 
-// Loading placeholder for the section drawer gallery: a title bar on top and a
-// 4-column grid of card skeletons (preview rect + label pill below).
+// Loading placeholder for the section drawer gallery body: a 3-column grid of
+// card skeletons (preview rect + label pill below). The drawer renders the
+// title + close header persistently, so it is not part of this skeleton.
 const SKELETON_CARDS = 6;
 
 const pulse = keyframes`
@@ -34,14 +35,14 @@ const StyledCard = styled.div`
 const StyledPreview = styled.div`
   width: 100%;
   aspect-ratio: 16 / 10;
-  border-radius: 6px;
+  border-radius: 2px;
   background: ${Colors.black10};
 `;
 
 const StyledPill = styled.div`
   width: 70%;
   height: 12px;
-  border-radius: 6px;
+  border-radius: 2px;
   background: ${Colors.black10};
 `;
 

@@ -52,7 +52,6 @@ const StyledThumbnail = styled.img`
 `;
 
 const StyledLabel = styled(Typography)`
-  font-weight: 700;
   text-align: center !important;
   white-space: nowrap;
   overflow: hidden;

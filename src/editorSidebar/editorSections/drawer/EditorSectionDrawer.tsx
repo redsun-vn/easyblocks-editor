@@ -1,4 +1,6 @@
 import { Colors } from "@redsun-vn/easyblocks-design-system";
+import { ButtonGhost } from "@redsun-vn/easyblocks-design-system/buttons";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
 import { Loader } from "@redsun-vn/easyblocks-design-system/Loader";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useState } from "react";
@@ -36,6 +38,27 @@ const StyledGrid = styled.div`
   gap: 16px 12px;
 `;
 
+// Persistent drawer header: section group title on the left, close button on the
+// right. Rendered in every state (loading/empty/loaded) so the close control is
+// always available and content never jumps.
+const StyledHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+
+// Truncate long group names with an ellipsis so the close button stays put and
+// the header never wraps to a second line in the fixed-width drawer.
+const StyledTitle = styled(Typography)`
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
 const StyledLoadMore = styled.div`
   display: flex;
   justify-content: center;
@@ -50,6 +73,8 @@ export const EditorSectionDrawer = ({
   onLoadMore,
   onAddTemplate,
   containerRef,
+  title,
+  onClose,
 }: {
   templates: TSectionTemplate[];
   isFetching?: boolean;
@@ -58,6 +83,8 @@ export const EditorSectionDrawer = ({
   onLoadMore?: () => void;
   onAddTemplate: (template: TSectionTemplate) => void;
   containerRef?: React.MutableRefObject<HTMLDivElement | null>;
+  title?: string;
+  onClose?: () => void;
 }) => {
   const { t } = useTranslation();
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -80,42 +107,58 @@ export const EditorSectionDrawer = ({
     }
   };
 
-  if (isFetching) {
-    return (
-      <StyledEditorSectionDrawer ref={containerRef}>
-        <EditorSectionDrawerSkeleton />
-      </StyledEditorSectionDrawer>
-    );
-  }
+  // Persistent header (title + close) shown in every state. The close button is
+  // always real and functional so the user can dismiss the drawer mid-load.
+  const header = (
+    <StyledHeader>
+      <StyledTitle variant="label" title={title}>
+        {title}
+      </StyledTitle>
+      <ButtonGhost
+        icon={Icons.Close}
+        hideLabel
+        showTooltip={false}
+        onClick={onClose}
+      >
+        Close
+      </ButtonGhost>
+    </StyledHeader>
+  );
 
-  if (!templates.length) {
-    return (
-      <StyledEditorSectionDrawer ref={containerRef}>
-        <Typography variant="body">{t("noData")}!</Typography>
-      </StyledEditorSectionDrawer>
+  let body: React.ReactNode;
+  if (isFetching) {
+    body = <EditorSectionDrawerSkeleton />;
+  } else if (!templates.length) {
+    body = <Typography variant="body">{t("noData")}!</Typography>;
+  } else {
+    body = (
+      <>
+        <StyledGrid>
+          {templates.map((template) => {
+            const id = template.template?.id ?? template.id;
+            return (
+              <EditorSectionDrawerCard
+                key={id}
+                template={template}
+                isLoading={loadingId === id}
+                onClick={() => handleAdd(template, id)}
+              />
+            );
+          })}
+        </StyledGrid>
+        {isLoadingMore ? (
+          <StyledLoadMore>
+            <Loader />
+          </StyledLoadMore>
+        ) : null}
+      </>
     );
   }
 
   return (
     <StyledEditorSectionDrawer ref={containerRef} onScroll={handleScroll}>
-      <StyledGrid>
-        {templates.map((template) => {
-          const id = template.template?.id ?? template.id;
-          return (
-            <EditorSectionDrawerCard
-              key={id}
-              template={template}
-              isLoading={loadingId === id}
-              onClick={() => handleAdd(template, id)}
-            />
-          );
-        })}
-      </StyledGrid>
-      {isLoadingMore ? (
-        <StyledLoadMore>
-          <Loader />
-        </StyledLoadMore>
-      ) : null}
+      {header}
+      {body}
     </StyledEditorSectionDrawer>
   );
 };

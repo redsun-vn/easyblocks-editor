@@ -403,6 +403,8 @@ export const EditorSections: React.FC = () => {
           onLoadMore={onLoadMore}
           onAddTemplate={onAddTemplate}
           containerRef={drawerRef}
+          title={hoveredSection}
+          onClose={() => setIsOpen(false)}
         />
       ) : null}
     </>

@@ -7755,7 +7755,7 @@ const StyledThumbnail = styled__default["default"].img.withConfig({
 const StyledLabel = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorSectionDrawerCard__StyledLabel",
   componentId: "sc-1g9htdu-4"
-})(["font-weight:700;text-align:center !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
+})(["text-align:center !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
 const EditorSectionDrawerCard = ({
   template,
   onClick,
@@ -7777,8 +7777,9 @@ const EditorSectionDrawerCard = ({
   }, label));
 };
 
-// Loading placeholder for the section drawer gallery: a title bar on top and a
-// 4-column grid of card skeletons (preview rect + label pill below).
+// Loading placeholder for the section drawer gallery body: a 3-column grid of
+// card skeletons (preview rect + label pill below). The drawer renders the
+// title + close header persistently, so it is not part of this skeleton.
 const SKELETON_CARDS = 6;
 const pulse$1 = styled.keyframes(["0%,100%{opacity:1;}50%{opacity:0.4;}"]);
 const StyledRoot = styled__default["default"].div.withConfig({
@@ -7796,11 +7797,11 @@ const StyledCard = styled__default["default"].div.withConfig({
 const StyledPreview = styled__default["default"].div.withConfig({
   displayName: "EditorSectionDrawerSkeleton__StyledPreview",
   componentId: "sc-1lbe0dn-3"
-})(["width:100%;aspect-ratio:16 / 10;border-radius:6px;background:", ";"], easyblocksDesignSystem.Colors.black10);
+})(["width:100%;aspect-ratio:16 / 10;border-radius:2px;background:", ";"], easyblocksDesignSystem.Colors.black10);
 const StyledPill = styled__default["default"].div.withConfig({
   displayName: "EditorSectionDrawerSkeleton__StyledPill",
   componentId: "sc-1lbe0dn-4"
-})(["width:70%;height:12px;border-radius:6px;background:", ";"], easyblocksDesignSystem.Colors.black10);
+})(["width:70%;height:12px;border-radius:2px;background:", ";"], easyblocksDesignSystem.Colors.black10);
 const EditorSectionDrawerSkeleton = () => /*#__PURE__*/React__default["default"].createElement(StyledRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledGrid$1, null, Array.from({
   length: SKELETON_CARDS
 }).map((_, index) => /*#__PURE__*/React__default["default"].createElement(StyledCard, {
@@ -7818,9 +7819,24 @@ const StyledGrid = styled__default["default"].div.withConfig({
   displayName: "EditorSectionDrawer__StyledGrid",
   componentId: "sc-bycoqx-1"
 })(["display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px;"]);
+
+// Persistent drawer header: section group title on the left, close button on the
+// right. Rendered in every state (loading/empty/loaded) so the close control is
+// always available and content never jumps.
+const StyledHeader = styled__default["default"].div.withConfig({
+  displayName: "EditorSectionDrawer__StyledHeader",
+  componentId: "sc-bycoqx-2"
+})(["display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px;"]);
+
+// Truncate long group names with an ellipsis so the close button stays put and
+// the header never wraps to a second line in the fixed-width drawer.
+const StyledTitle = styled__default["default"](Typography.Typography).withConfig({
+  displayName: "EditorSectionDrawer__StyledTitle",
+  componentId: "sc-bycoqx-3"
+})(["flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
 const StyledLoadMore = styled__default["default"].div.withConfig({
   displayName: "EditorSectionDrawer__StyledLoadMore",
-  componentId: "sc-bycoqx-2"
+  componentId: "sc-bycoqx-4"
 })(["display:flex;justify-content:center;padding:16px 0 4px;"]);
 const EditorSectionDrawer = ({
   templates,
@@ -7829,7 +7845,9 @@ const EditorSectionDrawer = ({
   hasMore,
   onLoadMore,
   onAddTemplate,
-  containerRef
+  containerRef,
+  title,
+  onClose
 }) => {
   const {
     t
@@ -7852,30 +7870,40 @@ const EditorSectionDrawer = ({
       onLoadMore();
     }
   };
+
+  // Persistent header (title + close) shown in every state. The close button is
+  // always real and functional so the user can dismiss the drawer mid-load.
+  const header = /*#__PURE__*/React__default["default"].createElement(StyledHeader, null, /*#__PURE__*/React__default["default"].createElement(StyledTitle, {
+    variant: "label",
+    title: title
+  }, title), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Close,
+    hideLabel: true,
+    showTooltip: false,
+    onClick: onClose
+  }, "Close"));
+  let body;
   if (isFetching) {
-    return /*#__PURE__*/React__default["default"].createElement(StyledEditorSectionDrawer, {
-      ref: containerRef
-    }, /*#__PURE__*/React__default["default"].createElement(EditorSectionDrawerSkeleton, null));
-  }
-  if (!templates.length) {
-    return /*#__PURE__*/React__default["default"].createElement(StyledEditorSectionDrawer, {
-      ref: containerRef
-    }, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
+    body = /*#__PURE__*/React__default["default"].createElement(EditorSectionDrawerSkeleton, null);
+  } else if (!templates.length) {
+    body = /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
       variant: "body"
-    }, t("noData"), "!"));
+    }, t("noData"), "!");
+  } else {
+    body = /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledGrid, null, templates.map(template => {
+      const id = template.template?.id ?? template.id;
+      return /*#__PURE__*/React__default["default"].createElement(EditorSectionDrawerCard, {
+        key: id,
+        template: template,
+        isLoading: loadingId === id,
+        onClick: () => handleAdd(template, id)
+      });
+    })), isLoadingMore ? /*#__PURE__*/React__default["default"].createElement(StyledLoadMore, null, /*#__PURE__*/React__default["default"].createElement(Loader.Loader, null)) : null);
   }
   return /*#__PURE__*/React__default["default"].createElement(StyledEditorSectionDrawer, {
     ref: containerRef,
     onScroll: handleScroll
-  }, /*#__PURE__*/React__default["default"].createElement(StyledGrid, null, templates.map(template => {
-    const id = template.template?.id ?? template.id;
-    return /*#__PURE__*/React__default["default"].createElement(EditorSectionDrawerCard, {
-      key: id,
-      template: template,
-      isLoading: loadingId === id,
-      onClick: () => handleAdd(template, id)
-    });
-  })), isLoadingMore ? /*#__PURE__*/React__default["default"].createElement(StyledLoadMore, null, /*#__PURE__*/React__default["default"].createElement(Loader.Loader, null)) : null);
+  }, header, body);
 };
 
 const StyledEditorSectionName = styled__default["default"].div.withConfig({
@@ -8227,7 +8255,9 @@ const EditorSections = () => {
     hasMore: hasMore,
     onLoadMore: onLoadMore,
     onAddTemplate: onAddTemplate,
-    containerRef: drawerRef
+    containerRef: drawerRef,
+    title: hoveredSection,
+    onClose: () => setIsOpen(false)
   }) : null);
 };
 
