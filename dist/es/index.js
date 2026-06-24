@@ -7717,10 +7717,20 @@ const StyledThumbnail = styled$1.img.withConfig({
   displayName: "EditorSectionDrawerCard__StyledThumbnail",
   componentId: "sc-1g9htdu-3"
 })(["width:100%;height:100%;object-fit:cover;"]);
+
+// Fallback label shown inside the preview box when there's no thumbnail.
+// Clamps to 2 lines then ellipsis (the box has vertical room from its
+// aspect-ratio). Full text is available via the card's title tooltip.
+const StyledPlaceholderLabel = styled$1(Typography).withConfig({
+  displayName: "EditorSectionDrawerCard__StyledPlaceholderLabel",
+  componentId: "sc-1g9htdu-4"
+})(["max-width:90px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;"]);
+
+// Bottom label: single line then ellipsis. Full text via the card's title.
 const StyledLabel = styled$1(Typography).withConfig({
   displayName: "EditorSectionDrawerCard__StyledLabel",
-  componentId: "sc-1g9htdu-4"
-})(["text-align:center !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
+  componentId: "sc-1g9htdu-5"
+})(["max-width:180px;text-align:center !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
 const EditorSectionDrawerCard = ({
   template,
   onClick,
@@ -7735,7 +7745,7 @@ const EditorSectionDrawerCard = ({
   }, /*#__PURE__*/React__default.createElement(StyledPreview$1, null, thumbnail ? /*#__PURE__*/React__default.createElement(StyledThumbnail, {
     src: thumbnail,
     alt: label
-  }) : /*#__PURE__*/React__default.createElement(Typography, {
+  }) : /*#__PURE__*/React__default.createElement(StyledPlaceholderLabel, {
     variant: "body"
   }, label), isLoading ? /*#__PURE__*/React__default.createElement(StyledLoadingOverlay, null, /*#__PURE__*/React__default.createElement(Loader, null)) : null), /*#__PURE__*/React__default.createElement(StyledLabel, {
     variant: "body"

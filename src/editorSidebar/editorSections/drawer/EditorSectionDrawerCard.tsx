@@ -51,7 +51,19 @@ const StyledThumbnail = styled.img`
   object-fit: cover;
 `;
 
+// Fallback label shown inside the preview box when there's no thumbnail.
+// Clamps to 2 lines then ellipsis (the box has vertical room from its
+// aspect-ratio). Full text is available via the card's title tooltip.
+const StyledPlaceholderLabel = styled(Typography)`
+  max-width: 90px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+`;
+
+// Bottom label: single line then ellipsis. Full text via the card's title.
 const StyledLabel = styled(Typography)`
+  max-width: 180px;
   text-align: center !important;
   white-space: nowrap;
   overflow: hidden;
@@ -76,7 +88,9 @@ export const EditorSectionDrawerCard = ({
         {thumbnail ? (
           <StyledThumbnail src={thumbnail} alt={label} />
         ) : (
-          <Typography variant="body">{label}</Typography>
+          <StyledPlaceholderLabel variant="body">
+            {label}
+          </StyledPlaceholderLabel>
         )}
         {isLoading ? (
           <StyledLoadingOverlay>
