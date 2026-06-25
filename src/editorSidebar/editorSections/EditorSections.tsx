@@ -1,10 +1,8 @@
 import {
   ComponentDefinitionShared,
-  ComponentSchemaProp,
   Template,
 } from "@redsun-vn/easyblocks-core";
 import {
-  findComponentDefinition,
   findComponentDefinitionById,
   normalize,
 } from "@redsun-vn/easyblocks-core/_internals";
@@ -17,8 +15,8 @@ import React, {
 } from "react";
 import styled from "styled-components";
 import { useEditorContext } from "../../EditorContext";
-import { unrollAcceptsFieldIntoComponents } from "../../unrollAcceptsFieldIntoComponents";
 import { getDefaultTemplateForDefinition } from "../../templates/getTemplates";
+import { getLocalComponents, getLocalGroups } from "./getLocalGroups";
 import { EditorSectionDrawer } from "./drawer/EditorSectionDrawer";
 import { EditorSectionGroup } from "./EditorSectionGroup";
 import { TOP_BAR_HEIGHT } from "../../EditorTopBar";
@@ -100,25 +98,16 @@ export const EditorSections: React.FC = () => {
   );
 
   // Local components: the components the root "data" field accepts. Sync.
-  const localComponents = useMemo(() => {
-    const schemaProp = findComponentDefinition(
-      editorContext.form.values,
-      editorContext,
-    )?.schema.find((x) => x.prop === "data") as ComponentSchemaProp;
-
-    return unrollAcceptsFieldIntoComponents(schemaProp?.accepts, editorContext);
-  }, [editorContext.form.values, editorContext.definitions]);
+  const localComponents = useMemo(
+    () => getLocalComponents(editorContext),
+    [editorContext.form.values, editorContext.definitions],
+  );
 
   // Local groups: the .group values of the accepted components.
-  const localGroups = useMemo(() => {
-    const groups = new Set<string>();
-    localComponents.forEach((component: any) => {
-      if (component.visible === false) return;
-      groups.add(component.group || "others");
-    });
-
-    return [...groups];
-  }, [localComponents]);
+  const localGroups = useMemo(
+    () => getLocalGroups(localComponents),
+    [localComponents],
+  );
 
   // Local-definition templates for the hovered group (default "Empty X"
   // templates built from the accepted components). Available synchronously.

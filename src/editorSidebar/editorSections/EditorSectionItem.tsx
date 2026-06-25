@@ -11,7 +11,7 @@ import {
 const StyledEditorSectionName = styled.div<{ hovered: boolean }>`
   font-size: var(--tina-font-size-0);
   display: block;
-  max-width: 240px;
+  max-width: 174px;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;

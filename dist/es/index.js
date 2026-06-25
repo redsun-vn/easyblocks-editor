@@ -31,6 +31,7 @@ import { RangeSlider } from '@redsun-vn/easyblocks-design-system/Slider';
 import { ChevronDownIcon } from '@redsun-vn/easyblocks-design-system/radix-ui/ReactIcons';
 import { RadixSelectTrigger, RadixSelectContent, RadixSelectViewport, RadixSelectItem, RadixSelectItemText, RadixSelectRoot, RadixSelectValue, RadixSelectPortal } from '@redsun-vn/easyblocks-design-system/radix-ui/ReactSelect';
 import { ToggleGroup, ToggleGroupItem } from '@redsun-vn/easyblocks-design-system/ToggleGroup';
+import { Autocomplete } from '@redsun-vn/easyblocks-design-system/Autocomplete';
 import { FormElement } from '@redsun-vn/easyblocks-design-system/FormElement';
 import { AccordionGroup } from '@redsun-vn/easyblocks-design-system/AccordionGroup';
 import { createForm as createForm$1, FORM_ERROR } from 'final-form';
@@ -4937,6 +4938,25 @@ const SkeletonEditor = () => {
   })))));
 };
 
+// Shared local-group derivation, used by both the EditorSections sidebar and the
+// TemplateModal group field so they show the same set of local component groups.
+
+// Components the root "data" field accepts (the local section components).
+const getLocalComponents = editorContext => {
+  const schemaProp = findComponentDefinition(editorContext.form.values, editorContext)?.schema.find(x => x.prop === "data");
+  return unrollAcceptsFieldIntoComponents(schemaProp?.accepts, editorContext);
+};
+
+// Distinct `.group` values of the visible local components ("others" when unset).
+const getLocalGroups = localComponents => {
+  const groups = new Set();
+  localComponents.forEach(component => {
+    if (component.visible === false) return;
+    groups.add(component.group || "others");
+  });
+  return [...groups];
+};
+
 const TemplateModal = props => {
   const [error, setError] = useState(null);
   const mode = props.action.mode;
@@ -4949,6 +4969,9 @@ const TemplateModal = props => {
   const {
     t
   } = useTranslation();
+  // Existing group names suggested in the group field's free-solo autocomplete.
+  const [groupOptions, setGroupOptions] = useState([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [template, setTemplate] = useState(() => {
     if (props.action.mode === "edit") {
       return props.action.template;
@@ -5030,6 +5053,31 @@ const TemplateModal = props => {
       setError(null);
     }
   }, [open]);
+
+  // Fetch existing group names (count API) to suggest in the group field.
+  // Same source pattern as EditorSections; failures are non-critical (the
+  // field stays free-solo, just without suggestions).
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingGroups(true);
+    backend.templates.getAll({
+      limit: 1
+    }).then(res => {
+      if (cancelled) return;
+      const count = res.count ?? {};
+      setGroupOptions(Object.keys(count).filter(g => (count[g]?.matchedCount ?? 0) > 0).sort());
+    }).catch(() => {}).finally(() => {
+      if (!cancelled) setIsLoadingGroups(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [backend]);
+
+  // Local component groups (same source as EditorSections), merged with the
+  // remote template groups so the field suggests the full group set.
+  const localGroups = useMemo(() => getLocalGroups(getLocalComponents(editorContext)), [editorContext.form.values, editorContext.definitions]);
+  const allGroups = useMemo(() => [...new Set([...localGroups, ...groupOptions])].sort(), [localGroups, groupOptions]);
   return /*#__PURE__*/React__default.createElement(Modal, {
     title: t("template.save.title"),
     isOpen: true,
@@ -5114,21 +5162,42 @@ const TemplateModal = props => {
       });
     },
     withBorder: true,
+    controlSize: "full-width",
     autoFocus: true
   })), /*#__PURE__*/React__default.createElement(FormElement, {
     name: "group",
     label: t("template.save.group")
-  }, /*#__PURE__*/React__default.createElement(Input, {
-    placeholder: t("template.save.group"),
-    value: group,
-    onChange: e => {
+  }, /*#__PURE__*/React__default.createElement(Autocomplete, {
+    freeSolo: true,
+    options: allGroups,
+    inputValue: group,
+    loading: isLoadingGroups,
+    loadingText: t("loading"),
+    onInputChange: (_event, value) => {
       setTemplate({
         ...template,
-        group: e.target.value
+        group: value
       });
     },
-    withBorder: true,
-    autoFocus: true
+    placeholder: t("template.save.group"),
+    noOptionsText: t("noData"),
+    getOptionLabel: option => option,
+    filterOptions: (options, {
+      inputValue
+    }) => {
+      const query = inputValue.trim().toLowerCase();
+      const matches = query ? options.filter(o => o.toLowerCase().includes(query)) : [...options];
+
+      // Append the raw typed value as a synthetic "add" entry when
+      // it's not already an existing group. Selecting it commits the
+      // raw string (via getOptionLabel); renderOption shows "+ Add".
+      const typed = inputValue.trim();
+      if (typed && !options.some(o => o === typed)) {
+        matches.push(typed);
+      }
+      return matches;
+    },
+    renderOption: option => allGroups.includes(option) ? option : `+ ${t("add")} "${option}"`
   })), /*#__PURE__*/React__default.createElement(FormElement, {
     name: "thumbnail",
     label: t("template.save.thumbnailLink"),
@@ -5152,6 +5221,7 @@ const TemplateModal = props => {
       });
     },
     withBorder: true,
+    controlSize: "full-width",
     autoFocus: true
   })), /*#__PURE__*/React__default.createElement("div", {
     style: {
@@ -7884,7 +7954,7 @@ const EditorSectionDrawer = ({
 const StyledEditorSectionName = styled$1.div.withConfig({
   displayName: "EditorSectionItem__StyledEditorSectionName",
   componentId: "sc-1li16rj-0"
-})(["font-size:var(--tina-font-size-0);display:block;max-width:240px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;cursor:pointer;border-radius:2px;padding:4px;", ""], ({
+})(["font-size:var(--tina-font-size-0);display:block;max-width:174px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;cursor:pointer;border-radius:2px;padding:4px;", ""], ({
   hovered
 }) => `${hovered ? `background: ${Colors.black10};` : ""}`);
 const EditorSectionItem = ({
@@ -7995,20 +8065,10 @@ const EditorSections = () => {
   }), [editorContext]);
 
   // Local components: the components the root "data" field accepts. Sync.
-  const localComponents = useMemo(() => {
-    const schemaProp = findComponentDefinition(editorContext.form.values, editorContext)?.schema.find(x => x.prop === "data");
-    return unrollAcceptsFieldIntoComponents(schemaProp?.accepts, editorContext);
-  }, [editorContext.form.values, editorContext.definitions]);
+  const localComponents = useMemo(() => getLocalComponents(editorContext), [editorContext.form.values, editorContext.definitions]);
 
   // Local groups: the .group values of the accepted components.
-  const localGroups = useMemo(() => {
-    const groups = new Set();
-    localComponents.forEach(component => {
-      if (component.visible === false) return;
-      groups.add(component.group || "others");
-    });
-    return [...groups];
-  }, [localComponents]);
+  const localGroups = useMemo(() => getLocalGroups(localComponents), [localComponents]);
 
   // Local-definition templates for the hovered group (default "Empty X"
   // templates built from the accepted components). Available synchronously.

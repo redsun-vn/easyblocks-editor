@@ -1,4 +1,5 @@
 import { Backend, Template } from "@redsun-vn/easyblocks-core";
+import { Autocomplete } from "@redsun-vn/easyblocks-design-system/Autocomplete";
 import {
   ButtonDanger,
   ButtonPrimary,
@@ -7,8 +8,12 @@ import { FormElement } from "@redsun-vn/easyblocks-design-system/FormElement";
 import { Input, InputFile } from "@redsun-vn/easyblocks-design-system/Input";
 import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
-import React, { MouseEvent, useEffect, useState } from "react";
+import React, { MouseEvent, useEffect, useMemo, useState } from "react";
 import { useEditorContext } from "./EditorContext";
+import {
+  getLocalComponents,
+  getLocalGroups,
+} from "./editorSidebar/editorSections/getLocalGroups";
 import {
   OpenTemplateModalAction,
   OpenTemplateModalActionCreate,
@@ -35,6 +40,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
 
   const toaster = useToaster();
   const { t } = useTranslation();
+  // Existing group names suggested in the group field's free-solo autocomplete.
+  const [groupOptions, setGroupOptions] = useState<string[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [template, setTemplate] = useState(() => {
     if (props.action.mode === "edit") {
       return props.action.template;
@@ -128,6 +136,43 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
       setError(null);
     }
   }, [open]);
+
+  // Fetch existing group names (count API) to suggest in the group field.
+  // Same source pattern as EditorSections; failures are non-critical (the
+  // field stays free-solo, just without suggestions).
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingGroups(true);
+    backend.templates
+      .getAll({ limit: 1 })
+      .then((res) => {
+        if (cancelled) return;
+        const count = res.count ?? {};
+        setGroupOptions(
+          Object.keys(count)
+            .filter((g) => (count[g]?.matchedCount ?? 0) > 0)
+            .sort(),
+        );
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setIsLoadingGroups(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [backend]);
+
+  // Local component groups (same source as EditorSections), merged with the
+  // remote template groups so the field suggests the full group set.
+  const localGroups = useMemo(
+    () => getLocalGroups(getLocalComponents(editorContext)),
+    [editorContext.form.values, editorContext.definitions],
+  );
+  const allGroups = useMemo(
+    () => [...new Set([...localGroups, ...groupOptions])].sort(),
+    [localGroups, groupOptions],
+  );
 
   return (
     <Modal
@@ -230,22 +275,47 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                 });
               }}
               withBorder={true}
+              controlSize="full-width"
               autoFocus
             />
           </FormElement>
 
           <FormElement name="group" label={t("template.save.group")}>
-            <Input
-              placeholder={t("template.save.group")}
-              value={group}
-              onChange={(e) => {
+            <Autocomplete
+              freeSolo
+              options={allGroups}
+              inputValue={group}
+              loading={isLoadingGroups}
+              loadingText={t("loading")}
+              onInputChange={(_event, value) => {
                 setTemplate({
                   ...template,
-                  group: e.target.value,
+                  group: value,
                 });
               }}
-              withBorder={true}
-              autoFocus
+              placeholder={t("template.save.group")}
+              noOptionsText={t("noData")}
+              getOptionLabel={(option) => option}
+              filterOptions={(options, { inputValue }) => {
+                const query = inputValue.trim().toLowerCase();
+                const matches = query
+                  ? options.filter((o) => o.toLowerCase().includes(query))
+                  : [...options];
+
+                // Append the raw typed value as a synthetic "add" entry when
+                // it's not already an existing group. Selecting it commits the
+                // raw string (via getOptionLabel); renderOption shows "+ Add".
+                const typed = inputValue.trim();
+                if (typed && !options.some((o) => o === typed)) {
+                  matches.push(typed);
+                }
+                return matches;
+              }}
+              renderOption={(option) =>
+                allGroups.includes(option)
+                  ? option
+                  : `+ ${t("add")} "${option}"`
+              }
             />
           </FormElement>
 
@@ -277,6 +347,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                 });
               }}
               withBorder={true}
+              controlSize="full-width"
               autoFocus
             />
           </FormElement>
