@@ -21,8 +21,9 @@ const StyledEditorSectionDrawer = styled.div`
   left: 198px;
   width: ${DRAWER_WIDTH}px;
   max-height: calc(100vh - 120px);
-  overflow-x: hidden;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: 16px;
   background: ${Colors.white};
   border: 1px solid ${Colors.black100};
@@ -30,6 +31,16 @@ const StyledEditorSectionDrawer = styled.div`
   z-index: var(--tina-z-index-5);
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
+`;
+
+// Scrollable body region. The drawer header lives outside this element so it
+// stays pinned while only the section grid scrolls. min-height: 0 lets this
+// flex child shrink below its content size so overflow-y can actually scroll.
+const StyledBody = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 `;
 
 const StyledGrid = styled.div`
@@ -156,9 +167,11 @@ export const EditorSectionDrawer = ({
   }
 
   return (
-    <StyledEditorSectionDrawer ref={containerRef} onScroll={handleScroll}>
+    <StyledEditorSectionDrawer>
       {header}
-      {body}
+      <StyledBody ref={containerRef} onScroll={handleScroll}>
+        {body}
+      </StyledBody>
     </StyledEditorSectionDrawer>
   );
 };
