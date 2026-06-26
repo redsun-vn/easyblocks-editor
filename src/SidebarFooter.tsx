@@ -111,8 +111,7 @@ export function SidebarFooter(props: {
       <IdWrapper>
         {showSaveAsTemplate ? (
           <ButtonWrapper>
-            {showSaveAsTemplate && (
-              // {showSaveAsTemplate && mode !== "admin" && (
+            {showSaveAsTemplate && mode !== "admin" && (
               <>
                 <ButtonSecondary
                   icon={Icons.Save1}
