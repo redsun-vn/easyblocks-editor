@@ -82,9 +82,7 @@ import {
   removeItems,
   replaceItems,
 } from "./editorActions";
-import { EditorGlobalSections } from "./editorSidebar/editorGlobalSections/EditorGlobalSections";
-import { EditorLayer } from "./editorSidebar/editorLayer/EditorLayer";
-import { EditorSections } from "./editorSidebar/editorSections/EditorSections";
+import { EditorLeftSidebar } from "./editorSidebar/EditorLeftSidebar";
 import { Form } from "./form";
 import { destinationResolver } from "./paste/destinationResolver";
 import { pasteManager } from "./paste/manager";
@@ -101,7 +99,6 @@ import {
 import { useDataSaver } from "./useDataSaver";
 import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShortcuts";
 import { useEditorHistory } from "./useEditorHistory";
-import { EditorLeftSidebar } from "./editorSidebar/EditorLeftSidebar";
 
 declare global {
   interface Window {
@@ -1328,23 +1325,9 @@ const EditorContent = ({
 
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
 
-  // const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-  //   if (!isDirty()) {
-  //     event.preventDefault();
-  //   }
-  // };
-
   useEffect(() => {
     Modal.setAppElement("#shopstory-app");
   }, []);
-
-  // useEffect(() => {
-  //   window.addEventListener("beforeunload", handleBeforeUnload);
-
-  //   return () => {
-  //     window.removeEventListener("beforeunload", handleBeforeUnload);
-  //   };
-  // }, [isDirty]);
 
   return (
     <div id={"shopstory-app"} style={{ height: appHeight, overflow: "hidden" }}>

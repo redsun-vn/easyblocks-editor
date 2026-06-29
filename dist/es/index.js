@@ -5629,169 +5629,6 @@ function takeLastOfEachParent(where) {
   return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
 }
 
-function includesAny(a, b) {
-  return a.some(i => b.includes(i));
-}
-
-function reconcile({
-  context,
-  templateId,
-  fieldName
-}) {
-  return item => {
-    if (!fieldName || !templateId) {
-      return item;
-    }
-    const contextMatches = item._itemProps?.[templateId]?.[fieldName] !== undefined;
-    if (contextMatches) {
-      return item;
-    }
-    return normalize({
-      ...item,
-      _itemProps: {
-        [templateId]: {
-          [fieldName]: {}
-        }
-      }
-    }, context);
-  };
-}
-
-const getTypes = schema => {
-  if (schema?.type === "component-collection" || schema?.type === "component") {
-    return schema.accepts;
-  }
-  return [];
-};
-const insertCommand = ({
-  context,
-  form,
-  schema,
-  templateId
-}) => {
-  const types = getTypes(schema);
-  const reconcileItem = reconcile({
-    context,
-    templateId,
-    fieldName: schema?.prop
-  });
-  return (path, index, item) => {
-    const itemDefinition = findComponentDefinition(item, context);
-    if (!itemDefinition) {
-      return null;
-    }
-    const itemTypes = [itemDefinition.id, ...normalizeToStringArray(itemDefinition.type)];
-    if (!includesAny(types, itemTypes)) {
-      return null;
-    }
-    const reconciledItem = reconcileItem(item);
-    const duplicatedItem = duplicateConfig(reconciledItem, context);
-    form.mutators.insert(path, index, duplicatedItem);
-    return `${path}.${index}`;
-  };
-};
-
-function getSchema(path, context) {
-  const parentDefinition = findComponentDefinitionById(path.parent?.templateId ?? "", context);
-  const schema = (parentDefinition?.schema ?? []).find(s => s.prop === path.parent?.fieldName);
-  return schema;
-}
-const toName = destination => [destination.parent?.path, destination.parent?.fieldName].filter(Boolean).join(".");
-const fixIndexInCollection = (index = 0, schema) => {
-  if (schema?.type === "component-collection") {
-    return index + 1;
-  }
-  return index;
-};
-function destinationResolver({
-  form,
-  context
-}) {
-  return function (initialDestinationPath) {
-    const resolvedDestinations = [];
-    const resolvedPaths = new Set();
-    const pathsQueue = [initialDestinationPath];
-    while (pathsQueue.length > 0) {
-      const path = pathsQueue.shift();
-      if (!path) {
-        continue;
-      }
-      if (resolvedPaths.has(path)) {
-        continue;
-      }
-      if (!dotNotationGet(form.values, path)) {
-        continue;
-      }
-      const parsed = parsePath(path, form);
-      const definition = findComponentDefinitionById(parsed.templateId ?? "", context);
-      if (!definition) {
-        continue;
-      }
-      const schema = getSchema(parsed, context);
-      resolvedDestinations.push({
-        index: fixIndexInCollection(parsed.index, schema),
-        name: toName(parsed),
-        insert: insertCommand({
-          context,
-          form,
-          schema,
-          templateId: parsed.parent?.templateId
-        })
-      });
-      for (const slot of definition.pasteSlots ?? []) {
-        const slotSchema = definition.schema.find(({
-          prop
-        }) => prop === slot);
-        if (!slotSchema) {
-          continue;
-        }
-        const slotPath = `${path}.${slot}`;
-        const slotValues = dotNotationGet(form.values, slotPath) ?? [];
-        if (slotValues.length === 0) {
-          resolvedDestinations.push({
-            name: slotPath,
-            index: 0,
-            insert: insertCommand({
-              context,
-              form,
-              schema: slotSchema,
-              templateId: definition.id
-            })
-          });
-        } else if (slotSchema.type === "component") {
-          pathsQueue.push(`${slotPath}.0`);
-        } else if (slotSchema.type === "component-collection") {
-          pathsQueue.push(...Array.from(Array(slotValues.length).keys()).map(idx => `${slotPath}.${idx}`).reverse());
-        }
-      }
-    }
-    return resolvedDestinations;
-  };
-}
-
-function pasteManager() {
-  const inserts = new Map();
-  return destinations => item => {
-    let i = 0;
-    while (i < destinations.length) {
-      const {
-        index,
-        name,
-        insert
-      } = destinations[i];
-      const path = `${name}.${index}`;
-      const latestDestinationInserts = inserts.get(path) ?? 0;
-      const result = insert(name, index + latestDestinationInserts, item);
-      if (result) {
-        inserts.set(path, latestDestinationInserts + 1);
-        return result;
-      }
-      i++;
-    }
-    return null;
-  };
-}
-
 const SelectionMoreActionsContainer = styled$1.div.withConfig({
   displayName: "Menu__SelectionMoreActionsContainer",
   componentId: "sc-7fauqp-0"
@@ -5848,1409 +5685,6 @@ const Menu = ({
     menu: menu
   })));
 };
-
-function editorVariable(name) {
-  return `--shopstory-editor-${name}`;
-}
-const BEFORE_ADD_BUTTON_DISPLAY = editorVariable("before-add-button-display");
-const BEFORE_ADD_BUTTON_TOP = editorVariable("before-add-button-top");
-const BEFORE_ADD_BUTTON_LEFT = editorVariable("before-add-button-left");
-const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
-const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
-const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
-
-const SelectionFrameActionsContainer = styled$1.div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
-  componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, Colors.white);
-const SelectionFrameActionsGroupButtons = styled$1.div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
-  componentId: "sc-1fta8jo-1"
-})(["display:flex;gap:2px;"]);
-const StyledButtonGroup$1 = styled$1.div.withConfig({
-  displayName: "SelectionFrameActions__StyledButtonGroup",
-  componentId: "sc-1fta8jo-2"
-})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
-const StyledMenu = styled$1.div.withConfig({
-  displayName: "SelectionFrameActions__StyledMenu",
-  componentId: "sc-1fta8jo-3"
-})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
-const SelectionMoreActions = ({
-  t
-}) => {
-  const editorContext = useEditorContext();
-  const router = new URLSearchParams(window.location.search);
-  const currentDocument = router.get("document") ?? "";
-  const toaster = useToaster();
-  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const inputRef = useRef(null);
-  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
-  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
-  const onRemoveGlobalSection = () => {
-    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
-    const groupName = currentSection?.[0];
-    if (groupName) {
-      setIsLoading(true);
-      editorContext.onGlobalSectionChange?.({
-        mode: "update",
-        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
-        label: currentSection?.[1].entities[currentEntry._id].label,
-        groupName,
-        entry: currentEntry
-      }).then(() => {
-        toaster.success(t("editor.sidebar.globalSections.removeGlobal.success"));
-        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
-          ...currentEntry,
-          _id: uniqueId()
-        });
-      }).catch(reason => {
-        toaster.error(reason);
-      }).finally(() => {
-        setIsLoading(false);
-      });
-    }
-  };
-  const menus = [{
-    id: "set-global",
-    label: t("editor.sidebar.globalSections.setGlobal"),
-    children: globalSectionGroups.map(globalSectionGroup => ({
-      id: globalSectionGroup.id,
-      label: globalSectionGroup.name,
-      onClick: () => setOpenConfirmGlobalSection({
-        groupName: globalSectionGroup.name
-      })
-    })),
-    isHidden: isAddedToPage
-  }, {
-    id: "remove-global",
-    label: t("editor.sidebar.globalSections.removeGlobal"),
-    isLoading,
-    isHidden: !isAddedToPage,
-    onClick: onRemoveGlobalSection
-  }];
-  const onClose = () => {
-    if (!isLoading) {
-      setOpenConfirmGlobalSection(null);
-    }
-  };
-  const onConfirmSetGlobalSection = () => {
-    if (!inputRef?.current?.value) {
-      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
-      return;
-    }
-    if (isLoading) {
-      return;
-    }
-    setIsLoading(true);
-    editorContext.onGlobalSectionChange?.({
-      mode: "update",
-      groupName: openConfirmGlobalSection?.groupName ?? "",
-      label: inputRef?.current?.value,
-      entry: currentEntry
-    }).then(() => {
-      setIsLoading(false);
-      toaster.success(t("editor.sidebar.globalSections.setGlobal.success"));
-      onClose();
-    }).catch(reason => {
-      setIsLoading(false);
-      toaster.error(reason);
-    });
-  };
-  const onEnter = e => {
-    if (e.code === "Enter" || e.code === "NumpadEnter") {
-      e.preventDefault();
-      e.stopPropagation();
-      onConfirmSetGlobalSection();
-    }
-  };
-  useEffect(() => {
-    if (openConfirmGlobalSection?.groupName) {
-      queueMicrotask(() => {
-        inputRef.current?.focus();
-      });
-    }
-  }, [openConfirmGlobalSection]);
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledMenu, null, /*#__PURE__*/React__default.createElement(Menu, {
-    menus: menus,
-    styles: {
-      top: "40px",
-      left: "80%"
-    }
-  })), /*#__PURE__*/React__default.createElement(Modal, {
-    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
-    isOpen: !!openConfirmGlobalSection,
-    onRequestClose: onClose,
-    mode: "fit",
-    height: "auto",
-    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
-      onClick: onClose
-    }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
-      isLoading: isLoading,
-      disabled: isLoading,
-      onClick: onConfirmSetGlobalSection
-    }, t("template.save.default")))
-  }, /*#__PURE__*/React__default.createElement(Input, {
-    ref: inputRef,
-    withBorder: true,
-    style: {
-      width: 300
-    },
-    onKeyDown: onEnter
-  })));
-};
-const SelectionFrameActions = ({
-  focussedField,
-  actions,
-  translationFiles,
-  contextParams,
-  editorMode
-}) => {
-  const {
-    t
-  } = getTranslation({
-    translationFiles,
-    contextParams
-  });
-  const [showMore, setShowMore] = useState(false);
-  return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, {
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.Duplicate,
-    hideLabel: true,
-    onClick: () => actions.duplicateItems(focussedField)
-  }, t("duplicate")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.Trash,
-    hideLabel: true,
-    onClick: () => actions.removeItems(focussedField)
-  }, t("delete")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.ArrowUp,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "top")
-  }, t("up")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.ArrowDown,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("down")), editorMode !== "admin-template" && /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.ThreeDotsHorizontal,
-    showTooltip: false,
-    hideLabel: true,
-    onClick: () => setShowMore(prev => !prev)
-  })), editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default.createElement(SelectionMoreActions, {
-    t: t
-  }) : null);
-};
-
-function AddButton({
-  position,
-  index,
-  offset,
-  onClick
-}) {
-  const [isOpen, setIsOpen] = React__default.useState(false);
-  const addBlockButtonRef = React__default.useRef(null);
-  const {
-    isOpen: isOpenTooltip,
-    tooltipProps,
-    triggerProps,
-    arrowProps
-  } = useTooltip();
-  const {
-    t
-  } = useTranslation();
-  const handleOpenBlockMenu = event => {
-    event.stopPropagation();
-    event.preventDefault();
-
-    // Custom add action
-    if (onClick) {
-      onClick();
-      return;
-    }
-  };
-  React__default.useEffect(() => {
-    const inactivateBlockMenu = () => setIsOpen(false);
-    document.addEventListener("mouseup", inactivateBlockMenu, false);
-    return () => document.removeEventListener("mouseup", inactivateBlockMenu);
-  }, []);
-  return /*#__PURE__*/React__default.createElement(AddButtonWrapper, _extends({
-    index: index,
-    offset: offset,
-    position: position,
-    isOpen: isOpen
-  }, triggerProps), isOpenTooltip && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, t("tooltip.add.section.blocks"))), /*#__PURE__*/React__default.createElement(AddIconButton, {
-    ref: addBlockButtonRef,
-    onClick: handleOpenBlockMenu,
-    isOpen: isOpen,
-    primary: true,
-    small: true
-  }, /*#__PURE__*/React__default.createElement("svg", {
-    strokeWidth: "3",
-    xmlns: "http://www.w3.org/2000/svg",
-    width: "18",
-    height: "18",
-    viewBox: "0 0 23 23",
-    fill: "none"
-  }, /*#__PURE__*/React__default.createElement("line", {
-    x1: "11.5",
-    y1: "4",
-    x2: "11.5",
-    y2: "19",
-    stroke: "currentColor"
-  }), /*#__PURE__*/React__default.createElement("line", {
-    x1: "4",
-    y1: "11.5",
-    x2: "19",
-    y2: "11.5",
-    stroke: "currentColor"
-  }))));
-}
-const AddIconButton = styled(IconButton).withConfig({
-  displayName: "AddButton__AddIconButton",
-  componentId: "sc-79bcl2-0"
-})(["display:flex;align-items:center;&:focus{outline:none !important;}", ";"], props => props.isOpen && css`
-      pointer-events: none;
-    `);
-const AddButtonWrapper = styled.div.withConfig({
-  displayName: "AddButton__AddButtonWrapper",
-  componentId: "sc-79bcl2-1"
-})(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;&:hover{transform:scale(1.2);transition:transform 0.1s ease-in-out;}"], ({
-  position
-}) => position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP, ({
-  position
-}) => position === "before" ? BEFORE_ADD_BUTTON_LEFT : AFTER_ADD_BUTTON_LEFT, ({
-  position
-}) => position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY);
-
-const Wrapper = styled.div.withConfig({
-  displayName: "SelectionFramestyles__Wrapper",
-  componentId: "sc-xqih8j-0"
-})(["position:absolute;top:0;left:0;bottom:0;right:0;display:grid;place-items:center;pointer-events:none;"]);
-const FrameWrapper = styled.div.attrs(({
-  width,
-  height,
-  transform
-}) => {
-  return {
-    style: {
-      width,
-      height,
-      transform
-    }
-  };
-}).withConfig({
-  displayName: "SelectionFramestyles__FrameWrapper",
-  componentId: "sc-xqih8j-1"
-})(["position:relative;z-index:1;display:grid;place-items:center;transform-origin:left;"]);
-
-function calculateAddButtonsProperties(direction, targetElementRect, viewport, containerElementRect) {
-  const halfButtonSize = Math.floor(ICON_BUTTON_SIZE / 2);
-  if (direction === "vertical") {
-    const beforeButtonTopOffset = Math.floor(targetElementRect.top - halfButtonSize);
-    const afterButtonTopOffset = Math.floor(targetElementRect.top + targetElementRect.height - halfButtonSize);
-    const buttonsLeftOffset = Math.floor(targetElementRect.left + targetElementRect.width / 2 - halfButtonSize);
-    const isBeforeButtonWithinViewport = isButtonWithinViewport({
-      top: beforeButtonTopOffset + halfButtonSize,
-      left: buttonsLeftOffset + halfButtonSize
-    }, viewport);
-    const isAfterButtonWithinViewport = isButtonWithinViewport({
-      top: afterButtonTopOffset + halfButtonSize,
-      left: buttonsLeftOffset + halfButtonSize
-    }, viewport);
-    if (containerElementRect) {
-      return {
-        before: {
-          top: beforeButtonTopOffset,
-          left: buttonsLeftOffset,
-          display: isBeforeButtonWithinViewport ? "block" : "none"
-        },
-        after: {
-          top: afterButtonTopOffset,
-          left: buttonsLeftOffset,
-          display: isAfterButtonWithinViewport ? "block" : "none"
-        }
-      };
-    } else {
-      return {
-        before: {
-          top: beforeButtonTopOffset,
-          left: buttonsLeftOffset,
-          display: isBeforeButtonWithinViewport ? "block" : "none"
-        },
-        after: {
-          top: afterButtonTopOffset,
-          left: buttonsLeftOffset,
-          display: isAfterButtonWithinViewport ? "block" : "none"
-        }
-      };
-    }
-  } else {
-    const buttonsTopOffset = Math.floor(targetElementRect.top + targetElementRect.height / 2 - halfButtonSize);
-    const beforeButtonLeftOffset = Math.floor(targetElementRect.left - halfButtonSize);
-    const afterButtonLeftOffset = Math.floor(targetElementRect.left + targetElementRect.width - halfButtonSize);
-    const isBeforeButtonWithinViewport = isButtonWithinViewport({
-      top: buttonsTopOffset + halfButtonSize,
-      left: beforeButtonLeftOffset + halfButtonSize
-    }, viewport);
-    const isAfterButtonWithinViewport = isButtonWithinViewport({
-      top: buttonsTopOffset + halfButtonSize,
-      left: afterButtonLeftOffset + halfButtonSize
-    }, viewport);
-    if (containerElementRect) {
-      return {
-        before: {
-          top: buttonsTopOffset,
-          left: beforeButtonLeftOffset,
-          display: isBeforeButtonWithinViewport ? "block" : "none"
-        },
-        after: {
-          top: buttonsTopOffset,
-          left: afterButtonLeftOffset,
-          display: isAfterButtonWithinViewport ? "block" : "none"
-        }
-      };
-    } else {
-      return {
-        before: {
-          top: buttonsTopOffset,
-          left: beforeButtonLeftOffset,
-          display: isBeforeButtonWithinViewport ? "block" : "none"
-        },
-        after: {
-          top: buttonsTopOffset,
-          left: afterButtonLeftOffset,
-          display: isAfterButtonWithinViewport ? "block" : "none"
-        }
-      };
-    }
-  }
-}
-function isButtonWithinViewport(target, viewport) {
-  return target.top >= 0 && target.top <= viewport.height && target.left >= 0 && target.left <= viewport.width;
-}
-
-function SelectionFrame({
-  width,
-  height,
-  transform,
-  editorMode
-}) {
-  const editorContext = useEditorContext();
-  const {
-    focussedField,
-    form,
-    actions,
-    translationFiles = {},
-    contextParams
-  } = editorContext;
-  const compiledFocusedField = focussedField.length === 1 ? pathToCompiledPath(focussedField[0], editorContext) : undefined;
-  const compiledComponentConfig = compiledFocusedField ? dotNotationGet(editorContext.compiledComponentConfig, compiledFocusedField) : undefined;
-  const {
-    direction = "vertical"
-  } = compiledComponentConfig?.__editing ?? {};
-  const isAddingEnabled = isAddingEnabledForSelectedFields(focussedField, editorContext);
-  useLayoutEffect(() => {
-    if (focussedField.length === 0) {
-      hideAddButtons();
-    }
-  }, [focussedField]);
-  useLayoutEffect(() => {
-    function handleSelectionFrameMessages(event) {
-      if (!isAddingEnabled) {
-        hideAddButtons();
-        return;
-      }
-      if (event.data.type === "@easyblocks-editor/selection-frame-position-changed") {
-        updateAddButtons(direction, event.data.payload.target, {
-          width,
-          height
-        }, event.data.payload.container);
-      }
-    }
-    window.addEventListener("message", handleSelectionFrameMessages);
-    return () => {
-      window.removeEventListener("message", handleSelectionFrameMessages);
-    };
-  }, [direction, height, isAddingEnabled, width]);
-  async function handleAddButtonClick(which) {
-    let path = focussedField.length === 1 ? focussedField[0] : undefined;
-    if (!path) {
-      return;
-    }
-    if (isConfigPathRichTextPart(path)) {
-      path = path.replace(RICH_TEXT_PART_CONFIG_PATH_REGEXP, "");
-    }
-    const {
-      parent,
-      index
-    } = parsePath(path, form);
-    if (!parent || index === undefined) {
-      return;
-    }
-    const definition = findComponentDefinitionById(parent.templateId, editorContext);
-    const schemaProp = definition?.schema.find(schemaProp => schemaProp.prop === parent.fieldName);
-    if (!schemaProp) {
-      return;
-    }
-    const parentPath = parent.path + (parent.path === "" ? "" : ".") + parent.fieldName;
-    const config = await actions.openComponentPicker({
-      path: parentPath
-    });
-    if (config) {
-      actions.insertItem({
-        name: schemaProp.type === "component-collection-localised" ? `${parentPath}.${editorContext.contextParams.locale}` : parentPath,
-        index: which === "before" ? index : index + 1,
-        block: config
-      });
-    }
-  }
-  return /*#__PURE__*/React__default.createElement(Wrapper, null, /*#__PURE__*/React__default.createElement(FrameWrapper, {
-    width: width,
-    height: height,
-    transform: transform
-  }, /*#__PURE__*/React__default.createElement(AddButton, {
-    position: "before",
-    onClick: () => handleAddButtonClick("before")
-  }), /*#__PURE__*/React__default.createElement(AddButton, {
-    position: "after",
-    onClick: () => handleAddButtonClick("after")
-  }), isAddingEnabled ? /*#__PURE__*/React__default.createElement(SelectionFrameActions, {
-    actions: actions,
-    focussedField: focussedField,
-    translationFiles: translationFiles,
-    contextParams: contextParams,
-    editorMode: editorMode
-  }) : null));
-}
-function updateAddButtons(direction, targetElementRect, viewport, containerElementRect) {
-  const {
-    after,
-    before
-  } = calculateAddButtonsProperties(direction, targetElementRect, viewport, containerElementRect);
-  setCssVariable(BEFORE_ADD_BUTTON_TOP, before.top + "px");
-  setCssVariable(BEFORE_ADD_BUTTON_LEFT, before.left + "px");
-  setCssVariable(AFTER_ADD_BUTTON_TOP, after.top + "px");
-  setCssVariable(AFTER_ADD_BUTTON_LEFT, after.left + "px");
-  setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, before.display);
-  setCssVariable(AFTER_ADD_BUTTON_DISPLAY, after.display);
-}
-function hideAddButtons() {
-  setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, "none");
-  setCssVariable(AFTER_ADD_BUTTON_DISPLAY, "none");
-}
-function setCssVariable(name, value) {
-  document.documentElement.style.setProperty(name, value.toString());
-}
-function isAddingEnabledForSelectedFields(focusedFields, editorContext) {
-  if (focusedFields.length === 0) {
-    return false;
-  } else if (focusedFields.length === 1) {
-    if (isConfigPathRichTextPart(focusedFields[0])) {
-      return false;
-    }
-    const {
-      parent
-    } = parsePath(focusedFields[0], editorContext.form);
-    if (!parent) return false;
-    const parentDefinition = findComponentDefinitionById(parent.templateId, editorContext);
-    const schemaProp = parentDefinition?.schema.find(schemaProp => schemaProp.prop === parent.fieldName);
-    if (!schemaProp) return false;
-    return isSchemaPropCollection(schemaProp);
-  } else {
-    return false;
-  }
-}
-
-function getDefaultTemplateForDefinition(def, editorContext) {
-  // Text has different way of building a default config
-  const config = def.id === "@easyblocks/rich-text" ? buildRichTextNoCodeEntry({
-    color: getDefaultTokenId(editorContext.theme.colors),
-    font: getDefaultTokenId(editorContext.theme.fonts)
-  }) : {
-    _component: def.id,
-    _id: uniqueId()
-  };
-  return {
-    id: `${def.id}_default`,
-    label: def.label ?? def.id,
-    entry: config,
-    isUserDefined: false,
-    group: def.group
-  };
-}
-function getDefaultTokenId(tokens) {
-  return Object.entries(tokens).find(([, value]) => value.isDefault)?.[0];
-}
-async function getTemplates(editorContext, configTemplates = [], query) {
-  const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates ? await editorContext.backend.templates.getAll(query) : {
-    items: [],
-    count: {}
-  };
-  const templates = getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates.items);
-  const textSearch = query?.filters?.split("@").find(filter => filter.includes("label:like:"))?.split("label:like:")[1];
-  const templatesFound = textSearch ? templates.filter(template => template.label?.toLowerCase().includes(textSearch.toLowerCase())) : templates;
-  return {
-    items: templatesFound,
-    count: remoteUserDefinedTemplates.count
-  };
-}
-function getNecessaryDefaultTemplates(components, templates, editorContext) {
-  const result = [];
-  components.forEach(component => {
-    const componentTemplates = templates.filter(template => template.entry._component === component.id);
-    if (componentTemplates.length === 0) {
-      result.push(getDefaultTemplateForDefinition(component, editorContext));
-    }
-  });
-  return result;
-}
-function normalizeTextLocales(config, editorContext) {
-  return configMap(config, editorContext, ({
-    value,
-    schemaProp
-  }) => {
-    if (schemaProp.type === "text") {
-      const firstDefinedValue = Object.values(value.value).filter(x => x !== null && x !== undefined)[0];
-      return {
-        ...value,
-        value: {
-          [getDefaultLocale(editorContext.locales).code]: firstDefinedValue
-        }
-      };
-    } else if (schemaProp.type === "component-collection-localised") {
-      const firstDefinedValue = Object.values(value).filter(x => x !== null && x !== undefined)[0];
-      return {
-        [getDefaultLocale(editorContext.locales).code]: firstDefinedValue
-      };
-    }
-    return value;
-  });
-}
-function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates) {
-  // If a component doesn't have a template, here's one added
-  const allBuiltinTemplates = [...configTemplates, ...getNecessaryDefaultTemplates(editorContext.definitions.components, configTemplates, editorContext)];
-  const allUserTemplates = [...remoteUserDefinedTemplates, ...allBuiltinTemplates];
-  const result = allUserTemplates.filter(template => {
-    const definition = findComponentDefinitionById(template.entry._component, editorContext);
-    if (!definition || definition.hideTemplates) {
-      return false;
-    }
-    return true;
-  }).map(template => {
-    const newTemplate = {
-      ...template,
-      entry: normalizeTextLocales(normalize({
-        ...template.entry,
-        _itemProps: {}
-      }, editorContext), editorContext)
-    };
-    return newTemplate;
-  });
-  return result;
-}
-
-class Form {
-  loading = false;
-  constructor({
-    id,
-    label,
-    fields,
-    actions,
-    buttons,
-    reset,
-    loadInitialValues,
-    onChange,
-    ...options
-  }) {
-    const initialValues = options.initialValues || {};
-    this.__type = options.__type || "form";
-    this.id = id;
-    this.label = label;
-    this.fields = fields || [];
-    this.onSubmit = options.onSubmit;
-    this.finalForm = createForm$1({
-      ...options,
-      initialValues,
-      onSubmit: this.handleSubmit,
-      mutators: {
-        ...arrayMutators,
-        ...options.mutators
-      }
-    });
-    this._reset = reset;
-    this.actions = actions || [];
-    this.buttons = buttons || {
-      save: "Save",
-      reset: "Reset"
-    };
-    this.updateFields(this.fields);
-    if (loadInitialValues) {
-      this.loading = true;
-      loadInitialValues().then(initialValues => {
-        this.updateInitialValues(initialValues);
-      }).finally(() => {
-        this.loading = false;
-      });
-    }
-    if (onChange) {
-      let firstUpdate = true;
-      this.subscribe(formState => {
-        if (firstUpdate) {
-          firstUpdate = false;
-        } else {
-          onChange(formState);
-        }
-      }, {
-        values: true
-      });
-    }
-  }
-
-  /**
-   * Returns the current values of the form.
-   *
-   * if the form is still loading it returns `undefined`.
-   */
-  get values() {
-    if (this.loading) {
-      return undefined;
-    }
-    return this.finalForm.getState().values || this.initialValues;
-  }
-
-  /**
-   * The values the form was initialized with.
-   */
-  get initialValues() {
-    return this.finalForm.getState().initialValues;
-  }
-
-  /**
-   * @deprecated Unnecessary indirection
-   */
-  updateFields(fields) {
-    this.fields = fields;
-  }
-
-  /**
-   * Subscribes to changes to the form. The subscriber will only be called when
-   * values specified in subscription change. A form can have many subscribers.
-   */
-  subscribe = (cb, options) => {
-    return this.finalForm.subscribe(cb, options);
-  };
-  handleSubmit = async (values, form, cb) => {
-    try {
-      const response = await this.onSubmit(values, form, cb);
-      form.initialize(values);
-      return response;
-    } catch (error) {
-      return {
-        [FORM_ERROR]: error
-      };
-    }
-  };
-
-  /**
-   * Changes the value of the given field.
-   *
-   * @param name
-   * @param value
-   */
-  change(name, value) {
-    if (process.env.NODE_ENV === "development") {
-      console.groupCollapsed("Change to", name === "" ? '""' : `"${name}"`);
-      console.log("Old config", this.values);
-      console.log("Old value", dotNotationGet(this.values, name));
-      this.finalForm.change(name, value);
-      console.log("New config", this.values);
-      console.log("New value", value);
-      console.groupEnd();
-      return;
-    }
-    return this.finalForm.change(name, value);
-  }
-  get mutators() {
-    return this.finalForm.mutators;
-  }
-
-  /**
-   * Updates multiple fields in the form.
-   *
-   * The updates are batched so that it only triggers one `onChange` event.
-   *
-   * In order to prevent disruptions to the user's editing experience this
-   * function will _not_ update the value of any field that is currently
-   * being edited.
-   *
-   * @param values
-   */
-  updateValues(values) {
-    this.finalForm.batch(() => {
-      const activePath = this.finalForm.getState().active;
-      if (!activePath) {
-        updateEverything(this.finalForm, values);
-      } else {
-        updateSelectively(this.finalForm, values);
-      }
-    });
-  }
-
-  /**
-   * Replaces the initialValues of the form without deleting the current values.
-   *
-   * This function is helpful when the initialValues are loaded asynchronously.
-   *
-   * @param initialValues
-   */
-  updateInitialValues(initialValues) {
-    this.finalForm.batch(() => {
-      const values = this.values || {};
-      this.finalForm.initialize(initialValues);
-      const activePath = this.finalForm.getState().active;
-      if (!activePath) {
-        updateEverything(this.finalForm, values);
-      } else {
-        updateSelectively(this.finalForm, values);
-      }
-    });
-  }
-}
-function updateEverything(form, values) {
-  Object.entries(values).forEach(([path, value]) => {
-    form.change(path, value);
-  });
-}
-function updateSelectively(form, values, prefix) {
-  const activePath = form.getState().active;
-  Object.entries(values).forEach(([name, value]) => {
-    const path = prefix ? `${prefix}.${name}` : name;
-    if (typeof value === "object") {
-      if (activePath.startsWith(path)) {
-        updateSelectively(form, value, path);
-      } else {
-        form.change(path, value);
-      }
-    } else if (path !== activePath) {
-      form.change(path, value);
-    }
-  });
-}
-
-/**
- * A hook that creates a form and updates it's watched properties.
- */
-function useForm({
-  loadInitialValues,
-  ...options
-}, watch = {}) {
-  /**
-   * `initialValues` will be usually be undefined if `loadInitialValues` is used.
-   *
-   * If the form helper is using `watch.values`, which would contain
-   * the current state of the form, then we set that to the `initialValues`
-   * so the form is initialized with some state.
-   *
-   * This is beneficial for SSR and will hopefully not be noticeable
-   * when editing the site as the actual `initialValues` will be set
-   * behind the scenes.
-   */
-  options.initialValues = options.initialValues || watch.values;
-  const [, setValues] = React__default.useState(options.initialValues);
-  const [form, setForm] = React__default.useState(() => {
-    return createForm(options, form => {
-      setValues(form.values);
-    });
-  });
-  React__default.useEffect(function () {
-    if (form.id === options.id) return;
-    setForm(createForm(options, form => {
-      setValues(form.values);
-    }));
-  }, [options.id]);
-  const [formIsLoading, setFormIsLoading] = React__default.useState(() => loadInitialValues ? true : false);
-  const loadFormData = React__default.useCallback(async () => {
-    if (loadInitialValues) {
-      setFormIsLoading(true);
-      await loadInitialValues().then(values => {
-        form.updateInitialValues(values);
-      }).finally(() => {
-        setFormIsLoading(false);
-      });
-    }
-  }, [form, setFormIsLoading]);
-  React__default.useEffect(() => {
-    loadFormData();
-  }, [form, loadFormData]);
-  useUpdateFormFields(form, watch.fields);
-  useUpdateFormLabel(form, watch.label);
-  useUpdateFormValues(form, watch.values);
-  return [form ? form.values : options.initialValues, form, formIsLoading];
-}
-function createForm(options, handleChange) {
-  const form = new Form(options);
-  form.subscribe(handleChange, {
-    values: true
-  });
-  return form;
-}
-
-/**
- * A React Hook that update's the `Form` if `fields` are changed.
- *
- * This hook is useful when dynamically creating fields, or updating
- * them via hot module replacement.
- */
-function useUpdateFormFields(form, fields) {
-  React__default.useEffect(() => {
-    if (typeof fields === "undefined") return;
-    form.updateFields(fields);
-  }, [form, fields]);
-}
-
-/**
- * A React Hook that update's the `Form` if the `label` is changed.
- *
- * This hook is useful when dynamically creating creating the label,
- * or updating it via hot module replacement.
- */
-function useUpdateFormLabel(form, label) {
-  React__default.useEffect(() => {
-    if (typeof label === "undefined") return;
-    form.label = label;
-  }, [form, label]);
-}
-
-/**
- * Updates the Form with new values.
- *
- * Only updates fields that are:
- *
- * 1. registered with the form
- * 2. not currently [active](https://final-form.org/docs/final-form/types/FieldState#active)
- *
- * This hook is useful when the form must be kept in sync with the data source.
- */
-function useUpdateFormValues(form, values) {
-  React__default.useEffect(() => {
-    if (typeof values === "undefined") return;
-    form.updateValues(values);
-  }, [form, values]);
-}
-
-/**
- * Outputs comparable config that is FULL COPY of config
- */
-function getConfigSnapshot(config) {
-  const strippedConfig = deepClone(config);
-  return strippedConfig;
-}
-
-function addLocalizedFlag(config, context) {
-  return configMap(config, context, ({
-    value,
-    schemaProp
-  }) => {
-    if (schemaProp.type === "text" && value.id?.startsWith("local.") || schemaProp.type === "component-collection-localised") {
-      return {
-        __localized: true,
-        ...value
-      };
-    }
-    return value;
-  });
-}
-
-/**
- * useDataSaver works in a realm of SINGLE CONFIG.
- * @param initialDocument
- * Data saver will use this document as a starting point. It can be `null` if there is no document yet.
- * Data saver will perform first save when any local change is detected.
- */
-function useDataSaver(initialDocument, editorContext, editorMode) {
-  const editorContextRef = useRef(editorContext);
-  const initialGlobalConfigs = useRef(deepClone(editorContextRef.current.globalSections));
-  const remoteDocument = useRef(initialDocument);
-  const toaster = useToaster();
-  const [isSaving, setIsSaving] = useState(false);
-  const {
-    t
-  } = getTranslation(editorContextRef.current);
-  const router = new URLSearchParams(window.location.search);
-  const themeId = router.get("themeId") ?? "";
-
-  /**
-   * This state variable is going to be used ONLY for comparison with local config in case of missing document.
-   * It's not going to change at any time during the lifecycle of this hook.
-   */
-  const [initialConfigInCaseOfMissingDocument] = useState(deepClone(editorContextRef.current.form.values));
-  const onTickRef = useRef(() => Promise.resolve());
-  const isConfigTheSame = () => {
-    const localConfig = editorContextRef.current.form.values;
-    const localConfigSnapshot = getConfigSnapshot(localConfig);
-    const previousConfig = remoteDocument.current ? remoteDocument.current.entry : initialConfigInCaseOfMissingDocument;
-    const previousConfigSnapshot = getConfigSnapshot(previousConfig);
-    if (editorMode === "admin-template") {
-      return deepCompare(localConfigSnapshot, previousConfigSnapshot);
-    }
-    return deepCompare(localConfigSnapshot, previousConfigSnapshot) && deepCompare(initialGlobalConfigs?.current ?? {}, editorContextRef.current.globalSections ?? {});
-  };
-  const onTick = async ({
-    mode
-  }) => {
-    // Playground mode is a special case, we don't want to save anything
-    if (editorContextRef.current.readOnly) {
-      return;
-    }
-    if (mode === "force") {
-      setIsSaving(true);
-    }
-    const localConfig = editorContextRef.current.form.values;
-    const localConfigSnapshot = getConfigSnapshot(localConfig);
-    const configToSaveWithLocalisedFlag = addLocalizedFlag(localConfigSnapshot, editorContextRef.current);
-    async function runSaveCallback() {
-      await editorContextRef.current.save(remoteDocument.current);
-    }
-
-    // New document
-    if (remoteDocument.current === null) {
-      console.debug("New document");
-
-      // There must be at least one change in order to create a new document, we're not storing empty temporary documents
-      if (isConfigTheSame()) {
-        console.debug("no change -> bye");
-        setIsSaving(false);
-        return;
-      }
-      console.debug("change detected! -> create");
-      const newDocument = await editorContextRef.current.backend.documents.create({
-        entry: configToSaveWithLocalisedFlag
-      });
-      remoteDocument.current = {
-        ...newDocument,
-        // @ts-ignore
-        config: {
-          config: configToSaveWithLocalisedFlag
-        }
-      };
-      await runSaveCallback();
-      setIsSaving(false);
-    }
-    // Document update
-    else {
-      console.debug("Existing document");
-      try {
-        const latestDocument = await editorContextRef.current.backend.documents.get({
-          id: remoteDocument.current.id,
-          themeId
-        });
-        const latestRemoteDocumentVersion = latestDocument.version ?? -1;
-        const isNewerDocumentVersionAvailable = remoteDocument.current.version < latestRemoteDocumentVersion;
-
-        // Newer version of document is available
-        if (isNewerDocumentVersionAvailable) {
-          console.debug("new remote version detected, updating");
-          if (!latestDocument) {
-            throw new Error("unexpected error");
-          }
-          const latestConfig = removeLocalizedFlag(latestDocument.entry, editorContextRef.current);
-          editorContextRef.current.actions.runChange(() => {
-            editorContextRef.current.form.change("", latestConfig);
-            return [];
-          });
-          remoteDocument.current = latestDocument;
-
-          // Notify when local config was modified
-          if (!isConfigTheSame()) {
-            console.debug("there were local changes -> notify");
-            editorContextRef.current.actions.notify("Remote changes detected, local changes have been overwritten.");
-          }
-          return;
-        }
-        // No remote change occurred
-        else {
-          if (isConfigTheSame()) {
-            console.debug("no local changes -> bye");
-            if (mode === "force") {
-              toaster.success(t("topBar.noLocalChange"));
-            }
-            // Let's do nothing, no remote and local change
-          } else {
-            console.debug("updating the document", remoteDocument.current.id);
-            const updatedPromises = [];
-            updatedPromises.push(editorContextRef.current.backend.documents.update({
-              id: remoteDocument.current.id,
-              entry: configToSaveWithLocalisedFlag,
-              version: remoteDocument.current.version
-            }, themeId));
-            if (mode === "force" && editorContextRef.current.backend.themes) {
-              if (editorMode !== "admin-template") {
-                updatedPromises.push(editorContextRef.current.backend.themes?.syncConfig({
-                  themeId
-                }));
-              }
-              initialGlobalConfigs.current = deepClone(editorContextRef.current.globalSections);
-            }
-            const [_updatedDocument, _updateThemeSuccess] = await Promise.all(updatedPromises);
-            const updatedDocument = _updatedDocument;
-            const updateThemeSuccess = _updateThemeSuccess;
-            if (updatedDocument?.id) {
-              remoteDocument.current.version = updatedDocument.version;
-              toaster.success(t("topBar.saved"));
-            } else if (!updatedDocument?.id) {
-              toaster.error(t("topBar.save.error"));
-            }
-            if (editorMode !== "admin-template") {
-              if (mode === "force" && updateThemeSuccess) {
-                toaster.success(t("editor.sidebar.globalSections.save.success"));
-              } else if (mode === "force" && !updateThemeSuccess) {
-                toaster.error(t("editor.sidebar.globalSections.save.error"));
-              }
-            }
-            remoteDocument.current.entry = localConfigSnapshot;
-            await runSaveCallback();
-          }
-        }
-      } catch (error) {
-        toaster.error(t("topBar.save.error"));
-      } finally {
-        setIsSaving(false);
-      }
-    }
-  };
-
-  // We're keeping this in ref, because of setInterval keeping initial closure
-  onTickRef.current = () => onTick({
-    mode: "auto"
-  });
-  const inProgress = useRef(false);
-  const wasSaveNowCalled = useRef(false);
-  const messageHandler = async event => {
-    const {
-      id,
-      type
-    } = event.data;
-    if (type === "@easyblocks/content-saved-status") {
-      event.source.postMessage({
-        id,
-        type: "@easyblocks/content-saved-status",
-        payload: {
-          isSavedDocument: isConfigTheSame()
-        }
-      }, "*");
-    }
-  };
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // We ignore ticks when previous requests are in progress
-      if (inProgress.current || wasSaveNowCalled.current) {
-        return;
-      }
-      inProgress.current = true;
-      onTickRef.current().finally(() => {
-        inProgress.current = false;
-      });
-    }, 60000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-  useEffect(() => {
-    window.addEventListener("message", messageHandler);
-    return () => window.removeEventListener("message", messageHandler);
-  }, []);
-  useEffect(() => {
-    editorContextRef.current = editorContext;
-  }, [editorContext]);
-  return {
-    isSaving,
-    isDirty: isConfigTheSame,
-    saveNow: async () => {
-      wasSaveNowCalled.current = true;
-
-      // Wait until inProgress is false
-      while (true) {
-        if (inProgress.current) {
-          console.debug("waiting...");
-          await sleep(500);
-        } else {
-          break;
-        }
-      }
-      console.debug("Last save!");
-      await onTick({
-        mode: "force"
-      });
-    }
-  };
-}
-
-const GLOBAL_SHORTCUTS_KEYS = ["Delete", "Backspace", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "l", "L"
-// "s",
-// "S",
-];
-const DATA_TRANSFER_FORMAT = "text/x-shopstory";
-function useEditorGlobalKeyboardShortcuts(editorContext) {
-  let isDeleting = false;
-  let pasteId;
-  const debouncedMoveItemsRef = useRef(debounce((actions, fields, direction) => {
-    actions.moveItems(fields, direction);
-  }, 100, {
-    leading: true,
-    trailing: false
-  }));
-  useEffect(() => {
-    const {
-      focussedField: focusedFields,
-      actions
-    } = editorContext;
-    const debouncedMoveItems = debouncedMoveItemsRef.current;
-    function handleKeydown(event) {
-      if (isTargetInputElement(event.target)) {
-        return;
-      }
-      if (!isGlobalShortcut(event)) {
-        return;
-      }
-      if (isAnyFieldSelected(focusedFields)) {
-        if ((event.key === "Delete" || event.key === "Backspace") && !isDeleting) {
-          isDeleting = true;
-          actions.removeItems(focusedFields);
-          setTimeout(() => {
-            isDeleting = false;
-          }, 2000);
-        } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-          debouncedMoveItems(actions, focusedFields, "top");
-        } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-          debouncedMoveItems(actions, focusedFields, "bottom");
-        } else if (event.key.toUpperCase() === "L") {
-          actions.logSelectedItems();
-        }
-      }
-
-      // if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
-      //   event.preventDefault();
-      //   saveNow?.();
-      // }
-    }
-    function handleCopy(event) {
-      if (!canHandleCopyPaste(focusedFields, event)) {
-        return;
-      }
-      const configs = getConfigsToCopy(focusedFields, editorContext);
-      const json = JSON.stringify(configs);
-      event.preventDefault();
-      // Custom MIME for in-editor paste fidelity; text/plain so OS clipboard
-      // surfaces the JSON to external apps.
-      event.clipboardData?.setData(DATA_TRANSFER_FORMAT, json);
-      event.clipboardData?.setData("text/plain", json);
-    }
-    function handleCut(event) {
-      if (!canHandleCopyPaste(focusedFields, event)) {
-        return;
-      }
-      const configs = getConfigsToCopy(focusedFields, editorContext);
-      const json = JSON.stringify(configs);
-      event.preventDefault();
-      event.clipboardData?.setData(DATA_TRANSFER_FORMAT, json);
-      event.clipboardData?.setData("text/plain", json);
-      actions.removeItems(focusedFields);
-    }
-    function handlePaste(event) {
-      const rawData = event.clipboardData?.getData(DATA_TRANSFER_FORMAT);
-      clearTimeout(pasteId);
-      pasteId = setTimeout(() => {
-        if (!canHandleCopyPaste(focusedFields, event)) {
-          return;
-        }
-        if (!rawData || rawData === "") {
-          return;
-        }
-        try {
-          const parsedData = JSON.parse(rawData);
-          const data = Array.isArray(parsedData) ? parsedData : [parsedData];
-          actions.pasteItems(data);
-          event.preventDefault();
-        } catch (e) {
-          console.error(e);
-          return;
-        }
-      }, 200);
-    }
-    window.document.addEventListener("keydown", handleKeydown);
-    window.document.addEventListener("copy", handleCopy);
-    window.document.addEventListener("cut", handleCut);
-    window.document.addEventListener("paste", handlePaste);
-    return () => {
-      window.document.removeEventListener("keydown", handleKeydown);
-      window.document.removeEventListener("copy", handleCopy);
-      window.document.removeEventListener("cut", handleCut);
-      window.document.removeEventListener("paste", handlePaste);
-    };
-  });
-  useEffect(() => {
-    return () => {
-      debouncedMoveItemsRef.current.cancel();
-    };
-  }, []);
-}
-function isTargetInputElement(target) {
-  return isTargetHtmlElement(target) && (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.tagName === "DIV" && target.getAttribute("role") === "textbox");
-}
-function isTargetHtmlElement(element) {
-  return element !== null;
-}
-function getConfigsToCopy(paths, editorContext) {
-  const sortedPaths = [...paths].sort(preOrderPathComparator("ascending"));
-  return sortedPaths.map(path => {
-    const config = dotNotationGet(editorContext.form.values, path);
-    return duplicateConfig(config, editorContext);
-  });
-}
-function canHandleCopyPaste(focusedFields, event) {
-  const notInsideInputElement = !(isTargetInputElement(event.target) || isTargetInputElement(document.activeElement));
-  const insideEditorIFrame = window.frameElement;
-  const focusedFieldsSelected = isAnyFieldSelected(focusedFields);
-  return notInsideInputElement && insideEditorIFrame && focusedFieldsSelected;
-}
-function isGlobalShortcut(event) {
-  return GLOBAL_SHORTCUTS_KEYS.includes(event.key);
-}
-
-// FIXME: This is my mistake, because I was lazy at the beginning and it was easier for me to introduce changes
-// by assuming that non empty array with empty string means no fields selected.
-// IMO this is stupid and can lead to confusion.
-function isAnyFieldSelected(focusedFields) {
-  return focusedFields.length > 0 && focusedFields[0] !== "";
-}
-
-const HISTORY_SIZE = 50;
-class EditorHistory {
-  constructor() {
-    this.values = [];
-    this.currentIndex = -1;
-  }
-  push(value) {
-    const isCurrentIndexLastEntry = this.values.length - 1 === this.currentIndex;
-
-    // If we push to history while `currentIndex` is not set on latest history entry
-    // our history would me messed up. We need to rewrite our history by removing all
-    // entries after the current index.
-    if (!isCurrentIndexLastEntry) {
-      this.values.splice(this.currentIndex + 1, this.values.length - 1 - this.currentIndex);
-    }
-    const isAboutToReachSizeLimit = this.values.length + 1 > HISTORY_SIZE;
-    if (isAboutToReachSizeLimit) {
-      this.values.shift();
-    }
-    this.values.push(value);
-    this.currentIndex = this.values.length - 1;
-  }
-  replace(value) {
-    this.values[this.currentIndex] = value;
-  }
-  replaceAt(oldValue, newValue) {
-    const entryIndex = this.values.findIndex(value => value.config === oldValue.config);
-    if (entryIndex !== -1) {
-      this.values[entryIndex] = newValue;
-    }
-  }
-  forward() {
-    if (!this.canGoForward()) {
-      this.currentIndex = this.values.length - 1;
-      return null;
-    }
-    const currentEntry = this.values[this.currentIndex];
-    while (this.canGoForward()) {
-      this.currentIndex += 1;
-      const nextEntry = this.values[this.currentIndex];
-      if (!deepCompare(nextEntry.config, currentEntry.config)) {
-        return nextEntry;
-      }
-    }
-    return null;
-  }
-  back() {
-    if (!this.canGoBack()) {
-      return null;
-    }
-    const currentEntry = this.values[this.currentIndex];
-    while (this.canGoBack()) {
-      this.currentIndex -= 1;
-      const previousEntry = this.values[this.currentIndex];
-      if (!deepCompare(previousEntry.config, currentEntry.config)) {
-        return previousEntry;
-      }
-    }
-    return null;
-  }
-  getEntries() {
-    return this.values.map(value => ({
-      ...value
-    }));
-  }
-  canGoForward() {
-    return this.currentIndex < this.values.length - 1;
-  }
-  canGoBack() {
-    return this.currentIndex > 0;
-  }
-  isNewest() {
-    return this.values.length === this.currentIndex + 1;
-  }
-  isOldest() {
-    return this.currentIndex === 0;
-  }
-}
-
-function useEditorHistory({
-  onChange
-}) {
-  const editorHistory = useRef(new EditorHistory()).current;
-  function undo() {
-    ReactDOM.unstable_batchedUpdates(() => {
-      const entry = editorHistory.back();
-      if (entry === null) {
-        return;
-      }
-      const {
-        focussedField,
-        ...rest
-      } = entry;
-      onChange({
-        focusedField: focussedField,
-        ...rest,
-        type: "undo"
-      });
-    });
-  }
-  function redo() {
-    ReactDOM.unstable_batchedUpdates(() => {
-      const entry = editorHistory.forward();
-      if (!entry) {
-        return null;
-      }
-      const {
-        focussedField,
-        ...rest
-      } = entry;
-      onChange({
-        focusedField: focussedField,
-        ...rest,
-        type: "redo"
-      });
-    });
-  }
-  function push(entry) {
-    editorHistory.push(entry);
-  }
-  return {
-    push,
-    redo,
-    undo,
-    editorHistoryInstance: editorHistory
-  };
-}
 
 const StyledEditorGlobalSectionItem = styled$1.div.withConfig({
   displayName: "EditorGlobalSectionItem__StyledEditorGlobalSectionItem",
@@ -7402,7 +5836,7 @@ const StyledEditorGlobalSectionGroup = styled$1(Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
   componentId: "sc-1fxbds7-2"
 })(["padding:10px 0px;"]);
-const StyledButtonGroup = styled$1.div.withConfig({
+const StyledButtonGroup$1 = styled$1.div.withConfig({
   displayName: "EditorGlobalSections__StyledButtonGroup",
   componentId: "sc-1fxbds7-3"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
@@ -7504,7 +5938,7 @@ const EditorGlobalSections = ({
       onRequestClose: onCloseConfirm,
       mode: "fit",
       height: "auto",
-      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
         onClick: onCloseConfirm
       }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
         isLoading: isLoading,
@@ -7520,7 +5954,7 @@ const EditorGlobalSections = ({
       onRequestClose: onCloseEditSection,
       mode: "fit",
       height: "auto",
-      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
         onClick: onCloseEditSection
       }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
         isLoading: isLoading,
@@ -7538,6 +5972,14 @@ const EditorGlobalSections = ({
     })));
   })));
 };
+
+/**
+ * Outputs comparable config that is FULL COPY of config
+ */
+function getConfigSnapshot(config) {
+  const strippedConfig = deepClone(config);
+  return strippedConfig;
+}
 
 const normalizeComponentLayers = (components, prefix = "data", _rootParentId) => {
   if (Array.isArray(components)) {
@@ -7760,6 +6202,94 @@ const EditorLayer = () => {
     layers: deferredLayers
   }) : null;
 };
+
+function getDefaultTemplateForDefinition(def, editorContext) {
+  // Text has different way of building a default config
+  const config = def.id === "@easyblocks/rich-text" ? buildRichTextNoCodeEntry({
+    color: getDefaultTokenId(editorContext.theme.colors),
+    font: getDefaultTokenId(editorContext.theme.fonts)
+  }) : {
+    _component: def.id,
+    _id: uniqueId()
+  };
+  return {
+    id: `${def.id}_default`,
+    label: def.label ?? def.id,
+    entry: config,
+    isUserDefined: false,
+    group: def.group
+  };
+}
+function getDefaultTokenId(tokens) {
+  return Object.entries(tokens).find(([, value]) => value.isDefault)?.[0];
+}
+async function getTemplates(editorContext, configTemplates = [], query) {
+  const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates ? await editorContext.backend.templates.getAll(query) : {
+    items: [],
+    count: {}
+  };
+  const templates = getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates.items);
+  const textSearch = query?.filters?.split("@").find(filter => filter.includes("label:like:"))?.split("label:like:")[1];
+  const templatesFound = textSearch ? templates.filter(template => template.label?.toLowerCase().includes(textSearch.toLowerCase())) : templates;
+  return {
+    items: templatesFound,
+    count: remoteUserDefinedTemplates.count
+  };
+}
+function getNecessaryDefaultTemplates(components, templates, editorContext) {
+  const result = [];
+  components.forEach(component => {
+    const componentTemplates = templates.filter(template => template.entry._component === component.id);
+    if (componentTemplates.length === 0) {
+      result.push(getDefaultTemplateForDefinition(component, editorContext));
+    }
+  });
+  return result;
+}
+function normalizeTextLocales(config, editorContext) {
+  return configMap(config, editorContext, ({
+    value,
+    schemaProp
+  }) => {
+    if (schemaProp.type === "text") {
+      const firstDefinedValue = Object.values(value.value).filter(x => x !== null && x !== undefined)[0];
+      return {
+        ...value,
+        value: {
+          [getDefaultLocale(editorContext.locales).code]: firstDefinedValue
+        }
+      };
+    } else if (schemaProp.type === "component-collection-localised") {
+      const firstDefinedValue = Object.values(value).filter(x => x !== null && x !== undefined)[0];
+      return {
+        [getDefaultLocale(editorContext.locales).code]: firstDefinedValue
+      };
+    }
+    return value;
+  });
+}
+function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedTemplates) {
+  // If a component doesn't have a template, here's one added
+  const allBuiltinTemplates = [...configTemplates, ...getNecessaryDefaultTemplates(editorContext.definitions.components, configTemplates, editorContext)];
+  const allUserTemplates = [...remoteUserDefinedTemplates, ...allBuiltinTemplates];
+  const result = allUserTemplates.filter(template => {
+    const definition = findComponentDefinitionById(template.entry._component, editorContext);
+    if (!definition || definition.hideTemplates) {
+      return false;
+    }
+    return true;
+  }).map(template => {
+    const newTemplate = {
+      ...template,
+      entry: normalizeTextLocales(normalize({
+        ...template.entry,
+        _itemProps: {}
+      }, editorContext), editorContext)
+    };
+    return newTemplate;
+  });
+  return result;
+}
 
 // Single template card shown in the section drawer gallery.
 // Preview box renders the template thumbnail when available, otherwise
@@ -8382,6 +6912,1503 @@ const EditorLeftSidebar = ({
     ref: sidebarNodeRef
   }, /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarTitle, null, sidebarConfig.title), /*#__PURE__*/React__default.createElement(HorizontalLine, null), /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarGroup, null, sidebarConfig.Component));
 };
+
+function includesAny(a, b) {
+  return a.some(i => b.includes(i));
+}
+
+function reconcile({
+  context,
+  templateId,
+  fieldName
+}) {
+  return item => {
+    if (!fieldName || !templateId) {
+      return item;
+    }
+    const contextMatches = item._itemProps?.[templateId]?.[fieldName] !== undefined;
+    if (contextMatches) {
+      return item;
+    }
+    return normalize({
+      ...item,
+      _itemProps: {
+        [templateId]: {
+          [fieldName]: {}
+        }
+      }
+    }, context);
+  };
+}
+
+const getTypes = schema => {
+  if (schema?.type === "component-collection" || schema?.type === "component") {
+    return schema.accepts;
+  }
+  return [];
+};
+const insertCommand = ({
+  context,
+  form,
+  schema,
+  templateId
+}) => {
+  const types = getTypes(schema);
+  const reconcileItem = reconcile({
+    context,
+    templateId,
+    fieldName: schema?.prop
+  });
+  return (path, index, item) => {
+    const itemDefinition = findComponentDefinition(item, context);
+    if (!itemDefinition) {
+      return null;
+    }
+    const itemTypes = [itemDefinition.id, ...normalizeToStringArray(itemDefinition.type)];
+    if (!includesAny(types, itemTypes)) {
+      return null;
+    }
+    const reconciledItem = reconcileItem(item);
+    const duplicatedItem = duplicateConfig(reconciledItem, context);
+    form.mutators.insert(path, index, duplicatedItem);
+    return `${path}.${index}`;
+  };
+};
+
+function getSchema(path, context) {
+  const parentDefinition = findComponentDefinitionById(path.parent?.templateId ?? "", context);
+  const schema = (parentDefinition?.schema ?? []).find(s => s.prop === path.parent?.fieldName);
+  return schema;
+}
+const toName = destination => [destination.parent?.path, destination.parent?.fieldName].filter(Boolean).join(".");
+const fixIndexInCollection = (index = 0, schema) => {
+  if (schema?.type === "component-collection") {
+    return index + 1;
+  }
+  return index;
+};
+function destinationResolver({
+  form,
+  context
+}) {
+  return function (initialDestinationPath) {
+    const resolvedDestinations = [];
+    const resolvedPaths = new Set();
+    const pathsQueue = [initialDestinationPath];
+    while (pathsQueue.length > 0) {
+      const path = pathsQueue.shift();
+      if (!path) {
+        continue;
+      }
+      if (resolvedPaths.has(path)) {
+        continue;
+      }
+      if (!dotNotationGet(form.values, path)) {
+        continue;
+      }
+      const parsed = parsePath(path, form);
+      const definition = findComponentDefinitionById(parsed.templateId ?? "", context);
+      if (!definition) {
+        continue;
+      }
+      const schema = getSchema(parsed, context);
+      resolvedDestinations.push({
+        index: fixIndexInCollection(parsed.index, schema),
+        name: toName(parsed),
+        insert: insertCommand({
+          context,
+          form,
+          schema,
+          templateId: parsed.parent?.templateId
+        })
+      });
+      for (const slot of definition.pasteSlots ?? []) {
+        const slotSchema = definition.schema.find(({
+          prop
+        }) => prop === slot);
+        if (!slotSchema) {
+          continue;
+        }
+        const slotPath = `${path}.${slot}`;
+        const slotValues = dotNotationGet(form.values, slotPath) ?? [];
+        if (slotValues.length === 0) {
+          resolvedDestinations.push({
+            name: slotPath,
+            index: 0,
+            insert: insertCommand({
+              context,
+              form,
+              schema: slotSchema,
+              templateId: definition.id
+            })
+          });
+        } else if (slotSchema.type === "component") {
+          pathsQueue.push(`${slotPath}.0`);
+        } else if (slotSchema.type === "component-collection") {
+          pathsQueue.push(...Array.from(Array(slotValues.length).keys()).map(idx => `${slotPath}.${idx}`).reverse());
+        }
+      }
+    }
+    return resolvedDestinations;
+  };
+}
+
+function pasteManager() {
+  const inserts = new Map();
+  return destinations => item => {
+    let i = 0;
+    while (i < destinations.length) {
+      const {
+        index,
+        name,
+        insert
+      } = destinations[i];
+      const path = `${name}.${index}`;
+      const latestDestinationInserts = inserts.get(path) ?? 0;
+      const result = insert(name, index + latestDestinationInserts, item);
+      if (result) {
+        inserts.set(path, latestDestinationInserts + 1);
+        return result;
+      }
+      i++;
+    }
+    return null;
+  };
+}
+
+function editorVariable(name) {
+  return `--shopstory-editor-${name}`;
+}
+const BEFORE_ADD_BUTTON_DISPLAY = editorVariable("before-add-button-display");
+const BEFORE_ADD_BUTTON_TOP = editorVariable("before-add-button-top");
+const BEFORE_ADD_BUTTON_LEFT = editorVariable("before-add-button-left");
+const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
+const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
+const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
+
+const SelectionFrameActionsContainer = styled$1.div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
+  componentId: "sc-1fta8jo-0"
+})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, Colors.white);
+const SelectionFrameActionsGroupButtons = styled$1.div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
+  componentId: "sc-1fta8jo-1"
+})(["display:flex;gap:2px;"]);
+const StyledButtonGroup = styled$1.div.withConfig({
+  displayName: "SelectionFrameActions__StyledButtonGroup",
+  componentId: "sc-1fta8jo-2"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const StyledMenu = styled$1.div.withConfig({
+  displayName: "SelectionFrameActions__StyledMenu",
+  componentId: "sc-1fta8jo-3"
+})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
+const SelectionMoreActions = ({
+  t
+}) => {
+  const editorContext = useEditorContext();
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+  const toaster = useToaster();
+  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef(null);
+  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
+  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
+  const onRemoveGlobalSection = () => {
+    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
+    const groupName = currentSection?.[0];
+    if (groupName) {
+      setIsLoading(true);
+      editorContext.onGlobalSectionChange?.({
+        mode: "update",
+        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
+        label: currentSection?.[1].entities[currentEntry._id].label,
+        groupName,
+        entry: currentEntry
+      }).then(() => {
+        toaster.success(t("editor.sidebar.globalSections.removeGlobal.success"));
+        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
+          ...currentEntry,
+          _id: uniqueId()
+        });
+      }).catch(reason => {
+        toaster.error(reason);
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    }
+  };
+  const menus = [{
+    id: "set-global",
+    label: t("editor.sidebar.globalSections.setGlobal"),
+    children: globalSectionGroups.map(globalSectionGroup => ({
+      id: globalSectionGroup.id,
+      label: globalSectionGroup.name,
+      onClick: () => setOpenConfirmGlobalSection({
+        groupName: globalSectionGroup.name
+      })
+    })),
+    isHidden: isAddedToPage
+  }, {
+    id: "remove-global",
+    label: t("editor.sidebar.globalSections.removeGlobal"),
+    isLoading,
+    isHidden: !isAddedToPage,
+    onClick: onRemoveGlobalSection
+  }];
+  const onClose = () => {
+    if (!isLoading) {
+      setOpenConfirmGlobalSection(null);
+    }
+  };
+  const onConfirmSetGlobalSection = () => {
+    if (!inputRef?.current?.value) {
+      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
+      return;
+    }
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      groupName: openConfirmGlobalSection?.groupName ?? "",
+      label: inputRef?.current?.value,
+      entry: currentEntry
+    }).then(() => {
+      setIsLoading(false);
+      toaster.success(t("editor.sidebar.globalSections.setGlobal.success"));
+      onClose();
+    }).catch(reason => {
+      setIsLoading(false);
+      toaster.error(reason);
+    });
+  };
+  const onEnter = e => {
+    if (e.code === "Enter" || e.code === "NumpadEnter") {
+      e.preventDefault();
+      e.stopPropagation();
+      onConfirmSetGlobalSection();
+    }
+  };
+  useEffect(() => {
+    if (openConfirmGlobalSection?.groupName) {
+      queueMicrotask(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [openConfirmGlobalSection]);
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledMenu, null, /*#__PURE__*/React__default.createElement(Menu, {
+    menus: menus,
+    styles: {
+      top: "40px",
+      left: "80%"
+    }
+  })), /*#__PURE__*/React__default.createElement(Modal, {
+    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
+    isOpen: !!openConfirmGlobalSection,
+    onRequestClose: onClose,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+      onClick: onClose
+    }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+      isLoading: isLoading,
+      disabled: isLoading,
+      onClick: onConfirmSetGlobalSection
+    }, t("template.save.default")))
+  }, /*#__PURE__*/React__default.createElement(Input, {
+    ref: inputRef,
+    withBorder: true,
+    style: {
+      width: 300
+    },
+    onKeyDown: onEnter
+  })));
+};
+const SelectionFrameActions = ({
+  focussedField,
+  actions,
+  translationFiles,
+  contextParams,
+  editorMode
+}) => {
+  const {
+    t
+  } = getTranslation({
+    translationFiles,
+    contextParams
+  });
+  const [showMore, setShowMore] = useState(false);
+  return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Duplicate,
+    hideLabel: true,
+    onClick: () => actions.duplicateItems(focussedField)
+  }, t("duplicate")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Trash,
+    hideLabel: true,
+    onClick: () => actions.removeItems(focussedField)
+  }, t("delete")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ArrowUp,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "top")
+  }, t("up")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ArrowDown,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "bottom")
+  }, t("down")), editorMode !== "admin-template" && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ThreeDotsHorizontal,
+    showTooltip: false,
+    hideLabel: true,
+    onClick: () => setShowMore(prev => !prev)
+  })), editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default.createElement(SelectionMoreActions, {
+    t: t
+  }) : null);
+};
+
+function AddButton({
+  position,
+  index,
+  offset,
+  onClick
+}) {
+  const [isOpen, setIsOpen] = React__default.useState(false);
+  const addBlockButtonRef = React__default.useRef(null);
+  const {
+    isOpen: isOpenTooltip,
+    tooltipProps,
+    triggerProps,
+    arrowProps
+  } = useTooltip();
+  const {
+    t
+  } = useTranslation();
+  const handleOpenBlockMenu = event => {
+    event.stopPropagation();
+    event.preventDefault();
+
+    // Custom add action
+    if (onClick) {
+      onClick();
+      return;
+    }
+  };
+  React__default.useEffect(() => {
+    const inactivateBlockMenu = () => setIsOpen(false);
+    document.addEventListener("mouseup", inactivateBlockMenu, false);
+    return () => document.removeEventListener("mouseup", inactivateBlockMenu);
+  }, []);
+  return /*#__PURE__*/React__default.createElement(AddButtonWrapper, _extends({
+    index: index,
+    offset: offset,
+    position: position,
+    isOpen: isOpen
+  }, triggerProps), isOpenTooltip && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, t("tooltip.add.section.blocks"))), /*#__PURE__*/React__default.createElement(AddIconButton, {
+    ref: addBlockButtonRef,
+    onClick: handleOpenBlockMenu,
+    isOpen: isOpen,
+    primary: true,
+    small: true
+  }, /*#__PURE__*/React__default.createElement("svg", {
+    strokeWidth: "3",
+    xmlns: "http://www.w3.org/2000/svg",
+    width: "18",
+    height: "18",
+    viewBox: "0 0 23 23",
+    fill: "none"
+  }, /*#__PURE__*/React__default.createElement("line", {
+    x1: "11.5",
+    y1: "4",
+    x2: "11.5",
+    y2: "19",
+    stroke: "currentColor"
+  }), /*#__PURE__*/React__default.createElement("line", {
+    x1: "4",
+    y1: "11.5",
+    x2: "19",
+    y2: "11.5",
+    stroke: "currentColor"
+  }))));
+}
+const AddIconButton = styled(IconButton).withConfig({
+  displayName: "AddButton__AddIconButton",
+  componentId: "sc-79bcl2-0"
+})(["display:flex;align-items:center;&:focus{outline:none !important;}", ";"], props => props.isOpen && css`
+      pointer-events: none;
+    `);
+const AddButtonWrapper = styled.div.withConfig({
+  displayName: "AddButton__AddButtonWrapper",
+  componentId: "sc-79bcl2-1"
+})(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;&:hover{transform:scale(1.2);transition:transform 0.1s ease-in-out;}"], ({
+  position
+}) => position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP, ({
+  position
+}) => position === "before" ? BEFORE_ADD_BUTTON_LEFT : AFTER_ADD_BUTTON_LEFT, ({
+  position
+}) => position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY);
+
+const Wrapper = styled.div.withConfig({
+  displayName: "SelectionFramestyles__Wrapper",
+  componentId: "sc-xqih8j-0"
+})(["position:absolute;top:0;left:0;bottom:0;right:0;display:grid;place-items:center;pointer-events:none;"]);
+const FrameWrapper = styled.div.attrs(({
+  width,
+  height,
+  transform
+}) => {
+  return {
+    style: {
+      width,
+      height,
+      transform
+    }
+  };
+}).withConfig({
+  displayName: "SelectionFramestyles__FrameWrapper",
+  componentId: "sc-xqih8j-1"
+})(["position:relative;z-index:1;display:grid;place-items:center;transform-origin:left;"]);
+
+function calculateAddButtonsProperties(direction, targetElementRect, viewport, containerElementRect) {
+  const halfButtonSize = Math.floor(ICON_BUTTON_SIZE / 2);
+  if (direction === "vertical") {
+    const beforeButtonTopOffset = Math.floor(targetElementRect.top - halfButtonSize);
+    const afterButtonTopOffset = Math.floor(targetElementRect.top + targetElementRect.height - halfButtonSize);
+    const buttonsLeftOffset = Math.floor(targetElementRect.left + targetElementRect.width / 2 - halfButtonSize);
+    const isBeforeButtonWithinViewport = isButtonWithinViewport({
+      top: beforeButtonTopOffset + halfButtonSize,
+      left: buttonsLeftOffset + halfButtonSize
+    }, viewport);
+    const isAfterButtonWithinViewport = isButtonWithinViewport({
+      top: afterButtonTopOffset + halfButtonSize,
+      left: buttonsLeftOffset + halfButtonSize
+    }, viewport);
+    if (containerElementRect) {
+      return {
+        before: {
+          top: beforeButtonTopOffset,
+          left: buttonsLeftOffset,
+          display: isBeforeButtonWithinViewport ? "block" : "none"
+        },
+        after: {
+          top: afterButtonTopOffset,
+          left: buttonsLeftOffset,
+          display: isAfterButtonWithinViewport ? "block" : "none"
+        }
+      };
+    } else {
+      return {
+        before: {
+          top: beforeButtonTopOffset,
+          left: buttonsLeftOffset,
+          display: isBeforeButtonWithinViewport ? "block" : "none"
+        },
+        after: {
+          top: afterButtonTopOffset,
+          left: buttonsLeftOffset,
+          display: isAfterButtonWithinViewport ? "block" : "none"
+        }
+      };
+    }
+  } else {
+    const buttonsTopOffset = Math.floor(targetElementRect.top + targetElementRect.height / 2 - halfButtonSize);
+    const beforeButtonLeftOffset = Math.floor(targetElementRect.left - halfButtonSize);
+    const afterButtonLeftOffset = Math.floor(targetElementRect.left + targetElementRect.width - halfButtonSize);
+    const isBeforeButtonWithinViewport = isButtonWithinViewport({
+      top: buttonsTopOffset + halfButtonSize,
+      left: beforeButtonLeftOffset + halfButtonSize
+    }, viewport);
+    const isAfterButtonWithinViewport = isButtonWithinViewport({
+      top: buttonsTopOffset + halfButtonSize,
+      left: afterButtonLeftOffset + halfButtonSize
+    }, viewport);
+    if (containerElementRect) {
+      return {
+        before: {
+          top: buttonsTopOffset,
+          left: beforeButtonLeftOffset,
+          display: isBeforeButtonWithinViewport ? "block" : "none"
+        },
+        after: {
+          top: buttonsTopOffset,
+          left: afterButtonLeftOffset,
+          display: isAfterButtonWithinViewport ? "block" : "none"
+        }
+      };
+    } else {
+      return {
+        before: {
+          top: buttonsTopOffset,
+          left: beforeButtonLeftOffset,
+          display: isBeforeButtonWithinViewport ? "block" : "none"
+        },
+        after: {
+          top: buttonsTopOffset,
+          left: afterButtonLeftOffset,
+          display: isAfterButtonWithinViewport ? "block" : "none"
+        }
+      };
+    }
+  }
+}
+function isButtonWithinViewport(target, viewport) {
+  return target.top >= 0 && target.top <= viewport.height && target.left >= 0 && target.left <= viewport.width;
+}
+
+function SelectionFrame({
+  width,
+  height,
+  transform,
+  editorMode
+}) {
+  const editorContext = useEditorContext();
+  const {
+    focussedField,
+    form,
+    actions,
+    translationFiles = {},
+    contextParams
+  } = editorContext;
+  const compiledFocusedField = focussedField.length === 1 ? pathToCompiledPath(focussedField[0], editorContext) : undefined;
+  const compiledComponentConfig = compiledFocusedField ? dotNotationGet(editorContext.compiledComponentConfig, compiledFocusedField) : undefined;
+  const {
+    direction = "vertical"
+  } = compiledComponentConfig?.__editing ?? {};
+  const isAddingEnabled = isAddingEnabledForSelectedFields(focussedField, editorContext);
+  useLayoutEffect(() => {
+    if (focussedField.length === 0) {
+      hideAddButtons();
+    }
+  }, [focussedField]);
+  useLayoutEffect(() => {
+    function handleSelectionFrameMessages(event) {
+      if (!isAddingEnabled) {
+        hideAddButtons();
+        return;
+      }
+      if (event.data.type === "@easyblocks-editor/selection-frame-position-changed") {
+        updateAddButtons(direction, event.data.payload.target, {
+          width,
+          height
+        }, event.data.payload.container);
+      }
+    }
+    window.addEventListener("message", handleSelectionFrameMessages);
+    return () => {
+      window.removeEventListener("message", handleSelectionFrameMessages);
+    };
+  }, [direction, height, isAddingEnabled, width]);
+  async function handleAddButtonClick(which) {
+    let path = focussedField.length === 1 ? focussedField[0] : undefined;
+    if (!path) {
+      return;
+    }
+    if (isConfigPathRichTextPart(path)) {
+      path = path.replace(RICH_TEXT_PART_CONFIG_PATH_REGEXP, "");
+    }
+    const {
+      parent,
+      index
+    } = parsePath(path, form);
+    if (!parent || index === undefined) {
+      return;
+    }
+    const definition = findComponentDefinitionById(parent.templateId, editorContext);
+    const schemaProp = definition?.schema.find(schemaProp => schemaProp.prop === parent.fieldName);
+    if (!schemaProp) {
+      return;
+    }
+    const parentPath = parent.path + (parent.path === "" ? "" : ".") + parent.fieldName;
+    const config = await actions.openComponentPicker({
+      path: parentPath
+    });
+    if (config) {
+      actions.insertItem({
+        name: schemaProp.type === "component-collection-localised" ? `${parentPath}.${editorContext.contextParams.locale}` : parentPath,
+        index: which === "before" ? index : index + 1,
+        block: config
+      });
+    }
+  }
+  return /*#__PURE__*/React__default.createElement(Wrapper, null, /*#__PURE__*/React__default.createElement(FrameWrapper, {
+    width: width,
+    height: height,
+    transform: transform
+  }, /*#__PURE__*/React__default.createElement(AddButton, {
+    position: "before",
+    onClick: () => handleAddButtonClick("before")
+  }), /*#__PURE__*/React__default.createElement(AddButton, {
+    position: "after",
+    onClick: () => handleAddButtonClick("after")
+  }), isAddingEnabled ? /*#__PURE__*/React__default.createElement(SelectionFrameActions, {
+    actions: actions,
+    focussedField: focussedField,
+    translationFiles: translationFiles,
+    contextParams: contextParams,
+    editorMode: editorMode
+  }) : null));
+}
+function updateAddButtons(direction, targetElementRect, viewport, containerElementRect) {
+  const {
+    after,
+    before
+  } = calculateAddButtonsProperties(direction, targetElementRect, viewport, containerElementRect);
+  setCssVariable(BEFORE_ADD_BUTTON_TOP, before.top + "px");
+  setCssVariable(BEFORE_ADD_BUTTON_LEFT, before.left + "px");
+  setCssVariable(AFTER_ADD_BUTTON_TOP, after.top + "px");
+  setCssVariable(AFTER_ADD_BUTTON_LEFT, after.left + "px");
+  setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, before.display);
+  setCssVariable(AFTER_ADD_BUTTON_DISPLAY, after.display);
+}
+function hideAddButtons() {
+  setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, "none");
+  setCssVariable(AFTER_ADD_BUTTON_DISPLAY, "none");
+}
+function setCssVariable(name, value) {
+  document.documentElement.style.setProperty(name, value.toString());
+}
+function isAddingEnabledForSelectedFields(focusedFields, editorContext) {
+  if (focusedFields.length === 0) {
+    return false;
+  } else if (focusedFields.length === 1) {
+    if (isConfigPathRichTextPart(focusedFields[0])) {
+      return false;
+    }
+    const {
+      parent
+    } = parsePath(focusedFields[0], editorContext.form);
+    if (!parent) return false;
+    const parentDefinition = findComponentDefinitionById(parent.templateId, editorContext);
+    const schemaProp = parentDefinition?.schema.find(schemaProp => schemaProp.prop === parent.fieldName);
+    if (!schemaProp) return false;
+    return isSchemaPropCollection(schemaProp);
+  } else {
+    return false;
+  }
+}
+
+class Form {
+  loading = false;
+  constructor({
+    id,
+    label,
+    fields,
+    actions,
+    buttons,
+    reset,
+    loadInitialValues,
+    onChange,
+    ...options
+  }) {
+    const initialValues = options.initialValues || {};
+    this.__type = options.__type || "form";
+    this.id = id;
+    this.label = label;
+    this.fields = fields || [];
+    this.onSubmit = options.onSubmit;
+    this.finalForm = createForm$1({
+      ...options,
+      initialValues,
+      onSubmit: this.handleSubmit,
+      mutators: {
+        ...arrayMutators,
+        ...options.mutators
+      }
+    });
+    this._reset = reset;
+    this.actions = actions || [];
+    this.buttons = buttons || {
+      save: "Save",
+      reset: "Reset"
+    };
+    this.updateFields(this.fields);
+    if (loadInitialValues) {
+      this.loading = true;
+      loadInitialValues().then(initialValues => {
+        this.updateInitialValues(initialValues);
+      }).finally(() => {
+        this.loading = false;
+      });
+    }
+    if (onChange) {
+      let firstUpdate = true;
+      this.subscribe(formState => {
+        if (firstUpdate) {
+          firstUpdate = false;
+        } else {
+          onChange(formState);
+        }
+      }, {
+        values: true
+      });
+    }
+  }
+
+  /**
+   * Returns the current values of the form.
+   *
+   * if the form is still loading it returns `undefined`.
+   */
+  get values() {
+    if (this.loading) {
+      return undefined;
+    }
+    return this.finalForm.getState().values || this.initialValues;
+  }
+
+  /**
+   * The values the form was initialized with.
+   */
+  get initialValues() {
+    return this.finalForm.getState().initialValues;
+  }
+
+  /**
+   * @deprecated Unnecessary indirection
+   */
+  updateFields(fields) {
+    this.fields = fields;
+  }
+
+  /**
+   * Subscribes to changes to the form. The subscriber will only be called when
+   * values specified in subscription change. A form can have many subscribers.
+   */
+  subscribe = (cb, options) => {
+    return this.finalForm.subscribe(cb, options);
+  };
+  handleSubmit = async (values, form, cb) => {
+    try {
+      const response = await this.onSubmit(values, form, cb);
+      form.initialize(values);
+      return response;
+    } catch (error) {
+      return {
+        [FORM_ERROR]: error
+      };
+    }
+  };
+
+  /**
+   * Changes the value of the given field.
+   *
+   * @param name
+   * @param value
+   */
+  change(name, value) {
+    if (process.env.NODE_ENV === "development") {
+      console.groupCollapsed("Change to", name === "" ? '""' : `"${name}"`);
+      console.log("Old config", this.values);
+      console.log("Old value", dotNotationGet(this.values, name));
+      this.finalForm.change(name, value);
+      console.log("New config", this.values);
+      console.log("New value", value);
+      console.groupEnd();
+      return;
+    }
+    return this.finalForm.change(name, value);
+  }
+  get mutators() {
+    return this.finalForm.mutators;
+  }
+
+  /**
+   * Updates multiple fields in the form.
+   *
+   * The updates are batched so that it only triggers one `onChange` event.
+   *
+   * In order to prevent disruptions to the user's editing experience this
+   * function will _not_ update the value of any field that is currently
+   * being edited.
+   *
+   * @param values
+   */
+  updateValues(values) {
+    this.finalForm.batch(() => {
+      const activePath = this.finalForm.getState().active;
+      if (!activePath) {
+        updateEverything(this.finalForm, values);
+      } else {
+        updateSelectively(this.finalForm, values);
+      }
+    });
+  }
+
+  /**
+   * Replaces the initialValues of the form without deleting the current values.
+   *
+   * This function is helpful when the initialValues are loaded asynchronously.
+   *
+   * @param initialValues
+   */
+  updateInitialValues(initialValues) {
+    this.finalForm.batch(() => {
+      const values = this.values || {};
+      this.finalForm.initialize(initialValues);
+      const activePath = this.finalForm.getState().active;
+      if (!activePath) {
+        updateEverything(this.finalForm, values);
+      } else {
+        updateSelectively(this.finalForm, values);
+      }
+    });
+  }
+}
+function updateEverything(form, values) {
+  Object.entries(values).forEach(([path, value]) => {
+    form.change(path, value);
+  });
+}
+function updateSelectively(form, values, prefix) {
+  const activePath = form.getState().active;
+  Object.entries(values).forEach(([name, value]) => {
+    const path = prefix ? `${prefix}.${name}` : name;
+    if (typeof value === "object") {
+      if (activePath.startsWith(path)) {
+        updateSelectively(form, value, path);
+      } else {
+        form.change(path, value);
+      }
+    } else if (path !== activePath) {
+      form.change(path, value);
+    }
+  });
+}
+
+/**
+ * A hook that creates a form and updates it's watched properties.
+ */
+function useForm({
+  loadInitialValues,
+  ...options
+}, watch = {}) {
+  /**
+   * `initialValues` will be usually be undefined if `loadInitialValues` is used.
+   *
+   * If the form helper is using `watch.values`, which would contain
+   * the current state of the form, then we set that to the `initialValues`
+   * so the form is initialized with some state.
+   *
+   * This is beneficial for SSR and will hopefully not be noticeable
+   * when editing the site as the actual `initialValues` will be set
+   * behind the scenes.
+   */
+  options.initialValues = options.initialValues || watch.values;
+  const [, setValues] = React__default.useState(options.initialValues);
+  const [form, setForm] = React__default.useState(() => {
+    return createForm(options, form => {
+      setValues(form.values);
+    });
+  });
+  React__default.useEffect(function () {
+    if (form.id === options.id) return;
+    setForm(createForm(options, form => {
+      setValues(form.values);
+    }));
+  }, [options.id]);
+  const [formIsLoading, setFormIsLoading] = React__default.useState(() => loadInitialValues ? true : false);
+  const loadFormData = React__default.useCallback(async () => {
+    if (loadInitialValues) {
+      setFormIsLoading(true);
+      await loadInitialValues().then(values => {
+        form.updateInitialValues(values);
+      }).finally(() => {
+        setFormIsLoading(false);
+      });
+    }
+  }, [form, setFormIsLoading]);
+  React__default.useEffect(() => {
+    loadFormData();
+  }, [form, loadFormData]);
+  useUpdateFormFields(form, watch.fields);
+  useUpdateFormLabel(form, watch.label);
+  useUpdateFormValues(form, watch.values);
+  return [form ? form.values : options.initialValues, form, formIsLoading];
+}
+function createForm(options, handleChange) {
+  const form = new Form(options);
+  form.subscribe(handleChange, {
+    values: true
+  });
+  return form;
+}
+
+/**
+ * A React Hook that update's the `Form` if `fields` are changed.
+ *
+ * This hook is useful when dynamically creating fields, or updating
+ * them via hot module replacement.
+ */
+function useUpdateFormFields(form, fields) {
+  React__default.useEffect(() => {
+    if (typeof fields === "undefined") return;
+    form.updateFields(fields);
+  }, [form, fields]);
+}
+
+/**
+ * A React Hook that update's the `Form` if the `label` is changed.
+ *
+ * This hook is useful when dynamically creating creating the label,
+ * or updating it via hot module replacement.
+ */
+function useUpdateFormLabel(form, label) {
+  React__default.useEffect(() => {
+    if (typeof label === "undefined") return;
+    form.label = label;
+  }, [form, label]);
+}
+
+/**
+ * Updates the Form with new values.
+ *
+ * Only updates fields that are:
+ *
+ * 1. registered with the form
+ * 2. not currently [active](https://final-form.org/docs/final-form/types/FieldState#active)
+ *
+ * This hook is useful when the form must be kept in sync with the data source.
+ */
+function useUpdateFormValues(form, values) {
+  React__default.useEffect(() => {
+    if (typeof values === "undefined") return;
+    form.updateValues(values);
+  }, [form, values]);
+}
+
+function addLocalizedFlag(config, context) {
+  return configMap(config, context, ({
+    value,
+    schemaProp
+  }) => {
+    if (schemaProp.type === "text" && value.id?.startsWith("local.") || schemaProp.type === "component-collection-localised") {
+      return {
+        __localized: true,
+        ...value
+      };
+    }
+    return value;
+  });
+}
+
+/**
+ * useDataSaver works in a realm of SINGLE CONFIG.
+ * @param initialDocument
+ * Data saver will use this document as a starting point. It can be `null` if there is no document yet.
+ * Data saver will perform first save when any local change is detected.
+ */
+function useDataSaver(initialDocument, editorContext, editorMode) {
+  const editorContextRef = useRef(editorContext);
+  const initialGlobalConfigs = useRef(deepClone(editorContextRef.current.globalSections));
+  const remoteDocument = useRef(initialDocument);
+  const toaster = useToaster();
+  const [isSaving, setIsSaving] = useState(false);
+  const {
+    t
+  } = getTranslation(editorContextRef.current);
+  const router = new URLSearchParams(window.location.search);
+  const themeId = router.get("themeId") ?? "";
+
+  /**
+   * This state variable is going to be used ONLY for comparison with local config in case of missing document.
+   * It's not going to change at any time during the lifecycle of this hook.
+   */
+  const [initialConfigInCaseOfMissingDocument] = useState(deepClone(editorContextRef.current.form.values));
+  const onTickRef = useRef(() => Promise.resolve());
+  const isConfigTheSame = () => {
+    const localConfig = editorContextRef.current.form.values;
+    const localConfigSnapshot = getConfigSnapshot(localConfig);
+    const previousConfig = remoteDocument.current ? remoteDocument.current.entry : initialConfigInCaseOfMissingDocument;
+    const previousConfigSnapshot = getConfigSnapshot(previousConfig);
+    if (editorMode === "admin-template") {
+      return deepCompare(localConfigSnapshot, previousConfigSnapshot);
+    }
+    return deepCompare(localConfigSnapshot, previousConfigSnapshot) && deepCompare(initialGlobalConfigs?.current ?? {}, editorContextRef.current.globalSections ?? {});
+  };
+
+  /**
+   * Saved-status flag mirrored into React state so the parent window gets a
+   * fresh "content-saved-status" message whenever it actually flips.
+   * `isConfigTheSame` reads from refs, so we cannot rely on render timing to
+   * recompute it — we drive it from real config changes instead (see effects below).
+   */
+  const [isSaved, setIsSaved] = useState(() => isConfigTheSame());
+  const onTick = async ({
+    mode
+  }) => {
+    // Playground mode is a special case, we don't want to save anything
+    if (editorContextRef.current.readOnly) {
+      return;
+    }
+    if (mode === "force") {
+      setIsSaving(true);
+    }
+    const localConfig = editorContextRef.current.form.values;
+    const localConfigSnapshot = getConfigSnapshot(localConfig);
+    const configToSaveWithLocalisedFlag = addLocalizedFlag(localConfigSnapshot, editorContextRef.current);
+    async function runSaveCallback() {
+      await editorContextRef.current.save(remoteDocument.current);
+    }
+
+    // New document
+    if (remoteDocument.current === null) {
+      console.debug("New document");
+
+      // There must be at least one change in order to create a new document, we're not storing empty temporary documents
+      if (isConfigTheSame()) {
+        console.debug("no change -> bye");
+        setIsSaving(false);
+        return;
+      }
+      console.debug("change detected! -> create");
+      const newDocument = await editorContextRef.current.backend.documents.create({
+        entry: configToSaveWithLocalisedFlag
+      });
+      remoteDocument.current = {
+        ...newDocument,
+        // @ts-ignore
+        config: {
+          config: configToSaveWithLocalisedFlag
+        }
+      };
+      await runSaveCallback();
+      setIsSaving(false);
+    }
+    // Document update
+    else {
+      console.debug("Existing document");
+      try {
+        const latestDocument = await editorContextRef.current.backend.documents.get({
+          id: remoteDocument.current.id,
+          themeId
+        });
+        const latestRemoteDocumentVersion = latestDocument.version ?? -1;
+        const isNewerDocumentVersionAvailable = remoteDocument.current.version < latestRemoteDocumentVersion;
+
+        // Newer version of document is available
+        if (isNewerDocumentVersionAvailable) {
+          console.debug("new remote version detected, updating");
+          if (!latestDocument) {
+            throw new Error("unexpected error");
+          }
+          const latestConfig = removeLocalizedFlag(latestDocument.entry, editorContextRef.current);
+          editorContextRef.current.actions.runChange(() => {
+            editorContextRef.current.form.change("", latestConfig);
+            return [];
+          });
+          remoteDocument.current = latestDocument;
+
+          // Notify when local config was modified
+          if (!isConfigTheSame()) {
+            console.debug("there were local changes -> notify");
+            editorContextRef.current.actions.notify("Remote changes detected, local changes have been overwritten.");
+          }
+          return;
+        }
+        // No remote change occurred
+        else {
+          if (isConfigTheSame()) {
+            console.debug("no local changes -> bye");
+            if (mode === "force") {
+              toaster.success(t("topBar.noLocalChange"));
+            }
+            // Let's do nothing, no remote and local change
+          } else {
+            console.debug("updating the document", remoteDocument.current.id);
+            const updatedPromises = [];
+            updatedPromises.push(editorContextRef.current.backend.documents.update({
+              id: remoteDocument.current.id,
+              entry: configToSaveWithLocalisedFlag,
+              version: remoteDocument.current.version
+            }, themeId));
+            if (mode === "force" && editorContextRef.current.backend.themes) {
+              if (editorMode !== "admin-template") {
+                updatedPromises.push(editorContextRef.current.backend.themes?.syncConfig({
+                  themeId
+                }));
+              }
+              initialGlobalConfigs.current = deepClone(editorContextRef.current.globalSections);
+            }
+            const [_updatedDocument, _updateThemeSuccess] = await Promise.all(updatedPromises);
+            const updatedDocument = _updatedDocument;
+            const updateThemeSuccess = _updateThemeSuccess;
+            if (updatedDocument?.id) {
+              remoteDocument.current.version = updatedDocument.version;
+              toaster.success(t("topBar.saved"));
+            } else if (!updatedDocument?.id) {
+              toaster.error(t("topBar.save.error"));
+            }
+            if (editorMode !== "admin-template") {
+              if (mode === "force" && updateThemeSuccess) {
+                toaster.success(t("editor.sidebar.globalSections.save.success"));
+              } else if (mode === "force" && !updateThemeSuccess) {
+                toaster.error(t("editor.sidebar.globalSections.save.error"));
+              }
+            }
+            remoteDocument.current.entry = localConfigSnapshot;
+            await runSaveCallback();
+          }
+        }
+      } catch (error) {
+        toaster.error(t("topBar.save.error"));
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
+
+  // We're keeping this in ref, because of setInterval keeping initial closure
+  onTickRef.current = () => onTick({
+    mode: "auto"
+  });
+  const inProgress = useRef(false);
+  const wasSaveNowCalled = useRef(false);
+  const messageHandler = async event => {
+    const {
+      id,
+      type
+    } = event.data;
+    if (type === "@easyblocks/content-saved-status") {
+      event.source.postMessage({
+        id,
+        type: "@easyblocks/content-saved-status",
+        payload: {
+          isSavedDocument: isConfigTheSame()
+        }
+      }, "*");
+    }
+  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // We ignore ticks when previous requests are in progress
+      if (inProgress.current || wasSaveNowCalled.current) {
+        return;
+      }
+      inProgress.current = true;
+      onTickRef.current().finally(() => {
+        inProgress.current = false;
+      });
+    }, 60000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+  useEffect(() => {
+    window.addEventListener("message", messageHandler);
+    return () => window.removeEventListener("message", messageHandler);
+  }, []);
+  useEffect(() => {
+    editorContextRef.current = editorContext;
+    setIsSaved(isConfigTheSame());
+  }, [editorContext]);
+  useEffect(() => {
+    const recompute = () => setIsSaved(isConfigTheSame());
+    recompute();
+    return editorContext.form.subscribe(recompute, {
+      values: true
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorContext.form]);
+
+  // Notify the parent window only when the saved status actually flips.
+  useEffect(() => {
+    window?.top?.postMessage({
+      type: "@easyblocks/content-saved-status",
+      payload: {
+        isSavedDocument: isSaved
+      }
+    }, "*");
+  }, [isSaved]);
+  return {
+    isSaving,
+    isDirty: isConfigTheSame,
+    saveNow: async () => {
+      wasSaveNowCalled.current = true;
+
+      // Wait until inProgress is false
+      while (true) {
+        if (inProgress.current) {
+          console.debug("waiting...");
+          await sleep(500);
+        } else {
+          break;
+        }
+      }
+      console.debug("Last save!");
+      await onTick({
+        mode: "force"
+      });
+    }
+  };
+}
+
+const GLOBAL_SHORTCUTS_KEYS = ["Delete", "Backspace", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "l", "L"
+// "s",
+// "S",
+];
+const DATA_TRANSFER_FORMAT = "text/x-shopstory";
+function useEditorGlobalKeyboardShortcuts(editorContext) {
+  let isDeleting = false;
+  let pasteId;
+  const debouncedMoveItemsRef = useRef(debounce((actions, fields, direction) => {
+    actions.moveItems(fields, direction);
+  }, 100, {
+    leading: true,
+    trailing: false
+  }));
+  useEffect(() => {
+    const {
+      focussedField: focusedFields,
+      actions
+    } = editorContext;
+    const debouncedMoveItems = debouncedMoveItemsRef.current;
+    function handleKeydown(event) {
+      if (isTargetInputElement(event.target)) {
+        return;
+      }
+      if (!isGlobalShortcut(event)) {
+        return;
+      }
+      if (isAnyFieldSelected(focusedFields)) {
+        if ((event.key === "Delete" || event.key === "Backspace") && !isDeleting) {
+          isDeleting = true;
+          actions.removeItems(focusedFields);
+          setTimeout(() => {
+            isDeleting = false;
+          }, 2000);
+        } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+          debouncedMoveItems(actions, focusedFields, "top");
+        } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+          debouncedMoveItems(actions, focusedFields, "bottom");
+        } else if (event.key.toUpperCase() === "L") {
+          actions.logSelectedItems();
+        }
+      }
+
+      // if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
+      //   event.preventDefault();
+      //   saveNow?.();
+      // }
+    }
+    function handleCopy(event) {
+      if (!canHandleCopyPaste(focusedFields, event)) {
+        return;
+      }
+      const configs = getConfigsToCopy(focusedFields, editorContext);
+      const json = JSON.stringify(configs);
+      event.preventDefault();
+      // Custom MIME for in-editor paste fidelity; text/plain so OS clipboard
+      // surfaces the JSON to external apps.
+      event.clipboardData?.setData(DATA_TRANSFER_FORMAT, json);
+      event.clipboardData?.setData("text/plain", json);
+    }
+    function handleCut(event) {
+      if (!canHandleCopyPaste(focusedFields, event)) {
+        return;
+      }
+      const configs = getConfigsToCopy(focusedFields, editorContext);
+      const json = JSON.stringify(configs);
+      event.preventDefault();
+      event.clipboardData?.setData(DATA_TRANSFER_FORMAT, json);
+      event.clipboardData?.setData("text/plain", json);
+      actions.removeItems(focusedFields);
+    }
+    function handlePaste(event) {
+      const rawData = event.clipboardData?.getData(DATA_TRANSFER_FORMAT);
+      clearTimeout(pasteId);
+      pasteId = setTimeout(() => {
+        if (!canHandleCopyPaste(focusedFields, event)) {
+          return;
+        }
+        if (!rawData || rawData === "") {
+          return;
+        }
+        try {
+          const parsedData = JSON.parse(rawData);
+          const data = Array.isArray(parsedData) ? parsedData : [parsedData];
+          actions.pasteItems(data);
+          event.preventDefault();
+        } catch (e) {
+          console.error(e);
+          return;
+        }
+      }, 200);
+    }
+    window.document.addEventListener("keydown", handleKeydown);
+    window.document.addEventListener("copy", handleCopy);
+    window.document.addEventListener("cut", handleCut);
+    window.document.addEventListener("paste", handlePaste);
+    return () => {
+      window.document.removeEventListener("keydown", handleKeydown);
+      window.document.removeEventListener("copy", handleCopy);
+      window.document.removeEventListener("cut", handleCut);
+      window.document.removeEventListener("paste", handlePaste);
+    };
+  });
+  useEffect(() => {
+    return () => {
+      debouncedMoveItemsRef.current.cancel();
+    };
+  }, []);
+}
+function isTargetInputElement(target) {
+  return isTargetHtmlElement(target) && (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.tagName === "DIV" && target.getAttribute("role") === "textbox");
+}
+function isTargetHtmlElement(element) {
+  return element !== null;
+}
+function getConfigsToCopy(paths, editorContext) {
+  const sortedPaths = [...paths].sort(preOrderPathComparator("ascending"));
+  return sortedPaths.map(path => {
+    const config = dotNotationGet(editorContext.form.values, path);
+    return duplicateConfig(config, editorContext);
+  });
+}
+function canHandleCopyPaste(focusedFields, event) {
+  const notInsideInputElement = !(isTargetInputElement(event.target) || isTargetInputElement(document.activeElement));
+  const insideEditorIFrame = window.frameElement;
+  const focusedFieldsSelected = isAnyFieldSelected(focusedFields);
+  return notInsideInputElement && insideEditorIFrame && focusedFieldsSelected;
+}
+function isGlobalShortcut(event) {
+  return GLOBAL_SHORTCUTS_KEYS.includes(event.key);
+}
+
+// FIXME: This is my mistake, because I was lazy at the beginning and it was easier for me to introduce changes
+// by assuming that non empty array with empty string means no fields selected.
+// IMO this is stupid and can lead to confusion.
+function isAnyFieldSelected(focusedFields) {
+  return focusedFields.length > 0 && focusedFields[0] !== "";
+}
+
+const HISTORY_SIZE = 50;
+class EditorHistory {
+  constructor() {
+    this.values = [];
+    this.currentIndex = -1;
+  }
+  push(value) {
+    const isCurrentIndexLastEntry = this.values.length - 1 === this.currentIndex;
+
+    // If we push to history while `currentIndex` is not set on latest history entry
+    // our history would me messed up. We need to rewrite our history by removing all
+    // entries after the current index.
+    if (!isCurrentIndexLastEntry) {
+      this.values.splice(this.currentIndex + 1, this.values.length - 1 - this.currentIndex);
+    }
+    const isAboutToReachSizeLimit = this.values.length + 1 > HISTORY_SIZE;
+    if (isAboutToReachSizeLimit) {
+      this.values.shift();
+    }
+    this.values.push(value);
+    this.currentIndex = this.values.length - 1;
+  }
+  replace(value) {
+    this.values[this.currentIndex] = value;
+  }
+  replaceAt(oldValue, newValue) {
+    const entryIndex = this.values.findIndex(value => value.config === oldValue.config);
+    if (entryIndex !== -1) {
+      this.values[entryIndex] = newValue;
+    }
+  }
+  forward() {
+    if (!this.canGoForward()) {
+      this.currentIndex = this.values.length - 1;
+      return null;
+    }
+    const currentEntry = this.values[this.currentIndex];
+    while (this.canGoForward()) {
+      this.currentIndex += 1;
+      const nextEntry = this.values[this.currentIndex];
+      if (!deepCompare(nextEntry.config, currentEntry.config)) {
+        return nextEntry;
+      }
+    }
+    return null;
+  }
+  back() {
+    if (!this.canGoBack()) {
+      return null;
+    }
+    const currentEntry = this.values[this.currentIndex];
+    while (this.canGoBack()) {
+      this.currentIndex -= 1;
+      const previousEntry = this.values[this.currentIndex];
+      if (!deepCompare(previousEntry.config, currentEntry.config)) {
+        return previousEntry;
+      }
+    }
+    return null;
+  }
+  getEntries() {
+    return this.values.map(value => ({
+      ...value
+    }));
+  }
+  canGoForward() {
+    return this.currentIndex < this.values.length - 1;
+  }
+  canGoBack() {
+    return this.currentIndex > 0;
+  }
+  isNewest() {
+    return this.values.length === this.currentIndex + 1;
+  }
+  isOldest() {
+    return this.currentIndex === 0;
+  }
+}
+
+function useEditorHistory({
+  onChange
+}) {
+  const editorHistory = useRef(new EditorHistory()).current;
+  function undo() {
+    ReactDOM.unstable_batchedUpdates(() => {
+      const entry = editorHistory.back();
+      if (entry === null) {
+        return;
+      }
+      const {
+        focussedField,
+        ...rest
+      } = entry;
+      onChange({
+        focusedField: focussedField,
+        ...rest,
+        type: "undo"
+      });
+    });
+  }
+  function redo() {
+    ReactDOM.unstable_batchedUpdates(() => {
+      const entry = editorHistory.forward();
+      if (!entry) {
+        return null;
+      }
+      const {
+        focussedField,
+        ...rest
+      } = entry;
+      onChange({
+        focusedField: focussedField,
+        ...rest,
+        type: "redo"
+      });
+    });
+  }
+  function push(entry) {
+    editorHistory.push(entry);
+  }
+  return {
+    push,
+    redo,
+    undo,
+    editorHistoryInstance: editorHistory
+  };
+}
 
 const debouncedUpdate = debounce$1(fn => fn(), 100);
 const ContentContainer = styled.div.withConfig({
@@ -9201,25 +9228,9 @@ const EditorContent = ({
     isDirty
   } = useDataSaver(initialDocument, editorContext, mode);
   const appHeight = heightMode === "viewport" ? "100vh" : "100%";
-
-  // const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-  //   if (!isDirty()) {
-  //     event.preventDefault();
-  //   }
-  // };
-
   useEffect(() => {
     Modal$1.setAppElement("#shopstory-app");
   }, []);
-
-  // useEffect(() => {
-  //   window.addEventListener("beforeunload", handleBeforeUnload);
-
-  //   return () => {
-  //     window.removeEventListener("beforeunload", handleBeforeUnload);
-  //   };
-  // }, [isDirty]);
-
   return /*#__PURE__*/React__default.createElement("div", {
     id: "shopstory-app",
     style: {

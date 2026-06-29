@@ -65,6 +65,14 @@ export function useDataSaver(
     );
   };
 
+  /**
+   * Saved-status flag mirrored into React state so the parent window gets a
+   * fresh "content-saved-status" message whenever it actually flips.
+   * `isConfigTheSame` reads from refs, so we cannot rely on render timing to
+   * recompute it — we drive it from real config changes instead (see effects below).
+   */
+  const [isSaved, setIsSaved] = useState<boolean>(() => isConfigTheSame());
+
   const onTick = async ({ mode }: { mode: "auto" | "force" }) => {
     // Playground mode is a special case, we don't want to save anything
     if (editorContextRef.current.readOnly) {
@@ -285,7 +293,29 @@ export function useDataSaver(
 
   useEffect(() => {
     editorContextRef.current = editorContext;
+
+    setIsSaved(isConfigTheSame());
   }, [editorContext]);
+
+  useEffect(() => {
+    const recompute = () => setIsSaved(isConfigTheSame());
+    recompute();
+    return editorContext.form.subscribe(recompute, { values: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorContext.form]);
+
+  // Notify the parent window only when the saved status actually flips.
+  useEffect(() => {
+    window?.top?.postMessage(
+      {
+        type: "@easyblocks/content-saved-status",
+        payload: {
+          isSavedDocument: isSaved,
+        },
+      },
+      "*",
+    );
+  }, [isSaved]);
 
   return {
     isSaving,
