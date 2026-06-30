@@ -22,6 +22,7 @@ import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal"
 import { TEasyblocksEditorMode, TLeftSidebar } from "./types";
 import { useTranslation } from "./useTranslation";
 import { getFlagUrl } from "./utils/getFlagSvgUrl";
+import { DEVICE_LABELS } from "./DeviceFrame";
 
 export const TOP_BAR_HEIGHT = 40;
 
@@ -125,6 +126,8 @@ export const EditorTopBar: React.FC<{
   showRightSidebar: boolean;
   onShowRightSidebar: () => void;
   editorMode: TEasyblocksEditorMode;
+  showDeviceFrame: boolean;
+  onToggleDeviceFrame: () => void;
 }> = ({
   name,
   onClose,
@@ -149,6 +152,8 @@ export const EditorTopBar: React.FC<{
   showRightSidebar,
   onShowRightSidebar,
   editorMode,
+  showDeviceFrame,
+  onToggleDeviceFrame,
 }) => {
   const headingRef = useRef<HTMLDivElement>(null);
   const router = new URLSearchParams(window.location.search);
@@ -266,6 +271,17 @@ export const EditorTopBar: React.FC<{
           }}
         >
           {t("editor.sidebar.properties")}
+        </ButtonGhost>
+
+        <ButtonGhost
+          icon={Icons.Device}
+          hideLabel
+          onClick={onToggleDeviceFrame}
+          style={{
+            background: showDeviceFrame ? Colors.black10 : "transparent",
+          }}
+        >
+          {t('editor.sidebar.deviceFrame')}
         </ButtonGhost>
 
         <Typography
@@ -561,6 +577,8 @@ function DeviceSwitch({
           return null;
         }
 
+        const label = DEVICE_LABELS[d.id] ?? d.label ?? d.id;
+
         return (
           <Tooltip key={d.id}>
             <TooltipTrigger>
@@ -570,7 +588,7 @@ function DeviceSwitch({
             </TooltipTrigger>
 
             <TooltipContent>
-              <Typography color="white">{d.label ?? d.id}</Typography>
+              <Typography color="white">{label}</Typography>
             </TooltipContent>
           </Tooltip>
         );

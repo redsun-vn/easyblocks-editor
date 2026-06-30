@@ -321,7 +321,7 @@ const EditorWrapper = memo(
 
     const rootTemplateEntry = props.rootTemplateId
       ? props.config.templates?.find((t) => t.id === props.rootTemplateId)
-          ?.entry
+        ?.entry
       : null;
 
     const rootComponentId = props.document
@@ -339,12 +339,12 @@ const EditorWrapper = memo(
     const initialEntry = props.document
       ? adaptRemoteConfig(props.document.entry, compilationContext)
       : normalize(
-          rootTemplateEntry ?? {
-            _id: uniqueId(),
-            _component: rootComponentId!,
-          },
-          compilationContext,
-        );
+        rootTemplateEntry ?? {
+          _id: uniqueId(),
+          _component: rootComponentId!,
+        },
+        compilationContext,
+      );
 
     return (
       <EditorContent
@@ -556,6 +556,7 @@ function calculateViewportRelatedStuff(
   devices: DeviceRange[],
   mainBreakpointIndex: string,
   availableSize?: { width: number; height: number },
+  showDeviceFrame?: boolean,
 ) {
   let activeDevice: DeviceRange;
 
@@ -623,6 +624,17 @@ function calculateViewportRelatedStuff(
     }
   }
 
+  const isMobileViewport = viewport === "xs" || viewport === "sm";
+  const shouldMiniaturize =
+    showDeviceFrame && viewport !== "fit-screen" && !isMobileViewport;
+
+  if (shouldMiniaturize) {
+    const MINIATURE_FACTOR = 0.82;
+
+    scaleFactor =
+      scaleFactor === null ? MINIATURE_FACTOR : scaleFactor * MINIATURE_FACTOR;
+  }
+
   return {
     breakpointIndex: activeDevice.id,
     iframeSize: {
@@ -687,11 +699,14 @@ const EditorContent = ({
       }
     : undefined;
 
+  const [showDeviceFrame, setShowDeviceFrame] = useState(false);
+
   const { breakpointIndex, iframeSize } = calculateViewportRelatedStuff(
     currentViewport,
     compilationContext.devices,
     compilationContext.mainBreakpointIndex,
     availableSize,
+    showDeviceFrame,
   );
 
   useRerenderOnIframeResize(iframeContainerRef.current); // re-render on resize (recalculates viewport size, active breakpoint for fit-screen etc);
@@ -1391,6 +1406,8 @@ const EditorContent = ({
                 }
               }}
               editorMode={mode}
+              showDeviceFrame={showDeviceFrame}
+              onToggleDeviceFrame={() => setShowDeviceFrame((p) => !p)}
             />
             <SidebarAndContentContainer height={appHeight}>
               {showLeftSidebar && isEditMode && (
@@ -1414,6 +1431,8 @@ const EditorContent = ({
                   height={iframeSize.height}
                   transform={iframeSize.transform}
                   containerRef={iframeContainerRef}
+                  showDeviceFrame={showDeviceFrame}
+                  viewport={currentViewport}
                 />
                 {isEditMode && (
                   <SelectionFrame

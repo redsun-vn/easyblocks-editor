@@ -28,5 +28,7 @@ export declare const EditorTopBar: React.FC<{
     showRightSidebar: boolean;
     onShowRightSidebar: () => void;
     editorMode: TEasyblocksEditorMode;
+    showDeviceFrame: boolean;
+    onToggleDeviceFrame: () => void;
 }>;
 //# sourceMappingURL=EditorTopBar.d.ts.map
