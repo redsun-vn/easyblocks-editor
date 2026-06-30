@@ -6386,7 +6386,7 @@ const DRAWER_WIDTH = 600;
 const StyledEditorSectionDrawer = styled$1.div.withConfig({
   displayName: "EditorSectionDrawer__StyledEditorSectionDrawer",
   componentId: "sc-bycoqx-0"
-})(["position:absolute;top:47px;left:198px;width:", "px;max-height:calc(100vh - 120px);display:flex;flex-direction:column;overflow:hidden;padding:16px;background:", ";border:1px solid ", ";box-shadow:var(--tina-shadow-big);z-index:var(--tina-z-index-5);border-top-right-radius:2px;border-bottom-right-radius:2px;"], DRAWER_WIDTH, Colors.white, Colors.black100);
+})(["position:absolute;top:47px;left:198px;width:", "px;max-height:calc(100vh - 120px);display:flex;flex-direction:column;overflow:hidden;background:", ";border:1px solid ", ";box-shadow:var(--tina-shadow-big);z-index:var(--tina-z-index-5);border-top-right-radius:2px;border-bottom-right-radius:2px;"], DRAWER_WIDTH, Colors.white, Colors.black100);
 
 // Scrollable body region. The drawer header lives outside this element so it
 // stays pinned while only the section grid scrolls. min-height: 0 lets this
@@ -6394,7 +6394,7 @@ const StyledEditorSectionDrawer = styled$1.div.withConfig({
 const StyledBody = styled$1.div.withConfig({
   displayName: "EditorSectionDrawer__StyledBody",
   componentId: "sc-bycoqx-1"
-})(["flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;"]);
+})(["flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;padding:16px;padding-top:8px;"]);
 const StyledGrid = styled$1.div.withConfig({
   displayName: "EditorSectionDrawer__StyledGrid",
   componentId: "sc-bycoqx-2"
@@ -6406,7 +6406,7 @@ const StyledGrid = styled$1.div.withConfig({
 const StyledHeader = styled$1.div.withConfig({
   displayName: "EditorSectionDrawer__StyledHeader",
   componentId: "sc-bycoqx-3"
-})(["display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px;"]);
+})(["display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px;padding-bottom:8px;"]);
 
 // Truncate long group names with an ellipsis so the close button stays put and
 // the header never wraps to a second line in the fixed-width drawer.

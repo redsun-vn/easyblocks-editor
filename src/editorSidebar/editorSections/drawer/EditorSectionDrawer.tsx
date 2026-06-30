@@ -24,7 +24,6 @@ const StyledEditorSectionDrawer = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 16px;
   background: ${Colors.white};
   border: 1px solid ${Colors.black100};
   box-shadow: var(--tina-shadow-big);
@@ -41,6 +40,8 @@ const StyledBody = styled.div`
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  padding: 16px;
+  padding-top: 8px;
 `;
 
 const StyledGrid = styled.div`
@@ -57,7 +58,8 @@ const StyledHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 16px;
+  padding: 16px;
+  padding-bottom: 8px;
 `;
 
 // Truncate long group names with an ellipsis so the close button stays put and
