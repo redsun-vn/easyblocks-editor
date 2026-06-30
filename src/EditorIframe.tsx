@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { styled } from "styled-components";
 import { ExtraKeys, useWindowKeyDown } from "./useWindowKeyDown";
 import { debounce } from "lodash";
+import { DeviceFrame } from "./DeviceFrame";
 
 interface EditorIframeWrapperProps {
   onEditorHistoryRedo: () => void;
@@ -13,6 +14,8 @@ interface EditorIframeWrapperProps {
   height: number;
   transform: string;
   containerRef: React.RefObject<HTMLDivElement>;
+  showDeviceFrame?: boolean;
+  viewport?: string;
 }
 
 function EditorIframe({
@@ -24,6 +27,8 @@ function EditorIframe({
   height,
   transform,
   containerRef,
+  showDeviceFrame = false,
+  viewport = "fit-screen",
 }: EditorIframeWrapperProps) {
   const [isIframeReady, setIframeReady] = useState(false);
   const debouncedSave = debounce((fn: () => void) => fn(), 200);
@@ -83,6 +88,14 @@ function EditorIframe({
             transform,
           }}
         />
+
+        <DeviceFrame
+          viewport={viewport}
+          width={width}
+          height={height}
+          transform={transform}
+          visible={showDeviceFrame}
+        />
       </IframeInnerContainer>
     </IframeContainer>
   );
@@ -94,6 +107,7 @@ const IframeContainer = styled.div`
   position: relative;
   flex: 1 1 auto;
   background: ${Colors.black100};
+  isolation: isolate;
 `;
 
 const IframeInnerContainer = styled.div`

@@ -3,7 +3,7 @@ import React from "react";
 import { FieldRenderProps } from "react-final-form";
 export declare const PositionFieldPlugin: {
     name: string;
-    Component: (props: import("./wrapFieldWithMeta").InputFieldType<FieldRenderProps<"top-center" | "top-left" | "top-right" | "center-center" | "center-left" | "center-right" | "bottom-center" | "bottom-left" | "bottom-right", HTMLInputElement, "top-center" | "top-left" | "top-right" | "center-center" | "center-left" | "center-right" | "bottom-center" | "bottom-left" | "bottom-right"> & {
+    Component: (props: import("./wrapFieldWithMeta").InputFieldType<FieldRenderProps<"top-left" | "top-center" | "top-right" | "center-left" | "center-center" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right", HTMLInputElement, "top-left" | "top-center" | "top-right" | "center-left" | "center-center" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right"> & {
         field: InternalField;
     }, Record<string, any>>) => React.JSX.Element;
 };
