@@ -6,6 +6,11 @@ import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
  */
 function getConfigSnapshot(config: NoCodeComponentEntry): NoCodeComponentEntry {
   const strippedConfig = deepClone(config);
+
+  if (!strippedConfig?.data) {
+    strippedConfig.data = [];
+  }
+
   return strippedConfig;
 }
 export { getConfigSnapshot };

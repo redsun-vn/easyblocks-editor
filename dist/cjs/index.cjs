@@ -7058,6 +7058,9 @@ const EditorGlobalSections = ({
  */
 function getConfigSnapshot(config) {
   const strippedConfig = deepClone(config);
+  if (!strippedConfig?.data) {
+    strippedConfig.data = [];
+  }
   return strippedConfig;
 }
 
@@ -8206,7 +8209,9 @@ const SelectionMoreActions = ({
         groupName,
         entry: currentEntry
       }).then(() => {
-        toaster.success(`${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`);
+        toaster.success(`${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`, {
+          duration: 5000
+        });
         editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
           ...currentEntry,
           _id: uniqueId()
@@ -8258,7 +8263,7 @@ const SelectionMoreActions = ({
     }).then(() => {
       setIsLoading(false);
       toaster.success(`${t("editor.sidebar.globalSections.setGlobal.success")} ${t("saveBeforeExit")}`, {
-        duration: 3000
+        duration: 5000
       });
       onClose();
     }).catch(reason => {
