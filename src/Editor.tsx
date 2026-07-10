@@ -321,7 +321,7 @@ const EditorWrapper = memo(
 
     const rootTemplateEntry = props.rootTemplateId
       ? props.config.templates?.find((t) => t.id === props.rootTemplateId)
-        ?.entry
+          ?.entry
       : null;
 
     const rootComponentId = props.document
@@ -339,12 +339,12 @@ const EditorWrapper = memo(
     const initialEntry = props.document
       ? adaptRemoteConfig(props.document.entry, compilationContext)
       : normalize(
-        rootTemplateEntry ?? {
-          _id: uniqueId(),
-          _component: rootComponentId!,
-        },
-        compilationContext,
-      );
+          rootTemplateEntry ?? {
+            _id: uniqueId(),
+            _component: rootComponentId!,
+          },
+          compilationContext,
+        );
 
     return (
       <EditorContent
@@ -1076,7 +1076,7 @@ const EditorContent = ({
     setFocussedField: handleSetFocussedField,
     translationFiles: props.config?.translationFiles ?? {},
     isEditing,
-    globalSections: props.config?.globalSections ?? {},
+    globalSections: props.config?.globalSections ?? null,
     onGlobalSectionChange: props.onGlobalSectionChange,
     actions,
     save: async (documentData) => {

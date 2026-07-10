@@ -109,7 +109,8 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
         })
         .then(() => {
           toaster.success(
-            t("editor.sidebar.globalSections.removeGlobal.success"),
+            `${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`,
+            { duration: 5000 },
           );
           editorContext.actions.replaceItems(
             [
@@ -181,7 +182,10 @@ const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
       })
       .then(() => {
         setIsLoading(false);
-        toaster.success(t("editor.sidebar.globalSections.setGlobal.success"));
+        toaster.success(
+          `${t("editor.sidebar.globalSections.setGlobal.success")} ${t("saveBeforeExit")}`,
+          { duration: 5000 },
+        );
         onClose();
       })
       .catch((reason) => {

@@ -8206,7 +8206,7 @@ const SelectionMoreActions = ({
         groupName,
         entry: currentEntry
       }).then(() => {
-        toaster.success(t("editor.sidebar.globalSections.removeGlobal.success"));
+        toaster.success(`${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`);
         editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
           ...currentEntry,
           _id: uniqueId()
@@ -8257,7 +8257,9 @@ const SelectionMoreActions = ({
       entry: currentEntry
     }).then(() => {
       setIsLoading(false);
-      toaster.success(t("editor.sidebar.globalSections.setGlobal.success"));
+      toaster.success(`${t("editor.sidebar.globalSections.setGlobal.success")} ${t("saveBeforeExit")}`, {
+        duration: 3000
+      });
       onClose();
     }).catch(reason => {
       setIsLoading(false);
@@ -8980,7 +8982,7 @@ function addLocalizedFlag(config, context) {
  */
 function useDataSaver(initialDocument, editorContext, editorMode) {
   const editorContextRef = React.useRef(editorContext);
-  const initialGlobalConfigs = React.useRef(deepClone(editorContextRef.current.globalSections));
+  const initialGlobalConfigs = React.useRef(null);
   const remoteDocument = React.useRef(initialDocument);
   const toaster = Toaster.useToaster();
   const [isSaving, setIsSaving] = React.useState(false);
@@ -9001,10 +9003,12 @@ function useDataSaver(initialDocument, editorContext, editorMode) {
     const localConfigSnapshot = getConfigSnapshot(localConfig);
     const previousConfig = remoteDocument.current ? remoteDocument.current.entry : initialConfigInCaseOfMissingDocument;
     const previousConfigSnapshot = getConfigSnapshot(previousConfig);
+    const isSnapshotSame = deepCompare(localConfigSnapshot, previousConfigSnapshot);
     if (editorMode === "admin-template") {
-      return deepCompare(localConfigSnapshot, previousConfigSnapshot);
+      return isSnapshotSame;
     }
-    return deepCompare(localConfigSnapshot, previousConfigSnapshot) && deepCompare(initialGlobalConfigs?.current ?? {}, editorContextRef.current.globalSections ?? {});
+    const isGlobalSectionsSame = initialGlobalConfigs?.current !== null ? deepCompare(initialGlobalConfigs?.current ?? {}, editorContextRef.current.globalSections ?? {}) : true;
+    return isSnapshotSame && isGlobalSectionsSame;
   };
 
   /**
@@ -9180,6 +9184,9 @@ function useDataSaver(initialDocument, editorContext, editorMode) {
   }, []);
   React.useEffect(() => {
     editorContextRef.current = editorContext;
+    if (initialGlobalConfigs.current === null && editorContextRef.current.globalSections !== null) {
+      initialGlobalConfigs.current = deepClone(editorContextRef.current.globalSections);
+    }
     setIsSaved(isConfigTheSame());
   }, [editorContext]);
   React.useEffect(() => {
@@ -10149,7 +10156,7 @@ const EditorContent = ({
     setFocussedField: handleSetFocussedField,
     translationFiles: props.config?.translationFiles ?? {},
     isEditing,
-    globalSections: props.config?.globalSections ?? {},
+    globalSections: props.config?.globalSections ?? null,
     onGlobalSectionChange: props.onGlobalSectionChange,
     actions,
     save: async documentData => {

@@ -25,7 +25,7 @@ export function useDataSaver(
   const editorContextRef = useRef(editorContext);
   const initialGlobalConfigs = useRef<
     EditorContextType["globalSections"] | null
-  >(deepClone(editorContextRef.current.globalSections));
+  >(null);
   const remoteDocument = useRef<Document | null>(initialDocument);
 
   const toaster = useToaster();
@@ -52,17 +52,24 @@ export function useDataSaver(
       : initialConfigInCaseOfMissingDocument;
     const previousConfigSnapshot = getConfigSnapshot(previousConfig);
 
+    const isSnapshotSame = deepCompare(
+      localConfigSnapshot,
+      previousConfigSnapshot,
+    );
+
     if (editorMode === "admin-template") {
-      return deepCompare(localConfigSnapshot, previousConfigSnapshot);
+      return isSnapshotSame;
     }
 
-    return (
-      deepCompare(localConfigSnapshot, previousConfigSnapshot) &&
-      deepCompare(
-        initialGlobalConfigs?.current ?? {},
-        editorContextRef.current.globalSections ?? {},
-      )
-    );
+    const isGlobalSectionsSame =
+      initialGlobalConfigs?.current !== null
+        ? deepCompare(
+            initialGlobalConfigs?.current ?? {},
+            editorContextRef.current.globalSections ?? {},
+          )
+        : true;
+
+    return isSnapshotSame && isGlobalSectionsSame;
   };
 
   /**
@@ -293,6 +300,14 @@ export function useDataSaver(
 
   useEffect(() => {
     editorContextRef.current = editorContext;
+    if (
+      initialGlobalConfigs.current === null &&
+      editorContextRef.current.globalSections !== null
+    ) {
+      initialGlobalConfigs.current = deepClone(
+        editorContextRef.current.globalSections,
+      );
+    }
 
     setIsSaved(isConfigTheSame());
   }, [editorContext]);

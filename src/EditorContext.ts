@@ -5,7 +5,6 @@ import {
   ExternalTypeDefinition,
   InlineTypeDefinition,
   InlineTypeWidgetComponentProps,
-  IThemeConfig,
   NoCodeComponentEntry,
   Template,
   TemplateQueryType,
@@ -87,7 +86,6 @@ export type EditorContextType = Omit<
     | EditorTokenTypeDefinition
   >;
   components: Record<string, ComponentType<any>>;
-  globalSections?: IThemeConfig["globalSections"];
 };
 
 export const EditorContext = React.createContext<EditorContextType | null>(
