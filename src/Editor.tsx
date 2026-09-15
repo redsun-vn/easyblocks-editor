@@ -86,6 +86,7 @@ import { EditorLeftSidebar } from "./editorSidebar/EditorLeftSidebar";
 import { Form } from "./form";
 import { destinationResolver } from "./paste/destinationResolver";
 import { pasteManager } from "./paste/manager";
+import { SelectionBreadcrumb } from "./selectionFrame/SelectionBreadcrumb";
 import { SelectionFrame } from "./selectionFrame/SelectionFrame";
 import { getTemplates } from "./templates/getTemplates";
 import { useForm } from "./tinacms/react-core";
@@ -115,9 +116,16 @@ declare global {
 
 const debouncedUpdate = debounce((fn: () => void) => fn(), 100);
 
+const CanvasColumn = styled.div`
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+`;
+
 const ContentContainer = styled.div`
   position: relative;
   flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 `;
@@ -1417,32 +1425,35 @@ const EditorContent = ({
                   sidebarNodeRef={leftSidebarNodeRef}
                 />
               )}
-              <ContentContainer
-                onClick={() => {
-                  setFocussedField([]);
-                }}
-              >
-                <EditorIframe
-                  onEditorHistoryUndo={undo}
-                  onEditorHistoryRedo={redo}
-                  onSave={saveNow}
-                  isSaving={isSaving}
-                  width={iframeSize.width}
-                  height={iframeSize.height}
-                  transform={iframeSize.transform}
-                  containerRef={iframeContainerRef}
-                  showDeviceFrame={showDeviceFrame}
-                  viewport={currentViewport}
-                />
-                {isEditMode && (
-                  <SelectionFrame
+              <CanvasColumn>
+                <ContentContainer
+                  onClick={() => {
+                    setFocussedField([]);
+                  }}
+                >
+                  <EditorIframe
+                    onEditorHistoryUndo={undo}
+                    onEditorHistoryRedo={redo}
+                    onSave={saveNow}
+                    isSaving={isSaving}
                     width={iframeSize.width}
                     height={iframeSize.height}
                     transform={iframeSize.transform}
-                    editorMode={mode}
+                    containerRef={iframeContainerRef}
+                    showDeviceFrame={showDeviceFrame}
+                    viewport={currentViewport}
                   />
-                )}
-              </ContentContainer>
+                  {isEditMode && (
+                    <SelectionFrame
+                      width={iframeSize.width}
+                      height={iframeSize.height}
+                      transform={iframeSize.transform}
+                      editorMode={mode}
+                    />
+                  )}
+                </ContentContainer>
+                {isEditMode && <SelectionBreadcrumb />}
+              </CanvasColumn>
               {isEditMode &&
                 (isRightSidebarOpen || focussedField.length > 0) && (
                   <SidebarContainer ref={sidebarNodeRef}>

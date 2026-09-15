@@ -8,6 +8,7 @@ import {
 import { ActionsType, TEasyblocksEditorMode } from "@/types";
 import { getTranslation } from "@/useTranslation";
 import { dotNotationGet } from "@/utils/object/dotNotationGet";
+import { getParentFocusedFields } from "@/utils/selection/canvasSelectionPaths";
 import { uniqueId } from "@/utils/uniqueId";
 import {
   ContextParams,
@@ -257,10 +258,24 @@ export const SelectionFrameActions = ({
     contextParams,
   } as EditorContextType);
   const [showMore, setShowMore] = useState(false);
+  const editorContext = useEditorContext();
+  const parentFocusedFields = getParentFocusedFields(
+    focussedField,
+    editorContext,
+  );
 
   return (
     <SelectionFrameActionsContainer onClick={(e) => e.stopPropagation()}>
       <SelectionFrameActionsGroupButtons>
+        {parentFocusedFields.length > 0 && (
+          <ButtonGhost
+            icon={Icons.LayerGroup}
+            hideLabel
+            onClick={() => editorContext.setFocussedField(parentFocusedFields)}
+          >
+            {t("selectParent")}
+          </ButtonGhost>
+        )}
         <ButtonGhost
           icon={Icons.Duplicate}
           hideLabel

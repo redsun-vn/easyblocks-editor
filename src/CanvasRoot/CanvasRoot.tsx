@@ -1,5 +1,6 @@
 import React, { ReactNode } from "react";
 import { useEditorGlobalKeyboardShortcuts } from "../useEditorGlobalKeyboardShortcuts";
+import { CanvasLayerContextMenu } from "./CanvasLayerContextMenu";
 
 type CanvasRootProps = {
   children: ReactNode;
@@ -30,6 +31,7 @@ function CanvasRoot(props: CanvasRootProps) {
             }}
           />
           {props.children}
+          <CanvasLayerContextMenu editorContext={editorContext} />
         </div>
       )}
       {!editorContext.isEditing && props.children}

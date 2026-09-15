@@ -2,10 +2,13 @@ import type { useSortable } from "@dnd-kit/sortable";
 import { selectionFramePositionChanged } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React, { MouseEvent, ReactNode, useEffect, useState } from "react";
+import {
+  CANVAS_FRAME_LABEL_ATTRIBUTE,
+  CANVAS_FRAME_PATH_ATTRIBUTE,
+} from "./canvasLayers";
 
 type SelectionFrameControllerProps = {
   isActive: boolean;
-  isChildrenSelectionDisabled: boolean;
   onSelect: (event: MouseEvent<HTMLElement>) => void;
   children: ReactNode;
   stitches: any;
@@ -13,11 +16,14 @@ type SelectionFrameControllerProps = {
   id: string;
   direction: "horizontal" | "vertical";
   path: string;
+  label: string;
 };
+
+/** Innermost hovered frame: the one a click selects, since clicks select deepest-first. */
+const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:hover))`;
 
 function SelectionFrameController({
   isActive,
-  isChildrenSelectionDisabled,
   children,
   onSelect,
   stitches,
@@ -25,6 +31,7 @@ function SelectionFrameController({
   id,
   direction,
   path,
+  label,
 }: SelectionFrameControllerProps) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
 
@@ -39,10 +46,9 @@ function SelectionFrameController({
     position: "relative",
     display: "grid",
 
-    // "&[data-children-selection-disabled=true] *": {
-    //   pointerEvents: "none !important",
-    //   userSelect: "none !important",
-    // },
+    // Selection is deepest-first: a click selects the innermost frame under the pointer,
+    // so children stay clickable. Ancestors are reached with Esc, the action bar parent
+    // button, the breadcrumb under the canvas or the right-click layer menu.
 
     "&[data-draggable-active=false]::after": {
       content: `''`,
@@ -59,19 +65,38 @@ function SelectionFrameController({
       userSelect: "none",
       transition: "all 100ms",
       boxShadow: "var(--tina-shadow-big)",
-      // zIndex: "var(--tina-z-index-2)",
     },
 
     "&[data-active=true]::after": {
       opacity: 1,
     },
 
-    "&:hover::after": {
+    // `:hover` also matches every ancestor frame, so only the click target gets feedback.
+    [`&[data-active=false]${HOVERED_TARGET_FRAME}::after`]: {
       opacity: 0.5,
     },
 
-    "&[data-active=true]:hover::after": {
-      opacity: 1,
+    // Name of the click target, unless it is already selected: the sidebar shows its name
+    // and the label would cover text being edited. While dragging, `::before` is the drop
+    // indicator instead.
+    [`&[data-active=false][data-draggable-dragging=false]${HOVERED_TARGET_FRAME}::before`]:
+      {
+      content: `attr(${CANVAS_FRAME_LABEL_ATTRIBUTE})`,
+      position: "absolute",
+      top: 0,
+      left: 0,
+      zIndex: "var(--tina-z-index-2)",
+      padding: "0 6px",
+      borderBottomRightRadius: "4px",
+      backgroundColor: "var(--tina-color-primary)",
+      color: "#fff",
+      fontFamily: "var(--tina-font-family)",
+      fontSize: "11px",
+      fontWeight: 600,
+      lineHeight: "18px",
+      whiteSpace: "nowrap",
+      pointerEvents: "none",
+      userSelect: "none",
     },
 
     "&[data-draggable-over=true]::before": {
@@ -124,8 +149,11 @@ function SelectionFrameController({
 
   return (
     <div
+      {...{
+        [CANVAS_FRAME_PATH_ATTRIBUTE]: path,
+        [CANVAS_FRAME_LABEL_ATTRIBUTE]: label,
+      }}
       data-active={isActive}
-      data-children-selection-disabled={isChildrenSelectionDisabled}
       data-draggable-dragging={sortable.active !== null}
       data-draggable-over={sortable.isOver}
       data-draggable-active={

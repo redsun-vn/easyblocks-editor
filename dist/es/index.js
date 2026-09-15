@@ -8124,6 +8124,157 @@ function pasteManager() {
   };
 }
 
+/**
+ * A selected rich text part is framed by its $richText component, so moving the
+ * selection around starts from that component.
+ */
+function getFramedPath(path) {
+  return isConfigPathRichTextPart(path) ? path.replace(RICH_TEXT_PART_CONFIG_PATH_REGEXP, "") : path;
+}
+
+/**
+ * A path that no longer points at a component entry (e.g. the item was just removed)
+ * resolves to its closest existing ancestor with a leftover field name.
+ */
+function isComponentPath(path, editorContext) {
+  return parsePath(path, editorContext.form).fieldName === undefined;
+}
+
+/**
+ * Whether the component at `path` renders inside a selection frame on the canvas.
+ * Mirrors rendering: the page root has no frame, children of `noInline` slots are built
+ * without EditableComponentBuilder, and BlocksControls skips the frame for compiled
+ * components marked `noInline` (`selectable: false` in editing info).
+ */
+function hasSelectionFrame(path, editorContext) {
+  const {
+    parent
+  } = parsePath(path, editorContext.form);
+  if (!parent) {
+    return false;
+  }
+  const schemaProp = findComponentDefinitionById(parent.templateId, editorContext)?.schema.find(schemaProp => schemaProp.prop === parent.fieldName);
+  if (!schemaProp || "noInline" in schemaProp && schemaProp.noInline) {
+    return false;
+  }
+  const compiledComponent = dotNotationGet(editorContext.compiledComponentConfig, pathToCompiledPath(path, editorContext));
+  return compiledComponent !== undefined && !compiledComponent.__editing?.noInline;
+}
+
+/**
+ * Framed components that contain `path`, nearest first: the layers a user can move the
+ * selection up to from the canvas.
+ */
+function getSelectableAncestorPaths(path, editorContext) {
+  const ancestorPaths = [];
+  try {
+    const framedPath = getFramedPath(path);
+    if (!isComponentPath(framedPath, editorContext)) {
+      return [];
+    }
+    if (framedPath !== path && hasSelectionFrame(framedPath, editorContext)) {
+      ancestorPaths.push(framedPath);
+    }
+    let parent = parsePath(framedPath, editorContext.form).parent;
+    while (parent) {
+      if (hasSelectionFrame(parent.path, editorContext)) {
+        ancestorPaths.push(parent.path);
+      }
+      parent = parsePath(parent.path, editorContext.form).parent;
+    }
+  } catch {
+    return [];
+  }
+  return ancestorPaths;
+}
+
+/**
+ * Focus after "select parent": the nearest framed ancestor of every focused item, once
+ * each. Top-level sections have no framed parent, so selecting their parent clears focus.
+ */
+function getParentFocusedFields(focusedFields, editorContext) {
+  const parentPaths = focusedFields.flatMap(focusedField => getSelectableAncestorPaths(focusedField, editorContext).slice(0, 1));
+  return Array.from(new Set(parentPaths));
+}
+
+/**
+ * Component name shown by canvas selection UI (hover label, breadcrumb). Falls back to
+ * the component id when its definition has no label.
+ */
+function getComponentLabel(templateId, editorContext, translate) {
+  const definition = findComponentDefinitionById(templateId, editorContext);
+  return translate(definition?.label ?? templateId);
+}
+
+/**
+ * Breadcrumb for a focused path: framed ancestors outermost first, then the framed
+ * selection itself. Empty when the path no longer points at a component.
+ */
+function getSelectionBreadcrumb(path, editorContext, translate) {
+  try {
+    const framedPath = getFramedPath(path);
+    if (!isComponentPath(framedPath, editorContext)) {
+      return [];
+    }
+    return getSelectableAncestorPaths(framedPath, editorContext).reverse().concat(framedPath).map(crumbPath => ({
+      path: crumbPath,
+      label: getComponentLabel(parsePath(crumbPath, editorContext.form).templateId, editorContext, translate)
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// Fixed height, rendered even without a selection, so selecting never resizes the canvas.
+const BreadcrumbBar = styled.nav.withConfig({
+  displayName: "SelectionBreadcrumb__BreadcrumbBar",
+  componentId: "sc-1hwunmc-0"
+})(["flex:0 0 36px;display:flex;align-items:center;gap:2px;padding:0 12px;overflow-x:auto;border-top:1px solid ", ";background:", ";white-space:nowrap;"], Colors.black10, Colors.white);
+const Crumb = styled.button.withConfig({
+  displayName: "SelectionBreadcrumb__Crumb",
+  componentId: "sc-1hwunmc-1"
+})(["flex-shrink:0;padding:2px 6px;border:0;border-radius:4px;background:transparent;cursor:pointer;&:hover{background:", ";}"], Colors.black10);
+const CrumbLabel = styled(Typography).withConfig({
+  displayName: "SelectionBreadcrumb__CrumbLabel",
+  componentId: "sc-1hwunmc-2"
+})(["cursor:pointer;font-weight:", ";"], ({
+  $isCurrent
+}) => $isCurrent ? 700 : 400);
+
+/**
+ * Strip under the canvas with the selection's framed ancestors, outermost first. Lets
+ * users reach containers that their children cover on the canvas.
+ */
+function SelectionBreadcrumb() {
+  const editorContext = useEditorContext();
+  const {
+    t
+  } = useTranslation();
+  const {
+    focussedField,
+    setFocussedField
+  } = editorContext;
+  const crumbs = focussedField.length === 1 ? getSelectionBreadcrumb(focussedField[0], editorContext, t) : [];
+  return /*#__PURE__*/React__default.createElement(BreadcrumbBar, {
+    "aria-label": t("selectionBreadcrumb")
+  }, crumbs.map((crumb, index) => {
+    const isCurrent = index === crumbs.length - 1;
+    return /*#__PURE__*/React__default.createElement(Fragment, {
+      key: crumb.path
+    }, index > 0 && /*#__PURE__*/React__default.createElement(Icons.ChevronRight, {
+      size: 14
+    }), /*#__PURE__*/React__default.createElement(Crumb, {
+      type: "button",
+      "aria-current": isCurrent ? "location" : undefined,
+      onClick: () => setFocussedField(crumb.path)
+    }, /*#__PURE__*/React__default.createElement(CrumbLabel, {
+      $isCurrent: isCurrent,
+      variant: "body",
+      component: "span"
+    }, crumb.label)));
+  }));
+}
+
 function editorVariable(name) {
   return `--shopstory-editor-${name}`;
 }
@@ -8292,9 +8443,15 @@ const SelectionFrameActions = ({
     contextParams
   });
   const [showMore, setShowMore] = useState(false);
+  const editorContext = useEditorContext();
+  const parentFocusedFields = getParentFocusedFields(focussedField, editorContext);
   return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, {
     onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, parentFocusedFields.length > 0 && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.LayerGroup,
+    hideLabel: true,
+    onClick: () => editorContext.setFocussedField(parentFocusedFields)
+  }, t("selectParent")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Duplicate,
     hideLabel: true,
     onClick: () => actions.duplicateItems(focussedField)
@@ -9200,7 +9357,7 @@ function useDataSaver(initialDocument, editorContext, editorMode) {
   };
 }
 
-const GLOBAL_SHORTCUTS_KEYS = ["Delete", "Backspace", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "l", "L"
+const GLOBAL_SHORTCUTS_KEYS = ["Escape", "Delete", "Backspace", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "l", "L"
 // "s",
 // "S",
 ];
@@ -9238,6 +9395,12 @@ function useEditorGlobalKeyboardShortcuts(editorContext) {
           debouncedMoveItems(actions, focusedFields, "top");
         } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
           debouncedMoveItems(actions, focusedFields, "bottom");
+        } else if (event.key === "Escape") {
+          // A popup (select, menu, tooltip) that closed on this Escape has already
+          // prevented its default; it must not also move the selection.
+          if (!event.defaultPrevented) {
+            editorContext.setFocussedField(getParentFocusedFields(focusedFields, editorContext));
+          }
         } else if (event.key.toUpperCase() === "L") {
           actions.logSelectedItems();
         }
@@ -9468,35 +9631,39 @@ function useEditorHistory({
 }
 
 const debouncedUpdate = debounce$1(fn => fn(), 100);
+const CanvasColumn = styled.div.withConfig({
+  displayName: "Editor__CanvasColumn",
+  componentId: "sc-t95yuf-0"
+})(["flex:1 1 auto;display:flex;flex-direction:column;"]);
 const ContentContainer = styled.div.withConfig({
   displayName: "Editor__ContentContainer",
-  componentId: "sc-t95yuf-0"
-})(["position:relative;flex:1 1 auto;display:flex;flex-direction:column;"]);
+  componentId: "sc-t95yuf-1"
+})(["position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;"]);
 const SidebarAndContentContainer = styled.div.withConfig({
   displayName: "Editor__SidebarAndContentContainer",
-  componentId: "sc-t95yuf-1"
+  componentId: "sc-t95yuf-2"
 })(["height:", ";width:100%;background:#fafafa;display:flex;flex-direction:row;align-items:stretch;"], props => `calc(${props.height} - ${TOP_BAR_HEIGHT}px)`);
 const SidebarContainer = styled.div.withConfig({
   displayName: "Editor__SidebarContainer",
-  componentId: "sc-t95yuf-2"
+  componentId: "sc-t95yuf-3"
 })(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
   width = "240px"
 }) => `flex: 0 0 ${width};`, Colors.white, Colors.black100, Colors.black100);
 const DataSaverRoot = styled.div.withConfig({
   displayName: "Editor__DataSaverRoot",
-  componentId: "sc-t95yuf-3"
+  componentId: "sc-t95yuf-4"
 })(["position:fixed;width:100%;height:100%;z-index:100000;display:flex;justify-content:center;align-items:center;"]);
 const DataSaverOverlay = styled.div.withConfig({
   displayName: "Editor__DataSaverOverlay",
-  componentId: "sc-t95yuf-4"
+  componentId: "sc-t95yuf-5"
 })(["z-index:-1;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.25);"]);
 const DataSaverModal = styled.div.withConfig({
   displayName: "Editor__DataSaverModal",
-  componentId: "sc-t95yuf-5"
+  componentId: "sc-t95yuf-6"
 })(["background:white;padding:32px;border-radius:8px;display:flex;justify-content:center;align-items:center;", " font-size:16px;"], Fonts.body);
 const AuthenticationScreen = styled.div.withConfig({
   displayName: "Editor__AuthenticationScreen",
-  componentId: "sc-t95yuf-6"
+  componentId: "sc-t95yuf-7"
 })(["width:100vw;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px;text-align:center;", ""], Fonts.bodyLarge);
 const Editor = EditorBackendInitializer;
 function EditorBackendInitializer(props) {
@@ -10359,7 +10526,7 @@ const EditorContent = ({
     showLeftSidebar: showLeftSidebar,
     globalSections: props.config.globalSections,
     sidebarNodeRef: leftSidebarNodeRef
-  }), /*#__PURE__*/React__default.createElement(ContentContainer, {
+  }), /*#__PURE__*/React__default.createElement(CanvasColumn, null, /*#__PURE__*/React__default.createElement(ContentContainer, {
     onClick: () => {
       setFocussedField([]);
     }
@@ -10379,7 +10546,7 @@ const EditorContent = ({
     height: iframeSize.height,
     transform: iframeSize.transform,
     editorMode: mode
-  })), isEditMode && (isRightSidebarOpen || focussedField.length > 0) && /*#__PURE__*/React__default.createElement(SidebarContainer, {
+  })), isEditMode && /*#__PURE__*/React__default.createElement(SelectionBreadcrumb, null)), isEditMode && (isRightSidebarOpen || focussedField.length > 0) && /*#__PURE__*/React__default.createElement(SidebarContainer, {
     ref: sidebarNodeRef
   }, /*#__PURE__*/React__default.createElement(EditorSidebar, {
     focussedField: focussedField,
@@ -10968,6 +11135,196 @@ function EasyblocksParent(props) {
   })));
 }
 
+/**
+ * Attributes set on every canvas selection frame. Hover styles and the layer context
+ * menu read them straight from the DOM, without tracking component state.
+ */
+const CANVAS_FRAME_PATH_ATTRIBUTE = "data-easyblocks-path";
+const CANVAS_FRAME_LABEL_ATTRIBUTE = "data-easyblocks-label";
+/**
+ * Selection frames among hit-tested elements (e.g. `document.elementsFromPoint`), kept
+ * in the given order so the topmost layer under the pointer comes first.
+ */
+function getCanvasLayers(elements) {
+  return elements.flatMap(element => {
+    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
+    if (path === null) {
+      return [];
+    }
+    return [{
+      path,
+      label: element.getAttribute(CANVAS_FRAME_LABEL_ATTRIBUTE) ?? path
+    }];
+  });
+}
+
+// Inline styles: the menu renders inside the site page, so it must not depend on page CSS.
+
+const menuStyles = {
+  position: "fixed",
+  zIndex: 2147483647,
+  minWidth: 180,
+  maxWidth: 320,
+  maxHeight: "60vh",
+  overflowY: "auto",
+  padding: "4px 0",
+  borderRadius: 4,
+  background: "#fff",
+  boxShadow: "var(--tina-shadow-big)",
+  color: "var(--tina-color-grey-10)",
+  fontFamily: "var(--tina-font-family)",
+  fontSize: 13,
+  lineHeight: "20px"
+};
+const titleStyles = {
+  padding: "4px 12px",
+  color: "var(--tina-color-grey-6)",
+  fontSize: 11,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: 0.4
+};
+const itemStyles = {
+  display: "block",
+  width: "100%",
+  padding: "6px 12px",
+  border: 0,
+  cursor: "pointer",
+  color: "inherit",
+  font: "inherit",
+  textAlign: "left",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis"
+};
+
+const VIEWPORT_MARGIN = 8;
+function clampToViewport(start, size, viewportSize) {
+  return Math.max(VIEWPORT_MARGIN, Math.min(start, viewportSize - size - VIEWPORT_MARGIN));
+}
+
+/**
+ * Right-click menu listing every selection frame under the pointer, topmost first, so
+ * layers covered by their children or by overlapping elements stay selectable from the
+ * canvas.
+ */
+function CanvasLayerContextMenu({
+  editorContext
+}) {
+  const [openedMenu, setOpenedMenu] = useState(null);
+  const [hoveredPath, setHoveredPath] = useState(null);
+  const menuRef = useRef(null);
+  const {
+    t
+  } = getTranslation(editorContext);
+  function close() {
+    setOpenedMenu(null);
+    setHoveredPath(null);
+  }
+  useEffect(() => {
+    function handleContextMenu(event) {
+      const target = event.target;
+      if (menuRef.current?.contains(target)) {
+        return;
+      }
+
+      // Text editing keeps the native menu (copy, paste, spellcheck).
+      if (target?.closest?.('input, textarea, [contenteditable="true"]')) {
+        return;
+      }
+      const layers = getCanvasLayers(document.elementsFromPoint(event.clientX, event.clientY));
+      if (layers.length === 0) {
+        return;
+      }
+      event.preventDefault();
+      setOpenedMenu({
+        x: event.clientX,
+        y: event.clientY,
+        layers
+      });
+    }
+    document.addEventListener("contextmenu", handleContextMenu);
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+    };
+  }, []);
+  useEffect(() => {
+    if (!openedMenu) {
+      return;
+    }
+    function closeWhenOutsideMenu(event) {
+      if (!menuRef.current?.contains(event.target)) {
+        close();
+      }
+    }
+
+    // Any key closes the menu: its layers were read from the DOM when it opened, and
+    // editing shortcuts (delete, move) change them. Escape must not also select the parent.
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+      }
+      close();
+    }
+    window.addEventListener("pointerdown", closeWhenOutsideMenu, true);
+    window.addEventListener("scroll", closeWhenOutsideMenu, true);
+    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("resize", close);
+    window.addEventListener("blur", close);
+    return () => {
+      window.removeEventListener("pointerdown", closeWhenOutsideMenu, true);
+      window.removeEventListener("scroll", closeWhenOutsideMenu, true);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("blur", close);
+    };
+  }, [openedMenu]);
+
+  // Keep the whole menu inside the canvas viewport, measured before paint.
+  useLayoutEffect(() => {
+    const menuElement = menuRef.current;
+    if (!openedMenu || !menuElement) {
+      return;
+    }
+    const {
+      width,
+      height
+    } = menuElement.getBoundingClientRect();
+    menuElement.style.left = `${clampToViewport(openedMenu.x, width, window.innerWidth)}px`;
+    menuElement.style.top = `${clampToViewport(openedMenu.y, height, window.innerHeight)}px`;
+  }, [openedMenu]);
+  if (!openedMenu) {
+    return null;
+  }
+  return /*#__PURE__*/React__default.createElement("div", {
+    ref: menuRef,
+    role: "menu",
+    "aria-label": t("selectLayer"),
+    style: menuStyles
+    // The canvas root clears the selection on click.
+    ,
+    onClick: event => event.stopPropagation(),
+    onContextMenu: event => event.preventDefault()
+  }, /*#__PURE__*/React__default.createElement("div", {
+    style: titleStyles
+  }, t("selectLayer")), openedMenu.layers.map(layer => /*#__PURE__*/React__default.createElement("button", {
+    key: layer.path,
+    type: "button",
+    role: "menuitem",
+    style: {
+      ...itemStyles,
+      background: hoveredPath === layer.path ? "var(--tina-color-grey-2)" : "transparent",
+      fontWeight: editorContext.focussedField.includes(layer.path) ? 600 : 400
+    },
+    onMouseEnter: () => setHoveredPath(layer.path),
+    onMouseLeave: () => setHoveredPath(null),
+    onClick: () => {
+      editorContext.setFocussedField(layer.path);
+      close();
+    }
+  }, layer.label)));
+}
+
 function CanvasRoot(props) {
   const editorContext = window.parent.editorWindowAPI?.editorContext;
   if (!editorContext) {
@@ -10988,7 +11345,9 @@ function CanvasRoot(props) {
     dangerouslySetInnerHTML: {
       __html: globalEditorRendererStyles
     }
-  }), props.children), !editorContext.isEditing && props.children);
+  }), props.children, /*#__PURE__*/React__default.createElement(CanvasLayerContextMenu, {
+    editorContext: editorContext
+  })), !editorContext.isEditing && props.children);
 }
 const globalEditorRendererStyles = `
     /*
@@ -11117,16 +11476,18 @@ const globalEditorRendererStyles = `
   }
 `;
 
+/** Innermost hovered frame: the one a click selects, since clicks select deepest-first. */
+const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:hover))`;
 function SelectionFrameController({
   isActive,
-  isChildrenSelectionDisabled,
   children,
   onSelect,
   stitches,
   sortable,
   id,
   direction,
-  path
+  path,
+  label
 }) {
   const [node, setNode] = useState(null);
   useUpdateFramePosition({
@@ -11137,10 +11498,9 @@ function SelectionFrameController({
   const wrapperClassName = stitches.css({
     position: "relative",
     display: "grid",
-    // "&[data-children-selection-disabled=true] *": {
-    //   pointerEvents: "none !important",
-    //   userSelect: "none !important",
-    // },
+    // Selection is deepest-first: a click selects the innermost frame under the pointer,
+    // so children stay clickable. Ancestors are reached with Esc, the action bar parent
+    // button, the breadcrumb under the canvas or the right-click layer menu.
 
     "&[data-draggable-active=false]::after": {
       content: `''`,
@@ -11157,16 +11517,34 @@ function SelectionFrameController({
       userSelect: "none",
       transition: "all 100ms",
       boxShadow: "var(--tina-shadow-big)"
-      // zIndex: "var(--tina-z-index-2)",
     },
     "&[data-active=true]::after": {
       opacity: 1
     },
-    "&:hover::after": {
+    // `:hover` also matches every ancestor frame, so only the click target gets feedback.
+    [`&[data-active=false]${HOVERED_TARGET_FRAME}::after`]: {
       opacity: 0.5
     },
-    "&[data-active=true]:hover::after": {
-      opacity: 1
+    // Name of the click target, unless it is already selected: the sidebar shows its name
+    // and the label would cover text being edited. While dragging, `::before` is the drop
+    // indicator instead.
+    [`&[data-active=false][data-draggable-dragging=false]${HOVERED_TARGET_FRAME}::before`]: {
+      content: `attr(${CANVAS_FRAME_LABEL_ATTRIBUTE})`,
+      position: "absolute",
+      top: 0,
+      left: 0,
+      zIndex: "var(--tina-z-index-2)",
+      padding: "0 6px",
+      borderBottomRightRadius: "4px",
+      backgroundColor: "var(--tina-color-primary)",
+      color: "#fff",
+      fontFamily: "var(--tina-font-family)",
+      fontSize: "11px",
+      fontWeight: 600,
+      lineHeight: "18px",
+      whiteSpace: "nowrap",
+      pointerEvents: "none",
+      userSelect: "none"
     },
     "&[data-draggable-over=true]::before": {
       position: "absolute",
@@ -11205,8 +11583,9 @@ function SelectionFrameController({
     };
   });
   return /*#__PURE__*/React__default.createElement("div", _extends({
+    [CANVAS_FRAME_PATH_ATTRIBUTE]: path,
+    [CANVAS_FRAME_LABEL_ATTRIBUTE]: label,
     "data-active": isActive,
-    "data-children-selection-disabled": isChildrenSelectionDisabled,
     "data-draggable-dragging": sortable.active !== null,
     "data-draggable-over": sortable.isOver,
     "data-draggable-active": sortable.active !== null && sortable.active?.id === id,
@@ -11282,14 +11661,16 @@ function BlocksControls({
   disabled,
   direction,
   id,
+  templateId,
   index,
   length
 }) {
+  const editorContext = window.parent.editorWindowAPI?.editorContext ?? {};
   const {
     focussedField = [],
     setFocussedField,
     form
-  } = window.parent.editorWindowAPI?.editorContext ?? {};
+  } = editorContext;
   const meta = useEasyblocksMetadata();
   const dndContext = useDndContext();
   const isActive = focussedField.map(focusedField => {
@@ -11377,13 +11758,13 @@ function BlocksControls({
     position: "before"
   }), /*#__PURE__*/React__default.createElement(SelectionFrameController, {
     isActive: isActive,
-    isChildrenSelectionDisabled: !isActive && !isChildComponentActive,
     onSelect: focusOnBlock,
     stitches: meta.stitches,
     sortable: sortable,
     id: id,
     direction: direction,
-    path: path
+    path: path,
+    label: getComponentLabel(templateId, editorContext, getTranslation(editorContext).t)
   }, children), !isDroppableDisabled && isActivePathInDifferentCollection && sortable.activeIndex > sortable.index && index === length - 1 && /*#__PURE__*/React__default.createElement(DroppablePlaceholder, {
     id: id,
     direction: direction,

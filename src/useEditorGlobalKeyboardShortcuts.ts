@@ -4,8 +4,10 @@ import { duplicateConfig } from "@redsun-vn/easyblocks-core/_internals";
 import { debounce } from "lodash";
 import { useEffect, useRef } from "react";
 import type { EditorContextType } from "./EditorContext";
+import { getParentFocusedFields } from "./utils/selection/canvasSelectionPaths";
 
 const GLOBAL_SHORTCUTS_KEYS = [
+  "Escape",
   "Delete",
   "Backspace",
   "ArrowUp",
@@ -66,6 +68,14 @@ function useEditorGlobalKeyboardShortcuts(editorContext: EditorContextType) {
           debouncedMoveItems(actions, focusedFields, "top");
         } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
           debouncedMoveItems(actions, focusedFields, "bottom");
+        } else if (event.key === "Escape") {
+          // A popup (select, menu, tooltip) that closed on this Escape has already
+          // prevented its default; it must not also move the selection.
+          if (!event.defaultPrevented) {
+            editorContext.setFocussedField(
+              getParentFocusedFields(focusedFields, editorContext),
+            );
+          }
         } else if (event.key.toUpperCase() === "L") {
           actions.logSelectedItems();
         }
