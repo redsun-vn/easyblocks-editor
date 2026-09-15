@@ -18,10 +18,12 @@ import {
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React, { Fragment } from "react";
 import { EditorContextType } from "../EditorContext";
+import { getTranslation } from "../useTranslation";
 import {
   RICH_TEXT_PART_CONFIG_PATH_REGEXP,
   isConfigPathRichTextPart,
 } from "../utils/isConfigPathRichTextPart";
+import { getComponentLabel } from "../utils/selection/canvasSelectionPaths";
 import { SelectionFrameController } from "./SelectionFrameController";
 
 interface BlocksControlsProps {
@@ -41,15 +43,13 @@ export function BlocksControls({
   disabled,
   direction,
   id,
+  templateId,
   index,
   length,
 }: BlocksControlsProps) {
-  const {
-    focussedField = [],
-    setFocussedField,
-    form,
-  }: EditorContextType = window.parent.editorWindowAPI?.editorContext ??
-  ({} as EditorContextType);
+  const editorContext: EditorContextType =
+    window.parent.editorWindowAPI?.editorContext ?? ({} as EditorContextType);
+  const { focussedField = [], setFocussedField, form } = editorContext;
 
   const meta = useEasyblocksMetadata();
   const dndContext = useDndContext();
@@ -220,13 +220,17 @@ export function BlocksControls({
 
       <SelectionFrameController
         isActive={isActive}
-        isChildrenSelectionDisabled={!isActive && !isChildComponentActive}
         onSelect={focusOnBlock}
         stitches={meta.stitches}
         sortable={sortable}
         id={id}
         direction={direction}
         path={path}
+        label={getComponentLabel(
+          templateId,
+          editorContext,
+          getTranslation(editorContext).t,
+        )}
       >
         {children}
       </SelectionFrameController>

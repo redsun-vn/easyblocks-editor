@@ -1,0 +1,1 @@
+{"version":3,"file":"CanvasLayerContextMenu.d.ts","sourceRoot":"","sources":["../../../src/CanvasRoot/CanvasLayerContextMenu.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAuD,MAAM,OAAO,CAAC;AAK5E,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,kBAAkB,CAAC;AAuB1D;;;;GAIG;AACH,iBAAS,sBAAsB,CAAC,EAC9B,aAAa,GACd,EAAE;IACD,aAAa,EAAE,iBAAiB,CAAC;CAClC,4BAuIA;AAED,OAAO,EAAE,sBAAsB,EAAE,CAAC"}

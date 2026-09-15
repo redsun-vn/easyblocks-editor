@@ -11,6 +11,6 @@ interface BlocksControlsProps {
     index: number;
     length: number;
 }
-export declare function BlocksControls({ children, path, disabled, direction, id, index, length, }: BlocksControlsProps): React.JSX.Element;
+export declare function BlocksControls({ children, path, disabled, direction, id, templateId, index, length, }: BlocksControlsProps): React.JSX.Element;
 export {};
 //# sourceMappingURL=BlockControls.d.ts.map
