@@ -10068,10 +10068,11 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
-  // Layers opens by default for theme builders. Shop owners never get this
-  // panel (see EditorLeftSidebar), so defaulting them to it would mount an
-  // empty 280px column.
-  const [showLeftSidebar, setShowLeftSidebar] = useState(mode === "user" ? null : "layers");
+  // Which left panel the editor opens with. Theme builders start on Layers.
+  // Shop owners start on Sections because Layers is hidden for them
+  // (see EditorLeftSidebar), and defaulting them to it would mount an empty
+  // 280px column.
+  const [showLeftSidebar, setShowLeftSidebar] = useState(mode === "user" ? "sections" : "layers");
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(compilationContext.contextParams.locale);
   const prevLocale = useRef("");
@@ -10534,11 +10535,6 @@ const EditorContent = ({
     }
     window.addEventListener("message", handleEditorEvents);
     return () => window.removeEventListener("message", handleEditorEvents);
-  }, []);
-  useEffect(() => {
-    if (mode !== "admin-template") {
-      setShowLeftSidebar("sections");
-    }
   }, []);
   useEffect(() => {
     const isSameConfig = deepCompare(configAfterAutoRef.current ?? {}, configAfterAuto);

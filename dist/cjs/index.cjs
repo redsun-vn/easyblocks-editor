@@ -10103,10 +10103,11 @@ const EditorContent = ({
 
   const compilationCache = React.useRef(new easyblocksCore.CompilationCache());
   const [isEditing, setEditing] = React.useState(true);
-  // Layers opens by default for theme builders. Shop owners never get this
-  // panel (see EditorLeftSidebar), so defaulting them to it would mount an
-  // empty 280px column.
-  const [showLeftSidebar, setShowLeftSidebar] = React.useState(mode === "user" ? null : "layers");
+  // Which left panel the editor opens with. Theme builders start on Layers.
+  // Shop owners start on Sections because Layers is hidden for them
+  // (see EditorLeftSidebar), and defaulting them to it would mount an empty
+  // 280px column.
+  const [showLeftSidebar, setShowLeftSidebar] = React.useState(mode === "user" ? "sections" : "layers");
   const [isRightSidebarOpen, setRightSidebarOpen] = React.useState(false);
   const [currentLocale, setCurrentLocale] = React.useState(compilationContext.contextParams.locale);
   const prevLocale = React.useRef("");
@@ -10569,11 +10570,6 @@ const EditorContent = ({
     }
     window.addEventListener("message", handleEditorEvents);
     return () => window.removeEventListener("message", handleEditorEvents);
-  }, []);
-  React.useEffect(() => {
-    if (mode !== "admin-template") {
-      setShowLeftSidebar("sections");
-    }
   }, []);
   React.useEffect(() => {
     const isSameConfig = deepCompare(configAfterAutoRef.current ?? {}, configAfterAuto);
