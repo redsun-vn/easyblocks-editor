@@ -108,7 +108,6 @@ const VerticalLine = styled.div`
 const debouncedSave = debounce((fn: () => void) => fn(), 200);
 
 export const EditorTopBar: React.FC<{
-  name?: string;
   saveLabel: string;
   onClose?: () => void;
   onSaveDocument?: () => void;
@@ -139,7 +138,6 @@ export const EditorTopBar: React.FC<{
   /** The scale actually in effect, which is clamped to what the container fits. */
   appliedScale: number;
 }> = ({
-  name,
   onClose,
   onSaveDocument: _onSaveDocument,
   onConfigChange,
@@ -300,19 +298,6 @@ export const EditorTopBar: React.FC<{
         >
           {t('editor.sidebar.deviceFrame')}
         </ButtonGhost>
-
-        <Typography
-          style={{
-            maxWidth: 150,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-          variant="body"
-          component="label"
-        >
-          {name}
-        </Typography>
 
         <FontColorConfigsModal
           isOpen={isOpenConfigs}
