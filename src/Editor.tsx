@@ -722,8 +722,11 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
+  // Layers opens by default for theme builders. Shop owners never get this
+  // panel (see EditorLeftSidebar), so defaulting them to it would mount an
+  // empty 280px column.
   const [showLeftSidebar, setShowLeftSidebar] = useState<TLeftSidebar | null>(
-    null,
+    mode === "user" ? null : "layers",
   );
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(
