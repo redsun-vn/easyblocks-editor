@@ -5,6 +5,8 @@ type EditorSidebarProps = {
     focussedField: Array<string>;
     form: Form;
     SaveAsPicker?: SaveAsTemplatePicker;
+    /** True while nothing is selected: the panel keeps its width but shows a hint. */
+    isCollapsed?: boolean;
 };
 export declare const EditorSidebar: React.FC<EditorSidebarProps>;
 export {};

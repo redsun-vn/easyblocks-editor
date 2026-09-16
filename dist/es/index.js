@@ -4532,13 +4532,27 @@ const Error$1 = styled.div.withConfig({
   displayName: "EditorSidebar__Error",
   componentId: "sc-xkxfa3-0"
 })(["", " padding:7px 6px 7px;color:hsl(0deg 0% 50% / 0.8);white-space:normal;background:hsl(0deg 100% 50% / 0.2);margin-right:10px;border-radius:2px;margin:16px;"], Fonts.body);
+const EmptyState = styled.div.withConfig({
+  displayName: "EditorSidebar__EmptyState",
+  componentId: "sc-xkxfa3-1"
+})(["", " padding:24px;color:hsl(0deg 0% 50% / 0.8);text-align:center;white-space:normal;"], Fonts.body);
 const EditorSidebar = props => {
   const {
     focussedField,
     form,
-    SaveAsPicker
+    SaveAsPicker,
+    isCollapsed
   } = props;
   const editorContext = useEditorContext();
+  const {
+    t
+  } = useTranslation();
+
+  // Nothing selected: skip buildTinaFields entirely, it would render a
+  // meaningless field list for the empty path.
+  if (isCollapsed === true) {
+    return /*#__PURE__*/React__default.createElement(EmptyState, null, t("editor.sidebar.emptySelection"));
+  }
   const error = (() => {
     if (focussedField.length === 1) {
       const path = focussedField[0];
@@ -5230,7 +5244,10 @@ const EditorTopBar = ({
   onShowRightSidebar,
   editorMode,
   showDeviceFrame,
-  onToggleDeviceFrame
+  onToggleDeviceFrame,
+  zoom,
+  onZoomChange,
+  appliedScale
 }) => {
   const headingRef = useRef(null);
   const router = new URLSearchParams(window.location.search);
@@ -5241,6 +5258,8 @@ const EditorTopBar = ({
   } = useTranslation();
   const [isOpenConfigs, setIsOpenConfigs] = useState(false);
   const isAdminTemplate = editorMode === "admin-template";
+  // Shop owners get a deliberately smaller chrome: no theme-building tools.
+  const isShopUser = editorMode === "user";
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
       debouncedSave(_onSaveDocument);
@@ -5279,21 +5298,21 @@ const EditorTopBar = ({
     style: {
       background: showLeftSidebar === "sections" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.blocksAndSections")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.blocksAndSections")), !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.GlobalSections,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("global-sections"),
     style: {
       background: showLeftSidebar === "global-sections" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.globalSections"))), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.globalSections"))), !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Layers,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("layers"),
     style: {
       background: showLeftSidebar === "layers" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.layers")), !isAdminTemplate && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.layers")), !isAdminTemplate && !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.ColorAndFonts,
     hideLabel: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
@@ -5327,7 +5346,13 @@ const EditorTopBar = ({
   })), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
-    onDeviceChange: onViewportChange
+    onDeviceChange: onViewportChange,
+    editorMode: editorMode
+  }), /*#__PURE__*/React__default.createElement(ZoomSelect, {
+    zoom: zoom,
+    appliedScale: appliedScale,
+    onZoomChange: onZoomChange,
+    fitLabel: t("editor.zoom.fit")
   })), /*#__PURE__*/React__default.createElement(TopBarRight, null, /*#__PURE__*/React__default.createElement("div", {
     style: {
       display: "flex",
@@ -5505,11 +5530,65 @@ const DEVICE_ID_TO_ICON = {
     fill: "black"
   }))
 };
+const ZOOM_STEPS = [0.5, 0.75, 1];
+function ZoomSelect({
+  zoom,
+  appliedScale,
+  onZoomChange,
+  fitLabel
+}) {
+  return /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: "6px"
+    }
+  }, /*#__PURE__*/React__default.createElement(Select, {
+    value: zoom === "fit" ? "fit" : String(zoom),
+    onChange: value => {
+      onZoomChange(value === "fit" ? "fit" : Number(value));
+    }
+  }, ZOOM_STEPS.map(step => /*#__PURE__*/React__default.createElement(SelectItem, {
+    key: step,
+    value: String(step)
+  }, `${Math.round(step * 100)}%`)), /*#__PURE__*/React__default.createElement(SelectItem, {
+    value: "fit"
+  }, fitLabel)), /*#__PURE__*/React__default.createElement(Typography, null, `${Math.round(appliedScale * 100)}%`));
+}
 function DeviceSwitch({
   deviceId,
   devices,
-  onDeviceChange
+  onDeviceChange,
+  editorMode
 }) {
+  const {
+    t
+  } = useTranslation();
+  const isShopUser = editorMode === "user";
+
+  // Shop owners pick between three familiar devices; theme builders keep the
+  // full breakpoint set. `isMain` is the desktop breakpoint, read off the
+  // device list so no extra prop is needed.
+  const shopUserDevices = isShopUser ? [{
+    device: devices.find(d => d.id === "xs"),
+    label: t("editor.device.mobile")
+  }, {
+    device: devices.find(d => d.id === "md"),
+    label: t("editor.device.tablet")
+  }, {
+    device: devices.find(d => d.isMain),
+    label: t("editor.device.desktop")
+  }].flatMap(({
+    device,
+    label
+  }) => device ? [{
+    device,
+    label
+  }] : []) : null;
+  const visibleDevices = shopUserDevices ?? devices.filter(d => !d.hidden).map(d => ({
+    device: d,
+    label: DEVICE_LABELS[d.id] ?? d.label ?? d.id
+  }));
   return /*#__PURE__*/React__default.createElement(ToggleGroup, {
     value: deviceId,
     onChange: deviceId => {
@@ -5518,19 +5597,16 @@ function DeviceSwitch({
       }
       onDeviceChange(deviceId);
     }
-  }, devices.map(d => {
-    if (d.hidden) {
-      return null;
-    }
-    const label = DEVICE_LABELS[d.id] ?? d.label ?? d.id;
-    return /*#__PURE__*/React__default.createElement(Tooltip$1, {
-      key: d.id
-    }, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(ToggleGroupItem, {
-      value: d.id
-    }, DEVICE_ID_TO_ICON[d.id])), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
-      color: "white"
-    }, label)));
-  }), /*#__PURE__*/React__default.createElement(Tooltip$1, null, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(ToggleGroupItem, {
+  }, visibleDevices.map(({
+    device,
+    label
+  }) => /*#__PURE__*/React__default.createElement(Tooltip$1, {
+    key: device.id
+  }, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(ToggleGroupItem, {
+    value: device.id
+  }, DEVICE_ID_TO_ICON[device.id])), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
+    color: "white"
+  }, label)))), !isShopUser && /*#__PURE__*/React__default.createElement(Tooltip$1, null, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(ToggleGroupItem, {
     value: "fit-screen"
   }, DEVICE_ID_TO_ICON["fit-screen"])), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
     color: "white"
@@ -7879,6 +7955,13 @@ const EditorSections = () => {
   }) : null);
 };
 
+const EMPTY_SIDEBAR_CONFIG = {
+  id: "no-config",
+  title: "",
+  enableScroll: true,
+  width: "280px",
+  Component: null
+};
 const StyledEditorLeftSidebarRoot = styled$1.div.withConfig({
   displayName: "EditorLeftSidebar__StyledEditorLeftSidebarRoot",
   componentId: "sc-16mpetx-0"
@@ -7902,7 +7985,8 @@ const StyledEditorLeftSidebarGroup = styled$1.div.withConfig({
 const EditorLeftSidebar = ({
   showLeftSidebar,
   globalSections,
-  sidebarNodeRef
+  sidebarNodeRef,
+  editorMode
 }) => {
   const {
     t
@@ -7911,6 +7995,9 @@ const EditorLeftSidebar = ({
     switch (showLeftSidebar) {
       case "global-sections":
         {
+          if (editorMode === "user") {
+            return EMPTY_SIDEBAR_CONFIG;
+          }
           return {
             id: "editor-global-sections",
             title: t("editor.sidebar.globalSections"),
@@ -7923,6 +8010,9 @@ const EditorLeftSidebar = ({
         }
       case "layers":
         {
+          if (editorMode === "user") {
+            return EMPTY_SIDEBAR_CONFIG;
+          }
           return {
             id: "editor-layers",
             title: t("editor.sidebar.layers"),
@@ -7943,16 +8033,10 @@ const EditorLeftSidebar = ({
         }
       default:
         {
-          return {
-            id: "no-config",
-            title: "",
-            enableScroll: true,
-            width: "280px",
-            Component: null
-          };
+          return EMPTY_SIDEBAR_CONFIG;
         }
     }
-  }, [showLeftSidebar, globalSections]);
+  }, [showLeftSidebar, globalSections, editorMode]);
   return /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarRoot, {
     id: sidebarConfig.id,
     width: sidebarConfig.width,
@@ -9631,6 +9715,12 @@ function useEditorHistory({
 }
 
 const debouncedUpdate = debounce$1(fn => fn(), 100);
+
+/** Breathing room so the device frame chrome is not clipped by the container. */
+const DEVICE_FRAME_PADDING_PX = 48;
+
+/** A fixed zoom level, or "fit" to always scale the device down to the container. */
+
 const CanvasColumn = styled.div.withConfig({
   displayName: "Editor__CanvasColumn",
   componentId: "sc-t95yuf-0"
@@ -9865,7 +9955,7 @@ function useBuiltContent(editorContext, config, rawContent, externalData, onExte
     meta: buildEntryResult.current.meta
   };
 }
-function calculateViewportRelatedStuff(viewport, devices, mainBreakpointIndex, availableSize, showDeviceFrame) {
+function calculateViewportRelatedStuff(viewport, devices, mainBreakpointIndex, availableSize, showDeviceFrame, zoom = "fit") {
   let activeDevice;
 
   // Calculate active device
@@ -9882,7 +9972,6 @@ function calculateViewportRelatedStuff(viewport, devices, mainBreakpointIndex, a
   } else {
     activeDevice = devices.find(device => device.id === viewport);
   }
-  const activeDeviceindex = devices.findIndex(device => device.id === activeDevice.id);
 
   // Calculate width, height and scale
   let width, height;
@@ -9897,30 +9986,32 @@ function calculateViewportRelatedStuff(viewport, devices, mainBreakpointIndex, a
       width = availableSize.width;
       height = availableSize.height;
     } else {
-      const smallestNonScaledWidth = activeDeviceindex === 0 ? 0 : devices[activeDeviceindex - 1].breakpoint;
+      const isMobile = viewport === "xs" || viewport === "sm";
+      // Leave room for the device frame chrome so it is not clipped.
+      const frameInset = showDeviceFrame && !isMobile ? DEVICE_FRAME_PADDING_PX * 2 : 0;
+      const widthBudget = Math.max(availableSize.width - frameInset, 1);
+
+      // The page always keeps the width the device declares. When it does not
+      // fit we shrink it proportionally; we never stretch the device to the
+      // container, which is what used to reflow the page on selection.
       width = activeDevice.w;
-      height = activeDevice.h === null ? availableSize.height : Math.min(activeDevice.h, availableSize.height);
-      if (activeDevice.w <= availableSize.width) ; else if (smallestNonScaledWidth <= availableSize.width) {
-        // fits currently selected device range
-        width = availableSize.width;
+      const fitScale = Math.min(1, widthBudget / activeDevice.w);
+
+      // A zoom above fit-screen would overflow a container that cannot scroll,
+      // so fitScale is a hard ceiling.
+      const appliedScale = zoom === "fit" ? fitScale : Math.min(zoom, fitScale);
+      if (appliedScale < 1) {
+        scaleFactor = appliedScale;
+        height = activeDevice.h === null ? availableSize.height / appliedScale : Math.min(activeDevice.h, availableSize.height / appliedScale);
+        offsetY = (availableSize.height - height) / 2;
       } else {
-        // we must scale
-        scaleFactor = availableSize.width / activeDevice.w;
-        if (activeDevice.h === null) {
-          height = availableSize.height / scaleFactor;
-          offsetY = (availableSize.height - height) / 2;
-        }
+        height = activeDevice.h === null ? availableSize.height : Math.min(activeDevice.h, availableSize.height);
       }
     }
   }
-  const isMobileViewport = viewport === "xs" || viewport === "sm";
-  const shouldMiniaturize = showDeviceFrame && viewport !== "fit-screen" && !isMobileViewport;
-  if (shouldMiniaturize) {
-    const MINIATURE_FACTOR = 0.82;
-    scaleFactor = scaleFactor === null ? MINIATURE_FACTOR : scaleFactor * MINIATURE_FACTOR;
-  }
   return {
     breakpointIndex: activeDevice.id,
+    appliedScale: scaleFactor ?? 1,
     iframeSize: {
       width,
       height,
@@ -9966,11 +10057,13 @@ const EditorContent = ({
     width: iframeContainerRef.current.clientWidth,
     height: iframeContainerRef.current.clientHeight
   } : undefined;
-  const [showDeviceFrame, setShowDeviceFrame] = useState(false);
+  const [showDeviceFrame, setShowDeviceFrame] = useState(mode === "user");
+  const [zoom, setZoom] = useState("fit");
   const {
     breakpointIndex,
-    iframeSize
-  } = calculateViewportRelatedStuff(currentViewport, compilationContext.devices, compilationContext.mainBreakpointIndex, availableSize, showDeviceFrame);
+    iframeSize,
+    appliedScale
+  } = calculateViewportRelatedStuff(currentViewport, compilationContext.devices, compilationContext.mainBreakpointIndex, availableSize, showDeviceFrame, zoom);
   useRerenderOnIframeResize(iframeContainerRef.current); // re-render on resize (recalculates viewport size, active breakpoint for fit-screen etc);
 
   const compilationCache = useRef(new CompilationCache());
@@ -10519,13 +10612,17 @@ const EditorContent = ({
     },
     editorMode: mode,
     showDeviceFrame: showDeviceFrame,
-    onToggleDeviceFrame: () => setShowDeviceFrame(p => !p)
+    onToggleDeviceFrame: () => setShowDeviceFrame(p => !p),
+    zoom: zoom,
+    onZoomChange: setZoom,
+    appliedScale: appliedScale
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
     height: appHeight
   }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default.createElement(EditorLeftSidebar, {
     showLeftSidebar: showLeftSidebar,
     globalSections: props.config.globalSections,
-    sidebarNodeRef: leftSidebarNodeRef
+    sidebarNodeRef: leftSidebarNodeRef,
+    editorMode: mode
   }), /*#__PURE__*/React__default.createElement(CanvasColumn, null, /*#__PURE__*/React__default.createElement(ContentContainer, {
     onClick: () => {
       setFocussedField([]);
@@ -10546,12 +10643,13 @@ const EditorContent = ({
     height: iframeSize.height,
     transform: iframeSize.transform,
     editorMode: mode
-  })), isEditMode && /*#__PURE__*/React__default.createElement(SelectionBreadcrumb, null)), isEditMode && (isRightSidebarOpen || focussedField.length > 0) && /*#__PURE__*/React__default.createElement(SidebarContainer, {
+  })), isEditMode && /*#__PURE__*/React__default.createElement(SelectionBreadcrumb, null)), isEditMode && /*#__PURE__*/React__default.createElement(SidebarContainer, {
     ref: sidebarNodeRef
   }, /*#__PURE__*/React__default.createElement(EditorSidebar, {
     focussedField: focussedField,
     form: form,
-    SaveAsPicker: SaveAsPicker
+    SaveAsPicker: SaveAsPicker,
+    isCollapsed: !isRightSidebarOpen && focussedField.length === 0
   })), componentPickerData && /*#__PURE__*/React__default.createElement(ModalPicker, {
     onClose: closeComponentPickerModal,
     config: componentPickerData.config,

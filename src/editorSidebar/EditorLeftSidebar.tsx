@@ -3,7 +3,7 @@ import { Colors } from "@redsun-vn/easyblocks-design-system";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useMemo } from "react";
 import styled from "styled-components";
-import { TLeftSidebar } from "../types";
+import { TEasyblocksEditorMode, TLeftSidebar } from "../types";
 import { useTranslation } from "../useTranslation";
 import { EditorGlobalSections } from "./editorGlobalSections/EditorGlobalSections";
 import { EditorLayer } from "./editorLayer/EditorLayer";
@@ -13,7 +13,16 @@ interface TEditorLeftSidebar {
   showLeftSidebar: TLeftSidebar | null;
   globalSections: IThemeConfig["globalSections"];
   sidebarNodeRef?: React.MutableRefObject<HTMLDivElement | null>;
+  editorMode: TEasyblocksEditorMode;
 }
+
+const EMPTY_SIDEBAR_CONFIG = {
+  id: "no-config",
+  title: "",
+  enableScroll: true,
+  width: "280px",
+  Component: null,
+};
 
 const StyledEditorLeftSidebarRoot = styled.div<{
   width?: string;
@@ -57,12 +66,17 @@ export const EditorLeftSidebar = ({
   showLeftSidebar,
   globalSections,
   sidebarNodeRef,
+  editorMode,
 }: TEditorLeftSidebar) => {
   const { t } = useTranslation();
 
   const sidebarConfig = useMemo(() => {
     switch (showLeftSidebar) {
       case "global-sections": {
+        if (editorMode === "user") {
+          return EMPTY_SIDEBAR_CONFIG;
+        }
+
         return {
           id: "editor-global-sections",
           title: t("editor.sidebar.globalSections"),
@@ -73,6 +87,10 @@ export const EditorLeftSidebar = ({
       }
 
       case "layers": {
+        if (editorMode === "user") {
+          return EMPTY_SIDEBAR_CONFIG;
+        }
+
         return {
           id: "editor-layers",
           title: t("editor.sidebar.layers"),
@@ -93,16 +111,10 @@ export const EditorLeftSidebar = ({
       }
 
       default: {
-        return {
-          id: "no-config",
-          title: "",
-          enableScroll: true,
-          width: "280px",
-          Component: null,
-        };
+        return EMPTY_SIDEBAR_CONFIG;
       }
     }
-  }, [showLeftSidebar, globalSections]);
+  }, [showLeftSidebar, globalSections, editorMode]);
 
   return (
     <StyledEditorLeftSidebarRoot

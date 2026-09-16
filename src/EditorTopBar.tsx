@@ -18,6 +18,7 @@ import debounce from "lodash/debounce";
 import React, { ReactNode, useEffect, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { EditorHistory } from "./EditorHistory";
+import type { Zoom } from "./Editor";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
 import { TEasyblocksEditorMode, TLeftSidebar } from "./types";
 import { useTranslation } from "./useTranslation";
@@ -128,6 +129,10 @@ export const EditorTopBar: React.FC<{
   editorMode: TEasyblocksEditorMode;
   showDeviceFrame: boolean;
   onToggleDeviceFrame: () => void;
+  zoom: Zoom;
+  onZoomChange: (zoom: Zoom) => void;
+  /** The scale actually in effect, which is clamped to what the container fits. */
+  appliedScale: number;
 }> = ({
   name,
   onClose,
@@ -154,6 +159,9 @@ export const EditorTopBar: React.FC<{
   editorMode,
   showDeviceFrame,
   onToggleDeviceFrame,
+  zoom,
+  onZoomChange,
+  appliedScale,
 }) => {
   const headingRef = useRef<HTMLDivElement>(null);
   const router = new URLSearchParams(window.location.search);
@@ -163,6 +171,8 @@ export const EditorTopBar: React.FC<{
   const [isOpenConfigs, setIsOpenConfigs] = useState(false);
 
   const isAdminTemplate = editorMode === "admin-template";
+  // Shop owners get a deliberately smaller chrome: no theme-building tools.
+  const isShopUser = editorMode === "user";
 
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
@@ -224,35 +234,39 @@ export const EditorTopBar: React.FC<{
             >
               {t("editor.sidebar.blocksAndSections")}
             </ButtonGhost>
-            <ButtonGhost
-              icon={Icons.GlobalSections}
-              hideLabel
-              onClick={() => onShowLeftSidebar("global-sections")}
-              style={{
-                background:
-                  showLeftSidebar === "global-sections"
-                    ? Colors.black10
-                    : "transparent",
-              }}
-            >
-              {t("editor.sidebar.globalSections")}
-            </ButtonGhost>
+            {!isShopUser && (
+              <ButtonGhost
+                icon={Icons.GlobalSections}
+                hideLabel
+                onClick={() => onShowLeftSidebar("global-sections")}
+                style={{
+                  background:
+                    showLeftSidebar === "global-sections"
+                      ? Colors.black10
+                      : "transparent",
+                }}
+              >
+                {t("editor.sidebar.globalSections")}
+              </ButtonGhost>
+            )}
           </>
         )}
 
-        <ButtonGhost
-          icon={Icons.Layers}
-          hideLabel
-          onClick={() => onShowLeftSidebar("layers")}
-          style={{
-            background:
-              showLeftSidebar === "layers" ? Colors.black10 : "transparent",
-          }}
-        >
-          {t("editor.sidebar.layers")}
-        </ButtonGhost>
+        {!isShopUser && (
+          <ButtonGhost
+            icon={Icons.Layers}
+            hideLabel
+            onClick={() => onShowLeftSidebar("layers")}
+            style={{
+              background:
+                showLeftSidebar === "layers" ? Colors.black10 : "transparent",
+            }}
+          >
+            {t("editor.sidebar.layers")}
+          </ButtonGhost>
+        )}
 
-        {!isAdminTemplate && (
+        {!isAdminTemplate && !isShopUser && (
           <ButtonGhost
             icon={Icons.ColorAndFonts}
             hideLabel
@@ -309,6 +323,14 @@ export const EditorTopBar: React.FC<{
           devices={devices}
           deviceId={viewport}
           onDeviceChange={onViewportChange}
+          editorMode={editorMode}
+        />
+
+        <ZoomSelect
+          zoom={zoom}
+          appliedScale={appliedScale}
+          onZoomChange={onZoomChange}
+          fitLabel={t("editor.zoom.fit")}
         />
       </TopBarCenter>
 
@@ -552,15 +574,75 @@ const DEVICE_ID_TO_ICON: Record<
   ),
 };
 
+const ZOOM_STEPS = [0.5, 0.75, 1] as const;
+
+function ZoomSelect({
+  zoom,
+  appliedScale,
+  onZoomChange,
+  fitLabel,
+}: {
+  zoom: Zoom;
+  appliedScale: number;
+  onZoomChange: (zoom: Zoom) => void;
+  fitLabel: string;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <Select
+        value={zoom === "fit" ? "fit" : String(zoom)}
+        onChange={(value) => {
+          onZoomChange(value === "fit" ? "fit" : Number(value));
+        }}
+      >
+        {ZOOM_STEPS.map((step) => (
+          <SelectItem key={step} value={String(step)}>
+            {`${Math.round(step * 100)}%`}
+          </SelectItem>
+        ))}
+        <SelectItem value="fit">{fitLabel}</SelectItem>
+      </Select>
+
+      {/*
+        The real scale, not the requested one: a narrow container clamps the
+        choice, so picking 100% can still read 62%.
+      */}
+      <Typography>{`${Math.round(appliedScale * 100)}%`}</Typography>
+    </div>
+  );
+}
+
 function DeviceSwitch({
   deviceId,
   devices,
   onDeviceChange,
+  editorMode,
 }: {
   devices: Devices;
   deviceId: string;
   onDeviceChange: (deviceId: string) => void;
+  editorMode: TEasyblocksEditorMode;
 }) {
+  const { t } = useTranslation();
+  const isShopUser = editorMode === "user";
+
+  // Shop owners pick between three familiar devices; theme builders keep the
+  // full breakpoint set. `isMain` is the desktop breakpoint, read off the
+  // device list so no extra prop is needed.
+  const shopUserDevices = isShopUser
+    ? [
+        { device: devices.find((d) => d.id === "xs"), label: t("editor.device.mobile") },
+        { device: devices.find((d) => d.id === "md"), label: t("editor.device.tablet") },
+        { device: devices.find((d) => d.isMain), label: t("editor.device.desktop") },
+      ].flatMap(({ device, label }) => (device ? [{ device, label }] : []))
+    : null;
+
+  const visibleDevices =
+    shopUserDevices ??
+    devices
+      .filter((d) => !d.hidden)
+      .map((d) => ({ device: d, label: DEVICE_LABELS[d.id] ?? d.label ?? d.id }));
+
   return (
     <ToggleGroup
       value={deviceId}
@@ -572,39 +654,33 @@ function DeviceSwitch({
         onDeviceChange(deviceId);
       }}
     >
-      {devices.map((d) => {
-        if (d.hidden) {
-          return null;
-        }
+      {visibleDevices.map(({ device, label }) => (
+        <Tooltip key={device.id}>
+          <TooltipTrigger>
+            <ToggleGroupItem value={device.id}>
+              {DEVICE_ID_TO_ICON[device.id]}
+            </ToggleGroupItem>
+          </TooltipTrigger>
 
-        const label = DEVICE_LABELS[d.id] ?? d.label ?? d.id;
+          <TooltipContent>
+            <Typography color="white">{label}</Typography>
+          </TooltipContent>
+        </Tooltip>
+      ))}
 
-        return (
-          <Tooltip key={d.id}>
-            <TooltipTrigger>
-              <ToggleGroupItem value={d.id}>
-                {DEVICE_ID_TO_ICON[d.id]}
-              </ToggleGroupItem>
-            </TooltipTrigger>
+      {!isShopUser && (
+        <Tooltip>
+          <TooltipTrigger>
+            <ToggleGroupItem value="fit-screen">
+              {DEVICE_ID_TO_ICON["fit-screen"]}
+            </ToggleGroupItem>
+          </TooltipTrigger>
 
-            <TooltipContent>
-              <Typography color="white">{label}</Typography>
-            </TooltipContent>
-          </Tooltip>
-        );
-      })}
-
-      <Tooltip>
-        <TooltipTrigger>
-          <ToggleGroupItem value="fit-screen">
-            {DEVICE_ID_TO_ICON["fit-screen"]}
-          </ToggleGroupItem>
-        </TooltipTrigger>
-
-        <TooltipContent>
-          <Typography color="white">Fit screen</Typography>
-        </TooltipContent>
-      </Tooltip>
+          <TooltipContent>
+            <Typography color="white">Fit screen</Typography>
+          </TooltipContent>
+        </Tooltip>
+      )}
     </ToggleGroup>
   );
 }

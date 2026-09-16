@@ -16,6 +16,8 @@ declare global {
         };
     }
 }
+/** A fixed zoom level, or "fit" to always scale the device down to the container. */
+export type Zoom = number | "fit";
 type EditorProps = {
     config: Config;
     locale?: string;

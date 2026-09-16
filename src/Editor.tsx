@@ -116,6 +116,12 @@ declare global {
 
 const debouncedUpdate = debounce((fn: () => void) => fn(), 100);
 
+/** Breathing room so the device frame chrome is not clipped by the container. */
+const DEVICE_FRAME_PADDING_PX = 48;
+
+/** A fixed zoom level, or "fit" to always scale the device down to the container. */
+export type Zoom = number | "fit";
+
 const CanvasColumn = styled.div`
   flex: 1 1 auto;
   display: flex;
@@ -565,6 +571,7 @@ function calculateViewportRelatedStuff(
   mainBreakpointIndex: string,
   availableSize?: { width: number; height: number },
   showDeviceFrame?: boolean,
+  zoom: Zoom = "fit",
 ) {
   let activeDevice: DeviceRange;
 
@@ -586,10 +593,6 @@ function calculateViewportRelatedStuff(
     activeDevice = devices.find((device) => device.id === viewport)!;
   }
 
-  const activeDeviceindex = devices.findIndex(
-    (device) => device.id === activeDevice.id,
-  );
-
   // Calculate width, height and scale
   let width, height: number;
   let scaleFactor: number | null = null;
@@ -604,47 +607,42 @@ function calculateViewportRelatedStuff(
       width = availableSize.width;
       height = availableSize.height;
     } else {
-      const smallestNonScaledWidth =
-        activeDeviceindex === 0
-          ? 0
-          : devices[activeDeviceindex - 1].breakpoint!;
+      const isMobile = viewport === "xs" || viewport === "sm";
+      // Leave room for the device frame chrome so it is not clipped.
+      const frameInset =
+        showDeviceFrame && !isMobile ? DEVICE_FRAME_PADDING_PX * 2 : 0;
+      const widthBudget = Math.max(availableSize.width - frameInset, 1);
 
+      // The page always keeps the width the device declares. When it does not
+      // fit we shrink it proportionally; we never stretch the device to the
+      // container, which is what used to reflow the page on selection.
       width = activeDevice.w;
-      height =
-        activeDevice.h === null
-          ? availableSize.height
-          : Math.min(activeDevice.h, availableSize.height);
 
-      if (activeDevice.w <= availableSize.width) {
-        // fits
-      } else if (smallestNonScaledWidth <= availableSize.width) {
-        // fits currently selected device range
-        width = availableSize.width;
+      const fitScale = Math.min(1, widthBudget / activeDevice.w);
+
+      // A zoom above fit-screen would overflow a container that cannot scroll,
+      // so fitScale is a hard ceiling.
+      const appliedScale = zoom === "fit" ? fitScale : Math.min(zoom, fitScale);
+
+      if (appliedScale < 1) {
+        scaleFactor = appliedScale;
+        height =
+          activeDevice.h === null
+            ? availableSize.height / appliedScale
+            : Math.min(activeDevice.h, availableSize.height / appliedScale);
+        offsetY = (availableSize.height - height) / 2;
       } else {
-        // we must scale
-        scaleFactor = availableSize.width / activeDevice.w;
-
-        if (activeDevice.h === null) {
-          height = availableSize.height / scaleFactor;
-          offsetY = (availableSize.height - height) / 2;
-        }
+        height =
+          activeDevice.h === null
+            ? availableSize.height
+            : Math.min(activeDevice.h, availableSize.height);
       }
     }
   }
 
-  const isMobileViewport = viewport === "xs" || viewport === "sm";
-  const shouldMiniaturize =
-    showDeviceFrame && viewport !== "fit-screen" && !isMobileViewport;
-
-  if (shouldMiniaturize) {
-    const MINIATURE_FACTOR = 0.82;
-
-    scaleFactor =
-      scaleFactor === null ? MINIATURE_FACTOR : scaleFactor * MINIATURE_FACTOR;
-  }
-
   return {
     breakpointIndex: activeDevice.id,
+    appliedScale: scaleFactor ?? 1,
     iframeSize: {
       width,
       height,
@@ -707,15 +705,18 @@ const EditorContent = ({
       }
     : undefined;
 
-  const [showDeviceFrame, setShowDeviceFrame] = useState(false);
+  const [showDeviceFrame, setShowDeviceFrame] = useState(mode === "user");
+  const [zoom, setZoom] = useState<Zoom>("fit");
 
-  const { breakpointIndex, iframeSize } = calculateViewportRelatedStuff(
-    currentViewport,
-    compilationContext.devices,
-    compilationContext.mainBreakpointIndex,
-    availableSize,
-    showDeviceFrame,
-  );
+  const { breakpointIndex, iframeSize, appliedScale } =
+    calculateViewportRelatedStuff(
+      currentViewport,
+      compilationContext.devices,
+      compilationContext.mainBreakpointIndex,
+      availableSize,
+      showDeviceFrame,
+      zoom,
+    );
 
   useRerenderOnIframeResize(iframeContainerRef.current); // re-render on resize (recalculates viewport size, active breakpoint for fit-screen etc);
 
@@ -1416,6 +1417,9 @@ const EditorContent = ({
               editorMode={mode}
               showDeviceFrame={showDeviceFrame}
               onToggleDeviceFrame={() => setShowDeviceFrame((p) => !p)}
+              zoom={zoom}
+              onZoomChange={setZoom}
+              appliedScale={appliedScale}
             />
             <SidebarAndContentContainer height={appHeight}>
               {showLeftSidebar && isEditMode && (
@@ -1423,6 +1427,7 @@ const EditorContent = ({
                   showLeftSidebar={showLeftSidebar}
                   globalSections={props.config.globalSections}
                   sidebarNodeRef={leftSidebarNodeRef}
+                  editorMode={mode}
                 />
               )}
               <CanvasColumn>
@@ -1454,16 +1459,18 @@ const EditorContent = ({
                 </ContentContainer>
                 {isEditMode && <SelectionBreadcrumb />}
               </CanvasColumn>
-              {isEditMode &&
-                (isRightSidebarOpen || focussedField.length > 0) && (
-                  <SidebarContainer ref={sidebarNodeRef}>
-                    <EditorSidebar
-                      focussedField={focussedField}
-                      form={form}
-                      SaveAsPicker={SaveAsPicker}
-                    />
-                  </SidebarContainer>
-                )}
+              {isEditMode && (
+                <SidebarContainer ref={sidebarNodeRef}>
+                  <EditorSidebar
+                    focussedField={focussedField}
+                    form={form}
+                    SaveAsPicker={SaveAsPicker}
+                    isCollapsed={
+                      !isRightSidebarOpen && focussedField.length === 0
+                    }
+                  />
+                </SidebarContainer>
+              )}
               {componentPickerData && (
                 <ModalPicker
                   onClose={closeComponentPickerModal}

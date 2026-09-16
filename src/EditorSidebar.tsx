@@ -9,11 +9,14 @@ import { Form } from "./form";
 import { InlineSettings } from "./inline-settings";
 import { SaveAsTemplatePicker } from "./TemplatePicker";
 import { mergeCommonFields } from "./tinacms/form-builder/utils/mergeCommonFields";
+import { useTranslation } from "./useTranslation";
 
 type EditorSidebarProps = {
   focussedField: Array<string>;
   form: Form;
   SaveAsPicker?: SaveAsTemplatePicker;
+  /** True while nothing is selected: the panel keeps its width but shows a hint. */
+  isCollapsed?: boolean;
 };
 
 const Error = styled.div`
@@ -27,9 +30,24 @@ const Error = styled.div`
   margin: 16px;
 `;
 
+const EmptyState = styled.div`
+  ${Fonts.body}
+  padding: 24px;
+  color: hsl(0deg 0% 50% / 0.8);
+  text-align: center;
+  white-space: normal;
+`;
+
 export const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
-  const { focussedField, form, SaveAsPicker } = props;
+  const { focussedField, form, SaveAsPicker, isCollapsed } = props;
   const editorContext = useEditorContext();
+  const { t } = useTranslation();
+
+  // Nothing selected: skip buildTinaFields entirely, it would render a
+  // meaningless field list for the empty path.
+  if (isCollapsed === true) {
+    return <EmptyState>{t("editor.sidebar.emptySelection")}</EmptyState>;
+  }
 
   const error = (() => {
     if (focussedField.length === 1) {
