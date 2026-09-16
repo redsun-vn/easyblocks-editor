@@ -4567,13 +4567,27 @@ const Error$1 = styled.styled.div.withConfig({
   displayName: "EditorSidebar__Error",
   componentId: "sc-xkxfa3-0"
 })(["", " padding:7px 6px 7px;color:hsl(0deg 0% 50% / 0.8);white-space:normal;background:hsl(0deg 100% 50% / 0.2);margin-right:10px;border-radius:2px;margin:16px;"], easyblocksDesignSystem.Fonts.body);
+const EmptyState = styled.styled.div.withConfig({
+  displayName: "EditorSidebar__EmptyState",
+  componentId: "sc-xkxfa3-1"
+})(["", " padding:24px;color:hsl(0deg 0% 50% / 0.8);text-align:center;white-space:normal;"], easyblocksDesignSystem.Fonts.body);
 const EditorSidebar = props => {
   const {
     focussedField,
     form,
-    SaveAsPicker
+    SaveAsPicker,
+    isCollapsed
   } = props;
   const editorContext = useEditorContext();
+  const {
+    t
+  } = useTranslation();
+
+  // Nothing selected: skip buildTinaFields entirely, it would render a
+  // meaningless field list for the empty path.
+  if (isCollapsed === true) {
+    return /*#__PURE__*/React__default["default"].createElement(EmptyState, null, t("editor.sidebar.emptySelection"));
+  }
   const error = (() => {
     if (focussedField.length === 1) {
       const path = focussedField[0];
@@ -10581,12 +10595,13 @@ const EditorContent = ({
     height: iframeSize.height,
     transform: iframeSize.transform,
     editorMode: mode
-  })), isEditMode && /*#__PURE__*/React__default["default"].createElement(SelectionBreadcrumb, null)), isEditMode && (isRightSidebarOpen || focussedField.length > 0) && /*#__PURE__*/React__default["default"].createElement(SidebarContainer, {
+  })), isEditMode && /*#__PURE__*/React__default["default"].createElement(SelectionBreadcrumb, null)), isEditMode && /*#__PURE__*/React__default["default"].createElement(SidebarContainer, {
     ref: sidebarNodeRef
   }, /*#__PURE__*/React__default["default"].createElement(EditorSidebar, {
     focussedField: focussedField,
     form: form,
-    SaveAsPicker: SaveAsPicker
+    SaveAsPicker: SaveAsPicker,
+    isCollapsed: !isRightSidebarOpen && focussedField.length === 0
   })), componentPickerData && /*#__PURE__*/React__default["default"].createElement(ModalPicker, {
     onClose: closeComponentPickerModal,
     config: componentPickerData.config,

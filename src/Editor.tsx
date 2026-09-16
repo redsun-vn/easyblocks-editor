@@ -1454,16 +1454,18 @@ const EditorContent = ({
                 </ContentContainer>
                 {isEditMode && <SelectionBreadcrumb />}
               </CanvasColumn>
-              {isEditMode &&
-                (isRightSidebarOpen || focussedField.length > 0) && (
-                  <SidebarContainer ref={sidebarNodeRef}>
-                    <EditorSidebar
-                      focussedField={focussedField}
-                      form={form}
-                      SaveAsPicker={SaveAsPicker}
-                    />
-                  </SidebarContainer>
-                )}
+              {isEditMode && (
+                <SidebarContainer ref={sidebarNodeRef}>
+                  <EditorSidebar
+                    focussedField={focussedField}
+                    form={form}
+                    SaveAsPicker={SaveAsPicker}
+                    isCollapsed={
+                      !isRightSidebarOpen && focussedField.length === 0
+                    }
+                  />
+                </SidebarContainer>
+              )}
               {componentPickerData && (
                 <ModalPicker
                   onClose={closeComponentPickerModal}
