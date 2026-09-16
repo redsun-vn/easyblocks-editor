@@ -87,10 +87,6 @@ export const EditorLeftSidebar = ({
       }
 
       case "layers": {
-        if (editorMode === "user") {
-          return EMPTY_SIDEBAR_CONFIG;
-        }
-
         return {
           id: "editor-layers",
           title: t("editor.sidebar.layers"),

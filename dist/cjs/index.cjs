@@ -5340,7 +5340,7 @@ const EditorTopBar = ({
     style: {
       background: showLeftSidebar === "global-sections" ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.globalSections"))), !isShopUser && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, t("editor.sidebar.globalSections"))), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     icon: icons.Icons.Layers,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("layers"),
@@ -8045,9 +8045,6 @@ const EditorLeftSidebar = ({
         }
       case "layers":
         {
-          if (editorMode === "user") {
-            return EMPTY_SIDEBAR_CONFIG;
-          }
           return {
             id: "editor-layers",
             title: t("editor.sidebar.layers"),
@@ -10103,11 +10100,8 @@ const EditorContent = ({
 
   const compilationCache = React.useRef(new easyblocksCore.CompilationCache());
   const [isEditing, setEditing] = React.useState(true);
-  // Which left panel the editor opens with. Theme builders start on Layers.
-  // Shop owners start on Sections because Layers is hidden for them
-  // (see EditorLeftSidebar), and defaulting them to it would mount an empty
-  // 280px column.
-  const [showLeftSidebar, setShowLeftSidebar] = React.useState(mode === "user" ? "sections" : "layers");
+  // Every editor opens on Layers, in all three modes.
+  const [showLeftSidebar, setShowLeftSidebar] = React.useState("layers");
   const [isRightSidebarOpen, setRightSidebarOpen] = React.useState(false);
   const [currentLocale, setCurrentLocale] = React.useState(compilationContext.contextParams.locale);
   const prevLocale = React.useRef("");

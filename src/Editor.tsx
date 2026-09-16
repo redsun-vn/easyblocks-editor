@@ -722,12 +722,9 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
-  // Which left panel the editor opens with. Theme builders start on Layers.
-  // Shop owners start on Sections because Layers is hidden for them
-  // (see EditorLeftSidebar), and defaulting them to it would mount an empty
-  // 280px column.
+  // Every editor opens on Layers, in all three modes.
   const [showLeftSidebar, setShowLeftSidebar] = useState<TLeftSidebar | null>(
-    mode === "user" ? "sections" : "layers",
+    "layers",
   );
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(

@@ -5305,7 +5305,7 @@ const EditorTopBar = ({
     style: {
       background: showLeftSidebar === "global-sections" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.globalSections"))), !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.globalSections"))), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Layers,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("layers"),
@@ -8010,9 +8010,6 @@ const EditorLeftSidebar = ({
         }
       case "layers":
         {
-          if (editorMode === "user") {
-            return EMPTY_SIDEBAR_CONFIG;
-          }
           return {
             id: "editor-layers",
             title: t("editor.sidebar.layers"),
@@ -10068,11 +10065,8 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
-  // Which left panel the editor opens with. Theme builders start on Layers.
-  // Shop owners start on Sections because Layers is hidden for them
-  // (see EditorLeftSidebar), and defaulting them to it would mount an empty
-  // 280px column.
-  const [showLeftSidebar, setShowLeftSidebar] = useState(mode === "user" ? "sections" : "layers");
+  // Every editor opens on Layers, in all three modes.
+  const [showLeftSidebar, setShowLeftSidebar] = useState("layers");
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(compilationContext.contextParams.locale);
   const prevLocale = useRef("");
