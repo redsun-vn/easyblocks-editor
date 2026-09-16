@@ -1364,7 +1364,6 @@ const EditorContent = ({
           <EditorExternalDataProvider externalData={externalData}>
             <div id="rootContainer" />
             <EditorTopBar
-              name={props.config.name}
               onUndo={undo}
               onRedo={redo}
               editorHistoryInstance={editorHistoryInstance}

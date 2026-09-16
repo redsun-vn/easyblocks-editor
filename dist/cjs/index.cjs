@@ -5255,7 +5255,6 @@ const VerticalLine = styled.styled.div.withConfig({
 })(["width:1px;height:20px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
 const debouncedSave = debounce__default["default"](fn => fn(), 200);
 const EditorTopBar = ({
-  name,
   onClose,
   onSaveDocument: _onSaveDocument,
   onConfigChange,
@@ -5365,16 +5364,7 @@ const EditorTopBar = ({
     style: {
       background: showDeviceFrame ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
-  }, t('editor.sidebar.deviceFrame')), /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
-    style: {
-      maxWidth: 150,
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      whiteSpace: "nowrap"
-    },
-    variant: "body",
-    component: "label"
-  }, name), /*#__PURE__*/React__default["default"].createElement(FontColorConfigsModal, {
+  }, t('editor.sidebar.deviceFrame')), /*#__PURE__*/React__default["default"].createElement(FontColorConfigsModal, {
     isOpen: isOpenConfigs,
     onConfigChange: onConfigChange,
     onClose: () => setIsOpenConfigs(false)
@@ -10598,7 +10588,6 @@ const EditorContent = ({
   }, /*#__PURE__*/React__default["default"].createElement("div", {
     id: "rootContainer"
   }), /*#__PURE__*/React__default["default"].createElement(EditorTopBar, {
-    name: props.config.name,
     onUndo: undo,
     onRedo: redo,
     editorHistoryInstance: editorHistoryInstance,
