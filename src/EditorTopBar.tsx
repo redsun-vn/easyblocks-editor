@@ -80,6 +80,11 @@ const TopBarCenter = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
 `;
 
 const ImageContainer = styled.div`

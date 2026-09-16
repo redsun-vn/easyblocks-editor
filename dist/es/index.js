@@ -5205,7 +5205,7 @@ const TopBarRight = styled.div.withConfig({
 const TopBarCenter = styled.div.withConfig({
   displayName: "EditorTopBar__TopBarCenter",
   componentId: "sc-726nw9-4"
-})(["position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"]);
+})(["position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:row;align-items:center;gap:8px;white-space:nowrap;"]);
 const ImageContainer$1 = styled.div.withConfig({
   displayName: "EditorTopBar__ImageContainer",
   componentId: "sc-726nw9-5"
@@ -10068,7 +10068,10 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
-  const [showLeftSidebar, setShowLeftSidebar] = useState(null);
+  // Layers opens by default for theme builders. Shop owners never get this
+  // panel (see EditorLeftSidebar), so defaulting them to it would mount an
+  // empty 280px column.
+  const [showLeftSidebar, setShowLeftSidebar] = useState(mode === "user" ? null : "layers");
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(compilationContext.contextParams.locale);
   const prevLocale = useRef("");

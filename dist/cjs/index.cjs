@@ -5240,7 +5240,7 @@ const TopBarRight = styled.styled.div.withConfig({
 const TopBarCenter = styled.styled.div.withConfig({
   displayName: "EditorTopBar__TopBarCenter",
   componentId: "sc-726nw9-4"
-})(["position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"]);
+})(["position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:row;align-items:center;gap:8px;white-space:nowrap;"]);
 const ImageContainer$1 = styled.styled.div.withConfig({
   displayName: "EditorTopBar__ImageContainer",
   componentId: "sc-726nw9-5"
@@ -10103,7 +10103,10 @@ const EditorContent = ({
 
   const compilationCache = React.useRef(new easyblocksCore.CompilationCache());
   const [isEditing, setEditing] = React.useState(true);
-  const [showLeftSidebar, setShowLeftSidebar] = React.useState(null);
+  // Layers opens by default for theme builders. Shop owners never get this
+  // panel (see EditorLeftSidebar), so defaulting them to it would mount an
+  // empty 280px column.
+  const [showLeftSidebar, setShowLeftSidebar] = React.useState(mode === "user" ? null : "layers");
   const [isRightSidebarOpen, setRightSidebarOpen] = React.useState(false);
   const [currentLocale, setCurrentLocale] = React.useState(compilationContext.contextParams.locale);
   const prevLocale = React.useRef("");
