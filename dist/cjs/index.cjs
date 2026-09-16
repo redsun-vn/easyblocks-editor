@@ -5279,7 +5279,10 @@ const EditorTopBar = ({
   onShowRightSidebar,
   editorMode,
   showDeviceFrame,
-  onToggleDeviceFrame
+  onToggleDeviceFrame,
+  zoom,
+  onZoomChange,
+  appliedScale
 }) => {
   const headingRef = React.useRef(null);
   const router = new URLSearchParams(window.location.search);
@@ -5377,6 +5380,11 @@ const EditorTopBar = ({
     devices: devices,
     deviceId: viewport,
     onDeviceChange: onViewportChange
+  }), /*#__PURE__*/React__default["default"].createElement(ZoomSelect, {
+    zoom: zoom,
+    appliedScale: appliedScale,
+    onZoomChange: onZoomChange,
+    fitLabel: t("editor.zoom.fit")
   })), /*#__PURE__*/React__default["default"].createElement(TopBarRight, null, /*#__PURE__*/React__default["default"].createElement("div", {
     style: {
       display: "flex",
@@ -5554,6 +5562,31 @@ const DEVICE_ID_TO_ICON = {
     fill: "black"
   }))
 };
+const ZOOM_STEPS = [0.5, 0.75, 1];
+function ZoomSelect({
+  zoom,
+  appliedScale,
+  onZoomChange,
+  fitLabel
+}) {
+  return /*#__PURE__*/React__default["default"].createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: "6px"
+    }
+  }, /*#__PURE__*/React__default["default"].createElement(Select.Select, {
+    value: zoom === "fit" ? "fit" : String(zoom),
+    onChange: value => {
+      onZoomChange(value === "fit" ? "fit" : Number(value));
+    }
+  }, ZOOM_STEPS.map(step => /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
+    key: step,
+    value: String(step)
+  }, `${Math.round(step * 100)}%`)), /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
+    value: "fit"
+  }, fitLabel)), /*#__PURE__*/React__default["default"].createElement(Typography.Typography, null, `${Math.round(appliedScale * 100)}%`));
+}
 function DeviceSwitch({
   deviceId,
   devices,
@@ -9680,6 +9713,12 @@ function useEditorHistory({
 }
 
 const debouncedUpdate = debounce__default["default"](fn => fn(), 100);
+
+/** Breathing room so the device frame chrome is not clipped by the container. */
+const DEVICE_FRAME_PADDING_PX = 48;
+
+/** A fixed zoom level, or "fit" to always scale the device down to the container. */
+
 const CanvasColumn = styled.styled.div.withConfig({
   displayName: "Editor__CanvasColumn",
   componentId: "sc-t95yuf-0"
@@ -9914,7 +9953,7 @@ function useBuiltContent(editorContext, config, rawContent, externalData, onExte
     meta: buildEntryResult.current.meta
   };
 }
-function calculateViewportRelatedStuff(viewport, devices, mainBreakpointIndex, availableSize, showDeviceFrame) {
+function calculateViewportRelatedStuff(viewport, devices, mainBreakpointIndex, availableSize, showDeviceFrame, zoom = "fit") {
   let activeDevice;
 
   // Calculate active device
@@ -9931,7 +9970,6 @@ function calculateViewportRelatedStuff(viewport, devices, mainBreakpointIndex, a
   } else {
     activeDevice = devices.find(device => device.id === viewport);
   }
-  const activeDeviceindex = devices.findIndex(device => device.id === activeDevice.id);
 
   // Calculate width, height and scale
   let width, height;
@@ -9946,30 +9984,32 @@ function calculateViewportRelatedStuff(viewport, devices, mainBreakpointIndex, a
       width = availableSize.width;
       height = availableSize.height;
     } else {
-      const smallestNonScaledWidth = activeDeviceindex === 0 ? 0 : devices[activeDeviceindex - 1].breakpoint;
+      const isMobile = viewport === "xs" || viewport === "sm";
+      // Leave room for the device frame chrome so it is not clipped.
+      const frameInset = showDeviceFrame && !isMobile ? DEVICE_FRAME_PADDING_PX * 2 : 0;
+      const widthBudget = Math.max(availableSize.width - frameInset, 1);
+
+      // The page always keeps the width the device declares. When it does not
+      // fit we shrink it proportionally; we never stretch the device to the
+      // container, which is what used to reflow the page on selection.
       width = activeDevice.w;
-      height = activeDevice.h === null ? availableSize.height : Math.min(activeDevice.h, availableSize.height);
-      if (activeDevice.w <= availableSize.width) ; else if (smallestNonScaledWidth <= availableSize.width) {
-        // fits currently selected device range
-        width = availableSize.width;
+      const fitScale = Math.min(1, widthBudget / activeDevice.w);
+
+      // A zoom above fit-screen would overflow a container that cannot scroll,
+      // so fitScale is a hard ceiling.
+      const appliedScale = zoom === "fit" ? fitScale : Math.min(zoom, fitScale);
+      if (appliedScale < 1) {
+        scaleFactor = appliedScale;
+        height = activeDevice.h === null ? availableSize.height / appliedScale : Math.min(activeDevice.h, availableSize.height / appliedScale);
+        offsetY = (availableSize.height - height) / 2;
       } else {
-        // we must scale
-        scaleFactor = availableSize.width / activeDevice.w;
-        if (activeDevice.h === null) {
-          height = availableSize.height / scaleFactor;
-          offsetY = (availableSize.height - height) / 2;
-        }
+        height = activeDevice.h === null ? availableSize.height : Math.min(activeDevice.h, availableSize.height);
       }
     }
   }
-  const isMobileViewport = viewport === "xs" || viewport === "sm";
-  const shouldMiniaturize = showDeviceFrame && viewport !== "fit-screen" && !isMobileViewport;
-  if (shouldMiniaturize) {
-    const MINIATURE_FACTOR = 0.82;
-    scaleFactor = scaleFactor === null ? MINIATURE_FACTOR : scaleFactor * MINIATURE_FACTOR;
-  }
   return {
     breakpointIndex: activeDevice.id,
+    appliedScale: scaleFactor ?? 1,
     iframeSize: {
       width,
       height,
@@ -10016,10 +10056,12 @@ const EditorContent = ({
     height: iframeContainerRef.current.clientHeight
   } : undefined;
   const [showDeviceFrame, setShowDeviceFrame] = React.useState(false);
+  const [zoom, setZoom] = React.useState("fit");
   const {
     breakpointIndex,
-    iframeSize
-  } = calculateViewportRelatedStuff(currentViewport, compilationContext.devices, compilationContext.mainBreakpointIndex, availableSize, showDeviceFrame);
+    iframeSize,
+    appliedScale
+  } = calculateViewportRelatedStuff(currentViewport, compilationContext.devices, compilationContext.mainBreakpointIndex, availableSize, showDeviceFrame, zoom);
   useRerenderOnIframeResize(iframeContainerRef.current); // re-render on resize (recalculates viewport size, active breakpoint for fit-screen etc);
 
   const compilationCache = React.useRef(new easyblocksCore.CompilationCache());
@@ -10568,7 +10610,10 @@ const EditorContent = ({
     },
     editorMode: mode,
     showDeviceFrame: showDeviceFrame,
-    onToggleDeviceFrame: () => setShowDeviceFrame(p => !p)
+    onToggleDeviceFrame: () => setShowDeviceFrame(p => !p),
+    zoom: zoom,
+    onZoomChange: setZoom,
+    appliedScale: appliedScale
   }), /*#__PURE__*/React__default["default"].createElement(SidebarAndContentContainer, {
     height: appHeight
   }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default["default"].createElement(EditorLeftSidebar, {

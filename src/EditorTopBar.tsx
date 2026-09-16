@@ -18,6 +18,7 @@ import debounce from "lodash/debounce";
 import React, { ReactNode, useEffect, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { EditorHistory } from "./EditorHistory";
+import type { Zoom } from "./Editor";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
 import { TEasyblocksEditorMode, TLeftSidebar } from "./types";
 import { useTranslation } from "./useTranslation";
@@ -128,6 +129,10 @@ export const EditorTopBar: React.FC<{
   editorMode: TEasyblocksEditorMode;
   showDeviceFrame: boolean;
   onToggleDeviceFrame: () => void;
+  zoom: Zoom;
+  onZoomChange: (zoom: Zoom) => void;
+  /** The scale actually in effect, which is clamped to what the container fits. */
+  appliedScale: number;
 }> = ({
   name,
   onClose,
@@ -154,6 +159,9 @@ export const EditorTopBar: React.FC<{
   editorMode,
   showDeviceFrame,
   onToggleDeviceFrame,
+  zoom,
+  onZoomChange,
+  appliedScale,
 }) => {
   const headingRef = useRef<HTMLDivElement>(null);
   const router = new URLSearchParams(window.location.search);
@@ -309,6 +317,13 @@ export const EditorTopBar: React.FC<{
           devices={devices}
           deviceId={viewport}
           onDeviceChange={onViewportChange}
+        />
+
+        <ZoomSelect
+          zoom={zoom}
+          appliedScale={appliedScale}
+          onZoomChange={onZoomChange}
+          fitLabel={t("editor.zoom.fit")}
         />
       </TopBarCenter>
 
@@ -551,6 +566,44 @@ const DEVICE_ID_TO_ICON: Record<
     </svg>
   ),
 };
+
+const ZOOM_STEPS = [0.5, 0.75, 1] as const;
+
+function ZoomSelect({
+  zoom,
+  appliedScale,
+  onZoomChange,
+  fitLabel,
+}: {
+  zoom: Zoom;
+  appliedScale: number;
+  onZoomChange: (zoom: Zoom) => void;
+  fitLabel: string;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <Select
+        value={zoom === "fit" ? "fit" : String(zoom)}
+        onChange={(value) => {
+          onZoomChange(value === "fit" ? "fit" : Number(value));
+        }}
+      >
+        {ZOOM_STEPS.map((step) => (
+          <SelectItem key={step} value={String(step)}>
+            {`${Math.round(step * 100)}%`}
+          </SelectItem>
+        ))}
+        <SelectItem value="fit">{fitLabel}</SelectItem>
+      </Select>
+
+      {/*
+        The real scale, not the requested one: a narrow container clamps the
+        choice, so picking 100% can still read 62%.
+      */}
+      <Typography>{`${Math.round(appliedScale * 100)}%`}</Typography>
+    </div>
+  );
+}
 
 function DeviceSwitch({
   deviceId,
