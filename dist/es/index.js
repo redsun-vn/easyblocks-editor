@@ -5305,7 +5305,7 @@ const EditorTopBar = ({
     style: {
       background: showLeftSidebar === "global-sections" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.globalSections"))), !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.globalSections"))), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Layers,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("layers"),
@@ -8010,9 +8010,6 @@ const EditorLeftSidebar = ({
         }
       case "layers":
         {
-          if (editorMode === "user") {
-            return EMPTY_SIDEBAR_CONFIG;
-          }
           return {
             id: "editor-layers",
             title: t("editor.sidebar.layers"),
@@ -10068,10 +10065,8 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
-  // Layers opens by default for theme builders. Shop owners never get this
-  // panel (see EditorLeftSidebar), so defaulting them to it would mount an
-  // empty 280px column.
-  const [showLeftSidebar, setShowLeftSidebar] = useState(mode === "user" ? null : "layers");
+  // Every editor opens on Layers, in all three modes.
+  const [showLeftSidebar, setShowLeftSidebar] = useState("layers");
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(compilationContext.contextParams.locale);
   const prevLocale = useRef("");
@@ -10534,11 +10529,6 @@ const EditorContent = ({
     }
     window.addEventListener("message", handleEditorEvents);
     return () => window.removeEventListener("message", handleEditorEvents);
-  }, []);
-  useEffect(() => {
-    if (mode !== "admin-template") {
-      setShowLeftSidebar("sections");
-    }
   }, []);
   useEffect(() => {
     const isSameConfig = deepCompare(configAfterAutoRef.current ?? {}, configAfterAuto);

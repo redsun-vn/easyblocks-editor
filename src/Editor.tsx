@@ -722,11 +722,9 @@ const EditorContent = ({
 
   const compilationCache = useRef(new CompilationCache());
   const [isEditing, setEditing] = useState(true);
-  // Layers opens by default for theme builders. Shop owners never get this
-  // panel (see EditorLeftSidebar), so defaulting them to it would mount an
-  // empty 280px column.
+  // Every editor opens on Layers, in all three modes.
   const [showLeftSidebar, setShowLeftSidebar] = useState<TLeftSidebar | null>(
-    mode === "user" ? null : "layers",
+    "layers",
   );
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(
@@ -1320,12 +1318,6 @@ const EditorContent = ({
     window.addEventListener("message", handleEditorEvents);
 
     return () => window.removeEventListener("message", handleEditorEvents);
-  }, []);
-
-  useEffect(() => {
-    if (mode !== "admin-template") {
-      setShowLeftSidebar("sections");
-    }
   }, []);
 
   useEffect(() => {

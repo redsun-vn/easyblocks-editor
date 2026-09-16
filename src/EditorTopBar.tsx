@@ -257,19 +257,17 @@ export const EditorTopBar: React.FC<{
           </>
         )}
 
-        {!isShopUser && (
-          <ButtonGhost
-            icon={Icons.Layers}
-            hideLabel
-            onClick={() => onShowLeftSidebar("layers")}
-            style={{
-              background:
-                showLeftSidebar === "layers" ? Colors.black10 : "transparent",
-            }}
-          >
-            {t("editor.sidebar.layers")}
-          </ButtonGhost>
-        )}
+        <ButtonGhost
+          icon={Icons.Layers}
+          hideLabel
+          onClick={() => onShowLeftSidebar("layers")}
+          style={{
+            background:
+              showLeftSidebar === "layers" ? Colors.black10 : "transparent",
+          }}
+        >
+          {t("editor.sidebar.layers")}
+        </ButtonGhost>
 
         {!isAdminTemplate && !isShopUser && (
           <ButtonGhost
