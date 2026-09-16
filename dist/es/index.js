@@ -5258,6 +5258,8 @@ const EditorTopBar = ({
   } = useTranslation();
   const [isOpenConfigs, setIsOpenConfigs] = useState(false);
   const isAdminTemplate = editorMode === "admin-template";
+  // Shop owners get a deliberately smaller chrome: no theme-building tools.
+  const isShopUser = editorMode === "user";
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
       debouncedSave(_onSaveDocument);
@@ -5296,21 +5298,21 @@ const EditorTopBar = ({
     style: {
       background: showLeftSidebar === "sections" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.blocksAndSections")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.blocksAndSections")), !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.GlobalSections,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("global-sections"),
     style: {
       background: showLeftSidebar === "global-sections" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.globalSections"))), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.globalSections"))), !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Layers,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("layers"),
     style: {
       background: showLeftSidebar === "layers" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.layers")), !isAdminTemplate && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.layers")), !isAdminTemplate && !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.ColorAndFonts,
     hideLabel: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
@@ -5344,7 +5346,8 @@ const EditorTopBar = ({
   })), /*#__PURE__*/React__default.createElement(TopBarCenter, null, /*#__PURE__*/React__default.createElement(DeviceSwitch, {
     devices: devices,
     deviceId: viewport,
-    onDeviceChange: onViewportChange
+    onDeviceChange: onViewportChange,
+    editorMode: editorMode
   }), /*#__PURE__*/React__default.createElement(ZoomSelect, {
     zoom: zoom,
     appliedScale: appliedScale,
@@ -5555,8 +5558,37 @@ function ZoomSelect({
 function DeviceSwitch({
   deviceId,
   devices,
-  onDeviceChange
+  onDeviceChange,
+  editorMode
 }) {
+  const {
+    t
+  } = useTranslation();
+  const isShopUser = editorMode === "user";
+
+  // Shop owners pick between three familiar devices; theme builders keep the
+  // full breakpoint set. `isMain` is the desktop breakpoint, read off the
+  // device list so no extra prop is needed.
+  const shopUserDevices = isShopUser ? [{
+    device: devices.find(d => d.id === "xs"),
+    label: t("editor.device.mobile")
+  }, {
+    device: devices.find(d => d.id === "md"),
+    label: t("editor.device.tablet")
+  }, {
+    device: devices.find(d => d.isMain),
+    label: t("editor.device.desktop")
+  }].flatMap(({
+    device,
+    label
+  }) => device ? [{
+    device,
+    label
+  }] : []) : null;
+  const visibleDevices = shopUserDevices ?? devices.filter(d => !d.hidden).map(d => ({
+    device: d,
+    label: DEVICE_LABELS[d.id] ?? d.label ?? d.id
+  }));
   return /*#__PURE__*/React__default.createElement(ToggleGroup, {
     value: deviceId,
     onChange: deviceId => {
@@ -5565,19 +5597,16 @@ function DeviceSwitch({
       }
       onDeviceChange(deviceId);
     }
-  }, devices.map(d => {
-    if (d.hidden) {
-      return null;
-    }
-    const label = DEVICE_LABELS[d.id] ?? d.label ?? d.id;
-    return /*#__PURE__*/React__default.createElement(Tooltip$1, {
-      key: d.id
-    }, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(ToggleGroupItem, {
-      value: d.id
-    }, DEVICE_ID_TO_ICON[d.id])), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
-      color: "white"
-    }, label)));
-  }), /*#__PURE__*/React__default.createElement(Tooltip$1, null, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(ToggleGroupItem, {
+  }, visibleDevices.map(({
+    device,
+    label
+  }) => /*#__PURE__*/React__default.createElement(Tooltip$1, {
+    key: device.id
+  }, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(ToggleGroupItem, {
+    value: device.id
+  }, DEVICE_ID_TO_ICON[device.id])), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
+    color: "white"
+  }, label)))), !isShopUser && /*#__PURE__*/React__default.createElement(Tooltip$1, null, /*#__PURE__*/React__default.createElement(TooltipTrigger, null, /*#__PURE__*/React__default.createElement(ToggleGroupItem, {
     value: "fit-screen"
   }, DEVICE_ID_TO_ICON["fit-screen"])), /*#__PURE__*/React__default.createElement(TooltipContent, null, /*#__PURE__*/React__default.createElement(Typography, {
     color: "white"
@@ -7926,6 +7955,13 @@ const EditorSections = () => {
   }) : null);
 };
 
+const EMPTY_SIDEBAR_CONFIG = {
+  id: "no-config",
+  title: "",
+  enableScroll: true,
+  width: "280px",
+  Component: null
+};
 const StyledEditorLeftSidebarRoot = styled$1.div.withConfig({
   displayName: "EditorLeftSidebar__StyledEditorLeftSidebarRoot",
   componentId: "sc-16mpetx-0"
@@ -7949,7 +7985,8 @@ const StyledEditorLeftSidebarGroup = styled$1.div.withConfig({
 const EditorLeftSidebar = ({
   showLeftSidebar,
   globalSections,
-  sidebarNodeRef
+  sidebarNodeRef,
+  editorMode
 }) => {
   const {
     t
@@ -7958,6 +7995,9 @@ const EditorLeftSidebar = ({
     switch (showLeftSidebar) {
       case "global-sections":
         {
+          if (editorMode === "user") {
+            return EMPTY_SIDEBAR_CONFIG;
+          }
           return {
             id: "editor-global-sections",
             title: t("editor.sidebar.globalSections"),
@@ -7970,6 +8010,9 @@ const EditorLeftSidebar = ({
         }
       case "layers":
         {
+          if (editorMode === "user") {
+            return EMPTY_SIDEBAR_CONFIG;
+          }
           return {
             id: "editor-layers",
             title: t("editor.sidebar.layers"),
@@ -7990,16 +8033,10 @@ const EditorLeftSidebar = ({
         }
       default:
         {
-          return {
-            id: "no-config",
-            title: "",
-            enableScroll: true,
-            width: "280px",
-            Component: null
-          };
+          return EMPTY_SIDEBAR_CONFIG;
         }
     }
-  }, [showLeftSidebar, globalSections]);
+  }, [showLeftSidebar, globalSections, editorMode]);
   return /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarRoot, {
     id: sidebarConfig.id,
     width: sidebarConfig.width,
@@ -10020,7 +10057,7 @@ const EditorContent = ({
     width: iframeContainerRef.current.clientWidth,
     height: iframeContainerRef.current.clientHeight
   } : undefined;
-  const [showDeviceFrame, setShowDeviceFrame] = useState(false);
+  const [showDeviceFrame, setShowDeviceFrame] = useState(mode === "user");
   const [zoom, setZoom] = useState("fit");
   const {
     breakpointIndex,
@@ -10584,7 +10621,8 @@ const EditorContent = ({
   }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default.createElement(EditorLeftSidebar, {
     showLeftSidebar: showLeftSidebar,
     globalSections: props.config.globalSections,
-    sidebarNodeRef: leftSidebarNodeRef
+    sidebarNodeRef: leftSidebarNodeRef,
+    editorMode: mode
   }), /*#__PURE__*/React__default.createElement(CanvasColumn, null, /*#__PURE__*/React__default.createElement(ContentContainer, {
     onClick: () => {
       setFocussedField([]);

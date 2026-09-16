@@ -171,6 +171,8 @@ export const EditorTopBar: React.FC<{
   const [isOpenConfigs, setIsOpenConfigs] = useState(false);
 
   const isAdminTemplate = editorMode === "admin-template";
+  // Shop owners get a deliberately smaller chrome: no theme-building tools.
+  const isShopUser = editorMode === "user";
 
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
@@ -232,35 +234,39 @@ export const EditorTopBar: React.FC<{
             >
               {t("editor.sidebar.blocksAndSections")}
             </ButtonGhost>
-            <ButtonGhost
-              icon={Icons.GlobalSections}
-              hideLabel
-              onClick={() => onShowLeftSidebar("global-sections")}
-              style={{
-                background:
-                  showLeftSidebar === "global-sections"
-                    ? Colors.black10
-                    : "transparent",
-              }}
-            >
-              {t("editor.sidebar.globalSections")}
-            </ButtonGhost>
+            {!isShopUser && (
+              <ButtonGhost
+                icon={Icons.GlobalSections}
+                hideLabel
+                onClick={() => onShowLeftSidebar("global-sections")}
+                style={{
+                  background:
+                    showLeftSidebar === "global-sections"
+                      ? Colors.black10
+                      : "transparent",
+                }}
+              >
+                {t("editor.sidebar.globalSections")}
+              </ButtonGhost>
+            )}
           </>
         )}
 
-        <ButtonGhost
-          icon={Icons.Layers}
-          hideLabel
-          onClick={() => onShowLeftSidebar("layers")}
-          style={{
-            background:
-              showLeftSidebar === "layers" ? Colors.black10 : "transparent",
-          }}
-        >
-          {t("editor.sidebar.layers")}
-        </ButtonGhost>
+        {!isShopUser && (
+          <ButtonGhost
+            icon={Icons.Layers}
+            hideLabel
+            onClick={() => onShowLeftSidebar("layers")}
+            style={{
+              background:
+                showLeftSidebar === "layers" ? Colors.black10 : "transparent",
+            }}
+          >
+            {t("editor.sidebar.layers")}
+          </ButtonGhost>
+        )}
 
-        {!isAdminTemplate && (
+        {!isAdminTemplate && !isShopUser && (
           <ButtonGhost
             icon={Icons.ColorAndFonts}
             hideLabel
@@ -317,6 +323,7 @@ export const EditorTopBar: React.FC<{
           devices={devices}
           deviceId={viewport}
           onDeviceChange={onViewportChange}
+          editorMode={editorMode}
         />
 
         <ZoomSelect
@@ -609,11 +616,33 @@ function DeviceSwitch({
   deviceId,
   devices,
   onDeviceChange,
+  editorMode,
 }: {
   devices: Devices;
   deviceId: string;
   onDeviceChange: (deviceId: string) => void;
+  editorMode: TEasyblocksEditorMode;
 }) {
+  const { t } = useTranslation();
+  const isShopUser = editorMode === "user";
+
+  // Shop owners pick between three familiar devices; theme builders keep the
+  // full breakpoint set. `isMain` is the desktop breakpoint, read off the
+  // device list so no extra prop is needed.
+  const shopUserDevices = isShopUser
+    ? [
+        { device: devices.find((d) => d.id === "xs"), label: t("editor.device.mobile") },
+        { device: devices.find((d) => d.id === "md"), label: t("editor.device.tablet") },
+        { device: devices.find((d) => d.isMain), label: t("editor.device.desktop") },
+      ].flatMap(({ device, label }) => (device ? [{ device, label }] : []))
+    : null;
+
+  const visibleDevices =
+    shopUserDevices ??
+    devices
+      .filter((d) => !d.hidden)
+      .map((d) => ({ device: d, label: DEVICE_LABELS[d.id] ?? d.label ?? d.id }));
+
   return (
     <ToggleGroup
       value={deviceId}
@@ -625,39 +654,33 @@ function DeviceSwitch({
         onDeviceChange(deviceId);
       }}
     >
-      {devices.map((d) => {
-        if (d.hidden) {
-          return null;
-        }
+      {visibleDevices.map(({ device, label }) => (
+        <Tooltip key={device.id}>
+          <TooltipTrigger>
+            <ToggleGroupItem value={device.id}>
+              {DEVICE_ID_TO_ICON[device.id]}
+            </ToggleGroupItem>
+          </TooltipTrigger>
 
-        const label = DEVICE_LABELS[d.id] ?? d.label ?? d.id;
+          <TooltipContent>
+            <Typography color="white">{label}</Typography>
+          </TooltipContent>
+        </Tooltip>
+      ))}
 
-        return (
-          <Tooltip key={d.id}>
-            <TooltipTrigger>
-              <ToggleGroupItem value={d.id}>
-                {DEVICE_ID_TO_ICON[d.id]}
-              </ToggleGroupItem>
-            </TooltipTrigger>
+      {!isShopUser && (
+        <Tooltip>
+          <TooltipTrigger>
+            <ToggleGroupItem value="fit-screen">
+              {DEVICE_ID_TO_ICON["fit-screen"]}
+            </ToggleGroupItem>
+          </TooltipTrigger>
 
-            <TooltipContent>
-              <Typography color="white">{label}</Typography>
-            </TooltipContent>
-          </Tooltip>
-        );
-      })}
-
-      <Tooltip>
-        <TooltipTrigger>
-          <ToggleGroupItem value="fit-screen">
-            {DEVICE_ID_TO_ICON["fit-screen"]}
-          </ToggleGroupItem>
-        </TooltipTrigger>
-
-        <TooltipContent>
-          <Typography color="white">Fit screen</Typography>
-        </TooltipContent>
-      </Tooltip>
+          <TooltipContent>
+            <Typography color="white">Fit screen</Typography>
+          </TooltipContent>
+        </Tooltip>
+      )}
     </ToggleGroup>
   );
 }

@@ -705,7 +705,7 @@ const EditorContent = ({
       }
     : undefined;
 
-  const [showDeviceFrame, setShowDeviceFrame] = useState(false);
+  const [showDeviceFrame, setShowDeviceFrame] = useState(mode === "user");
   const [zoom, setZoom] = useState<Zoom>("fit");
 
   const { breakpointIndex, iframeSize, appliedScale } =
@@ -1427,6 +1427,7 @@ const EditorContent = ({
                   showLeftSidebar={showLeftSidebar}
                   globalSections={props.config.globalSections}
                   sidebarNodeRef={leftSidebarNodeRef}
+                  editorMode={mode}
                 />
               )}
               <CanvasColumn>
