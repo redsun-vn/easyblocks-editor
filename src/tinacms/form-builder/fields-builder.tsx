@@ -2,6 +2,7 @@ import { toArray } from "@/utils/array/toArray";
 import { TTabSchemaProp } from "@redsun-vn/easyblocks-core";
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { Input } from "@redsun-vn/easyblocks-design-system/Input";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { useContext, useMemo, useState } from "react";
 import { styled } from "styled-components";
@@ -191,6 +192,19 @@ export function FieldBuilder({
   );
 }
 
+/** Diacritics-insensitive so "mau" finds "Màu". */
+const normalize = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+const SearchBar = styled.div`
+  padding: 8px 12px;
+  border-bottom: 1px solid ${Colors.black10};
+`;
+
 const tabs: Array<{ id: TTabSchemaProp; label: string }> = [
   { id: "styles", label: "Styles" },
   { id: "data", label: "Data" },
@@ -233,6 +247,8 @@ export interface FieldsBuilderProps {
   form: Form;
   fields: InternalField[];
   isEmptyField?: boolean;
+  /** Opt-in: only the properties sidebar shows the search box. */
+  showSearch?: boolean;
 }
 
 const HorizontalLine = styled.div`
@@ -245,22 +261,40 @@ export function FieldsBuilder({
   form,
   fields,
   isEmptyField = false,
+  showSearch = false,
 }: FieldsBuilderProps) {
   const { t } = useTranslation();
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
   const [activeTab, setActiveTab] = useState<TTabSchemaProp>("styles");
+  const [query, setQuery] = useState("");
 
   const hasTabs = fields.some(
     (f) => f.component !== "identity" && f.component !== null,
   );
 
-  const visibleFields = hasTabs
-    ? fields.filter((f) => {
-        const fieldTab: TTabSchemaProp = f.schemaProp?.tab ?? "styles";
-        return fieldTab === activeTab;
-      })
-    : fields;
+  const isSearching = showSearch && normalize(query).length > 0;
+
+  const matchesQuery = (field: InternalField) => {
+    const needle = normalize(query);
+    const label =
+      typeof field.label === "string" ? normalize(t(field.label)) : "";
+    const group = field.group ? normalize(t(field.group)) : "";
+
+    return label.includes(needle) || group.includes(needle);
+  };
+
+  // While searching, ignore the tab split: a property the user is looking for
+  // often sits on a tab other than the open one, and finding nothing there
+  // would read as "this property does not exist".
+  const visibleFields = isSearching
+    ? fields.filter(matchesQuery)
+    : hasTabs
+      ? fields.filter((f) => {
+          const fieldTab: TTabSchemaProp = f.schemaProp?.tab ?? "styles";
+          return fieldTab === activeTab;
+        })
+      : fields;
 
   const grouped: Record<string, Array<InternalField>> = {};
   const ungrouped: Array<InternalField> = [];
@@ -299,7 +333,17 @@ export function FieldsBuilder({
         </React.Fragment>
       )}
 
-      {hasTabs && !isEmptyField && (
+      {showSearch && !isEmptyField && (
+        <SearchBar>
+          <Input
+            value={query}
+            placeholder={t("editor.properties.search")}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </SearchBar>
+      )}
+
+      {hasTabs && !isEmptyField && !isSearching && (
         <TabsBar>
           {tabs.map((tab) => (
             <TabButton
@@ -314,6 +358,10 @@ export function FieldsBuilder({
       )}
 
       {isEmptyField ? <EmptyField /> : null}
+
+      {isSearching && visibleFields.length === 0 && (
+        <NoData>{t("editor.properties.noResults")}</NoData>
+      )}
 
       {Object.keys(grouped).map((groupName) => (
         <div key={groupName}>

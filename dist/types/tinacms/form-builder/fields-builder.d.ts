@@ -12,6 +12,8 @@ export interface FieldsBuilderProps {
     form: Form;
     fields: InternalField[];
     isEmptyField?: boolean;
+    /** Opt-in: only the properties sidebar shows the search box. */
+    showSearch?: boolean;
 }
-export declare function FieldsBuilder({ form, fields, isEmptyField, }: FieldsBuilderProps): React.JSX.Element;
+export declare function FieldsBuilder({ form, fields, isEmptyField, showSearch, }: FieldsBuilderProps): React.JSX.Element;
 //# sourceMappingURL=fields-builder.d.ts.map
