@@ -5245,8 +5245,7 @@ const EditorTopBar = ({
   showDeviceFrame,
   onToggleDeviceFrame,
   zoom,
-  onZoomChange,
-  appliedScale
+  onZoomChange
 }) => {
   const headingRef = useRef(null);
   const router = new URLSearchParams(window.location.search);
@@ -5340,7 +5339,6 @@ const EditorTopBar = ({
     editorMode: editorMode
   }), /*#__PURE__*/React__default.createElement(ZoomSelect, {
     zoom: zoom,
-    appliedScale: appliedScale,
     onZoomChange: onZoomChange,
     fitLabel: t("editor.zoom.fit")
   })), /*#__PURE__*/React__default.createElement(TopBarRight, null, /*#__PURE__*/React__default.createElement("div", {
@@ -5523,17 +5521,10 @@ const DEVICE_ID_TO_ICON = {
 const ZOOM_STEPS = [0.5, 0.75, 1];
 function ZoomSelect({
   zoom,
-  appliedScale,
   onZoomChange,
   fitLabel
 }) {
-  return /*#__PURE__*/React__default.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: "6px"
-    }
-  }, /*#__PURE__*/React__default.createElement(Select, {
+  return /*#__PURE__*/React__default.createElement(Select, {
     value: zoom === "fit" ? "fit" : String(zoom),
     onChange: value => {
       onZoomChange(value === "fit" ? "fit" : Number(value));
@@ -5543,7 +5534,7 @@ function ZoomSelect({
     value: String(step)
   }, `${Math.round(step * 100)}%`)), /*#__PURE__*/React__default.createElement(SelectItem, {
     value: "fit"
-  }, fitLabel)), /*#__PURE__*/React__default.createElement(Typography, null, `${Math.round(appliedScale * 100)}%`));
+  }, fitLabel));
 }
 function DeviceSwitch({
   deviceId,
@@ -9998,7 +9989,6 @@ function calculateViewportRelatedStuff(viewport, devices, mainBreakpointIndex, a
   }
   return {
     breakpointIndex: activeDevice.id,
-    appliedScale: scaleFactor ?? 1,
     iframeSize: {
       width,
       height,
@@ -10048,8 +10038,7 @@ const EditorContent = ({
   const [zoom, setZoom] = useState("fit");
   const {
     breakpointIndex,
-    iframeSize,
-    appliedScale
+    iframeSize
   } = calculateViewportRelatedStuff(currentViewport, compilationContext.devices, compilationContext.mainBreakpointIndex, availableSize, showDeviceFrame, zoom);
   useRerenderOnIframeResize(iframeContainerRef.current); // re-render on resize (recalculates viewport size, active breakpoint for fit-screen etc);
 
@@ -10596,8 +10585,7 @@ const EditorContent = ({
     showDeviceFrame: showDeviceFrame,
     onToggleDeviceFrame: () => setShowDeviceFrame(p => !p),
     zoom: zoom,
-    onZoomChange: setZoom,
-    appliedScale: appliedScale
+    onZoomChange: setZoom
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
     height: appHeight
   }, showLeftSidebar && isEditMode && /*#__PURE__*/React__default.createElement(EditorLeftSidebar, {

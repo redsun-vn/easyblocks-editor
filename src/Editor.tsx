@@ -642,7 +642,6 @@ function calculateViewportRelatedStuff(
 
   return {
     breakpointIndex: activeDevice.id,
-    appliedScale: scaleFactor ?? 1,
     iframeSize: {
       width,
       height,
@@ -708,8 +707,7 @@ const EditorContent = ({
   const [showDeviceFrame, setShowDeviceFrame] = useState(mode === "user");
   const [zoom, setZoom] = useState<Zoom>("fit");
 
-  const { breakpointIndex, iframeSize, appliedScale } =
-    calculateViewportRelatedStuff(
+  const { breakpointIndex, iframeSize } = calculateViewportRelatedStuff(
       currentViewport,
       compilationContext.devices,
       compilationContext.mainBreakpointIndex,
@@ -1413,7 +1411,6 @@ const EditorContent = ({
               onToggleDeviceFrame={() => setShowDeviceFrame((p) => !p)}
               zoom={zoom}
               onZoomChange={setZoom}
-              appliedScale={appliedScale}
             />
             <SidebarAndContentContainer height={appHeight}>
               {showLeftSidebar && isEditMode && (
