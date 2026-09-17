@@ -148,11 +148,12 @@ const SidebarAndContentContainer = styled.div<{ height: "100vh" | "100%" }>`
 const SidebarContainer = styled.div<{ width?: string }>`
   ${({ width = "240px" }) =>
     // A flex item defaults to min-width:auto, which lets a wide field push the
-    // panel past its basis. Different selections carry different fields, so the
+    // panel past its basis; different selections carry different fields, so the
     // panel would resize on every click and shove the canvas sideways.
+    // max-width clamps that automatic minimum, which pins the width without
+    // clipping: overflow here would cut off any popover a field opens.
     `flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`}
   position: relative;
-  overflow-x: hidden;
   background: ${Colors.white};
   border-left: 1px solid ${Colors.black100};
   border-right: 1px solid ${Colors.black100};
