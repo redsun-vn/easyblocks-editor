@@ -2,9 +2,10 @@ import { toArray } from "@/utils/array/toArray";
 import { TTabSchemaProp } from "@redsun-vn/easyblocks-core";
 import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors, Fonts } from "@redsun-vn/easyblocks-design-system";
+import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
 import { Input } from "@redsun-vn/easyblocks-design-system/Input";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useMemo, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { useEditorContext } from "../../EditorContext";
 import { Form } from "../../form";
@@ -201,8 +202,39 @@ const normalize = (value: string) =>
     .trim();
 
 const SearchBar = styled.div`
+  position: relative;
   padding: 8px 12px;
   border-bottom: 1px solid ${Colors.black10};
+
+  /* Room for the clear button, so a long query never runs underneath it. Scoped to this
+     one search bar rather than to the shared control, which every sidebar field uses. */
+  input {
+    padding-right: 26px;
+  }
+`;
+
+const SearchClearButton = styled.button`
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: ${Colors.black40};
+
+  &:hover {
+    color: ${Colors.black700};
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px ${Colors.blue60};
+  }
 `;
 
 const tabs: Array<{ id: TTabSchemaProp; label: string }> = [
@@ -268,6 +300,7 @@ export function FieldsBuilder({
   const panelContext = useContext(PanelContext);
   const [activeTab, setActiveTab] = useState<TTabSchemaProp>("styles");
   const [query, setQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const hasTabs = fields.some(
     (f) => f.component !== "identity" && f.component !== null,
@@ -336,10 +369,26 @@ export function FieldsBuilder({
       {showSearch && !isEmptyField && (
         <SearchBar>
           <Input
+            ref={searchInputRef}
+            controlSize="full-width"
             value={query}
             placeholder={t("editor.properties.search")}
             onChange={(event) => setQuery(event.target.value)}
           />
+          {query !== "" && (
+            <SearchClearButton
+              type="button"
+              aria-label={t("editor.properties.search.clear")}
+              onClick={() => {
+                setQuery("");
+                // Clearing is a step in the search, not the end of it, so the caret
+                // stays where the user was typing.
+                searchInputRef.current?.focus();
+              }}
+            >
+              <Icons.Close size={14} />
+            </SearchClearButton>
+          )}
         </SearchBar>
       )}
 

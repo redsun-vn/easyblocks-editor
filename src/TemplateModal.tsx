@@ -1,25 +1,81 @@
-import { Backend, Template } from "@redsun-vn/easyblocks-core";
-import { Autocomplete } from "@redsun-vn/easyblocks-design-system/Autocomplete";
+import {
+  Backend,
+  NoCodeComponentEntry,
+  Template,
+} from "@redsun-vn/easyblocks-core";
 import {
   ButtonDanger,
+  ButtonGhost,
   ButtonPrimary,
 } from "@redsun-vn/easyblocks-design-system/buttons";
 import { FormElement } from "@redsun-vn/easyblocks-design-system/FormElement";
 import { Input, InputFile } from "@redsun-vn/easyblocks-design-system/Input";
 import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
+import { Select, SelectItem } from "@redsun-vn/easyblocks-design-system/Select";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, { MouseEvent, useEffect, useMemo, useState } from "react";
 import { useEditorContext } from "./EditorContext";
-import {
-  getLocalComponents,
-  getLocalGroups,
-} from "./editorSidebar/editorSections/getLocalGroups";
 import {
   OpenTemplateModalAction,
   OpenTemplateModalActionCreate,
   TEasyblocksEditorMode,
 } from "./types";
 import { useTranslation } from "./useTranslation";
+
+/** One selectable template category. */
+export type TTemplateCategoryOption = {
+  id: string;
+  name: string;
+};
+
+/**
+ * Template category access, exposed by the host app's backend on top of the
+ * `Backend` contract in `easyblocks-core`.
+ *
+ * Both members are optional on purpose. A host that does not implement them
+ * keeps the previous behaviour — no category field at all — instead of
+ * presenting a required field nobody can satisfy.
+ */
+type TTemplateCategorySource = {
+  getCategories?: () => Promise<TTemplateCategoryOption[]>;
+  createCategory?: (input: {
+    name: string;
+  }) => Promise<TTemplateCategoryOption>;
+};
+
+/**
+ * What this modal sends when saving.
+ *
+ * `category_uuid` is the real relation; `group` stays the human-readable label
+ * and is filled from the chosen category's name rather than from typing. The
+ * free-text field it replaces is what let a shop write "Layout" and land its
+ * own template among the built-in Layout components.
+ *
+ * Declared as a named type and passed as a variable rather than inlined at the
+ * call: the contract in `easyblocks-core` does not yet mention `category_uuid`,
+ * and an inline object literal would be rejected for that extra member while a
+ * typed variable is simply assignable to it.
+ */
+interface ITemplateCreateInput {
+  label: string;
+  group?: string;
+  category_uuid?: string | null;
+  thumbnail?: string;
+  thumbnailLabel?: string;
+  entry: NoCodeComponentEntry;
+  width?: number;
+  widthAuto?: boolean;
+}
+
+interface ITemplateUpdateInput {
+  id: string;
+  label: string;
+  group?: string;
+  category_uuid?: string | null;
+  thumbnail?: string;
+  thumbnailLabel?: string;
+}
 
 type TemplateModalProps = {
   action: OpenTemplateModalAction;
@@ -40,9 +96,30 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
 
   const toaster = useToaster();
   const { t } = useTranslation();
-  // Existing group names suggested in the group field's free-solo autocomplete.
-  const [groupOptions, setGroupOptions] = useState<string[]>([]);
-  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+
+  // Same widening trick as the sidebar: every added member is optional, so the
+  // plain contract still satisfies the intersection.
+  const templatesApi: Backend["templates"] & TTemplateCategorySource =
+    backend.templates;
+  const canListCategories = typeof templatesApi.getCategories === "function";
+  const canCreateCategory = typeof templatesApi.createCategory === "function";
+
+  const [categories, setCategories] = useState<TTemplateCategoryOption[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  // Whether the listing actually came back. A failed call must not be mistaken
+  // for "this shop has no categories".
+  const [didLoadCategories, setDidLoadCategories] = useState(false);
+  const [categoryId, setCategoryId] = useState<string>(() =>
+    props.action.mode === "edit"
+      ? ((props.action.template as { category_uuid?: string | null })
+          .category_uuid ?? "")
+      : "",
+  );
+  // Inline category creation, open only while the user is typing a new name.
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+
   const [template, setTemplate] = useState(() => {
     if (props.action.mode === "edit") {
       return props.action.template;
@@ -64,7 +141,24 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
     thumbnailLabel = "",
   } = template as Template;
   const open = props.action !== undefined;
-  const canSend = label.trim() !== "";
+
+  const selectedCategory = useMemo(
+    () => categories.find((category) => category.id === categoryId),
+    [categories, categoryId],
+  );
+
+  /**
+   * A category is mandatory — but only once there is one to pick.
+   *
+   * Demanding it unconditionally would lock the shop out of saving anything at
+   * all on the day this ships: the table starts empty, and a listing that fails
+   * or a gateway that has not deployed these routes yet would look exactly like
+   * a shop with no categories. So the rule binds when the list came back with
+   * entries, and the "add a category" affordance covers the empty case.
+   */
+  const isCategoryMissing =
+    canListCategories && didLoadCategories && categories.length > 0 && !categoryId;
+  const canSend = label.trim() !== "" && !isCategoryMissing;
   const ctaLabel = t("template.save.default");
 
   const validateUploadImage = (file: File) => {
@@ -137,42 +231,58 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
     }
   }, [open]);
 
-  // Fetch existing group names (count API) to suggest in the group field.
-  // Same source pattern as EditorSections; failures are non-critical (the
-  // field stays free-solo, just without suggestions).
+  // Load the selectable categories. Read-only: the list the shop is allowed to
+  // see (its own plus the system ones) is decided server-side.
   useEffect(() => {
+    const getCategories = templatesApi.getCategories;
+    if (!getCategories) return;
+
     let cancelled = false;
-    setIsLoadingGroups(true);
-    backend.templates
-      .getAll({ limit: 1 })
-      .then((res) => {
+    setIsLoadingCategories(true);
+
+    getCategories()
+      .then((items) => {
         if (cancelled) return;
-        const count = res.count ?? {};
-        setGroupOptions(
-          Object.keys(count)
-            .filter((g) => (count[g]?.matchedCount ?? 0) > 0)
-            .sort(),
-        );
+        setCategories(items);
+        setDidLoadCategories(true);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (cancelled) return;
+        // Stays false on purpose: saving keeps working while the category
+        // source is unreachable, instead of silently disabling the button.
+        setDidLoadCategories(false);
+        toaster.error(t("template.category.load.error"));
+      })
       .finally(() => {
-        if (!cancelled) setIsLoadingGroups(false);
+        if (!cancelled) setIsLoadingCategories(false);
       });
+
     return () => {
       cancelled = true;
     };
   }, [backend]);
 
-  // Local component groups (same source as EditorSections), merged with the
-  // remote template groups so the field suggests the full group set.
-  const localGroups = useMemo(
-    () => getLocalGroups(getLocalComponents(editorContext)),
-    [editorContext.form.values, editorContext.definitions],
-  );
-  const allGroups = useMemo(
-    () => [...new Set([...localGroups, ...groupOptions])].sort(),
-    [localGroups, groupOptions],
-  );
+  const onCreateCategory = async () => {
+    const createCategory = templatesApi.createCategory;
+    const name = newCategoryName.trim();
+    if (!createCategory || !name || isSavingCategory) return;
+
+    setIsSavingCategory(true);
+
+    try {
+      const created = await createCategory({ name });
+      setCategories((prev) => [...prev, created]);
+      setDidLoadCategories(true);
+      setCategoryId(created.id);
+      setNewCategoryName("");
+      setIsAddingCategory(false);
+      toaster.success(t("template.category.create.success"));
+    } catch {
+      toaster.error(t("template.category.create.error"));
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
 
   return (
     <Modal
@@ -183,7 +293,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
       }}
       mode={"center-small"}
       headerLine={true}
-      maxHeight="430px"
+      maxHeight="470px"
     >
       <form
         onSubmit={(e) => {
@@ -197,25 +307,35 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
 
           setLoadingEdit(true);
 
+          // The label shown in the picker follows the chosen category; with no
+          // category source the previously stored string is kept untouched.
+          const nextGroup = canListCategories
+            ? (selectedCategory?.name ?? group)
+            : group;
+          const nextCategoryId = canListCategories ? categoryId : undefined;
+
           if (mode === "create") {
             const createAction = props.action as OpenTemplateModalActionCreate;
+            const payload: ITemplateCreateInput = {
+              label,
+              group: nextGroup,
+              category_uuid: nextCategoryId,
+              thumbnail,
+              thumbnailLabel,
+              entry: createAction.config,
+              width: createAction.width,
+              widthAuto: createAction.widthAuto,
+            };
 
             backend.templates
-              .create({
-                label,
-                group,
-                thumbnail,
-                thumbnailLabel,
-                entry: createAction.config,
-                width: createAction.width,
-                widthAuto: createAction.widthAuto,
-              })
+              .create(payload)
               .then((newTemplate) => {
                 editorContext.syncTemplates({
                   mode: "create",
                   template: {
                     id: newTemplate.id,
                     ...template,
+                    group: nextGroup,
                   },
                 });
                 toaster.success(t("template.save.success"));
@@ -228,18 +348,21 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
                 setLoadingEdit(false);
               });
           } else {
+            const payload: ITemplateUpdateInput = {
+              label,
+              group: nextGroup,
+              category_uuid: nextCategoryId,
+              thumbnail,
+              thumbnailLabel,
+              id: (template as Template).id!,
+            };
+
             backend.templates
-              .update({
-                label,
-                group,
-                thumbnail,
-                thumbnailLabel,
-                id: (template as Template).id!,
-              })
+              .update(payload)
               .then(() => {
                 editorContext.syncTemplates({
                   mode: "edit",
-                  template: template as Template,
+                  template: { ...(template as Template), group: nextGroup },
                 });
                 toaster.success(t("template.save.success"));
                 props.onClose();
@@ -280,44 +403,96 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
             />
           </FormElement>
 
-          <FormElement name="group" label={t("template.save.group")}>
-            <Autocomplete
-              freeSolo
-              options={allGroups}
-              inputValue={group}
-              loading={isLoadingGroups}
-              loadingText={t("loading")}
-              onInputChange={(_event, value) => {
-                setTemplate({
-                  ...template,
-                  group: value,
-                });
-              }}
-              placeholder={t("template.save.group")}
-              noOptionsText={t("noData")}
-              getOptionLabel={(option) => option}
-              filterOptions={(options, { inputValue }) => {
-                const query = inputValue.trim().toLowerCase();
-                const matches = query
-                  ? options.filter((o) => o.toLowerCase().includes(query))
-                  : [...options];
+          {canListCategories && (
+            <FormElement name="category" label={t("template.save.category")}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  width: "100%",
+                }}
+              >
+                <Select
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  placeholder={
+                    isLoadingCategories
+                      ? t("loading")
+                      : t("template.save.category.placeholder")
+                  }
+                  style={{ width: "100%" }}
+                >
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </Select>
 
-                // Append the raw typed value as a synthetic "add" entry when
-                // it's not already an existing group. Selecting it commits the
-                // raw string (via getOptionLabel); renderOption shows "+ Add".
-                const typed = inputValue.trim();
-                if (typed && !options.some((o) => o === typed)) {
-                  matches.push(typed);
-                }
-                return matches;
-              }}
-              renderOption={(option) =>
-                allGroups.includes(option)
-                  ? option
-                  : `+ ${t("add")} "${option}"`
-              }
-            />
-          </FormElement>
+                {!isLoadingCategories &&
+                  didLoadCategories &&
+                  categories.length === 0 &&
+                  !isAddingCategory && (
+                    <Typography variant="body">
+                      {t("template.category.empty")}
+                    </Typography>
+                  )}
+
+                {canCreateCategory &&
+                  (isAddingCategory ? (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <Input
+                        placeholder={t("template.category.name")}
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        // Enter inside a nested field must create the category,
+                        // not submit the template form behind it.
+                        onKeyDown={(e: React.KeyboardEvent) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            onCreateCategory();
+                          }
+                        }}
+                        withBorder={true}
+                        controlSize="full-width"
+                      />
+                      <ButtonPrimary
+                        type="button"
+                        isLoading={isSavingCategory}
+                        disabled={!newCategoryName.trim()}
+                        onClick={(e: MouseEvent) => {
+                          e.preventDefault();
+                          onCreateCategory();
+                        }}
+                      >
+                        {t("add")}
+                      </ButtonPrimary>
+                      <ButtonGhost
+                        type="button"
+                        onClick={(e: MouseEvent) => {
+                          e.preventDefault();
+                          setIsAddingCategory(false);
+                          setNewCategoryName("");
+                        }}
+                      >
+                        {t("cancel")}
+                      </ButtonGhost>
+                    </div>
+                  ) : (
+                    <ButtonGhost
+                      type="button"
+                      onClick={(e: MouseEvent) => {
+                        e.preventDefault();
+                        setIsAddingCategory(true);
+                      }}
+                    >
+                      {t("template.category.create")}
+                    </ButtonGhost>
+                  ))}
+              </div>
+            </FormElement>
+          )}
 
           <FormElement
             name="thumbnail"
@@ -348,7 +523,6 @@ export const TemplateModal: React.FC<TemplateModalProps> = (props) => {
               }}
               withBorder={true}
               controlSize="full-width"
-              autoFocus
             />
           </FormElement>
 
