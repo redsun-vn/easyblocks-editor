@@ -32,7 +32,5 @@ export declare const EditorTopBar: React.FC<{
     onToggleDeviceFrame: () => void;
     zoom: Zoom;
     onZoomChange: (zoom: Zoom) => void;
-    /** The scale actually in effect, which is clamped to what the container fits. */
-    appliedScale: number;
 }>;
 //# sourceMappingURL=EditorTopBar.d.ts.map
