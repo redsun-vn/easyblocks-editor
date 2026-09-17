@@ -53,6 +53,7 @@ export function BlocksControls({
 
   const meta = useEasyblocksMetadata();
   const dndContext = useDndContext();
+  const { t } = getTranslation(editorContext);
 
   const isActive = focussedField
     .map((focusedField: string) => {
@@ -64,10 +65,6 @@ export function BlocksControls({
       return focusedField;
     })
     .includes(path);
-
-  const isChildComponentActive = focussedField.some((focusedField: string) =>
-    focusedField.startsWith(path),
-  );
 
   const entryPathParseResult = parsePath(path, form);
   const entryComponentDefinition = meta.vars.definitions.components.find(
@@ -82,17 +79,7 @@ export function BlocksControls({
         s.type === "component",
     );
 
-  const isAncestorComponentActive = focussedField.some((f: string) =>
-    entryPathParseResult.parent!.path.startsWith(f),
-  );
-
   const isMultiSelection = focussedField.length > 1;
-
-  const isSiblingComponentActive = focussedField.some((f: string) => {
-    const pathWithoutIndexPart = path.split(".").slice(0, -1).join(".");
-    const regexp = new RegExp(`^${pathWithoutIndexPart}\\.\\d+$`);
-    return regexp.test(f);
-  });
 
   const draggedEntryPathParseResult = dndContext.active
     ? parsePath(dndContext.active.data.current!.path, form)
@@ -114,27 +101,21 @@ export function BlocksControls({
         })
       : true;
 
-  const isDroppableDisabled =
-    disabled ||
-    isEntryComponentOrComponentFixed ||
-    !canDraggedComponentBeDropped;
+  const sortableDisabledState = getSortableDisabledState({
+    isEditingDisabled: disabled === true,
+    isFixedSlot: isEntryComponentOrComponentFixed,
+    isMultiSelection,
+    canAcceptDraggedComponent: canDraggedComponentBeDropped,
+  });
+
+  const isDroppableDisabled = sortableDisabledState.droppable;
 
   const sortable = useSortable({
     id,
     data: {
       path,
     },
-    disabled: {
-      draggable:
-        disabled ||
-        isMultiSelection ||
-        isEntryComponentOrComponentFixed ||
-        (!isActive &&
-          !isAncestorComponentActive &&
-          !isSiblingComponentActive &&
-          !isChildComponentActive),
-      droppable: isDroppableDisabled,
-    },
+    disabled: sortableDisabledState,
     strategy:
       direction === "horizontal"
         ? horizontalListSortingStrategy
@@ -200,6 +181,25 @@ export function BlocksControls({
     }
   };
 
+  const isBlockBeingDragged = sortable.active?.data.current?.path === path;
+
+  const dropRejectionMessage =
+    sortable.active && !isBlockBeingDragged
+      ? getDropRejectionMessage({
+          isFixedSlot: isEntryComponentOrComponentFixed,
+          canAcceptDraggedComponent: canDraggedComponentBeDropped,
+          targetLabel: getComponentLabel(
+            entryPathParseResult.parent!.templateId,
+            editorContext,
+            t,
+          ),
+          acceptedTypes: entryComponentDefinition
+            ? getAllowedComponentTypes(entryComponentDefinition)
+            : [],
+          t,
+        })
+      : undefined;
+
   const isActivePathInDifferentCollection =
     sortable.active &&
     !isPathsParentEqual(sortable.active.data.current!.path, path);
@@ -226,11 +226,9 @@ export function BlocksControls({
         id={id}
         direction={direction}
         path={path}
-        label={getComponentLabel(
-          templateId,
-          editorContext,
-          getTranslation(editorContext).t,
-        )}
+        label={getComponentLabel(templateId, editorContext, t)}
+        isDraggable={!sortableDisabledState.draggable}
+        dropRejectionMessage={dropRejectionMessage}
       >
         {children}
       </SelectionFrameController>
@@ -250,7 +248,93 @@ export function BlocksControls({
   );
 }
 
-function getAllowedComponentTypes(
+export interface SortableDisabledStateInput {
+  /** The block lives in a subtree where editing is switched off. */
+  isEditingDisabled: boolean;
+  /** The block fills a fixed `component` slot, so it has no collection to be reordered in. */
+  isFixedSlot: boolean;
+  /** More than one block is selected. */
+  isMultiSelection: boolean;
+  /** The parent collection accepts the type of the block currently being dragged. */
+  canAcceptDraggedComponent: boolean;
+}
+
+/** `@dnd-kit` reads both flags as *disabled*: `true` switches the capability off. */
+export interface SortableDisabledState {
+  draggable: boolean;
+  droppable: boolean;
+}
+
+/**
+ * Which blocks may be picked up and which may receive a drop.
+ *
+ * Dragging deliberately does not depend on what is selected. It used to: a block could only
+ * be picked up when it was the selection, or its parent, sibling or descendant. A freshly
+ * opened editor has no selection, so no block could be dragged at all and drag and drop read
+ * as broken.
+ */
+export function getSortableDisabledState({
+  isEditingDisabled,
+  isFixedSlot,
+  isMultiSelection,
+  canAcceptDraggedComponent,
+}: SortableDisabledStateInput): SortableDisabledState {
+  return {
+    // Group drag stays off on purpose: the cross-frame move event carries a single
+    // `fromPath`, so a multi-selection cannot be expressed without changing that contract.
+    // Multiple blocks are still moved together with cut and paste.
+    draggable: isEditingDisabled || isFixedSlot || isMultiSelection,
+    droppable: isEditingDisabled || isFixedSlot || !canAcceptDraggedComponent,
+  };
+}
+
+export interface DropRejectionInput {
+  isFixedSlot: boolean;
+  canAcceptDraggedComponent: boolean;
+  /** Name of the component that owns the collection being dropped into. */
+  targetLabel: string;
+  /** Component types that collection accepts. */
+  acceptedTypes: Array<string>;
+  t: (key: string) => string;
+}
+
+/**
+ * Why this block refuses the block being dragged, or `undefined` when it accepts it.
+ *
+ * A refused target used to just stay inert, which left no way to tell "nothing happens here"
+ * apart from "drag and drop is broken".
+ */
+export function getDropRejectionMessage({
+  isFixedSlot,
+  canAcceptDraggedComponent,
+  targetLabel,
+  acceptedTypes,
+  t,
+}: DropRejectionInput): string | undefined {
+  if (!isFixedSlot && canAcceptDraggedComponent) {
+    return undefined;
+  }
+
+  // A fixed slot, or a collection that lists no accepted type, can never take the block,
+  // so naming the types would say nothing.
+  if (isFixedSlot || acceptedTypes.length === 0) {
+    return t("editor.canvas.drop.rejected.fixed").replace(
+      "{target}",
+      targetLabel,
+    );
+  }
+
+  return t("editor.canvas.drop.rejected.type")
+    .replace("{target}", targetLabel)
+    .replace("{types}", acceptedTypes.join(", "));
+}
+
+/**
+ * Component types a block accepts into its collections. A drop is refused when the dragged
+ * block matches none of them, which is what keeps a block from landing in a parent that
+ * cannot hold it.
+ */
+export function getAllowedComponentTypes(
   componentDefinition: SerializedRenderableComponentDefinition,
 ) {
   const collectionSchemaProps =
@@ -263,7 +347,12 @@ function getAllowedComponentTypes(
   return Array.from(new Set(allowedComponentTypes));
 }
 
-function isPathsParentEqual(path1: string, path2: string) {
+/**
+ * Whether two block paths sit in the same collection. Drops into a *different* collection are
+ * the move-to-another-parent case: they need the extra before/after placeholders, and the
+ * parent window resolves them through insert + remove instead of a plain reorder.
+ */
+export function isPathsParentEqual(path1: string, path2: string) {
   const activePathParts = path1.split(".");
   const currentPathParts = path2.split(".");
 
@@ -319,6 +408,9 @@ function DroppablePlaceholder({
     },
     "&[data-draggable-over=true]::before": {
       opacity: 1,
+      borderRadius: "2px",
+      // Halo, so the insertion line stays readable on a background of any colour.
+      boxShadow: `0 0 0 1px ${Colors.white}`,
       ...(direction === "horizontal"
         ? {
             top: 0,

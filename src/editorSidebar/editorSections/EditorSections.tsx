@@ -49,6 +49,29 @@ type TGroupRemoteState = {
   total: number;
 };
 
+/**
+ * Where a section picked from the drawer lands in the root collection: directly after the
+ * selected section, which is where the user is looking. With nothing selected there is no
+ * such position, so it goes to the end.
+ *
+ * `focussedField` can point deep inside a section (`data.2.Cards.0`); only the top level
+ * index matters, because the drawer always inserts into the root `data` collection.
+ */
+export function getSectionInsertionIndex(
+  focussedField: Array<string>,
+  sectionCount: number,
+): number {
+  const rootSectionIndex = focussedField[focussedField.length - 1]?.match(
+    /^data\.(\d+)/,
+  )?.[1];
+
+  if (rootSectionIndex === undefined) {
+    return sectionCount;
+  }
+
+  return Math.min(Number(rootSectionIndex) + 1, sectionCount);
+}
+
 const StyledEditorSectionGroup = styled.div`
   padding-left: 12px;
   padding-right: 12px;
@@ -195,8 +218,8 @@ export const EditorSections: React.FC = () => {
     tryScroll();
   }, []);
 
-  // Insert the picked template into the root "data" collection (appended at
-  // the end). No keepId, so fresh ids are generated and a template can be
+  // Insert the picked template into the root "data" collection, right after the
+  // selected section. No keepId, so fresh ids are generated and a template can be
   // added multiple times. Used by the drawer cards only.
   const onAddTemplate = useCallback(
     (template: TSectionTemplate) => {
@@ -212,20 +235,24 @@ export const EditorSections: React.FC = () => {
         editorContext,
       );
 
+      const insertionIndex = getSectionInsertionIndex(
+        editorContext.focussedField,
+        editorContext.compiledComponentConfig?.components.data.length ?? 0,
+      );
+
       editorContext.actions.insertItem({
         name: "data",
-        index:
-          editorContext.compiledComponentConfig?.components.data.length ?? 0,
+        index: insertionIndex,
         block: normalizedEntry,
       });
 
       toaster.success(t("editor.sidebar.blocksAndSections.add.success"));
 
-      // The new section is appended at the end; scroll the canvas to it.
+      // Scroll the canvas to wherever the new section landed.
       const data = (editorContext.form.values?.data ?? []) as Array<{
         _id?: string;
       }>;
-      const newId = data[data.length - 1]?._id;
+      const newId = data[insertionIndex]?._id;
       if (newId) scrollCanvasToComponent(newId);
     },
     [editorContext, scrollCanvasToComponent],

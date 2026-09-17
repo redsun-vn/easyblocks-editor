@@ -3,6 +3,8 @@ import {
   CollisionDetection,
   DndContext,
   MouseSensor,
+  TouchSensor,
+  UniqueIdentifier,
   pointerWithin,
   rectIntersection,
   useSensor,
@@ -32,6 +34,57 @@ const dragDataSchema = z.object({
   }),
 });
 
+/**
+ * Minimal structural view of a `@dnd-kit` drag end event. `data.current` is `unknown`
+ * on purpose: it is untrusted input that `dragDataSchema` validates at this boundary.
+ */
+export interface DragEndSubject {
+  active: { id: UniqueIdentifier; data: { current: unknown } };
+  over: { id: UniqueIdentifier; data: { current: unknown } } | null;
+}
+
+/**
+ * What a finished drag means. `move` carries the cross-frame event that the parent
+ * window turns into a reorder or a move to a different parent; `refocus` reselects
+ * the dragged block because nothing changed.
+ */
+export type DragEndOutcome =
+  | { type: "move"; event: ReturnType<typeof itemMoved> }
+  | { type: "refocus"; path: string };
+
+/**
+ * Decides what a finished drag means. Kept pure and separate from the React tree so the
+ * move-to-a-different-parent path stays covered by tests: the parent window relies on
+ * `fromPath` and `toPath` pointing at different collections to take its insert/remove
+ * branch, so any change here silently breaks moving a block out of its parent.
+ */
+export function resolveDragEndOutcome(event: DragEndSubject): DragEndOutcome {
+  const activeData = dragDataSchema.parse(event.active.data.current);
+
+  if (!event.over) {
+    // No drop target under the pointer: nothing moved, so reselect the dragged block.
+    return { type: "refocus", path: activeData.path };
+  }
+
+  if (event.over.id === event.active.id) {
+    // Dropped onto itself: nothing moved either.
+    return { type: "refocus", path: activeData.path };
+  }
+
+  const overData = dragDataSchema.parse(event.over.data.current);
+
+  return {
+    type: "move",
+    event: itemMoved({
+      fromPath: activeData.path,
+      toPath: overData.path,
+      // Placeholder droppables are registered as `<id>.before` / `<id>.after`; a plain
+      // block id has no suffix and leaves the placement for the parent to work out.
+      placement: ifValidPlacement(event.over.id.toString().split(".")[1]),
+    }),
+  };
+}
+
 function customCollisionDetection(args: Parameters<CollisionDetection>[0]) {
   // First, let's see if there are any collisions with the pointer
   const pointerCollisions = pointerWithin(args);
@@ -59,6 +112,14 @@ export function EasyblocksCanvas({
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
       distance: 10,
+    },
+  });
+  // Touch needs a hold instead of a distance: on a touch screen a short drag is how the
+  // page is scrolled, so a block is only picked up once the finger has stayed put.
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 250,
+      tolerance: 8,
     },
   });
 
@@ -100,7 +161,7 @@ export function EasyblocksCanvas({
       <TooltipProvider>
         <CanvasRoot>
           <DndContext
-            sensors={[mouseSensor]}
+            sensors={[mouseSensor, touchSensor]}
             collisionDetection={customCollisionDetection}
             onDragStart={(event) => {
               document.documentElement.style.cursor = "grabbing";
@@ -113,37 +174,19 @@ export function EasyblocksCanvas({
             }}
             onDragEnd={(event) => {
               document.documentElement.style.cursor = "";
-              const activeData = dragDataSchema.parse(
-                event.active.data.current,
-              );
 
-              if (event.over) {
-                const overData = dragDataSchema.parse(event.over.data.current);
+              const outcome = resolveDragEndOutcome(event);
 
-                if (event.over.id === event.active.id) {
-                  // If the dragged item is dropped on itself, we want to refocus the dragged item.
-                  window.parent.editorWindowAPI?.editorContext?.setFocussedField(
-                    activeData.path,
-                  );
-                } else {
-                  const itemMovedEvent = itemMoved({
-                    fromPath: activeData.path,
-                    toPath: overData.path,
-                    placement: ifValidPlacement(
-                      event.over.id.toString().split(".")[1],
-                    ),
-                  });
-
-                  requestAnimationFrame(() => {
-                    window.parent.postMessage(itemMovedEvent);
-                  });
-                }
-              } else {
-                // If there was no drop target, we want to refocus the dragged item.
+              if (outcome.type === "refocus") {
                 window.parent.editorWindowAPI?.editorContext?.setFocussedField(
-                  activeData.path,
+                  outcome.path,
                 );
+                return;
               }
+
+              requestAnimationFrame(() => {
+                window.parent.postMessage(outcome.event);
+              });
             }}
             onDragCancel={(event) => {
               document.documentElement.style.cursor = "";
@@ -176,7 +219,13 @@ export function EasyblocksCanvas({
   );
 }
 
-function getSortableItems(
+/**
+ * Every `component-collection` in the tree, at every depth, contributes its items plus a
+ * `.before` / `.after` droppable. Those extra ids are what make a collection reachable from
+ * a drag that started in a *different* collection, so dropping the last/first slot of another
+ * parent keeps working.
+ */
+export function getSortableItems(
   rootNoCodeEntry: NoCodeComponentEntry,
   editorContext: EditorContextType,
 ) {

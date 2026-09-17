@@ -1,5 +1,8 @@
 import { EditorContextType, useEditorContext } from "@/EditorContext";
+import { shiftPath } from "@/editorActions";
 import { IMenu, Menu } from "@/menu/Menu";
+import { destinationResolver } from "@/paste/destinationResolver";
+import { pasteManager } from "@/paste/manager";
 import {
   BEFORE_ADD_BUTTON_DISPLAY,
   BEFORE_ADD_BUTTON_LEFT,
@@ -8,13 +11,20 @@ import {
 import { ActionsType, TEasyblocksEditorMode } from "@/types";
 import { getTranslation } from "@/useTranslation";
 import { dotNotationGet } from "@/utils/object/dotNotationGet";
-import { getParentFocusedFields } from "@/utils/selection/canvasSelectionPaths";
+import {
+  getComponentLabel,
+  getParentFocusedFields,
+} from "@/utils/selection/canvasSelectionPaths";
 import { uniqueId } from "@/utils/uniqueId";
 import {
   ContextParams,
   NoCodeComponentEntry,
   globalSectionGroups,
 } from "@redsun-vn/easyblocks-core";
+import {
+  duplicateConfig,
+  parsePath,
+} from "@redsun-vn/easyblocks-core/_internals";
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import {
   ButtonGhost,
@@ -25,8 +35,35 @@ import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
 import { Input } from "@redsun-vn/easyblocks-design-system/Input";
 import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
+
+export interface MovePlan {
+  /** Where the source block sits once the copy has been inserted. */
+  sourceToRemove: string;
+  /** Where the inserted block sits once the source has been removed. */
+  pathToFocus: string;
+}
+
+/**
+ * Moving a block is an insert followed by a remove, and each of those shifts the indices of
+ * everything after it in the same collection. Replaying those shifts is what makes the block
+ * that gets removed the original one rather than a neighbour that slid into its place.
+ *
+ * The insert happens first on purpose: if no collection in the chosen section accepts the
+ * block the document is simply left alone, whereas removing first would destroy it.
+ */
+export function planMoveAfterInsert(
+  sourcePath: string,
+  insertedPath: string,
+): MovePlan {
+  const sourceToRemove = shiftPath(sourcePath, insertedPath, "downward");
+
+  return {
+    sourceToRemove,
+    pathToFocus: shiftPath(insertedPath, sourceToRemove, "upward"),
+  };
+}
 
 interface ISelectionFrameActionsProps {
   focussedField: string[];
@@ -258,11 +295,97 @@ export const SelectionFrameActions = ({
     contextParams,
   } as EditorContextType);
   const [showMore, setShowMore] = useState(false);
+  const [showMoveTo, setShowMoveTo] = useState(false);
   const editorContext = useEditorContext();
+  const toaster = useToaster();
   const parentFocusedFields = getParentFocusedFields(
     focussedField,
     editorContext,
   );
+
+  // Moving carries one block: the block is inserted into the chosen section and removed from
+  // where it was, and a multi-selection has no single source path to remove. Several blocks
+  // are still moved together with cut and paste.
+  const sourcePath =
+    focussedField.length === 1 ? focussedField[0] : undefined;
+
+  const moveTo = (destinationPath: string) => {
+    setShowMoveTo(false);
+
+    if (!sourcePath) {
+      return;
+    }
+
+    const sourceEntry: NoCodeComponentEntry | undefined = dotNotationGet(
+      editorContext.form.values,
+      sourcePath,
+    );
+
+    if (!sourceEntry) {
+      return;
+    }
+
+    const block = duplicateConfig(sourceEntry, editorContext);
+    let wasRejected = false;
+
+    editorContext.actions.runChange(() => {
+      const insertedPath = pasteManager()(
+        destinationResolver({
+          form: editorContext.form,
+          context: editorContext,
+        })(destinationPath),
+      )(block);
+
+      if (!insertedPath) {
+        // Nothing in the chosen section accepts this block, so the document is untouched.
+        wasRejected = true;
+        return [sourcePath];
+      }
+
+      const { sourceToRemove, pathToFocus } = planMoveAfterInsert(
+        sourcePath,
+        insertedPath,
+      );
+
+      editorContext.actions.removeItems([sourceToRemove]);
+
+      return [pathToFocus];
+    });
+
+    if (wasRejected) {
+      toaster.error(t("editor.canvas.action.moveTo.rejected"));
+    }
+  };
+
+  // Every other top level section is offered as a destination. The section the block is
+  // already in, and any section inside the block itself, are not destinations.
+  const moveDestinations: IMenu[] = useMemo(() => {
+    if (!sourcePath) {
+      return [];
+    }
+
+    const sections = (editorContext.form.values?.data ??
+      []) as Array<NoCodeComponentEntry>;
+
+    return sections
+      .map((_, index) => `data.${index}`)
+      .filter(
+        (destinationPath) =>
+          destinationPath !== sourcePath &&
+          !destinationPath.startsWith(`${sourcePath}.`) &&
+          !sourcePath.startsWith(`${destinationPath}.`),
+      )
+      .map((destinationPath, _, all) => ({
+        id: destinationPath,
+        // Sections repeat, so the position disambiguates two blocks with the same name.
+        label: `${all.indexOf(destinationPath) + 1}. ${getComponentLabel(
+          parsePath(destinationPath, editorContext.form).templateId,
+          editorContext,
+          t,
+        )}`,
+        onClick: () => moveTo(destinationPath),
+      }));
+  }, [sourcePath, editorContext.form.values, t]);
 
   return (
     <SelectionFrameActionsContainer onClick={(e) => e.stopPropagation()}>
@@ -295,15 +418,24 @@ export const SelectionFrameActions = ({
           hideLabel
           onClick={() => actions.moveItems(focussedField, "top")}
         >
-          {t("up")}
+          {t("editor.canvas.action.moveUp")}
         </ButtonGhost>
         <ButtonGhost
           icon={Icons.ArrowDown}
           hideLabel
           onClick={() => actions.moveItems(focussedField, "bottom")}
         >
-          {t("down")}
+          {t("editor.canvas.action.moveDown")}
         </ButtonGhost>
+        {moveDestinations.length > 0 && (
+          <ButtonGhost
+            icon={Icons.Drag}
+            hideLabel
+            onClick={() => setShowMoveTo((prev) => !prev)}
+          >
+            {t("editor.canvas.action.moveTo")}
+          </ButtonGhost>
+        )}
 
         {editorMode !== "admin-template" && (
           <ButtonGhost
@@ -314,6 +446,12 @@ export const SelectionFrameActions = ({
           />
         )}
       </SelectionFrameActionsGroupButtons>
+
+      {showMoveTo && moveDestinations.length > 0 ? (
+        <StyledMenu>
+          <Menu menus={moveDestinations} styles={{ top: "40px", left: "0%" }} />
+        </StyledMenu>
+      ) : null}
 
       {editorMode !== "admin-template" && showMore ? (
         <SelectionMoreActions t={t} />

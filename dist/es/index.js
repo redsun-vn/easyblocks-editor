@@ -8,7 +8,7 @@ import { useToaster, Toaster } from '@redsun-vn/easyblocks-design-system/Toaster
 import { Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, TooltipProvider } from '@redsun-vn/easyblocks-design-system/Tooltip';
 import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
-import { findComponentDefinition, parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize as normalize$1, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
+import { findComponentDefinition, parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize as normalize$1, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, RichTextEditor, TextEditor, configTraverse, itemMoved } from '@redsun-vn/easyblocks-core/_internals';
 import { Colors, Fonts } from '@redsun-vn/easyblocks-design-system';
 import throttle from 'lodash.throttle';
 import debounce$1 from 'lodash/debounce';
@@ -37,7 +37,7 @@ import { AccordionGroup } from '@redsun-vn/easyblocks-design-system/AccordionGro
 import { createForm as createForm$1, FORM_ERROR } from 'final-form';
 import arrayMutators from 'final-form-arrays';
 import { BasicRow } from '@redsun-vn/easyblocks-design-system/rows';
-import { useDndContext, useSensor, MouseSensor, DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
+import { useDndContext, useSensor, MouseSensor, TouchSensor, DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
 import { useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { z } from 'zod';
 
@@ -4357,7 +4357,11 @@ const normalize = value => value.normalize("NFD").replace(/[\u0300-\u036f]/g, ""
 const SearchBar = styled.div.withConfig({
   displayName: "fields-builder__SearchBar",
   componentId: "sc-ignixa-0"
-})(["padding:8px 12px;border-bottom:1px solid ", ";"], Colors.black10);
+})(["position:relative;padding:8px 12px;border-bottom:1px solid ", ";input{padding-right:26px;}"], Colors.black10);
+const SearchClearButton = styled.button.withConfig({
+  displayName: "fields-builder__SearchClearButton",
+  componentId: "sc-ignixa-1"
+})(["all:unset;box-sizing:border-box;position:absolute;top:8px;bottom:8px;right:14px;display:flex;align-items:center;justify-content:center;width:20px;border-radius:4px;cursor:pointer;color:", ";&:hover{color:", ";}&:focus-visible{box-shadow:0 0 0 2px ", ";}"], Colors.black40, Colors.black700, Colors.blue60);
 const tabs = [{
   id: "styles",
   label: "Styles"
@@ -4372,22 +4376,22 @@ const tabs = [{
 // Underline-style tab bar (flat text buttons sitting on a baseline track).
 const TabsBar = styled.div.withConfig({
   displayName: "fields-builder__TabsBar",
-  componentId: "sc-ignixa-1"
+  componentId: "sc-ignixa-2"
 })(["display:flex;justify-content:space-between;border-bottom:1px solid ", ";"], Colors.black10);
 
 // Active tab: faint Colors.black5 underline + bold/dark text so it stays
 // distinguishable even though the underline color is subtle.
 const TabButton = styled.button.withConfig({
   displayName: "fields-builder__TabButton",
-  componentId: "sc-ignixa-2"
+  componentId: "sc-ignixa-3"
 })(["padding:8px 16px;margin-bottom:-1px;border:none;border-bottom:2px solid ", ";background:transparent;cursor:pointer;font-size:12px;font-weight:", ";color:", ";transition:all 0.15s ease;white-space:nowrap;&:hover{color:black;}"], p => p.$active ? Colors.black500 : "transparent", p => p.$active ? "600" : "400", p => p.$active ? "black" : Colors.black40);
 const NoData = styled(Typography).withConfig({
   displayName: "fields-builder__NoData",
-  componentId: "sc-ignixa-3"
+  componentId: "sc-ignixa-4"
 })(["padding:20px 16px;"]);
 const HorizontalLine$2 = styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
-  componentId: "sc-ignixa-4"
+  componentId: "sc-ignixa-5"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
 function FieldsBuilder({
   form,
@@ -4402,6 +4406,7 @@ function FieldsBuilder({
   const panelContext = useContext(PanelContext);
   const [activeTab, setActiveTab] = useState("styles");
   const [query, setQuery] = useState("");
+  const searchInputRef = useRef(null);
   const hasTabs = fields.some(f => f.component !== "identity" && f.component !== null);
   const isSearching = showSearch && normalize(query).length > 0;
   const matchesQuery = field => {
@@ -4441,10 +4446,23 @@ function FieldsBuilder({
     field: identityField,
     form: form
   }), horizontalLine), showSearch && !isEmptyField && /*#__PURE__*/React__default.createElement(SearchBar, null, /*#__PURE__*/React__default.createElement(Input, {
+    ref: searchInputRef,
+    controlSize: "full-width",
     value: query,
     placeholder: t("editor.properties.search"),
     onChange: event => setQuery(event.target.value)
-  })), hasTabs && !isEmptyField && !isSearching && /*#__PURE__*/React__default.createElement(TabsBar, null, tabs.map(tab => /*#__PURE__*/React__default.createElement(TabButton, {
+  }), query !== "" && /*#__PURE__*/React__default.createElement(SearchClearButton, {
+    type: "button",
+    "aria-label": t("editor.properties.search.clear"),
+    onClick: () => {
+      setQuery("");
+      // Clearing is a step in the search, not the end of it, so the caret
+      // stays where the user was typing.
+      searchInputRef.current?.focus();
+    }
+  }, /*#__PURE__*/React__default.createElement(Icons.Close, {
+    size: 14
+  }))), hasTabs && !isEmptyField && !isSearching && /*#__PURE__*/React__default.createElement(TabsBar, null, tabs.map(tab => /*#__PURE__*/React__default.createElement(TabButton, {
     key: tab.id,
     $active: activeTab === tab.id,
     onClick: () => setActiveTab(tab.id)
@@ -4474,15 +4492,15 @@ function generateFieldKey(field, breakpointIndex) {
 }
 const FieldWrapper = styled.div.withConfig({
   displayName: "fields-builder__FieldWrapper",
-  componentId: "sc-ignixa-5"
+  componentId: "sc-ignixa-6"
 })(["margin-bottom:", ";"], props => props.isLast ? "8px" : 0);
 const FieldsGroupLabel = styled.div.withConfig({
   displayName: "fields-builder__FieldsGroupLabel",
-  componentId: "sc-ignixa-6"
+  componentId: "sc-ignixa-7"
 })(["display:flex;align-items:center;padding:20px 16px 10px 16px;", ";color:#000;"], Fonts.label);
 const FieldsGroup = styled.div.withConfig({
   displayName: "fields-builder__FieldsGroup",
-  componentId: "sc-ignixa-7"
+  componentId: "sc-ignixa-8"
 })(["position:relative;display:block;width:100%;padding:0;white-space:nowrap;overflow:unset;"]);
 
 const theme = css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Roboto\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
@@ -7694,6 +7712,21 @@ const TEMPLATES_LIMIT = 30;
 
 // Accumulated remote templates for a group plus its paging cursor.
 
+/**
+ * Where a section picked from the drawer lands in the root collection: directly after the
+ * selected section, which is where the user is looking. With nothing selected there is no
+ * such position, so it goes to the end.
+ *
+ * `focussedField` can point deep inside a section (`data.2.Cards.0`); only the top level
+ * index matters, because the drawer always inserts into the root `data` collection.
+ */
+function getSectionInsertionIndex(focussedField, sectionCount) {
+  const rootSectionIndex = focussedField[focussedField.length - 1]?.match(/^data\.(\d+)/)?.[1];
+  if (rootSectionIndex === undefined) {
+    return sectionCount;
+  }
+  return Math.min(Number(rootSectionIndex) + 1, sectionCount);
+}
 const StyledEditorSectionGroup = styled$1.div.withConfig({
   displayName: "EditorSections__StyledEditorSectionGroup",
   componentId: "sc-1nr6ndr-0"
@@ -7795,8 +7828,8 @@ const EditorSections = () => {
     tryScroll();
   }, []);
 
-  // Insert the picked template into the root "data" collection (appended at
-  // the end). No keepId, so fresh ids are generated and a template can be
+  // Insert the picked template into the root "data" collection, right after the
+  // selected section. No keepId, so fresh ids are generated and a template can be
   // added multiple times. Used by the drawer cards only.
   const onAddTemplate = useCallback(template => {
     const entry = template.template?.entry;
@@ -7810,16 +7843,17 @@ const EditorSections = () => {
       ...entry,
       _itemProps: {}
     }, editorContext);
+    const insertionIndex = getSectionInsertionIndex(editorContext.focussedField, editorContext.compiledComponentConfig?.components.data.length ?? 0);
     editorContext.actions.insertItem({
       name: "data",
-      index: editorContext.compiledComponentConfig?.components.data.length ?? 0,
+      index: insertionIndex,
       block: normalizedEntry
     });
     toaster.success(t("editor.sidebar.blocksAndSections.add.success"));
 
-    // The new section is appended at the end; scroll the canvas to it.
+    // Scroll the canvas to wherever the new section landed.
     const data = editorContext.form.values?.data ?? [];
-    const newId = data[data.length - 1]?._id;
+    const newId = data[insertionIndex]?._id;
     if (newId) scrollCanvasToComponent(newId);
   }, [editorContext, scrollCanvasToComponent]);
   useEffect(() => {
@@ -8377,6 +8411,21 @@ const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
 const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
 const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
 
+/**
+ * Moving a block is an insert followed by a remove, and each of those shifts the indices of
+ * everything after it in the same collection. Replaying those shifts is what makes the block
+ * that gets removed the original one rather than a neighbour that slid into its place.
+ *
+ * The insert happens first on purpose: if no collection in the chosen section accepts the
+ * block the document is simply left alone, whereas removing first would destroy it.
+ */
+function planMoveAfterInsert(sourcePath, insertedPath) {
+  const sourceToRemove = shiftPath(sourcePath, insertedPath, "downward");
+  return {
+    sourceToRemove,
+    pathToFocus: shiftPath(insertedPath, sourceToRemove, "upward")
+  };
+}
 const SelectionFrameActionsContainer = styled$1.div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
   componentId: "sc-1fta8jo-0"
@@ -8535,8 +8584,62 @@ const SelectionFrameActions = ({
     contextParams
   });
   const [showMore, setShowMore] = useState(false);
+  const [showMoveTo, setShowMoveTo] = useState(false);
   const editorContext = useEditorContext();
+  const toaster = useToaster();
   const parentFocusedFields = getParentFocusedFields(focussedField, editorContext);
+
+  // Moving carries one block: the block is inserted into the chosen section and removed from
+  // where it was, and a multi-selection has no single source path to remove. Several blocks
+  // are still moved together with cut and paste.
+  const sourcePath = focussedField.length === 1 ? focussedField[0] : undefined;
+  const moveTo = destinationPath => {
+    setShowMoveTo(false);
+    if (!sourcePath) {
+      return;
+    }
+    const sourceEntry = dotNotationGet(editorContext.form.values, sourcePath);
+    if (!sourceEntry) {
+      return;
+    }
+    const block = duplicateConfig(sourceEntry, editorContext);
+    let wasRejected = false;
+    editorContext.actions.runChange(() => {
+      const insertedPath = pasteManager()(destinationResolver({
+        form: editorContext.form,
+        context: editorContext
+      })(destinationPath))(block);
+      if (!insertedPath) {
+        // Nothing in the chosen section accepts this block, so the document is untouched.
+        wasRejected = true;
+        return [sourcePath];
+      }
+      const {
+        sourceToRemove,
+        pathToFocus
+      } = planMoveAfterInsert(sourcePath, insertedPath);
+      editorContext.actions.removeItems([sourceToRemove]);
+      return [pathToFocus];
+    });
+    if (wasRejected) {
+      toaster.error(t("editor.canvas.action.moveTo.rejected"));
+    }
+  };
+
+  // Every other top level section is offered as a destination. The section the block is
+  // already in, and any section inside the block itself, are not destinations.
+  const moveDestinations = useMemo(() => {
+    if (!sourcePath) {
+      return [];
+    }
+    const sections = editorContext.form.values?.data ?? [];
+    return sections.map((_, index) => `data.${index}`).filter(destinationPath => destinationPath !== sourcePath && !destinationPath.startsWith(`${sourcePath}.`) && !sourcePath.startsWith(`${destinationPath}.`)).map((destinationPath, _, all) => ({
+      id: destinationPath,
+      // Sections repeat, so the position disambiguates two blocks with the same name.
+      label: `${all.indexOf(destinationPath) + 1}. ${getComponentLabel(parsePath(destinationPath, editorContext.form).templateId, editorContext, t)}`,
+      onClick: () => moveTo(destinationPath)
+    }));
+  }, [sourcePath, editorContext.form.values, t]);
   return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, {
     onClick: e => e.stopPropagation()
   }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, parentFocusedFields.length > 0 && /*#__PURE__*/React__default.createElement(ButtonGhost, {
@@ -8555,16 +8658,26 @@ const SelectionFrameActions = ({
     icon: Icons.ArrowUp,
     hideLabel: true,
     onClick: () => actions.moveItems(focussedField, "top")
-  }, t("up")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.canvas.action.moveUp")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.ArrowDown,
     hideLabel: true,
     onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("down")), editorMode !== "admin-template" && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.canvas.action.moveDown")), moveDestinations.length > 0 && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Drag,
+    hideLabel: true,
+    onClick: () => setShowMoveTo(prev => !prev)
+  }, t("editor.canvas.action.moveTo")), editorMode !== "admin-template" && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.ThreeDotsHorizontal,
     showTooltip: false,
     hideLabel: true,
     onClick: () => setShowMore(prev => !prev)
-  })), editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default.createElement(SelectionMoreActions, {
+  })), showMoveTo && moveDestinations.length > 0 ? /*#__PURE__*/React__default.createElement(StyledMenu, null, /*#__PURE__*/React__default.createElement(Menu, {
+    menus: moveDestinations,
+    styles: {
+      top: "40px",
+      left: "0%"
+    }
+  })) : null, editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default.createElement(SelectionMoreActions, {
     t: t
   }) : null);
 };
@@ -11584,6 +11697,9 @@ const globalEditorRendererStyles = `
 
 /** Innermost hovered frame: the one a click selects, since clicks select deepest-first. */
 const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:hover))`;
+
+/** Marks the refusal bubble so the frame around it can reveal it on hover. */
+const DROP_REJECTION_ATTRIBUTE = "data-easyblocks-drop-rejection";
 function SelectionFrameController({
   isActive,
   children,
@@ -11593,7 +11709,9 @@ function SelectionFrameController({
   id,
   direction,
   path,
-  label
+  label,
+  isDraggable,
+  dropRejectionMessage
 }) {
   const [node, setNode] = useState(null);
   useUpdateFramePosition({
@@ -11670,6 +11788,9 @@ function SelectionFrameController({
       display: "block",
       content: "''",
       backgroundColor: Colors.blue50,
+      borderRadius: "2px",
+      // Halo, so the insertion line stays readable on a background of any colour.
+      boxShadow: `0 0 0 1px ${Colors.white}`,
       zIndex: 9999999
     },
     "&[data-draggable-active=true]": {
@@ -11677,7 +11798,37 @@ function SelectionFrameController({
     },
     "&[data-draggable-dragging=true]": {
       cursor: "grabbing"
+    },
+    // Any block can be picked up without being selected first, so the click target
+    // advertises it while nothing is being dragged yet.
+    [`&[data-draggable-enabled=true][data-draggable-dragging=false]${HOVERED_TARGET_FRAME}`]: {
+      cursor: "grab"
+    },
+    "&[data-drop-rejected=true]": {
+      cursor: "no-drop"
+    },
+    // The refusal only concerns the block actually under the pointer.
+    [`&${HOVERED_TARGET_FRAME} [${DROP_REJECTION_ATTRIBUTE}]`]: {
+      opacity: 1
     }
+  });
+  const dropRejectionClassName = stitches.css({
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 9999999,
+    maxWidth: "280px",
+    padding: "2px 6px",
+    borderRadius: "4px",
+    backgroundColor: Colors.black900,
+    color: Colors.white,
+    fontFamily: "var(--tina-font-family)",
+    fontSize: "11px",
+    fontWeight: 500,
+    lineHeight: "18px",
+    opacity: 0,
+    pointerEvents: "none",
+    userSelect: "none"
   });
   useEffect(() => {
     return () => {
@@ -11692,6 +11843,8 @@ function SelectionFrameController({
     [CANVAS_FRAME_PATH_ATTRIBUTE]: path,
     [CANVAS_FRAME_LABEL_ATTRIBUTE]: label,
     "data-active": isActive,
+    "data-draggable-enabled": isDraggable,
+    "data-drop-rejected": dropRejectionMessage !== undefined,
     "data-draggable-dragging": sortable.active !== null,
     "data-draggable-over": sortable.isOver,
     "data-draggable-active": sortable.active !== null && sortable.active?.id === id,
@@ -11701,7 +11854,11 @@ function SelectionFrameController({
       sortable.setNodeRef(node);
     },
     onClick: onSelect
-  }, sortable.attributes, sortable.listeners), children);
+  }, sortable.attributes, sortable.listeners), dropRejectionMessage !== undefined && /*#__PURE__*/React__default.createElement("div", {
+    [DROP_REJECTION_ATTRIBUTE]: "",
+    role: "tooltip",
+    className: dropRejectionClassName().className
+  }, dropRejectionMessage), children);
 }
 function useUpdateFramePosition({
   node,
@@ -11779,6 +11936,9 @@ function BlocksControls({
   } = editorContext;
   const meta = useEasyblocksMetadata();
   const dndContext = useDndContext();
+  const {
+    t
+  } = getTranslation(editorContext);
   const isActive = focussedField.map(focusedField => {
     // If the focused field is rich text part path, we want to show the frame around rich text parent component.
     if (isConfigPathRichTextPart(focusedField)) {
@@ -11786,34 +11946,30 @@ function BlocksControls({
     }
     return focusedField;
   }).includes(path);
-  const isChildComponentActive = focussedField.some(focusedField => focusedField.startsWith(path));
   const entryPathParseResult = parsePath(path, form);
   const entryComponentDefinition = meta.vars.definitions.components.find(c => c.id === entryPathParseResult.parent.templateId);
 
   // component` could be draggable, but right now we only support collections.
   const isEntryComponentOrComponentFixed = entryComponentDefinition.schema.some(s => s.prop === entryPathParseResult.parent.fieldName && s.type === "component");
-  const isAncestorComponentActive = focussedField.some(f => entryPathParseResult.parent.path.startsWith(f));
   const isMultiSelection = focussedField.length > 1;
-  const isSiblingComponentActive = focussedField.some(f => {
-    const pathWithoutIndexPart = path.split(".").slice(0, -1).join(".");
-    const regexp = new RegExp(`^${pathWithoutIndexPart}\\.\\d+$`);
-    return regexp.test(f);
-  });
   const draggedEntryPathParseResult = dndContext.active ? parsePath(dndContext.active.data.current.path, form) : null;
   const draggedComponentDefinition = draggedEntryPathParseResult ? meta.vars.definitions.components.find(c => c.id === draggedEntryPathParseResult.templateId) : null;
   const canDraggedComponentBeDropped = entryComponentDefinition && draggedComponentDefinition ? getAllowedComponentTypes(entryComponentDefinition).some(type => {
     return toArray(draggedComponentDefinition.type ?? []).includes(type) || draggedComponentDefinition.id === type;
   }) : true;
-  const isDroppableDisabled = disabled || isEntryComponentOrComponentFixed || !canDraggedComponentBeDropped;
+  const sortableDisabledState = getSortableDisabledState({
+    isEditingDisabled: disabled === true,
+    isFixedSlot: isEntryComponentOrComponentFixed,
+    isMultiSelection,
+    canAcceptDraggedComponent: canDraggedComponentBeDropped
+  });
+  const isDroppableDisabled = sortableDisabledState.droppable;
   const sortable = useSortable({
     id,
     data: {
       path
     },
-    disabled: {
-      draggable: disabled || isMultiSelection || isEntryComponentOrComponentFixed || !isActive && !isAncestorComponentActive && !isSiblingComponentActive && !isChildComponentActive,
-      droppable: isDroppableDisabled
-    },
+    disabled: sortableDisabledState,
     strategy: direction === "horizontal" ? horizontalListSortingStrategy : verticalListSortingStrategy
   });
   if (disabled) {
@@ -11856,6 +12012,14 @@ function BlocksControls({
       document.getSelection()?.removeAllRanges();
     }
   };
+  const isBlockBeingDragged = sortable.active?.data.current?.path === path;
+  const dropRejectionMessage = sortable.active && !isBlockBeingDragged ? getDropRejectionMessage({
+    isFixedSlot: isEntryComponentOrComponentFixed,
+    canAcceptDraggedComponent: canDraggedComponentBeDropped,
+    targetLabel: getComponentLabel(entryPathParseResult.parent.templateId, editorContext, t),
+    acceptedTypes: entryComponentDefinition ? getAllowedComponentTypes(entryComponentDefinition) : [],
+    t
+  }) : undefined;
   const isActivePathInDifferentCollection = sortable.active && !isPathsParentEqual(sortable.active.data.current.path, path);
   return /*#__PURE__*/React__default.createElement(Fragment, null, !isDroppableDisabled && isActivePathInDifferentCollection && sortable.activeIndex < sortable.index && index === 0 && /*#__PURE__*/React__default.createElement(DroppablePlaceholder, {
     id: id,
@@ -11870,7 +12034,9 @@ function BlocksControls({
     id: id,
     direction: direction,
     path: path,
-    label: getComponentLabel(templateId, editorContext, getTranslation(editorContext).t)
+    label: getComponentLabel(templateId, editorContext, t),
+    isDraggable: !sortableDisabledState.draggable,
+    dropRejectionMessage: dropRejectionMessage
   }, children), !isDroppableDisabled && isActivePathInDifferentCollection && sortable.activeIndex > sortable.index && index === length - 1 && /*#__PURE__*/React__default.createElement(DroppablePlaceholder, {
     id: id,
     direction: direction,
@@ -11878,11 +12044,72 @@ function BlocksControls({
     position: "after"
   }));
 }
+
+/** `@dnd-kit` reads both flags as *disabled*: `true` switches the capability off. */
+
+/**
+ * Which blocks may be picked up and which may receive a drop.
+ *
+ * Dragging deliberately does not depend on what is selected. It used to: a block could only
+ * be picked up when it was the selection, or its parent, sibling or descendant. A freshly
+ * opened editor has no selection, so no block could be dragged at all and drag and drop read
+ * as broken.
+ */
+function getSortableDisabledState({
+  isEditingDisabled,
+  isFixedSlot,
+  isMultiSelection,
+  canAcceptDraggedComponent
+}) {
+  return {
+    // Group drag stays off on purpose: the cross-frame move event carries a single
+    // `fromPath`, so a multi-selection cannot be expressed without changing that contract.
+    // Multiple blocks are still moved together with cut and paste.
+    draggable: isEditingDisabled || isFixedSlot || isMultiSelection,
+    droppable: isEditingDisabled || isFixedSlot || !canAcceptDraggedComponent
+  };
+}
+/**
+ * Why this block refuses the block being dragged, or `undefined` when it accepts it.
+ *
+ * A refused target used to just stay inert, which left no way to tell "nothing happens here"
+ * apart from "drag and drop is broken".
+ */
+function getDropRejectionMessage({
+  isFixedSlot,
+  canAcceptDraggedComponent,
+  targetLabel,
+  acceptedTypes,
+  t
+}) {
+  if (!isFixedSlot && canAcceptDraggedComponent) {
+    return undefined;
+  }
+
+  // A fixed slot, or a collection that lists no accepted type, can never take the block,
+  // so naming the types would say nothing.
+  if (isFixedSlot || acceptedTypes.length === 0) {
+    return t("editor.canvas.drop.rejected.fixed").replace("{target}", targetLabel);
+  }
+  return t("editor.canvas.drop.rejected.type").replace("{target}", targetLabel).replace("{types}", acceptedTypes.join(", "));
+}
+
+/**
+ * Component types a block accepts into its collections. A drop is refused when the dragged
+ * block matches none of them, which is what keeps a block from landing in a parent that
+ * cannot hold it.
+ */
 function getAllowedComponentTypes(componentDefinition) {
   const collectionSchemaProps = componentDefinition.schema.filter(s => s.type === "component-collection");
   const allowedComponentTypes = collectionSchemaProps.flatMap(s => s.accepts);
   return Array.from(new Set(allowedComponentTypes));
 }
+
+/**
+ * Whether two block paths sit in the same collection. Drops into a *different* collection are
+ * the move-to-another-parent case: they need the extra before/after placeholders, and the
+ * parent window resolves them through insert + remove instead of a plain reorder.
+ */
 function isPathsParentEqual(path1, path2) {
   const activePathParts = path1.split(".");
   const currentPathParts = path2.split(".");
@@ -11923,6 +12150,9 @@ function DroppablePlaceholder({
     },
     "&[data-draggable-over=true]::before": {
       opacity: 1,
+      borderRadius: "2px",
+      // Halo, so the insertion line stays readable on a background of any colour.
+      boxShadow: `0 0 0 1px ${Colors.white}`,
       ...(direction === "horizontal" ? {
         top: 0,
         bottom: 0,
@@ -12132,6 +12362,52 @@ const dragDataSchema = z.object({
     index: z.number()
   })
 });
+
+/**
+ * Minimal structural view of a `@dnd-kit` drag end event. `data.current` is `unknown`
+ * on purpose: it is untrusted input that `dragDataSchema` validates at this boundary.
+ */
+
+/**
+ * What a finished drag means. `move` carries the cross-frame event that the parent
+ * window turns into a reorder or a move to a different parent; `refocus` reselects
+ * the dragged block because nothing changed.
+ */
+
+/**
+ * Decides what a finished drag means. Kept pure and separate from the React tree so the
+ * move-to-a-different-parent path stays covered by tests: the parent window relies on
+ * `fromPath` and `toPath` pointing at different collections to take its insert/remove
+ * branch, so any change here silently breaks moving a block out of its parent.
+ */
+function resolveDragEndOutcome(event) {
+  const activeData = dragDataSchema.parse(event.active.data.current);
+  if (!event.over) {
+    // No drop target under the pointer: nothing moved, so reselect the dragged block.
+    return {
+      type: "refocus",
+      path: activeData.path
+    };
+  }
+  if (event.over.id === event.active.id) {
+    // Dropped onto itself: nothing moved either.
+    return {
+      type: "refocus",
+      path: activeData.path
+    };
+  }
+  const overData = dragDataSchema.parse(event.over.data.current);
+  return {
+    type: "move",
+    event: itemMoved({
+      fromPath: activeData.path,
+      toPath: overData.path,
+      // Placeholder droppables are registered as `<id>.before` / `<id>.after`; a plain
+      // block id has no suffix and leaves the placement for the parent to work out.
+      placement: ifValidPlacement(event.over.id.toString().split(".")[1])
+    })
+  };
+}
 function customCollisionDetection(args) {
   // First, let's see if there are any collisions with the pointer
   const pointerCollisions = pointerWithin(args);
@@ -12163,6 +12439,14 @@ function EasyblocksCanvas({
       distance: 10
     }
   });
+  // Touch needs a hold instead of a distance: on a touch screen a short drag is how the
+  // page is scrolled, so a block is only picked up once the finger has stayed put.
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 250,
+      tolerance: 8
+    }
+  });
   useEffect(() => {
     if (window.self === window.top) {
       throw new Error("No host");
@@ -12186,7 +12470,7 @@ function EasyblocksCanvas({
   return /*#__PURE__*/ /* EasyblocksMetadataProvider must be defined in case of nested <Easyblocks /> components are used! */React__default.createElement(EasyblocksMetadataProvider, {
     meta: meta
   }, /*#__PURE__*/React__default.createElement(TooltipProvider, null, /*#__PURE__*/React__default.createElement(CanvasRoot, null, /*#__PURE__*/React__default.createElement(DndContext, {
-    sensors: [mouseSensor],
+    sensors: [mouseSensor, touchSensor],
     collisionDetection: customCollisionDetection,
     onDragStart: event => {
       document.documentElement.style.cursor = "grabbing";
@@ -12195,26 +12479,14 @@ function EasyblocksCanvas({
     },
     onDragEnd: event => {
       document.documentElement.style.cursor = "";
-      const activeData = dragDataSchema.parse(event.active.data.current);
-      if (event.over) {
-        const overData = dragDataSchema.parse(event.over.data.current);
-        if (event.over.id === event.active.id) {
-          // If the dragged item is dropped on itself, we want to refocus the dragged item.
-          window.parent.editorWindowAPI?.editorContext?.setFocussedField(activeData.path);
-        } else {
-          const itemMovedEvent = itemMoved({
-            fromPath: activeData.path,
-            toPath: overData.path,
-            placement: ifValidPlacement(event.over.id.toString().split(".")[1])
-          });
-          requestAnimationFrame(() => {
-            window.parent.postMessage(itemMovedEvent);
-          });
-        }
-      } else {
-        // If there was no drop target, we want to refocus the dragged item.
-        window.parent.editorWindowAPI?.editorContext?.setFocussedField(activeData.path);
+      const outcome = resolveDragEndOutcome(event);
+      if (outcome.type === "refocus") {
+        window.parent.editorWindowAPI?.editorContext?.setFocussedField(outcome.path);
+        return;
       }
+      requestAnimationFrame(() => {
+        window.parent.postMessage(outcome.event);
+      });
     },
     onDragCancel: event => {
       document.documentElement.style.cursor = "";
@@ -12238,6 +12510,13 @@ function EasyblocksCanvas({
     }
   }))))));
 }
+
+/**
+ * Every `component-collection` in the tree, at every depth, contributes its items plus a
+ * `.before` / `.after` droppable. Those extra ids are what make a collection reachable from
+ * a drag that started in a *different* collection, so dropping the last/first slot of another
+ * parent keeps working.
+ */
 function getSortableItems(rootNoCodeEntry, editorContext) {
   const sortableItems = [];
   configTraverse(rootNoCodeEntry, editorContext, ({

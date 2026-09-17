@@ -17,10 +17,17 @@ type SelectionFrameControllerProps = {
   direction: "horizontal" | "vertical";
   path: string;
   label: string;
+  /** Whether this block can be picked up right now. Drives the `grab` cursor. */
+  isDraggable: boolean;
+  /** Why this block refuses the block being dragged, if it refuses it. */
+  dropRejectionMessage?: string;
 };
 
 /** Innermost hovered frame: the one a click selects, since clicks select deepest-first. */
 const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:hover))`;
+
+/** Marks the refusal bubble so the frame around it can reveal it on hover. */
+const DROP_REJECTION_ATTRIBUTE = "data-easyblocks-drop-rejection";
 
 function SelectionFrameController({
   isActive,
@@ -32,6 +39,8 @@ function SelectionFrameController({
   direction,
   path,
   label,
+  isDraggable,
+  dropRejectionMessage,
 }: SelectionFrameControllerProps) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
 
@@ -120,6 +129,9 @@ function SelectionFrameController({
       display: "block",
       content: "''",
       backgroundColor: Colors.blue50,
+      borderRadius: "2px",
+      // Halo, so the insertion line stays readable on a background of any colour.
+      boxShadow: `0 0 0 1px ${Colors.white}`,
       zIndex: 9999999,
     },
 
@@ -130,6 +142,41 @@ function SelectionFrameController({
     "&[data-draggable-dragging=true]": {
       cursor: "grabbing",
     },
+
+    // Any block can be picked up without being selected first, so the click target
+    // advertises it while nothing is being dragged yet.
+    [`&[data-draggable-enabled=true][data-draggable-dragging=false]${HOVERED_TARGET_FRAME}`]:
+      {
+        cursor: "grab",
+      },
+
+    "&[data-drop-rejected=true]": {
+      cursor: "no-drop",
+    },
+
+    // The refusal only concerns the block actually under the pointer.
+    [`&${HOVERED_TARGET_FRAME} [${DROP_REJECTION_ATTRIBUTE}]`]: {
+      opacity: 1,
+    },
+  });
+
+  const dropRejectionClassName = stitches.css({
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 9999999,
+    maxWidth: "280px",
+    padding: "2px 6px",
+    borderRadius: "4px",
+    backgroundColor: Colors.black900,
+    color: Colors.white,
+    fontFamily: "var(--tina-font-family)",
+    fontSize: "11px",
+    fontWeight: 500,
+    lineHeight: "18px",
+    opacity: 0,
+    pointerEvents: "none",
+    userSelect: "none",
   });
 
   useEffect(() => {
@@ -154,6 +201,8 @@ function SelectionFrameController({
         [CANVAS_FRAME_LABEL_ATTRIBUTE]: label,
       }}
       data-active={isActive}
+      data-draggable-enabled={isDraggable}
+      data-drop-rejected={dropRejectionMessage !== undefined}
       data-draggable-dragging={sortable.active !== null}
       data-draggable-over={sortable.isOver}
       data-draggable-active={
@@ -168,6 +217,15 @@ function SelectionFrameController({
       {...sortable.attributes}
       {...sortable.listeners}
     >
+      {dropRejectionMessage !== undefined && (
+        <div
+          {...{ [DROP_REJECTION_ATTRIBUTE]: "" }}
+          role="tooltip"
+          className={dropRejectionClassName().className}
+        >
+          {dropRejectionMessage}
+        </div>
+      )}
       {children}
     </div>
   );
