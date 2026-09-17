@@ -29,11 +29,12 @@ const StyledEditorLeftSidebarRoot = styled.div<{
   enableScroll?: boolean;
 }>`
   ${({ width = "240px" }) =>
-    // Same guard as the right panel: without min-width:0 a wide child would
-    // stretch the flex item past its basis and move the canvas.
+    // max-width is what actually pins the size: it clamps a flex item's
+    // automatic minimum, so a wide child can no longer stretch the panel and
+    // move the canvas. No overflow clipping here — the section drawer is
+    // absolutely positioned outside this box and would be cut off.
     `flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`}
   position: relative;
-  overflow-x: hidden;
   background: ${Colors.white};
   border-left: 1px solid ${Colors.black100};
   border-right: 1px solid ${Colors.black100};
