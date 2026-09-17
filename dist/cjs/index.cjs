@@ -10076,7 +10076,9 @@ const EditorContent = ({
     width: iframeContainerRef.current.clientWidth,
     height: iframeContainerRef.current.clientHeight
   } : undefined;
-  const [showDeviceFrame, setShowDeviceFrame] = React.useState(mode === "user");
+
+  // Off in every mode: Layers is the only control active when the editor opens.
+  const [showDeviceFrame, setShowDeviceFrame] = React.useState(false);
   const [zoom, setZoom] = React.useState("fit");
   const {
     breakpointIndex,
