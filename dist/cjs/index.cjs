@@ -7981,9 +7981,12 @@ const EMPTY_SIDEBAR_CONFIG = {
 const StyledEditorLeftSidebarRoot = styled__default["default"].div.withConfig({
   displayName: "EditorLeftSidebar__StyledEditorLeftSidebarRoot",
   componentId: "sc-16mpetx-0"
-})(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;", " > *{box-sizing:border-box;}"], ({
+})(["", " position:relative;overflow-x:hidden;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;", " > *{box-sizing:border-box;}"], ({
   width = "240px"
-}) => `flex: 0 0 ${width};`, easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100, easyblocksDesignSystem.Colors.black100, ({
+}) =>
+// Same guard as the right panel: without min-width:0 a wide child would
+// stretch the flex item past its basis and move the canvas.
+`flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`, easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100, easyblocksDesignSystem.Colors.black100, ({
   enableScroll = true
 }) => enableScroll ? `overflow-y: auto;` : "");
 const StyledEditorLeftSidebarTitle = styled__default["default"](Typography.Typography).withConfig({
@@ -9749,9 +9752,13 @@ const SidebarAndContentContainer = styled.styled.div.withConfig({
 const SidebarContainer = styled.styled.div.withConfig({
   displayName: "Editor__SidebarContainer",
   componentId: "sc-t95yuf-3"
-})(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
+})(["", " position:relative;overflow-x:hidden;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
   width = "240px"
-}) => `flex: 0 0 ${width};`, easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100, easyblocksDesignSystem.Colors.black100);
+}) =>
+// A flex item defaults to min-width:auto, which lets a wide field push the
+// panel past its basis. Different selections carry different fields, so the
+// panel would resize on every click and shove the canvas sideways.
+`flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`, easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100, easyblocksDesignSystem.Colors.black100);
 const DataSaverRoot = styled.styled.div.withConfig({
   displayName: "Editor__DataSaverRoot",
   componentId: "sc-t95yuf-4"
