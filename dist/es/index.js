@@ -1,5 +1,5 @@
 "use client";
-import { getDefaultLocale, isTrulyResponsiveValue, getExternalReferenceLocationKey, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, getBrightnessColor, validateColor, isNoCodeComponentOfType, globalSectionGroups, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$1, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
+import { getDefaultLocale, isTrulyResponsiveValue, getExternalReferenceLocationKey, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, getBrightnessColor, validateColor, isNoCodeComponentOfType, globalSectionGroups, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$2, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, useCallback, useDeferredValue, memo } from 'react';
 import isPropValid from '@emotion/is-prop-valid';
@@ -8,7 +8,7 @@ import { useToaster, Toaster } from '@redsun-vn/easyblocks-design-system/Toaster
 import { Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, TooltipProvider } from '@redsun-vn/easyblocks-design-system/Tooltip';
 import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
-import { findComponentDefinition, parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
+import { findComponentDefinition, parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize as normalize$1, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
 import { Colors, Fonts } from '@redsun-vn/easyblocks-design-system';
 import throttle from 'lodash.throttle';
 import debounce$1 from 'lodash/debounce';
@@ -16,6 +16,7 @@ import Modal$1 from 'react-modal';
 import { debounce } from 'lodash';
 import { ButtonSecondary, ButtonGhost, ButtonPrimary, ButtonDanger, ButtonGhostColor } from '@redsun-vn/easyblocks-design-system/buttons';
 import { Icons } from '@redsun-vn/easyblocks-design-system/icons';
+import { Input, InputColor, ColorPicker, InputFile } from '@redsun-vn/easyblocks-design-system/Input';
 import { Typography } from '@redsun-vn/easyblocks-design-system/Typography';
 import { ThumbnailButton } from '@redsun-vn/easyblocks-design-system/ThumbnailButton';
 import ReactDOM, { createPortal } from 'react-dom';
@@ -24,7 +25,6 @@ import { usePopper } from 'react-popper';
 import { Loader } from '@redsun-vn/easyblocks-design-system/Loader';
 import { Select, SelectSeparator, SelectItem } from '@redsun-vn/easyblocks-design-system/Select';
 import * as RadixRadioGroup from '@radix-ui/react-radio-group';
-import { Input, InputColor, ColorPicker, InputFile } from '@redsun-vn/easyblocks-design-system/Input';
 import { Toggle as Toggle$1 } from '@redsun-vn/easyblocks-design-system/Toggle';
 import { SelectInline, ToggleButton } from '@redsun-vn/easyblocks-design-system/ToggleButton';
 import { RangeSlider } from '@redsun-vn/easyblocks-design-system/Slider';
@@ -4351,6 +4351,13 @@ function FieldBuilder({
     layout: "column"
   }, /*#__PURE__*/React__default.createElement(Typography, null, "Unrecognized field type"));
 }
+
+/** Diacritics-insensitive so "mau" finds "Màu". */
+const normalize = value => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const SearchBar = styled.div.withConfig({
+  displayName: "fields-builder__SearchBar",
+  componentId: "sc-ignixa-0"
+})(["padding:8px 12px;border-bottom:1px solid ", ";"], Colors.black10);
 const tabs = [{
   id: "styles",
   label: "Styles"
@@ -4365,27 +4372,28 @@ const tabs = [{
 // Underline-style tab bar (flat text buttons sitting on a baseline track).
 const TabsBar = styled.div.withConfig({
   displayName: "fields-builder__TabsBar",
-  componentId: "sc-ignixa-0"
+  componentId: "sc-ignixa-1"
 })(["display:flex;justify-content:space-between;border-bottom:1px solid ", ";"], Colors.black10);
 
 // Active tab: faint Colors.black5 underline + bold/dark text so it stays
 // distinguishable even though the underline color is subtle.
 const TabButton = styled.button.withConfig({
   displayName: "fields-builder__TabButton",
-  componentId: "sc-ignixa-1"
+  componentId: "sc-ignixa-2"
 })(["padding:8px 16px;margin-bottom:-1px;border:none;border-bottom:2px solid ", ";background:transparent;cursor:pointer;font-size:12px;font-weight:", ";color:", ";transition:all 0.15s ease;white-space:nowrap;&:hover{color:black;}"], p => p.$active ? Colors.black500 : "transparent", p => p.$active ? "600" : "400", p => p.$active ? "black" : Colors.black40);
 const NoData = styled(Typography).withConfig({
   displayName: "fields-builder__NoData",
-  componentId: "sc-ignixa-2"
+  componentId: "sc-ignixa-3"
 })(["padding:20px 16px;"]);
 const HorizontalLine$2 = styled.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
-  componentId: "sc-ignixa-3"
+  componentId: "sc-ignixa-4"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
 function FieldsBuilder({
   form,
   fields,
-  isEmptyField = false
+  isEmptyField = false,
+  showSearch = false
 }) {
   const {
     t
@@ -4393,8 +4401,20 @@ function FieldsBuilder({
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
   const [activeTab, setActiveTab] = useState("styles");
+  const [query, setQuery] = useState("");
   const hasTabs = fields.some(f => f.component !== "identity" && f.component !== null);
-  const visibleFields = hasTabs ? fields.filter(f => {
+  const isSearching = showSearch && normalize(query).length > 0;
+  const matchesQuery = field => {
+    const needle = normalize(query);
+    const label = typeof field.label === "string" ? normalize(t(field.label)) : "";
+    const group = field.group ? normalize(t(field.group)) : "";
+    return label.includes(needle) || group.includes(needle);
+  };
+
+  // While searching, ignore the tab split: a property the user is looking for
+  // often sits on a tab other than the open one, and finding nothing there
+  // would read as "this property does not exist".
+  const visibleFields = isSearching ? fields.filter(matchesQuery) : hasTabs ? fields.filter(f => {
     const fieldTab = f.schemaProp?.tab ?? "styles";
     return fieldTab === activeTab;
   }) : fields;
@@ -4420,11 +4440,15 @@ function FieldsBuilder({
   return /*#__PURE__*/React__default.createElement(FieldsGroup, null, identityField !== undefined && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(FieldBuilder, {
     field: identityField,
     form: form
-  }), horizontalLine), hasTabs && !isEmptyField && /*#__PURE__*/React__default.createElement(TabsBar, null, tabs.map(tab => /*#__PURE__*/React__default.createElement(TabButton, {
+  }), horizontalLine), showSearch && !isEmptyField && /*#__PURE__*/React__default.createElement(SearchBar, null, /*#__PURE__*/React__default.createElement(Input, {
+    value: query,
+    placeholder: t("editor.properties.search"),
+    onChange: event => setQuery(event.target.value)
+  })), hasTabs && !isEmptyField && !isSearching && /*#__PURE__*/React__default.createElement(TabsBar, null, tabs.map(tab => /*#__PURE__*/React__default.createElement(TabButton, {
     key: tab.id,
     $active: activeTab === tab.id,
     onClick: () => setActiveTab(tab.id)
-  }, tab.label))), isEmptyField ? /*#__PURE__*/React__default.createElement(EmptyField, null) : null, Object.keys(grouped).map(groupName => /*#__PURE__*/React__default.createElement("div", {
+  }, tab.label))), isEmptyField ? /*#__PURE__*/React__default.createElement(EmptyField, null) : null, isSearching && visibleFields.length === 0 && /*#__PURE__*/React__default.createElement(NoData, null, t("editor.properties.noResults")), Object.keys(grouped).map(groupName => /*#__PURE__*/React__default.createElement("div", {
     key: groupName
   }, /*#__PURE__*/React__default.createElement(FieldsGroupLabel, null, groupName), grouped[groupName].map((field, index, fields) => /*#__PURE__*/React__default.createElement(FieldWrapper, {
     key: generateFieldKey(field, breakpointIndex),
@@ -4450,15 +4474,15 @@ function generateFieldKey(field, breakpointIndex) {
 }
 const FieldWrapper = styled.div.withConfig({
   displayName: "fields-builder__FieldWrapper",
-  componentId: "sc-ignixa-4"
+  componentId: "sc-ignixa-5"
 })(["margin-bottom:", ";"], props => props.isLast ? "8px" : 0);
 const FieldsGroupLabel = styled.div.withConfig({
   displayName: "fields-builder__FieldsGroupLabel",
-  componentId: "sc-ignixa-5"
+  componentId: "sc-ignixa-6"
 })(["display:flex;align-items:center;padding:20px 16px 10px 16px;", ";color:#000;"], Fonts.label);
 const FieldsGroup = styled.div.withConfig({
   displayName: "fields-builder__FieldsGroup",
-  componentId: "sc-ignixa-6"
+  componentId: "sc-ignixa-7"
 })(["position:relative;display:block;width:100%;padding:0;white-space:nowrap;overflow:unset;"]);
 
 const theme = css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Roboto\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
@@ -4513,7 +4537,8 @@ function SettingsContent({
   }, /*#__PURE__*/React__default.createElement(Wrapper$1, null, /*#__PURE__*/React__default.createElement(FieldsBuilder, {
     form: form,
     fields: fields,
-    isEmptyField: !focussedField.length
+    isEmptyField: !focussedField.length,
+    showSearch: true
   }), /*#__PURE__*/React__default.createElement(SidebarFooter, {
     paths: focussedField,
     SaveAsPicker: SaveAsPicker
@@ -5705,7 +5730,7 @@ const ModalPicker = ({
         [fieldName]: {}
       }
     };
-    const newComponent = fieldName.startsWith("$") ? config : duplicateConfig(normalize({
+    const newComponent = fieldName.startsWith("$") ? config : duplicateConfig(normalize$1({
       ...config,
       _itemProps
     }, editorContext), editorContext);
@@ -5713,7 +5738,7 @@ const ModalPicker = ({
   };
   const onModalClose = template => {
     if (template) {
-      close(normalize(template.entry, editorContext));
+      close(normalize$1(template.entry, editorContext));
     } else {
       onClose();
     }
@@ -7386,7 +7411,7 @@ function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedT
   }).map(template => {
     const newTemplate = {
       ...template,
-      entry: normalizeTextLocales(normalize({
+      entry: normalizeTextLocales(normalize$1({
         ...template.entry,
         _itemProps: {}
       }, editorContext), editorContext)
@@ -7781,7 +7806,7 @@ const EditorSections = () => {
     }
 
     // Raw API entries aren't normalized; normalize the picked entry before insert.
-    const normalizedEntry = normalize({
+    const normalizedEntry = normalize$1({
       ...entry,
       _itemProps: {}
     }, editorContext);
@@ -8045,7 +8070,7 @@ function reconcile({
     if (contextMatches) {
       return item;
     }
-    return normalize({
+    return normalize$1({
       ...item,
       _itemProps: {
         [templateId]: {
@@ -9814,7 +9839,7 @@ const EditorWrapper = /*#__PURE__*/memo(props => {
   const compilationContext = createCompilationContext(props.config, {
     locale: props?.defaultLocale ?? locale
   }, rootComponentId);
-  const initialEntry = props.document ? adaptRemoteConfig(props.document.entry, compilationContext) : normalize$1(rootTemplateEntry ?? {
+  const initialEntry = props.document ? adaptRemoteConfig(props.document.entry, compilationContext) : normalize$2(rootTemplateEntry ?? {
     _id: uniqueId(),
     _component: rootComponentId
   }, compilationContext);
@@ -10649,7 +10674,7 @@ const EditorContent = ({
 };
 function adaptRemoteConfig(config, compilationContext) {
   const withoutLocalizedFlag = removeLocalizedFlag(config, compilationContext);
-  const normalized = normalize$1(withoutLocalizedFlag, compilationContext);
+  const normalized = normalize$2(withoutLocalizedFlag, compilationContext);
   return normalized;
 }
 function calculateInsertionIndex(fromPath, toPath, placement, form) {

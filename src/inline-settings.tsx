@@ -47,6 +47,7 @@ function SettingsContent({ fields, SaveAsPicker }: SettingsContentProps) {
           form={form}
           fields={fields}
           isEmptyField={!focussedField.length}
+          showSearch
         />
         <SidebarFooter paths={focussedField} SaveAsPicker={SaveAsPicker} />
       </Wrapper>
