@@ -7946,9 +7946,12 @@ const EMPTY_SIDEBAR_CONFIG = {
 const StyledEditorLeftSidebarRoot = styled$1.div.withConfig({
   displayName: "EditorLeftSidebar__StyledEditorLeftSidebarRoot",
   componentId: "sc-16mpetx-0"
-})(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;", " > *{box-sizing:border-box;}"], ({
+})(["", " position:relative;overflow-x:hidden;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;", " > *{box-sizing:border-box;}"], ({
   width = "240px"
-}) => `flex: 0 0 ${width};`, Colors.white, Colors.black100, Colors.black100, ({
+}) =>
+// Same guard as the right panel: without min-width:0 a wide child would
+// stretch the flex item past its basis and move the canvas.
+`flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`, Colors.white, Colors.black100, Colors.black100, ({
   enableScroll = true
 }) => enableScroll ? `overflow-y: auto;` : "");
 const StyledEditorLeftSidebarTitle = styled$1(Typography).withConfig({
@@ -9714,9 +9717,13 @@ const SidebarAndContentContainer = styled.div.withConfig({
 const SidebarContainer = styled.div.withConfig({
   displayName: "Editor__SidebarContainer",
   componentId: "sc-t95yuf-3"
-})(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
+})(["", " position:relative;overflow-x:hidden;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
   width = "240px"
-}) => `flex: 0 0 ${width};`, Colors.white, Colors.black100, Colors.black100);
+}) =>
+// A flex item defaults to min-width:auto, which lets a wide field push the
+// panel past its basis. Different selections carry different fields, so the
+// panel would resize on every click and shove the canvas sideways.
+`flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`, Colors.white, Colors.black100, Colors.black100);
 const DataSaverRoot = styled.div.withConfig({
   displayName: "Editor__DataSaverRoot",
   componentId: "sc-t95yuf-4"
@@ -10034,7 +10041,9 @@ const EditorContent = ({
     width: iframeContainerRef.current.clientWidth,
     height: iframeContainerRef.current.clientHeight
   } : undefined;
-  const [showDeviceFrame, setShowDeviceFrame] = useState(mode === "user");
+
+  // Off in every mode: Layers is the only control active when the editor opens.
+  const [showDeviceFrame, setShowDeviceFrame] = useState(false);
   const [zoom, setZoom] = useState("fit");
   const {
     breakpointIndex,

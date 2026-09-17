@@ -28,8 +28,12 @@ const StyledEditorLeftSidebarRoot = styled.div<{
   width?: string;
   enableScroll?: boolean;
 }>`
-  ${({ width = "240px" }) => `flex: 0 0 ${width};`}
+  ${({ width = "240px" }) =>
+    // Same guard as the right panel: without min-width:0 a wide child would
+    // stretch the flex item past its basis and move the canvas.
+    `flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`}
   position: relative;
+  overflow-x: hidden;
   background: ${Colors.white};
   border-left: 1px solid ${Colors.black100};
   border-right: 1px solid ${Colors.black100};
