@@ -1,11 +1,14 @@
 import {
+  Backend,
   ComponentDefinitionShared,
   Template,
+  TemplateQueryType,
 } from "@redsun-vn/easyblocks-core";
 import {
   findComponentDefinitionById,
   normalize,
 } from "@redsun-vn/easyblocks-core/_internals";
+import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, {
   useCallback,
   useEffect,
@@ -16,9 +19,14 @@ import React, {
 import styled from "styled-components";
 import { useEditorContext } from "../../EditorContext";
 import { getDefaultTemplateForDefinition } from "../../templates/getTemplates";
-import { getLocalComponents, getLocalGroups } from "./getLocalGroups";
+import {
+  getCategoryLabel,
+  getLocalComponents,
+  getLocalGroups,
+} from "./getLocalGroups";
 import { EditorSectionDrawer } from "./drawer/EditorSectionDrawer";
-import { EditorSectionGroup } from "./EditorSectionGroup";
+import { EditorSectionItem, TSectionItemKind } from "./EditorSectionItem";
+import { EditorSectionsSkeleton } from "./EditorSectionsSkeleton";
 import { TOP_BAR_HEIGHT } from "../../EditorTopBar";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import { useTranslation } from "../../useTranslation";
@@ -39,11 +47,54 @@ export type TSectionTemplate = IComponentGroups[string]["templates"][number];
 
 const TITLE_HEIGHT = 50;
 const PADDING_TOP_HEIGHT = 20;
-// Page size for the per-group remote template fetch (infinite scroll).
+// Page size for the per-entry remote template fetch (infinite scroll).
 const TEMPLATES_LIMIT = 30;
 
-// Accumulated remote templates for a group plus its paging cursor.
-type TGroupRemoteState = {
+/** Shape both remote template endpoints answer with. */
+type TTemplateListResult = {
+  items?: Template[];
+  count?: Record<string, { matchedCount: number; total: number }>;
+};
+
+/**
+ * The public template path, exposed by the host app's backend on top of the
+ * `Backend` contract.
+ *
+ * REDSUN templates have no `shop_id`, and every shop-side query is pinned to a
+ * shop id down in Elasticsearch, so they can never come back through
+ * `templates.getAll`. Showing them needs a genuinely different endpoint — the
+ * public one, which only ever returns what an admin switched on — not a filter
+ * applied to the shop result.
+ *
+ * Optional because the contract in `easyblocks-core` does not carry it: a host
+ * that does not implement it simply has no REDSUN section, instead of breaking.
+ */
+type TPublicTemplateSource = {
+  getAllPublic?: (query: TemplateQueryType) => Promise<TTemplateListResult>;
+};
+
+/** Where an entry in the section list reads its templates from. */
+type TSectionSource = "builtin" | "shop" | "public";
+
+type TSectionEntry = {
+  /** Stable key for hover state and for the per-entry template cache. */
+  id: string;
+  /** Already localized; the raw category string is kept in `group`. */
+  label: string;
+  /** Raw `.group` value, only set for built-in categories. */
+  group?: string;
+  source: TSectionSource;
+  kind: TSectionItemKind;
+};
+
+type TSectionArea = {
+  id: string;
+  title: string;
+  entries: TSectionEntry[];
+};
+
+// Accumulated remote templates for one entry plus its paging cursor.
+type TEntryRemoteState = {
   items: TSectionTemplate[];
   page: number;
   total: number;
@@ -72,6 +123,14 @@ export function getSectionInsertionIndex(
   return Math.min(Number(rootSectionIndex) + 1, sectionCount);
 }
 
+/** Total matched documents across every group bucket of a count response. */
+function sumMatchedCount(count: TTemplateListResult["count"]): number {
+  return Object.values(count ?? {}).reduce(
+    (sum, bucket) => sum + (bucket?.matchedCount ?? 0),
+    0,
+  );
+}
+
 const StyledEditorSectionGroup = styled.div`
   padding-left: 12px;
   padding-right: 12px;
@@ -79,6 +138,22 @@ const StyledEditorSectionGroup = styled.div`
   max-height: calc(
     100vh - ${TOP_BAR_HEIGHT + TITLE_HEIGHT + PADDING_TOP_HEIGHT}px
   );
+`;
+
+// Heading of one area. Built-in components and templates are two different
+// kinds of thing, so they get two labelled regions rather than one list with
+// mixed icons — the icon alone is too weak a signal to tell them apart.
+const StyledAreaTitle = styled(Typography)`
+  display: block;
+  padding: 4px;
+  margin-top: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+
+  &:first-child {
+    margin-top: 0;
+  }
 `;
 
 export const EditorSections: React.FC = () => {
@@ -90,16 +165,20 @@ export const EditorSections: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const sectionListRef = useRef<HTMLDivElement | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
-  // Remote groups loaded from the count API; loading flag for that call.
-  const [remoteGroups, setRemoteGroups] = useState<string[]>([]);
-  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
-  // Remote templates fetched per group (paged), cached so a re-hover doesn't
+  // Remote templates fetched per entry (paged), cached so a re-hover doesn't
   // refetch. `isFetching` = first page; `isLoadingMore` = subsequent pages.
-  const [remoteByGroup, setRemoteByGroup] = useState<
-    Record<string, TGroupRemoteState>
+  const [remoteByEntry, setRemoteByEntry] = useState<
+    Record<string, TEntryRemoteState>
   >({});
   const [isFetching, setIsFetching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // The host backend, widened with the optional public-template reader. An
+  // intersection rather than a cast: every added member is optional, so the
+  // plain contract still satisfies it and a missing implementation stays a
+  // runtime-checkable `undefined` instead of a lie to the type checker.
+  const templatesApi: Backend["templates"] & TPublicTemplateSource =
+    editorContext.backend.templates;
 
   // Map raw API templates to the shape the drawer/card consume.
   const mapRemoteItems = useCallback(
@@ -132,16 +211,93 @@ export const EditorSections: React.FC = () => {
     [localComponents],
   );
 
-  // Local-definition templates for the hovered group (default "Empty X"
-  // templates built from the accepted components). Available synchronously.
+  /**
+   * The list, split into a built-in area and a template area.
+   *
+   * The two areas are built from separate sources and never merged, which is
+   * the whole point: the previous
+   * `[...new Set([...localGroups, ...remoteGroups])]` put a shop's own group
+   * called "Layout" into the same row as the built-in Layout category, so a
+   * saved template looked like a stock component.
+   *
+   * Each template source stays a single entry instead of being expanded into
+   * its group names. A shop that saved templates under "Layout" would otherwise
+   * reintroduce the collision one level down, with the same word appearing in
+   * both areas. The group string survives as a per-template label in the picker.
+   */
+  const areas = useMemo<TSectionArea[]>(() => {
+    const builtinEntries: TSectionEntry[] = [...localGroups]
+      .sort()
+      .map((group) => ({
+        id: `builtin:${group}`,
+        label: getCategoryLabel(t, group),
+        group,
+        source: "builtin",
+        kind: "builtin",
+      }));
+
+    const templateEntries: TSectionEntry[] = [];
+
+    // Admin edits the REDSUN library directly, so its own path already holds
+    // exactly those templates and a second public read would be a duplicate.
+    if (editorContext.mode === "user") {
+      templateEntries.push({
+        id: "public:redsun",
+        label: t("editor.sidebar.sections.templates.redsun"),
+        source: "public",
+        kind: "template",
+      });
+      templateEntries.push({
+        id: "shop:own",
+        label: t("editor.sidebar.sections.templates.shop"),
+        source: "shop",
+        kind: "template",
+      });
+    } else {
+      templateEntries.push({
+        id: "shop:own",
+        label: t("editor.sidebar.sections.templates.redsun"),
+        source: "shop",
+        kind: "template",
+      });
+    }
+
+    return [
+      {
+        id: "components",
+        title: t("editor.sidebar.sections.components"),
+        entries: builtinEntries,
+      },
+      {
+        id: "templates",
+        title: t("editor.sidebar.sections.templates"),
+        entries: templateEntries,
+      },
+    ];
+  }, [localGroups, editorContext.mode, t]);
+
+  const entriesById = useMemo(() => {
+    const map: Record<string, TSectionEntry> = {};
+    areas.forEach((area) =>
+      area.entries.forEach((entry) => {
+        map[entry.id] = entry;
+      }),
+    );
+    return map;
+  }, [areas]);
+
+  const hoveredEntry = entriesById[hoveredSection];
+
+  // Local-definition templates for the hovered built-in category (the default
+  // "Empty X" templates built from the accepted components). Synchronous.
   const localTemplates = useMemo<TSectionTemplate[]>(() => {
-    if (!hoveredSection) return [];
+    if (!hoveredEntry || hoveredEntry.source !== "builtin") return [];
 
     return localComponents
       .filter(
         (component: any) =>
           component.visible !== false &&
-          (component.group || "others") === hoveredSection,
+          (component.group || "others") === hoveredEntry.group,
       )
       .map((component: any) => {
         const template = getDefaultTemplateForDefinition(
@@ -155,39 +311,28 @@ export const EditorSections: React.FC = () => {
           template,
         } as unknown as TSectionTemplate;
       });
-  }, [hoveredSection, localComponents]);
+  }, [hoveredEntry, localComponents]);
 
-  // Remote groups from the templates `count` API (keys are group names).
-  // Count-only call (items ignored).
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoadingGroups(true);
+  /**
+   * One page of a remote source. Returns null when the source is not reachable,
+   * which is how a host without the public reader ends up with an empty REDSUN
+   * section rather than an error.
+   */
+  const fetchRemotePage = useCallback(
+    (source: TSectionSource, page: number): Promise<TTemplateListResult> | null => {
+      const query: TemplateQueryType = { page, limit: TEMPLATES_LIMIT };
 
-    editorContext.backend.templates
-      .getAll({ limit: 1 })
-      .then((res) => {
-        if (cancelled) return;
+      if (source === "shop") {
+        return templatesApi.getAll(query);
+      }
 
-        const count = res.count ?? {};
-        setRemoteGroups(
-          Object.keys(count).filter(
-            (group) => (count[group]?.matchedCount ?? 0) > 0,
-          ),
-        );
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingGroups(false);
-      });
+      if (source === "public") {
+        return templatesApi.getAllPublic?.(query) ?? null;
+      }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [editorContext.backend]);
-
-  // Left list = local groups merged with remote groups, deduped and sorted.
-  const sectionGroups = useMemo(
-    () => [...new Set([...localGroups, ...remoteGroups])].sort(),
-    [localGroups, remoteGroups],
+      return null;
+    },
+    [templatesApi],
   );
 
   // Smoothly scroll the editor canvas to a component by its config id. The
@@ -258,10 +403,10 @@ export const EditorSections: React.FC = () => {
     [editorContext, scrollCanvasToComponent],
   );
 
+  // Preselect the first built-in category so the drawer has something to show.
   useEffect(() => {
-    if (sectionGroups.length) {
-      setHoveredSection(sectionGroups[0]);
-    }
+    const first = areas[0]?.entries[0]?.id;
+    if (first) setHoveredSection(first);
   }, []);
 
   // Hovering a section selects it and opens the drawer.
@@ -300,30 +445,50 @@ export const EditorSections: React.FC = () => {
     };
   }, [isOpen]);
 
-  // Fetch the hovered group's first page of remote templates (server-side
-  // group filter). Cached per group so re-hovering is instant.
+  // First page for the hovered template entry. Cached per entry so re-hovering
+  // is instant; built-in entries never reach here.
   useEffect(() => {
-    if (!hoveredSection || remoteByGroup[hoveredSection]) return;
+    if (!hoveredEntry || hoveredEntry.source === "builtin") return;
+    if (remoteByEntry[hoveredEntry.id]) return;
 
-    const group = hoveredSection;
+    const entryId = hoveredEntry.id;
+    const request = fetchRemotePage(hoveredEntry.source, 1);
+
+    if (!request) {
+      // No reader for this source: record an empty, complete page so the
+      // drawer settles on "no data" instead of retrying on every hover.
+      setRemoteByEntry((prev) => ({
+        ...prev,
+        [entryId]: { items: [], page: 1, total: 0 },
+      }));
+      return;
+    }
+
     let cancelled = false;
     setIsFetching(true);
 
-    editorContext.backend.templates
-      .getAll({
-        filters: `group.keyword:eq:${group}`,
-        page: 1,
-        limit: TEMPLATES_LIMIT,
-      })
+    request
       .then((res) => {
         if (cancelled) return;
 
         const items = mapRemoteItems(res.items ?? []);
-        const total = res.count?.[group]?.matchedCount ?? items.length;
-        setRemoteByGroup((prev) => ({
+        setRemoteByEntry((prev) => ({
           ...prev,
-          [group]: { items, page: 1, total },
+          [entryId]: {
+            items,
+            page: 1,
+            total: sumMatchedCount(res.count) || items.length,
+          },
         }));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // A failed listing must not leave the drawer spinning forever.
+        setRemoteByEntry((prev) => ({
+          ...prev,
+          [entryId]: { items: [], page: 1, total: 0 },
+        }));
+        toaster.error(t("editor.sidebar.blocksAndSections.load.error"));
       })
       .finally(() => {
         if (!cancelled) setIsFetching(false);
@@ -332,64 +497,73 @@ export const EditorSections: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [hoveredSection]);
+  }, [hoveredEntry, fetchRemotePage]);
 
-  // Whether the hovered group has more remote templates to load (remote only;
+  // Whether the hovered entry has more remote templates to load (remote only;
   // local templates aren't paginated).
   const hasMore = useMemo(() => {
-    const state = remoteByGroup[hoveredSection];
+    const state = remoteByEntry[hoveredSection];
     return !!state && state.items.length < state.total;
-  }, [remoteByGroup, hoveredSection]);
+  }, [remoteByEntry, hoveredSection]);
 
-  // Load the next page of remote templates for the hovered group (infinite
+  // Load the next page of remote templates for the hovered entry (infinite
   // scroll). Appends to the existing items.
   const onLoadMore = useCallback(() => {
-    const group = hoveredSection;
-    const state = remoteByGroup[group];
-    if (!group || !state || isFetching || isLoadingMore) return;
+    const entry = hoveredEntry;
+    const state = entry ? remoteByEntry[entry.id] : undefined;
+    if (!entry || !state || isFetching || isLoadingMore) return;
+    if (entry.source === "builtin") return;
     if (state.items.length >= state.total) return;
 
     const nextPage = state.page + 1;
+    const request = fetchRemotePage(entry.source, nextPage);
+    if (!request) return;
+
     setIsLoadingMore(true);
 
-    editorContext.backend.templates
-      .getAll({
-        filters: `group.keyword:eq:${group}`,
-        page: nextPage,
-        limit: TEMPLATES_LIMIT,
-      })
+    request
       .then((res) => {
         const more = mapRemoteItems(res.items ?? []);
-        setRemoteByGroup((prev) => {
-          const existing = prev[group]?.items ?? [];
-          const total =
-            res.count?.[group]?.matchedCount ?? prev[group]?.total ?? 0;
+        setRemoteByEntry((prev) => {
+          const existing = prev[entry.id]?.items ?? [];
           return {
             ...prev,
-            [group]: { items: [...existing, ...more], page: nextPage, total },
+            [entry.id]: {
+              items: [...existing, ...more],
+              page: nextPage,
+              total: sumMatchedCount(res.count) || prev[entry.id]?.total || 0,
+            },
           };
         });
       })
+      .catch(() => {
+        toaster.error(t("editor.sidebar.blocksAndSections.load.error"));
+      })
       .finally(() => setIsLoadingMore(false));
   }, [
-    hoveredSection,
-    remoteByGroup,
+    hoveredEntry,
+    remoteByEntry,
     isFetching,
     isLoadingMore,
     mapRemoteItems,
-    editorContext,
+    fetchRemotePage,
   ]);
 
-  // Drawer = local-definition templates merged with remote ones, deduped by
-  // template id. Local shows immediately; remote appends when fetched.
+  // Drawer content for the hovered entry: built-in entries show the local
+  // "Empty X" templates, template entries show what their source returned.
+  // The two are never combined — that is the separation this phase is about.
   const drawerTemplates = useMemo(() => {
+    if (!hoveredEntry) return [];
+
+    const source =
+      hoveredEntry.source === "builtin"
+        ? localTemplates
+        : (remoteByEntry[hoveredEntry.id]?.items ?? []);
+
     const seen = new Set<string>();
     const result: TSectionTemplate[] = [];
 
-    [
-      ...localTemplates,
-      ...(remoteByGroup[hoveredSection]?.items ?? []),
-    ].forEach((template) => {
+    source.forEach((template) => {
       const id = template.template?.id ?? template.id;
       if (id && !seen.has(id)) {
         seen.add(id);
@@ -398,19 +572,40 @@ export const EditorSections: React.FC = () => {
     });
 
     return result;
-  }, [localTemplates, remoteByGroup, hoveredSection]);
+  }, [hoveredEntry, localTemplates, remoteByEntry]);
+
+  const isLoadingList = areas.every((area) => area.entries.length === 0);
 
   return (
     <>
       <StyledEditorSectionGroup ref={sectionListRef}>
-        <EditorSectionGroup
-          isFetchingRemoteGroup={isLoadingGroups && sectionGroups.length === 0}
-          sectionGroups={sectionGroups}
-          hoveredSection={hoveredSection}
-          onHoverSection={handleHoverSection}
-        />
+        {isLoadingList ? (
+          <EditorSectionsSkeleton />
+        ) : (
+          areas.map((area) => (
+            <div key={area.id}>
+              <StyledAreaTitle variant="label">{area.title}</StyledAreaTitle>
+              {area.entries.length ? (
+                area.entries.map((entry) => (
+                  <EditorSectionItem
+                    key={entry.id}
+                    id={entry.id}
+                    name={entry.label}
+                    kind={entry.kind}
+                    hovered={hoveredSection === entry.id}
+                    onHoverSection={handleHoverSection}
+                  />
+                ))
+              ) : (
+                <Typography variant="body" style={{ paddingLeft: 4 }}>
+                  {t("noData")}!
+                </Typography>
+              )}
+            </div>
+          ))
+        )}
       </StyledEditorSectionGroup>
-      {isOpen && hoveredSection ? (
+      {isOpen && hoveredEntry ? (
         <EditorSectionDrawer
           templates={drawerTemplates}
           isFetching={isFetching && drawerTemplates.length === 0}
@@ -419,7 +614,7 @@ export const EditorSections: React.FC = () => {
           onLoadMore={onLoadMore}
           onAddTemplate={onAddTemplate}
           containerRef={drawerRef}
-          title={hoveredSection}
+          title={hoveredEntry.label}
           onClose={() => setIsOpen(false)}
         />
       ) : null}
