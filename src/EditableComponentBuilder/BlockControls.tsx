@@ -223,6 +223,17 @@ export function BlocksControls({
     sortable.activeIndex > sortable.index &&
     index === length - 1;
 
+  // The block the dragged one would land inside. `over` is whatever droppable is
+  // under the pointer, which is nearly always a deeply nested block, so the line
+  // on its edge answers "at which boundary" but never "inside what" — and inside
+  // what is the question a drop over a three-column footer actually raises.
+  const overPath = dndContext.over?.data.current?.path as string | undefined;
+  const isDropContainer =
+    !!sortable.active &&
+    !!overPath &&
+    overPath !== path &&
+    parsePath(overPath, form).parent?.path === path;
+
   const dropIndicatorEdge = resolveDropIndicatorEdge({
     id,
     overId: dndContext.over ? String(dndContext.over.id) : null,
@@ -245,6 +256,10 @@ export function BlocksControls({
       isDraggable={!sortableDisabledState.draggable}
       dropRejectionMessage={dropRejectionMessage}
       dropIndicatorEdge={dropIndicatorEdge}
+      isDropContainer={isDropContainer}
+      isDropCandidate={
+        !!sortable.active && !isDroppableDisabled && !isBlockBeingDragged
+      }
       edgeDropTargets={
         <Fragment>
           {hasCollectionStartTarget && (

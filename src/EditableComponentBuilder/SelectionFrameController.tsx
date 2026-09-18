@@ -24,6 +24,10 @@ type SelectionFrameControllerProps = {
   dropRejectionMessage?: string;
   /** Edge of this block the dragged block would land on, or `null` when it would land elsewhere. */
   dropIndicatorEdge: DropIndicatorEdge;
+  /** This block is the one the dragged block would land inside. */
+  isDropContainer: boolean;
+  /** A drag is in progress and this block would accept it. */
+  isDropCandidate: boolean;
   /**
    * Droppables marking the outer edges of the collection. They are positioned against this
    * frame, so they belong inside it: the frame is the only box that knows where the edge is.
@@ -81,6 +85,8 @@ function SelectionFrameController({
   isDraggable,
   dropRejectionMessage,
   dropIndicatorEdge,
+  isDropContainer,
+  isDropCandidate,
   edgeDropTargets,
 }: SelectionFrameControllerProps) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
@@ -150,6 +156,17 @@ function SelectionFrameController({
       opacity: 0.5,
     },
 
+    // Mid-drag, the block under the pointer states plainly that it would take the
+    // drop. A half-opacity hairline — the same one hovering shows when nothing is
+    // being dragged — read as "nothing is happening here", which is why aiming at
+    // a target felt like aiming at a place that would not accept anything.
+    [`&[data-drop-candidate=true]${HOVERED_TARGET_FRAME}::after`]: {
+      opacity: 1,
+      borderColor: Colors.purple,
+      borderWidth: "2px",
+      boxShadow: "none",
+    },
+
     // Name of the click target, unless it is already selected: the sidebar shows its name
     // and the label would cover text being edited. While dragging, `::before` is the drop
     // indicator instead.
@@ -158,7 +175,9 @@ function SelectionFrameController({
       content: `attr(${CANVAS_FRAME_LABEL_ATTRIBUTE})`,
       position: "absolute",
       top: 0,
-      left: `${DRAG_HANDLE_SIZE}px`,
+      // Sits beside the grip when there is one, and reclaims the space when
+      // there is not, so a block that cannot be dragged shows no empty gap.
+      left: 0,
       zIndex: "var(--tina-z-index-2)",
       padding: "0 6px",
       borderBottomRightRadius: "4px",
@@ -173,6 +192,11 @@ function SelectionFrameController({
       userSelect: "none",
     },
 
+    [`&[data-draggable-enabled=true][data-active=false][data-draggable-dragging=false]${HOVERED_TARGET_FRAME}::before`]:
+      {
+        left: `${DRAG_HANDLE_SIZE}px`,
+      },
+
     "&[data-drop-indicator=before]::before": {
       ...dropIndicatorBar,
       [leadingEdge]: dropIndicatorOffset,
@@ -185,6 +209,14 @@ function SelectionFrameController({
 
     "&[data-draggable-active=true]": {
       opacity: 0.5,
+    },
+
+    // The container that will receive the drop, ringed in the same purple as the
+    // insertion line. Between them a drag now answers both halves of "where does
+    // this go": the ring says inside what, the line says at which boundary.
+    "&[data-drop-container=true]": {
+      boxShadow: `inset 0 0 0 2px ${Colors.purple}`,
+      borderRadius: "2px",
     },
 
     // The grip is revealed by the same hover that reveals the label, so picking a
@@ -291,6 +323,8 @@ function SelectionFrameController({
       data-drop-rejected={dropRejectionMessage !== undefined}
       data-draggable-dragging={sortable.active !== null}
       data-drop-indicator={dropIndicatorEdge ?? "none"}
+      data-drop-container={isDropContainer}
+      data-drop-candidate={isDropCandidate}
       data-draggable-active={
         sortable.active !== null && sortable.active?.id === id
       }

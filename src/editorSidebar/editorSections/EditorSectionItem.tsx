@@ -49,14 +49,18 @@ export const EditorSectionItem = ({
   name: string;
   onSelectSection: (id: string) => void;
 }) => {
-  const { isOpen, tooltipProps, triggerProps, arrowProps } = useTooltip();
+  // The click goes through the tooltip hook rather than onto the row: the hook's
+  // own `triggerProps` carries an `onClick`, and spreading those over the row
+  // silently replaced any handler put there directly.
+  const { isOpen, tooltipProps, triggerProps, arrowProps } = useTooltip({
+    onClick: () => onSelectSection(id),
+  });
 
   return (
     <>
       <StyledRow
         id={id}
         selected={selected}
-        onClick={() => onSelectSection(id)}
         {...triggerProps}
       >
         <StyledEditorSectionName>{name}</StyledEditorSectionName>

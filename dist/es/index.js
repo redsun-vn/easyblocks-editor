@@ -7841,16 +7841,20 @@ const EditorSectionItem = ({
   selected,
   onSelectSection
 }) => {
+  // The click goes through the tooltip hook rather than onto the row: the hook's
+  // own `triggerProps` carries an `onClick`, and spreading those over the row
+  // silently replaced any handler put there directly.
   const {
     isOpen,
     tooltipProps,
     triggerProps,
     arrowProps
-  } = useTooltip();
+  } = useTooltip({
+    onClick: () => onSelectSection(id)
+  });
   return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledRow, _extends({
     id: id,
-    selected: selected,
-    onClick: () => onSelectSection(id)
+    selected: selected
   }, triggerProps), /*#__PURE__*/React__default.createElement(StyledEditorSectionName, null, name)), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, name)));
 };
 
@@ -12337,6 +12341,8 @@ function SelectionFrameController({
   isDraggable,
   dropRejectionMessage,
   dropIndicatorEdge,
+  isDropContainer,
+  isDropCandidate,
   edgeDropTargets
 }) {
   const [node, setNode] = useState(null);
@@ -12405,6 +12411,16 @@ function SelectionFrameController({
     [`&[data-active=false]${HOVERED_TARGET_FRAME}::after`]: {
       opacity: 0.5
     },
+    // Mid-drag, the block under the pointer states plainly that it would take the
+    // drop. A half-opacity hairline — the same one hovering shows when nothing is
+    // being dragged — read as "nothing is happening here", which is why aiming at
+    // a target felt like aiming at a place that would not accept anything.
+    [`&[data-drop-candidate=true]${HOVERED_TARGET_FRAME}::after`]: {
+      opacity: 1,
+      borderColor: Colors.purple,
+      borderWidth: "2px",
+      boxShadow: "none"
+    },
     // Name of the click target, unless it is already selected: the sidebar shows its name
     // and the label would cover text being edited. While dragging, `::before` is the drop
     // indicator instead.
@@ -12412,7 +12428,9 @@ function SelectionFrameController({
       content: `attr(${CANVAS_FRAME_LABEL_ATTRIBUTE})`,
       position: "absolute",
       top: 0,
-      left: `${DRAG_HANDLE_SIZE}px`,
+      // Sits beside the grip when there is one, and reclaims the space when
+      // there is not, so a block that cannot be dragged shows no empty gap.
+      left: 0,
       zIndex: "var(--tina-z-index-2)",
       padding: "0 6px",
       borderBottomRightRadius: "4px",
@@ -12426,6 +12444,9 @@ function SelectionFrameController({
       pointerEvents: "none",
       userSelect: "none"
     },
+    [`&[data-draggable-enabled=true][data-active=false][data-draggable-dragging=false]${HOVERED_TARGET_FRAME}::before`]: {
+      left: `${DRAG_HANDLE_SIZE}px`
+    },
     "&[data-drop-indicator=before]::before": {
       ...dropIndicatorBar,
       [leadingEdge]: dropIndicatorOffset
@@ -12436,6 +12457,13 @@ function SelectionFrameController({
     },
     "&[data-draggable-active=true]": {
       opacity: 0.5
+    },
+    // The container that will receive the drop, ringed in the same purple as the
+    // insertion line. Between them a drag now answers both halves of "where does
+    // this go": the ring says inside what, the line says at which boundary.
+    "&[data-drop-container=true]": {
+      boxShadow: `inset 0 0 0 2px ${Colors.purple}`,
+      borderRadius: "2px"
     },
     // The grip is revealed by the same hover that reveals the label, so picking a
     // block up still takes no prior selection — it just takes aiming at a control
@@ -12523,6 +12551,8 @@ function SelectionFrameController({
     "data-drop-rejected": dropRejectionMessage !== undefined,
     "data-draggable-dragging": sortable.active !== null,
     "data-drop-indicator": dropIndicatorEdge ?? "none",
+    "data-drop-container": isDropContainer,
+    "data-drop-candidate": isDropCandidate,
     "data-draggable-active": sortable.active !== null && sortable.active?.id === id,
     className: wrapperClassName().className,
     ref: node => {
@@ -12714,6 +12744,13 @@ function BlocksControls({
   // of this one by hovering a block: the order of the two paths already decides that side.
   const hasCollectionStartTarget = !isDroppableDisabled && isActivePathInDifferentCollection && sortable.activeIndex < sortable.index && index === 0;
   const hasCollectionEndTarget = !isDroppableDisabled && isActivePathInDifferentCollection && sortable.activeIndex > sortable.index && index === length - 1;
+
+  // The block the dragged one would land inside. `over` is whatever droppable is
+  // under the pointer, which is nearly always a deeply nested block, so the line
+  // on its edge answers "at which boundary" but never "inside what" — and inside
+  // what is the question a drop over a three-column footer actually raises.
+  const overPath = dndContext.over?.data.current?.path;
+  const isDropContainer = !!sortable.active && !!overPath && overPath !== path && parsePath(overPath, form).parent?.path === path;
   const dropIndicatorEdge = resolveDropIndicatorEdge({
     id,
     overId: dndContext.over ? String(dndContext.over.id) : null,
@@ -12734,6 +12771,8 @@ function BlocksControls({
     isDraggable: !sortableDisabledState.draggable,
     dropRejectionMessage: dropRejectionMessage,
     dropIndicatorEdge: dropIndicatorEdge,
+    isDropContainer: isDropContainer,
+    isDropCandidate: !!sortable.active && !isDroppableDisabled && !isBlockBeingDragged,
     edgeDropTargets: /*#__PURE__*/React__default.createElement(Fragment, null, hasCollectionStartTarget && /*#__PURE__*/React__default.createElement(CollectionEdgeDropTarget, {
       id: id,
       direction: direction,

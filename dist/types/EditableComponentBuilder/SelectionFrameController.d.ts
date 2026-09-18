@@ -17,12 +17,16 @@ type SelectionFrameControllerProps = {
     dropRejectionMessage?: string;
     /** Edge of this block the dragged block would land on, or `null` when it would land elsewhere. */
     dropIndicatorEdge: DropIndicatorEdge;
+    /** This block is the one the dragged block would land inside. */
+    isDropContainer: boolean;
+    /** A drag is in progress and this block would accept it. */
+    isDropCandidate: boolean;
     /**
      * Droppables marking the outer edges of the collection. They are positioned against this
      * frame, so they belong inside it: the frame is the only box that knows where the edge is.
      */
     edgeDropTargets?: ReactNode;
 };
-declare function SelectionFrameController({ isActive, children, onSelect, stitches, sortable, id, direction, path, label, isDraggable, dropRejectionMessage, dropIndicatorEdge, edgeDropTargets, }: SelectionFrameControllerProps): React.JSX.Element;
+declare function SelectionFrameController({ isActive, children, onSelect, stitches, sortable, id, direction, path, label, isDraggable, dropRejectionMessage, dropIndicatorEdge, isDropContainer, isDropCandidate, edgeDropTargets, }: SelectionFrameControllerProps): React.JSX.Element;
 export { SelectionFrameController };
 //# sourceMappingURL=SelectionFrameController.d.ts.map
