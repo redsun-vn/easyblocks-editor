@@ -20,6 +20,7 @@ import { styled } from "styled-components";
 import { EditorHistory } from "./EditorHistory";
 import type { Zoom } from "./Editor";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
+import { TemplateIcon } from "./icons/TemplateIcon";
 import { TEasyblocksEditorMode, TLeftSidebar } from "./types";
 import { useTranslation } from "./useTranslation";
 import { getFlagUrl } from "./utils/getFlagSvgUrl";
@@ -222,17 +223,30 @@ export const EditorTopBar: React.FC<{
         {!isAdminTemplate && (
           <>
             <ButtonGhost
-              icon={Icons.Section}
+              icon={Icons.Add}
               hideLabel
-              onClick={() => onShowLeftSidebar("sections")}
+              onClick={() => onShowLeftSidebar("components")}
               style={{
                 background:
-                  showLeftSidebar === "sections"
+                  showLeftSidebar === "components"
                     ? Colors.black10
                     : "transparent",
               }}
             >
-              {t("editor.sidebar.blocksAndSections")}
+              {t("editor.sidebar.sections.components")}
+            </ButtonGhost>
+            <ButtonGhost
+              icon={TemplateIcon}
+              hideLabel
+              onClick={() => onShowLeftSidebar("templates")}
+              style={{
+                background:
+                  showLeftSidebar === "templates"
+                    ? Colors.black10
+                    : "transparent",
+              }}
+            >
+              {t("editor.sidebar.sections.templates")}
             </ButtonGhost>
             {!isShopUser && (
               <ButtonGhost

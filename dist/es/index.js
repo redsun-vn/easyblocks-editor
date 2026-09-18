@@ -5210,6 +5210,46 @@ const FontColorConfigsModal = ({
   }) : null))));
 };
 
+/**
+ * Template glyph: a framed page with a header band, drawn locally rather than
+ * taken from the design system.
+ *
+ * The design system has no "template" icon, and adding one there would not help
+ * here: this package resolves `@redsun-vn/easyblocks-design-system` from an
+ * installed git build, so a new export only becomes visible after that package
+ * is published — which the release rules for this change forbid. The three
+ * existing candidates are all taken: `Master` is a four-diamond cluster that
+ * reads as "component", while `Duplicate` and `LayerGroup` already mean
+ * "duplicate this block" and "select the parent block" on the block toolbar.
+ *
+ * Lives in its own module because both the panel rail button and the rows
+ * inside the template panel draw it, and two copies would drift apart.
+ */
+const TemplateIcon = ({
+  size = 16
+}) => /*#__PURE__*/React__default.createElement("svg", {
+  width: size,
+  height: size,
+  viewBox: "0 0 16 16",
+  fill: "none",
+  xmlns: "http://www.w3.org/2000/svg",
+  "aria-hidden": "true",
+  focusable: "false"
+}, /*#__PURE__*/React__default.createElement("rect", {
+  x: "2.5",
+  y: "2.5",
+  width: "11",
+  height: "11",
+  rx: "1.5",
+  stroke: "currentColor"
+}), /*#__PURE__*/React__default.createElement("path", {
+  d: "M2.5 6.5H13.5",
+  stroke: "currentColor"
+}), /*#__PURE__*/React__default.createElement("path", {
+  d: "M6.5 6.5V13.5",
+  stroke: "currentColor"
+}));
+
 const SUBDIVISION_OVERRIDES = {
   "gd-GB": "gb-sct",
   // Scotland flag
@@ -5332,13 +5372,20 @@ const EditorTopBar = ({
       onRedo();
     }
   }, t("editor.sidebar.redo")), /*#__PURE__*/React__default.createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default.createElement(Label, null, "(Read-Only)"), !isAdminTemplate && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.Section,
+    icon: Icons.Add,
     hideLabel: true,
-    onClick: () => onShowLeftSidebar("sections"),
+    onClick: () => onShowLeftSidebar("components"),
     style: {
-      background: showLeftSidebar === "sections" ? Colors.black10 : "transparent"
+      background: showLeftSidebar === "components" ? Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.blocksAndSections")), !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+  }, t("editor.sidebar.sections.components")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: TemplateIcon,
+    hideLabel: true,
+    onClick: () => onShowLeftSidebar("templates"),
+    style: {
+      background: showLeftSidebar === "templates" ? Colors.black10 : "transparent"
+    }
+  }, t("editor.sidebar.sections.templates")), !isShopUser && /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.GlobalSections,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("global-sections"),
@@ -7769,42 +7816,6 @@ const EditorSectionDrawer = ({
 
 /** What an entry in the section list stands for, which also picks its icon. */
 
-/**
- * Template glyph: a framed page with a header band, drawn locally rather than
- * taken from the design system.
- *
- * The design system has no "template" icon, and adding one there would not help
- * here: this package resolves `@redsun-vn/easyblocks-design-system` from an
- * installed git build, so a new export only becomes visible after that package
- * is published — which the release rules for this change forbid. The three
- * existing candidates are all taken: `Master` is a four-diamond cluster that
- * reads as "component", while `Duplicate` and `LayerGroup` already mean
- * "duplicate this block" and "select the parent block" on the block toolbar.
- */
-const TemplateIcon = ({
-  size = 16
-}) => /*#__PURE__*/React__default.createElement("svg", {
-  width: size,
-  height: size,
-  viewBox: "0 0 16 16",
-  fill: "none",
-  xmlns: "http://www.w3.org/2000/svg",
-  "aria-hidden": "true",
-  focusable: "false"
-}, /*#__PURE__*/React__default.createElement("rect", {
-  x: "2.5",
-  y: "2.5",
-  width: "11",
-  height: "11",
-  rx: "1.5",
-  stroke: "currentColor"
-}), /*#__PURE__*/React__default.createElement("path", {
-  d: "M2.5 6.5H13.5",
-  stroke: "currentColor"
-}), /*#__PURE__*/React__default.createElement("path", {
-  d: "M6.5 6.5V13.5",
-  stroke: "currentColor"
-}));
 const StyledRow = styled$1.div.withConfig({
   displayName: "EditorSectionItem__StyledRow",
   componentId: "sc-1li16rj-0"
@@ -7884,6 +7895,12 @@ const TEMPLATES_LIMIT = 30;
 
 /** Where an entry in the section list reads its templates from. */
 
+/**
+ * Which of the two panels this instance is. Built-in components and saved
+ * templates each own a rail button and a panel, so one instance only ever
+ * builds and renders one of the two lists.
+ */
+
 // Accumulated remote templates for one entry plus its paging cursor.
 
 /**
@@ -7902,6 +7919,58 @@ function getSectionInsertionIndex(focussedField, sectionCount) {
   return Math.min(Number(rootSectionIndex) + 1, sectionCount);
 }
 
+/**
+ * The entries of one panel, and only that panel.
+ *
+ * The two kinds are built from separate sources and never merged, which is the
+ * whole point: the previous `[...new Set([...localGroups, ...remoteGroups])]`
+ * put a shop's own group called "Layout" into the same row as the built-in
+ * Layout category, so a saved template looked like a stock component.
+ *
+ * Each template source stays a single entry instead of being expanded into its
+ * group names. A shop that saved templates under "Layout" would otherwise
+ * reintroduce the collision one level down, with the same word appearing in
+ * both panels. The group string survives as a per-template label in the picker.
+ */
+function buildSectionEntries({
+  panel,
+  mode,
+  localGroups,
+  t
+}) {
+  if (panel === "components") {
+    return [...localGroups].sort().map(group => ({
+      id: `builtin:${group}`,
+      label: getCategoryLabel(t, group),
+      group,
+      source: "builtin",
+      kind: "builtin"
+    }));
+  }
+
+  // Admin edits the REDSUN library directly, so its own path already holds
+  // exactly those templates and a second public read would be a duplicate.
+  if (mode === "user") {
+    return [{
+      id: "public:redsun",
+      label: t("editor.sidebar.sections.templates.redsun"),
+      source: "public",
+      kind: "template"
+    }, {
+      id: "shop:own",
+      label: t("editor.sidebar.sections.templates.shop"),
+      source: "shop",
+      kind: "template"
+    }];
+  }
+  return [{
+    id: "shop:own",
+    label: t("editor.sidebar.sections.templates.redsun"),
+    source: "shop",
+    kind: "template"
+  }];
+}
+
 /** Total matched documents across every group bucket of a count response. */
 function sumMatchedCount(count) {
   return Object.values(count ?? {}).reduce((sum, bucket) => sum + (bucket?.matchedCount ?? 0), 0);
@@ -7910,15 +7979,9 @@ const StyledEditorSectionGroup = styled$1.div.withConfig({
   displayName: "EditorSections__StyledEditorSectionGroup",
   componentId: "sc-1nr6ndr-0"
 })(["padding-left:12px;padding-right:12px;overflow-y:auto;max-height:calc( 100vh - ", "px );"], TOP_BAR_HEIGHT + TITLE_HEIGHT + PADDING_TOP_HEIGHT);
-
-// Heading of one area. Built-in components and templates are two different
-// kinds of thing, so they get two labelled regions rather than one list with
-// mixed icons — the icon alone is too weak a signal to tell them apart.
-const StyledAreaTitle = styled$1(Typography).withConfig({
-  displayName: "EditorSections__StyledAreaTitle",
-  componentId: "sc-1nr6ndr-1"
-})(["display:block;padding:4px;margin-top:12px;text-transform:uppercase;letter-spacing:0.04em;opacity:0.6;&:first-child{margin-top:0;}"]);
-const EditorSections = () => {
+const EditorSections = ({
+  panel
+}) => {
   const editorContext = useEditorContext();
   const toaster = useToaster();
   const {
@@ -7957,71 +8020,19 @@ const EditorSections = () => {
 
   // Local groups: the .group values of the accepted components.
   const localGroups = useMemo(() => getLocalGroups(localComponents), [localComponents]);
-
-  /**
-   * The list, split into a built-in area and a template area.
-   *
-   * The two areas are built from separate sources and never merged, which is
-   * the whole point: the previous
-   * `[...new Set([...localGroups, ...remoteGroups])]` put a shop's own group
-   * called "Layout" into the same row as the built-in Layout category, so a
-   * saved template looked like a stock component.
-   *
-   * Each template source stays a single entry instead of being expanded into
-   * its group names. A shop that saved templates under "Layout" would otherwise
-   * reintroduce the collision one level down, with the same word appearing in
-   * both areas. The group string survives as a per-template label in the picker.
-   */
-  const areas = useMemo(() => {
-    const builtinEntries = [...localGroups].sort().map(group => ({
-      id: `builtin:${group}`,
-      label: getCategoryLabel(t, group),
-      group,
-      source: "builtin",
-      kind: "builtin"
-    }));
-    const templateEntries = [];
-
-    // Admin edits the REDSUN library directly, so its own path already holds
-    // exactly those templates and a second public read would be a duplicate.
-    if (editorContext.mode === "user") {
-      templateEntries.push({
-        id: "public:redsun",
-        label: t("editor.sidebar.sections.templates.redsun"),
-        source: "public",
-        kind: "template"
-      });
-      templateEntries.push({
-        id: "shop:own",
-        label: t("editor.sidebar.sections.templates.shop"),
-        source: "shop",
-        kind: "template"
-      });
-    } else {
-      templateEntries.push({
-        id: "shop:own",
-        label: t("editor.sidebar.sections.templates.redsun"),
-        source: "shop",
-        kind: "template"
-      });
-    }
-    return [{
-      id: "components",
-      title: t("editor.sidebar.sections.components"),
-      entries: builtinEntries
-    }, {
-      id: "templates",
-      title: t("editor.sidebar.sections.templates"),
-      entries: templateEntries
-    }];
-  }, [localGroups, editorContext.mode, t]);
+  const entries = useMemo(() => buildSectionEntries({
+    panel,
+    mode: editorContext.mode,
+    localGroups,
+    t
+  }), [panel, localGroups, editorContext.mode, t]);
   const entriesById = useMemo(() => {
     const map = {};
-    areas.forEach(area => area.entries.forEach(entry => {
+    entries.forEach(entry => {
       map[entry.id] = entry;
-    }));
+    });
     return map;
-  }, [areas]);
+  }, [entries]);
   const hoveredEntry = entriesById[hoveredSection];
 
   // Local-definition templates for the hovered built-in category (the default
@@ -8087,7 +8098,7 @@ const EditorSections = () => {
   const onAddTemplate = useCallback(template => {
     const entry = template.template?.entry;
     if (!entry) {
-      toaster.error(t("editor.sidebar.blocksAndSections.add.error"));
+      toaster.error(t("editor.sidebar.sections.add.error"));
       return;
     }
 
@@ -8102,7 +8113,7 @@ const EditorSections = () => {
       index: insertionIndex,
       block: normalizedEntry
     });
-    toaster.success(t("editor.sidebar.blocksAndSections.add.success"));
+    toaster.success(t("editor.sidebar.sections.add.success"));
 
     // Scroll the canvas to wherever the new section landed.
     const data = editorContext.form.values?.data ?? [];
@@ -8110,9 +8121,9 @@ const EditorSections = () => {
     if (newId) scrollCanvasToComponent(newId);
   }, [editorContext, scrollCanvasToComponent]);
 
-  // Preselect the first built-in category so the drawer has something to show.
+  // Preselect this panel's first entry so the drawer has something to show.
   useEffect(() => {
-    const first = areas[0]?.entries[0]?.id;
+    const first = entries[0]?.id;
     if (first) setHoveredSection(first);
   }, []);
 
@@ -8191,7 +8202,7 @@ const EditorSections = () => {
           total: 0
         }
       }));
-      toaster.error(t("editor.sidebar.blocksAndSections.load.error"));
+      toaster.error(t("editor.sidebar.sections.load.error"));
     }).finally(() => {
       if (!cancelled) setIsFetching(false);
     });
@@ -8233,7 +8244,7 @@ const EditorSections = () => {
         };
       });
     }).catch(() => {
-      toaster.error(t("editor.sidebar.blocksAndSections.load.error"));
+      toaster.error(t("editor.sidebar.sections.load.error"));
     }).finally(() => setIsLoadingMore(false));
   }, [hoveredEntry, remoteByEntry, isFetching, isLoadingMore, mapRemoteItems, fetchRemotePage]);
 
@@ -8254,26 +8265,26 @@ const EditorSections = () => {
     });
     return result;
   }, [hoveredEntry, localTemplates, remoteByEntry]);
-  const isLoadingList = areas.every(area => area.entries.length === 0);
+
+  // Built-in categories are derived from the form, which is still empty on the
+  // first paint, so an empty components list means "not ready yet". The
+  // template list is static, so an empty one is genuinely "nothing here".
+  const isLoadingList = panel === "components" && entries.length === 0;
   return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledEditorSectionGroup, {
     ref: sectionListRef
-  }, isLoadingList ? /*#__PURE__*/React__default.createElement(EditorSectionsSkeleton, null) : areas.map(area => /*#__PURE__*/React__default.createElement("div", {
-    key: area.id
-  }, /*#__PURE__*/React__default.createElement(StyledAreaTitle, {
-    variant: "label"
-  }, area.title), area.entries.length ? area.entries.map(entry => /*#__PURE__*/React__default.createElement(EditorSectionItem, {
+  }, isLoadingList && /*#__PURE__*/React__default.createElement(EditorSectionsSkeleton, null), !isLoadingList && entries.length === 0 && /*#__PURE__*/React__default.createElement(Typography, {
+    variant: "body",
+    style: {
+      paddingLeft: 4
+    }
+  }, t("noData"), "!"), !isLoadingList && entries.map(entry => /*#__PURE__*/React__default.createElement(EditorSectionItem, {
     key: entry.id,
     id: entry.id,
     name: entry.label,
     kind: entry.kind,
     hovered: hoveredSection === entry.id,
     onHoverSection: handleHoverSection
-  })) : /*#__PURE__*/React__default.createElement(Typography, {
-    variant: "body",
-    style: {
-      paddingLeft: 4
-    }
-  }, t("noData"), "!")))), isOpen && hoveredEntry ? /*#__PURE__*/React__default.createElement(EditorSectionDrawer, {
+  }))), isOpen && hoveredEntry ? /*#__PURE__*/React__default.createElement(EditorSectionDrawer, {
     templates: drawerTemplates,
     isFetching: isFetching && drawerTemplates.length === 0,
     isLoadingMore: isLoadingMore,
@@ -8354,14 +8365,28 @@ const EditorLeftSidebar = ({
             Component: /*#__PURE__*/React__default.createElement(EditorLayer, null)
           };
         }
-      case "sections":
+      case "components":
         {
           return {
-            id: "editor-sections",
-            title: t("editor.sidebar.blocksAndSections"),
+            id: "editor-components",
+            title: t("editor.sidebar.sections.components"),
             width: "200px",
             enableScroll: false,
-            Component: /*#__PURE__*/React__default.createElement(EditorSections, null)
+            Component: /*#__PURE__*/React__default.createElement(EditorSections, {
+              panel: "components"
+            })
+          };
+        }
+      case "templates":
+        {
+          return {
+            id: "editor-templates",
+            title: t("editor.sidebar.sections.templates"),
+            width: "200px",
+            enableScroll: false,
+            Component: /*#__PURE__*/React__default.createElement(EditorSections, {
+              panel: "templates"
+            })
           };
         }
       default:
