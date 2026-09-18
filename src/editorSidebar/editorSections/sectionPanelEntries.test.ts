@@ -1,4 +1,4 @@
-import { buildSectionEntries } from "./EditorSections";
+import { buildSectionEntries, getTemplateSources } from "./EditorSections";
 
 // Stands in for the editor's translation lookup, which returns the key itself
 // when the key is absent.
@@ -7,6 +7,7 @@ const t = (key: string): string =>
     ({
       "definition.category.layout": "Bố cục",
       "definition.category.content": "Nội dung",
+      "definition.category.others": "Khác",
       "editor.sidebar.sections.templates.system": "Mẫu hệ thống",
       "editor.sidebar.sections.templates.shop": "Mẫu của khách hàng",
     }) as Record<string, string>
@@ -78,58 +79,161 @@ describe("entries shown in the components panel", () => {
   });
 });
 
-describe("entries shown in the templates panel", () => {
-  it("gives a shop both the system library and its own templates", () => {
-    const entries = buildSectionEntries({
-      panel: "templates",
-      mode: "user",
-      localGroups: ["layout"],
-      t,
-    });
-
-    expect(entries).toEqual([
+describe("template libraries a mode may read", () => {
+  it("gives a shop the system library and its own, in that order", () => {
+    expect(getTemplateSources("user")).toEqual([
       {
-        id: "public:redsun",
-        label: "Mẫu hệ thống",
         source: "public",
-        kind: "template",
+        labelKey: "editor.sidebar.sections.templates.system",
       },
-      {
-        id: "shop:own",
-        label: "Mẫu của khách hàng",
-        source: "shop",
-        kind: "template",
-      },
+      { source: "shop", labelKey: "editor.sidebar.sections.templates.shop" },
     ]);
   });
 
-  it("gives an admin one entry, because its own path is the system library", () => {
-    const entries = buildSectionEntries({
-      panel: "templates",
-      mode: "admin",
-      localGroups: ["layout"],
-      t,
-    });
-
-    expect(entries).toEqual([
-      {
-        id: "shop:own",
-        label: "Mẫu hệ thống",
-        source: "shop",
-        kind: "template",
-      },
+  it("gives an admin one library, because its own path is the system one", () => {
+    expect(getTemplateSources("admin")).toEqual([
+      { source: "shop", labelKey: "editor.sidebar.sections.templates.system" },
     ]);
   });
 
   it("treats the template editor like the theme editor", () => {
+    expect(getTemplateSources("admin-template")).toHaveLength(1);
+  });
+});
+
+describe("entries shown in the templates panel", () => {
+  it("lists one row per category, under a heading naming its library", () => {
+    const entries = buildSectionEntries({
+      panel: "templates",
+      mode: "user",
+      localGroups: ["layout"],
+      categoriesBySource: {
+        public: ["Landing"],
+        shop: ["Banner"],
+      },
+      t,
+    });
+
+    expect(entries).toEqual([
+      {
+        id: "public:Landing",
+        label: "Landing",
+        group: "Landing",
+        source: "public",
+        kind: "template",
+        sourceLabel: "Mẫu hệ thống",
+      },
+      {
+        id: "shop:Banner",
+        label: "Banner",
+        group: "Banner",
+        source: "shop",
+        kind: "template",
+        sourceLabel: "Mẫu của khách hàng",
+      },
+    ]);
+  });
+
+  it("keeps a category of the same name in each library apart", () => {
+    const entries = buildSectionEntries({
+      panel: "templates",
+      mode: "user",
+      localGroups: [],
+      categoriesBySource: { public: ["Banner"], shop: ["Banner"] },
+      t,
+    });
+
+    expect(entries.map((entry) => entry.id)).toEqual([
+      "public:Banner",
+      "shop:Banner",
+    ]);
+    expect(entries.map((entry) => entry.sourceLabel)).toEqual([
+      "Mẫu hệ thống",
+      "Mẫu của khách hàng",
+    ]);
+  });
+
+  it("leaves no heading and no row behind for an empty library", () => {
+    const entries = buildSectionEntries({
+      panel: "templates",
+      mode: "user",
+      localGroups: [],
+      categoriesBySource: { public: [], shop: ["Banner"] },
+      t,
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0].source).toBe("shop");
+    expect(entries.some((entry) => entry.source === "public")).toBe(false);
+  });
+
+  it("sorts categories A→Z and keeps the uncategorized bucket last", () => {
+    const entries = buildSectionEntries({
+      panel: "templates",
+      mode: "admin",
+      localGroups: [],
+      categoriesBySource: { shop: ["others", "Zalo", "Banner"] },
+      t,
+    });
+
+    expect(entries.map((entry) => entry.group)).toEqual([
+      "Banner",
+      "Zalo",
+      "others",
+    ]);
+  });
+
+  it("localizes the uncategorized bucket but shows category names verbatim", () => {
+    // "others" is this editor's sentinel for "no category", so it is
+    // translated. "Layout" is a name somebody typed and stays as typed, even
+    // though the built-in component category of the same name is translated.
+    const entries = buildSectionEntries({
+      panel: "templates",
+      mode: "admin",
+      localGroups: [],
+      categoriesBySource: { shop: ["Layout", "others"] },
+      t,
+    });
+
+    expect(entries.map((entry) => entry.label)).toEqual(["Layout", "Khác"]);
+  });
+
+  it("does not reorder the discovered categories in place", () => {
+    const categories = ["Zalo", "Banner"];
+
+    buildSectionEntries({
+      panel: "templates",
+      mode: "admin",
+      localGroups: [],
+      categoriesBySource: { shop: categories },
+      t,
+    });
+
+    expect(categories).toEqual(["Zalo", "Banner"]);
+  });
+
+  it("is empty while the categories are still being discovered", () => {
     expect(
       buildSectionEntries({
         panel: "templates",
-        mode: "admin-template",
-        localGroups: [],
+        mode: "user",
+        localGroups: ["layout"],
+        categoriesBySource: null,
         t,
       }),
-    ).toHaveLength(1);
+    ).toEqual([]);
+  });
+
+  it("is empty when no library holds a single template", () => {
+    expect(
+      buildSectionEntries({
+        panel: "templates",
+        mode: "user",
+        localGroups: ["layout"],
+        categoriesBySource: { public: [], shop: [] },
+        t,
+      }),
+    ).toEqual([]);
   });
 
   it("ignores the built-in categories entirely", () => {
@@ -139,6 +243,7 @@ describe("entries shown in the templates panel", () => {
       panel: "templates",
       mode: "user",
       localGroups: ["layout", "content"],
+      categoriesBySource: { shop: ["Layout"] },
       t,
     });
 
@@ -154,6 +259,7 @@ describe("entries shown in the templates panel", () => {
         panel: "templates",
         mode: "user",
         localGroups: [],
+        categoriesBySource: { public: ["Landing"], shop: ["Banner"] },
         t,
       }),
     ).toHaveLength(2);

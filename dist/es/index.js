@@ -7876,6 +7876,12 @@ const TITLE_HEIGHT = 50;
 const PADDING_TOP_HEIGHT = 20;
 // Page size for the per-entry remote template fetch (infinite scroll).
 const TEMPLATES_LIMIT = 30;
+// Category discovery only reads the group buckets, never the items, so it asks
+// for the smallest page the endpoint will answer with.
+const CATEGORY_DISCOVERY_LIMIT = 1;
+// The bucket a template with no category falls into, exactly as the group count
+// map keys it. The host's list route translates it back to "no group".
+const UNCATEGORIZED_GROUP = "others";
 
 /** Shape both remote template endpoints answer with. */
 
@@ -7894,6 +7900,13 @@ const TEMPLATES_LIMIT = 30;
  */
 
 /** Where an entry in the section list reads its templates from. */
+
+/**
+ * A remote template library. `builtin` is derived from the local component
+ * definitions and never appears here.
+ */
+
+/** The categories each template library turned out to contain. */
 
 /**
  * Which of the two panels this instance is. Built-in components and saved
@@ -7920,6 +7933,51 @@ function getSectionInsertionIndex(focussedField, sectionCount) {
 }
 
 /**
+ * The template libraries a mode may read, in the order the panel lists them.
+ *
+ * Admin edits the system library directly, so its own shop path already holds
+ * exactly those templates and a second public read would be a duplicate.
+ */
+function getTemplateSources(mode) {
+  if (mode === "user") {
+    return [{
+      source: "public",
+      labelKey: "editor.sidebar.sections.templates.system"
+    }, {
+      source: "shop",
+      labelKey: "editor.sidebar.sections.templates.shop"
+    }];
+  }
+  return [{
+    source: "shop",
+    labelKey: "editor.sidebar.sections.templates.system"
+  }];
+}
+
+/**
+ * Row label for a template category.
+ *
+ * A category name is data somebody typed, so it is shown verbatim — unlike a
+ * built-in component group, which is one of a fixed set the translation file
+ * knows by name. The single exception is the uncategorized bucket: that key is
+ * this editor's own sentinel rather than a name anybody chose, so it takes the
+ * localized "others" label.
+ */
+function getTemplateCategoryLabel(t, group) {
+  return group === UNCATEGORIZED_GROUP ? getCategoryLabel(t, UNCATEGORIZED_GROUP) : group;
+}
+
+/** Categories A→Z, uncategorized last because it is the remainder, not a name. */
+function sortTemplateCategories(categories) {
+  return [...categories].sort((a, b) => {
+    if (a === b) return 0;
+    if (a === UNCATEGORIZED_GROUP) return 1;
+    if (b === UNCATEGORIZED_GROUP) return -1;
+    return a.localeCompare(b, "vi");
+  });
+}
+
+/**
  * The entries of one panel, and only that panel.
  *
  * The two kinds are built from separate sources and never merged, which is the
@@ -7927,15 +7985,22 @@ function getSectionInsertionIndex(focussedField, sectionCount) {
  * put a shop's own group called "Layout" into the same row as the built-in
  * Layout category, so a saved template looked like a stock component.
  *
- * Each template source stays a single entry instead of being expanded into its
- * group names. A shop that saved templates under "Layout" would otherwise
- * reintroduce the collision one level down, with the same word appearing in
- * both panels. The group string survives as a per-template label in the picker.
+ * A template library is expanded into one row per category it actually
+ * contains, mirroring how the Components panel lists its built-in categories.
+ * The collision the split was made to prevent is held off by `sourceLabel`
+ * instead: category rows sit under a heading naming their library, so a shop
+ * category called "Layout" reads as the shop's, never as the built-in one, and
+ * the two libraries may each carry a category of the same name without the
+ * panel showing two rows that look identical.
+ *
+ * A library with no categories contributes nothing — no heading, no row —
+ * because `categoriesBySource` only ever lists buckets that matched something.
  */
 function buildSectionEntries({
   panel,
   mode,
   localGroups,
+  categoriesBySource,
   t
 }) {
   if (panel === "components") {
@@ -7947,38 +8012,89 @@ function buildSectionEntries({
       kind: "builtin"
     }));
   }
-
-  // Admin edits the system library directly, so its own path already holds
-  // exactly those templates and a second public read would be a duplicate.
-  if (mode === "user") {
-    return [{
-      id: "public:redsun",
-      label: t("editor.sidebar.sections.templates.system"),
-      source: "public",
-      kind: "template"
-    }, {
-      id: "shop:own",
-      label: t("editor.sidebar.sections.templates.shop"),
-      source: "shop",
-      kind: "template"
-    }];
-  }
-  return [{
-    id: "shop:own",
-    label: t("editor.sidebar.sections.templates.system"),
-    source: "shop",
-    kind: "template"
-  }];
+  return getTemplateSources(mode).flatMap(({
+    source,
+    labelKey
+  }) => {
+    const categories = sortTemplateCategories(categoriesBySource?.[source] ?? []);
+    if (categories.length === 0) return [];
+    const sourceLabel = t(labelKey);
+    return categories.map(group => ({
+      id: `${source}:${group}`,
+      label: getTemplateCategoryLabel(t, group),
+      group,
+      source,
+      kind: "template",
+      sourceLabel
+    }));
+  });
 }
 
 /** Total matched documents across every group bucket of a count response. */
 function sumMatchedCount(count) {
   return Object.values(count ?? {}).reduce((sum, bucket) => sum + (bucket?.matchedCount ?? 0), 0);
 }
+
+/**
+ * Reads one page of one template source. Returns null when the source has no
+ * reader on this host, which is how a missing implementation ends up as an
+ * empty library instead of an error.
+ */
+
+/**
+ * The categories one template library actually contains.
+ *
+ * No extra endpoint is involved: every list response already carries the group
+ * bucket map the host builds for its counters, and those buckets are keyed by
+ * the template's `group` — the very category name the save dialog writes. Only
+ * `matchedCount` is consulted, because `total` counts the whole index while
+ * `matchedCount` counts what the caller's own scope matched, so an empty
+ * category never produces a row the drawer cannot fill.
+ */
+async function readSourceCategories(fetchPage, source) {
+  // Never rejects: the panel waits on all of these at once, so one library
+  // throwing — even synchronously, before its promise exists — must not strand
+  // the others behind a skeleton that has nothing left to resolve it.
+  try {
+    const request = fetchPage(source, 1, {
+      limit: CATEGORY_DISCOVERY_LIMIT
+    });
+
+    // No reader for this source on this host: it contributes no rows, which is
+    // not a failure and must not raise an error toast.
+    if (!request) return {
+      source,
+      categories: [],
+      failed: false
+    };
+    const count = (await request).count ?? {};
+    const categories = Object.keys(count).filter(group => (count[group]?.matchedCount ?? 0) > 0);
+    return {
+      source,
+      categories,
+      failed: false
+    };
+  } catch {
+    return {
+      source,
+      categories: [],
+      failed: true
+    };
+  }
+}
 const StyledEditorSectionGroup = styled$1.div.withConfig({
   displayName: "EditorSections__StyledEditorSectionGroup",
   componentId: "sc-1nr6ndr-0"
 })(["padding-left:12px;padding-right:12px;overflow-y:auto;max-height:calc( 100vh - ", "px );"], TOP_BAR_HEIGHT + TITLE_HEIGHT + PADDING_TOP_HEIGHT);
+
+// Names the library a run of category rows belongs to. Muted and uppercase so
+// it reads as a heading rather than as one more clickable row; the panel is
+// only 200px wide, so the source is said once here instead of being prefixed
+// onto every row, where it would push the category names into an ellipsis.
+const StyledSourceHeading = styled$1.div.withConfig({
+  displayName: "EditorSections__StyledSourceHeading",
+  componentId: "sc-1nr6ndr-1"
+})(["font-size:var(--tina-font-size-0);font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:", ";padding:4px;margin-top:12px;&:first-child{margin-top:0;}"], Colors.black40);
 const EditorSections = ({
   panel
 }) => {
@@ -7997,6 +8113,9 @@ const EditorSections = ({
   const [remoteByEntry, setRemoteByEntry] = useState({});
   const [isFetching, setIsFetching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // Categories per template library. `null` while the discovery read is still
+  // in flight, which is what tells the Templates panel to show its skeleton.
+  const [categoriesBySource, setCategoriesBySource] = useState(null);
 
   // The host backend, widened with the optional public-template reader. An
   // intersection rather than a cast: every added member is optional, so the
@@ -8024,8 +8143,9 @@ const EditorSections = ({
     panel,
     mode: editorContext.mode,
     localGroups,
+    categoriesBySource,
     t
-  }), [panel, localGroups, editorContext.mode, t]);
+  }), [panel, localGroups, editorContext.mode, categoriesBySource, t]);
   const entriesById = useMemo(() => {
     const map = {};
     entries.forEach(entry => {
@@ -8053,12 +8173,20 @@ const EditorSections = ({
    * One page of a remote source. Returns null when the source is not reachable,
    * which is how a host without the public reader ends up with an empty system
    * section rather than an error.
+   *
+   * `group` narrows the page to one category. It is sent on `group.keyword`
+   * rather than `group` because that is the exact-match field the host's list
+   * route accepts, and the uncategorized sentinel travels as-is: the host
+   * translates it back into "no group" on its way to the index.
    */
-  const fetchRemotePage = useCallback((source, page) => {
+  const fetchRemotePage = useCallback((source, page, options) => {
     const query = {
       page,
-      limit: TEMPLATES_LIMIT
+      limit: options?.limit ?? TEMPLATES_LIMIT
     };
+    if (options?.group) {
+      query.filters = `group.keyword:eq:${options.group}`;
+    }
     if (source === "shop") {
       return templatesApi.getAll(query);
     }
@@ -8067,6 +8195,12 @@ const EditorSections = ({
     }
     return null;
   }, [templatesApi]);
+
+  // Held in a ref so the discovery effect below can depend on the panel and the
+  // mode alone. The host rebuilds its backend object freely, and a fetcher in
+  // the dependency array would restart the discovery read on every such render.
+  const fetchRemotePageRef = useRef(fetchRemotePage);
+  fetchRemotePageRef.current = fetchRemotePage;
 
   // Smoothly scroll the editor canvas to a component by its config id. The
   // canvas renders asynchronously after insert, so poll briefly for the node.
@@ -8121,11 +8255,46 @@ const EditorSections = ({
     if (newId) scrollCanvasToComponent(newId);
   }, [editorContext, scrollCanvasToComponent]);
 
-  // Preselect this panel's first entry so the drawer has something to show.
+  // Which categories each template library holds. One read per library, issued
+  // once per panel and mode; the per-category pages come later, on hover.
   useEffect(() => {
+    if (panel !== "templates") return;
+    let cancelled = false;
+    setCategoriesBySource(null);
+    Promise.all(getTemplateSources(editorContext.mode).map(({
+      source
+    }) => readSourceCategories(fetchRemotePageRef.current, source))).then(results => {
+      if (cancelled) return;
+      const next = {};
+      results.forEach(({
+        source,
+        categories
+      }) => {
+        next[source] = categories;
+      });
+
+      // One message however many libraries failed: the user can only retry the
+      // panel as a whole, so a toast per library would just repeat itself.
+      setCategoriesBySource(next);
+      if (results.some(({
+        failed
+      }) => failed)) {
+        toaster.error(t("editor.sidebar.sections.load.error"));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [panel, editorContext.mode]);
+
+  // Preselect this panel's first entry so the drawer has something to show.
+  // Re-runs when the entries arrive, and also when a panel switch leaves the
+  // selection pointing at a row this panel does not have.
+  useEffect(() => {
+    if (entries.some(entry => entry.id === hoveredSection)) return;
     const first = entries[0]?.id;
     if (first) setHoveredSection(first);
-  }, []);
+  }, [entries, hoveredSection]);
 
   // Hovering a section selects it and opens the drawer.
   const handleHoverSection = useCallback(id => {
@@ -8164,7 +8333,9 @@ const EditorSections = ({
     if (!hoveredEntry || hoveredEntry.source === "builtin") return;
     if (remoteByEntry[hoveredEntry.id]) return;
     const entryId = hoveredEntry.id;
-    const request = fetchRemotePage(hoveredEntry.source, 1);
+    const request = fetchRemotePage(hoveredEntry.source, 1, {
+      group: hoveredEntry.group
+    });
     if (!request) {
       // No reader for this source: record an empty, complete page so the
       // drawer settles on "no data" instead of retrying on every hover.
@@ -8227,7 +8398,9 @@ const EditorSections = ({
     if (entry.source === "builtin") return;
     if (state.items.length >= state.total) return;
     const nextPage = state.page + 1;
-    const request = fetchRemotePage(entry.source, nextPage);
+    const request = fetchRemotePage(entry.source, nextPage, {
+      group: entry.group
+    });
     if (!request) return;
     setIsLoadingMore(true);
     request.then(res => {
@@ -8266,10 +8439,16 @@ const EditorSections = ({
     return result;
   }, [hoveredEntry, localTemplates, remoteByEntry]);
 
+  // The drawer names the library as well as the category. Two libraries may
+  // each hold a category of the same name, and the drawer is where the user
+  // actually picks, so "which library is this?" has to be answerable there too.
+  const drawerTitle = hoveredEntry?.sourceLabel ? `${hoveredEntry.sourceLabel} · ${hoveredEntry.label}` : hoveredEntry?.label;
+
   // Built-in categories are derived from the form, which is still empty on the
-  // first paint, so an empty components list means "not ready yet". The
-  // template list is static, so an empty one is genuinely "nothing here".
-  const isLoadingList = panel === "components" && entries.length === 0;
+  // first paint, so an empty components list means "not ready yet". Template
+  // categories come from the discovery read, so there the skeleton runs until
+  // that read answers — an empty list afterwards is genuinely "nothing here".
+  const isLoadingList = panel === "components" ? entries.length === 0 : categoriesBySource === null;
   return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledEditorSectionGroup, {
     ref: sectionListRef
   }, isLoadingList && /*#__PURE__*/React__default.createElement(EditorSectionsSkeleton, null), !isLoadingList && entries.length === 0 && /*#__PURE__*/React__default.createElement(Typography, {
@@ -8277,14 +8456,19 @@ const EditorSections = ({
     style: {
       paddingLeft: 4
     }
-  }, t("noData"), "!"), !isLoadingList && entries.map(entry => /*#__PURE__*/React__default.createElement(EditorSectionItem, {
-    key: entry.id,
-    id: entry.id,
-    name: entry.label,
-    kind: entry.kind,
-    hovered: hoveredSection === entry.id,
-    onHoverSection: handleHoverSection
-  }))), isOpen && hoveredEntry ? /*#__PURE__*/React__default.createElement(EditorSectionDrawer, {
+  }, t("noData"), "!"), !isLoadingList && entries.map((entry, index) => {
+    // A heading opens each run of rows belonging to a new library.
+    const startsLibrary = !!entry.sourceLabel && entry.source !== entries[index - 1]?.source;
+    return /*#__PURE__*/React__default.createElement(React__default.Fragment, {
+      key: entry.id
+    }, startsLibrary && /*#__PURE__*/React__default.createElement(StyledSourceHeading, null, entry.sourceLabel), /*#__PURE__*/React__default.createElement(EditorSectionItem, {
+      id: entry.id,
+      name: entry.label,
+      kind: entry.kind,
+      hovered: hoveredSection === entry.id,
+      onHoverSection: handleHoverSection
+    }));
+  })), isOpen && hoveredEntry ? /*#__PURE__*/React__default.createElement(EditorSectionDrawer, {
     templates: drawerTemplates,
     isFetching: isFetching && drawerTemplates.length === 0,
     isLoadingMore: isLoadingMore,
@@ -8292,7 +8476,7 @@ const EditorSections = ({
     onLoadMore: onLoadMore,
     onAddTemplate: onAddTemplate,
     containerRef: drawerRef,
-    title: hoveredEntry.label,
+    title: drawerTitle,
     onClose: () => setIsOpen(false)
   }) : null);
 };
