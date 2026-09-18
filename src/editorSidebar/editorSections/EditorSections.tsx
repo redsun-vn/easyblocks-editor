@@ -534,6 +534,10 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   const listCategoriesRef = useRef(templatesApi.getCategories);
   listCategoriesRef.current = templatesApi.getCategories;
 
+  // The mode whose categories are already in state, so toggling between the
+  // two panels does not discover them again.
+  const discoveredForModeRef = useRef<TEasyblocksEditorMode | null>(null);
+
   // Smoothly scroll the editor canvas to a component by its config id. The
   // canvas renders asynchronously after insert, so poll briefly for the node.
   const scrollCanvasToComponent = useCallback((id: string) => {
@@ -602,12 +606,18 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     [editorContext, scrollCanvasToComponent],
   );
 
-  // The category rows, discovered once per panel and mode. The templates
-  // themselves come later, on hover.
+  // The category rows, discovered once per mode. Deliberately not once per
+  // panel: both panels are the same mounted component, so re-running this when
+  // the user toggles back to Templates would throw away rows that are still
+  // valid and put the skeleton back while they are fetched again. A failed
+  // discovery clears the marker, so the next visit does retry.
   useEffect(() => {
     if (panel !== "templates") return;
+    if (discoveredForModeRef.current === editorContext.mode) return;
+    discoveredForModeRef.current = editorContext.mode;
 
     let cancelled = false;
+    let settled = false;
     setTemplateCategories(null);
 
     discoverTemplateCategories(
@@ -616,17 +626,23 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
       getTemplateSources(editorContext.mode),
     ).then(({ categories, failed }) => {
       if (cancelled) return;
+      settled = true;
 
       // One message however many reads failed: the user can only retry the
       // panel as a whole, so a toast per read would just repeat itself.
       setTemplateCategories(categories);
       if (failed) {
+        discoveredForModeRef.current = null;
         toaster.error(t("editor.sidebar.sections.load.error"));
       }
     });
 
     return () => {
       cancelled = true;
+      // Dropped before it could fill the state, so the marker must go back too
+      // — otherwise the next visit would trust rows that were never stored and
+      // sit on the skeleton forever.
+      if (!settled) discoveredForModeRef.current = null;
     };
   }, [panel, editorContext.mode]);
 
