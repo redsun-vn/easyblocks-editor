@@ -1,4 +1,4 @@
-import { UniqueIdentifier } from "@dnd-kit/core";
+import { CollisionDetection, UniqueIdentifier } from "@dnd-kit/core";
 import { NoCodeComponentEntry } from "@redsun-vn/easyblocks-core";
 import { EditorContextType, itemMoved } from "@redsun-vn/easyblocks-core/_internals";
 import React from "react";
@@ -39,6 +39,34 @@ export type DragEndOutcome = {
  * branch, so any change here silently breaks moving a block out of its parent.
  */
 export declare function resolveDragEndOutcome(event: DragEndSubject): DragEndOutcome;
+/** Squared distance from a point to the nearest point of a rectangle; 0 inside it. */
+export declare function squaredDistanceToRect(pointer: {
+    x: number;
+    y: number;
+}, rect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+}): number;
+/**
+ * The block a drop is aimed at.
+ *
+ * Whatever is under the pointer wins, and when nothing is, the nearest block to
+ * the pointer does. The fallback matters more than it sounds: blocks are
+ * separated by margins, padding and grid gaps that belong to no block at all,
+ * and aiming into one of those gaps used to leave the drag with no target — no
+ * border, no insertion line, nothing to say the drop would work. Every gap now
+ * belongs to whichever block is closest, which is the same thing as giving each
+ * block a hit area that reaches halfway into the space around it.
+ *
+ * The rectangle intersection this replaced could not do that job. It measures
+ * the dragged block's own rectangle, and the dragged block never moves — the
+ * canvas draws no ghost, it carries a chip instead — so that rectangle stayed
+ * at the position the drag started from and answered with the neighbours of
+ * where the block already was.
+ */
+export declare function pointerNearestCollisionDetection(args: Parameters<CollisionDetection>[0]): import("@dnd-kit/core").Collision[];
 export declare function EasyblocksCanvas({ components, }: {
     components?: Record<string, React.ComponentType<any>>;
 }): React.JSX.Element;

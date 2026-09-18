@@ -7,7 +7,6 @@ import {
   TouchSensor,
   UniqueIdentifier,
   pointerWithin,
-  rectIntersection,
   useSensor,
 } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
@@ -144,17 +143,68 @@ export function resolveDragEndOutcome(event: DragEndSubject): DragEndOutcome {
   };
 }
 
-function customCollisionDetection(args: Parameters<CollisionDetection>[0]) {
-  // First, let's see if there are any collisions with the pointer
+/** Squared distance from a point to the nearest point of a rectangle; 0 inside it. */
+export function squaredDistanceToRect(
+  pointer: { x: number; y: number },
+  rect: { left: number; top: number; width: number; height: number },
+): number {
+  const dx = Math.max(rect.left - pointer.x, 0, pointer.x - (rect.left + rect.width));
+  const dy = Math.max(rect.top - pointer.y, 0, pointer.y - (rect.top + rect.height));
+
+  return dx * dx + dy * dy;
+}
+
+/**
+ * The block a drop is aimed at.
+ *
+ * Whatever is under the pointer wins, and when nothing is, the nearest block to
+ * the pointer does. The fallback matters more than it sounds: blocks are
+ * separated by margins, padding and grid gaps that belong to no block at all,
+ * and aiming into one of those gaps used to leave the drag with no target — no
+ * border, no insertion line, nothing to say the drop would work. Every gap now
+ * belongs to whichever block is closest, which is the same thing as giving each
+ * block a hit area that reaches halfway into the space around it.
+ *
+ * The rectangle intersection this replaced could not do that job. It measures
+ * the dragged block's own rectangle, and the dragged block never moves — the
+ * canvas draws no ghost, it carries a chip instead — so that rectangle stayed
+ * at the position the drag started from and answered with the neighbours of
+ * where the block already was.
+ */
+export function pointerNearestCollisionDetection(
+  args: Parameters<CollisionDetection>[0],
+) {
   const pointerCollisions = pointerWithin(args);
 
-  // Collision detection algorithms return an array of collisions
   if (pointerCollisions.length > 0) {
     return pointerCollisions;
   }
 
-  // If there are no collisions with the pointer, return rectangle intersections
-  return rectIntersection(args);
+  const pointer = args.pointerCoordinates;
+
+  if (!pointer) {
+    return [];
+  }
+
+  let nearestContainer: (typeof args.droppableContainers)[number] | undefined;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+
+  for (const container of args.droppableContainers) {
+    const rect = args.droppableRects.get(container.id);
+
+    if (!rect) continue;
+
+    const distance = squaredDistanceToRect(pointer, rect);
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestContainer = container;
+    }
+  }
+
+  return nearestContainer
+    ? [{ id: nearestContainer.id, data: { droppableContainer: nearestContainer } }]
+    : [];
 }
 
 export function EasyblocksCanvas({
@@ -227,7 +277,7 @@ export function EasyblocksCanvas({
         <CanvasRoot>
           <DndContext
             sensors={[mouseSensor, touchSensor]}
-            collisionDetection={customCollisionDetection}
+            collisionDetection={pointerNearestCollisionDetection}
             onDragStart={(event) => {
               document.documentElement.style.cursor = "grabbing";
               const activeData = dragDataSchema.parse(event.active.data.current);

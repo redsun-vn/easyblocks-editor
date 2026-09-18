@@ -36,7 +36,7 @@ import { AccordionGroup } from '@redsun-vn/easyblocks-design-system/AccordionGro
 import { createForm as createForm$1, FORM_ERROR } from 'final-form';
 import arrayMutators from 'final-form-arrays';
 import { BasicRow } from '@redsun-vn/easyblocks-design-system/rows';
-import { useDndContext, useSensor, MouseSensor, TouchSensor, DndContext, DragOverlay, pointerWithin, rectIntersection } from '@dnd-kit/core';
+import { useDndContext, useSensor, MouseSensor, TouchSensor, DndContext, DragOverlay, pointerWithin } from '@dnd-kit/core';
 import { useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { z } from 'zod';
 
@@ -12298,7 +12298,7 @@ function resolveDropIndicatorEdge({
  * control, so the line is drawn thinner than this wherever the device does not fit the
  * viewport at 1:1, which is what made a hairline unreadable.
  */
-const DROP_INDICATOR_THICKNESS = 6;
+const DROP_INDICATOR_THICKNESS = 8;
 
 /** Innermost hovered frame: the one a click selects, since clicks select deepest-first. */
 const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:hover))`;
@@ -12418,7 +12418,11 @@ function SelectionFrameController({
     "&[data-drop-target=true]::after": {
       opacity: 1,
       borderColor: Colors.purple,
-      borderWidth: "2px",
+      borderWidth: "3px",
+      // A wash over the whole target, not just a line around it. Two blocks
+      // sitting flush in a row leave the eye nowhere to notice a border, and a
+      // reorder inside one row is the move that felt like nothing happened.
+      backgroundColor: "rgba(123, 112, 245, 0.16)",
       boxShadow: "none"
     },
     // Name of the click target, unless it is already selected: the sidebar shows its name
@@ -13214,17 +13218,57 @@ function resolveDragEndOutcome(event) {
     })
   };
 }
-function customCollisionDetection(args) {
-  // First, let's see if there are any collisions with the pointer
-  const pointerCollisions = pointerWithin(args);
 
-  // Collision detection algorithms return an array of collisions
+/** Squared distance from a point to the nearest point of a rectangle; 0 inside it. */
+function squaredDistanceToRect(pointer, rect) {
+  const dx = Math.max(rect.left - pointer.x, 0, pointer.x - (rect.left + rect.width));
+  const dy = Math.max(rect.top - pointer.y, 0, pointer.y - (rect.top + rect.height));
+  return dx * dx + dy * dy;
+}
+
+/**
+ * The block a drop is aimed at.
+ *
+ * Whatever is under the pointer wins, and when nothing is, the nearest block to
+ * the pointer does. The fallback matters more than it sounds: blocks are
+ * separated by margins, padding and grid gaps that belong to no block at all,
+ * and aiming into one of those gaps used to leave the drag with no target — no
+ * border, no insertion line, nothing to say the drop would work. Every gap now
+ * belongs to whichever block is closest, which is the same thing as giving each
+ * block a hit area that reaches halfway into the space around it.
+ *
+ * The rectangle intersection this replaced could not do that job. It measures
+ * the dragged block's own rectangle, and the dragged block never moves — the
+ * canvas draws no ghost, it carries a chip instead — so that rectangle stayed
+ * at the position the drag started from and answered with the neighbours of
+ * where the block already was.
+ */
+function pointerNearestCollisionDetection(args) {
+  const pointerCollisions = pointerWithin(args);
   if (pointerCollisions.length > 0) {
     return pointerCollisions;
   }
-
-  // If there are no collisions with the pointer, return rectangle intersections
-  return rectIntersection(args);
+  const pointer = args.pointerCoordinates;
+  if (!pointer) {
+    return [];
+  }
+  let nearestContainer;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const container of args.droppableContainers) {
+    const rect = args.droppableRects.get(container.id);
+    if (!rect) continue;
+    const distance = squaredDistanceToRect(pointer, rect);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestContainer = container;
+    }
+  }
+  return nearestContainer ? [{
+    id: nearestContainer.id,
+    data: {
+      droppableContainer: nearestContainer
+    }
+  }] : [];
 }
 function EasyblocksCanvas({
   components
@@ -13283,7 +13327,7 @@ function EasyblocksCanvas({
     meta: meta
   }, /*#__PURE__*/React__default.createElement(TooltipProvider, null, /*#__PURE__*/React__default.createElement(CanvasRoot, null, /*#__PURE__*/React__default.createElement(DndContext, {
     sensors: [mouseSensor, touchSensor],
-    collisionDetection: customCollisionDetection,
+    collisionDetection: pointerNearestCollisionDetection,
     onDragStart: event => {
       document.documentElement.style.cursor = "grabbing";
       const activeData = dragDataSchema.parse(event.active.data.current);

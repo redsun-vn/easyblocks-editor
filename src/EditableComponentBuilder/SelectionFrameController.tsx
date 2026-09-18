@@ -40,7 +40,7 @@ type SelectionFrameControllerProps = {
  * control, so the line is drawn thinner than this wherever the device does not fit the
  * viewport at 1:1, which is what made a hairline unreadable.
  */
-const DROP_INDICATOR_THICKNESS = 6;
+const DROP_INDICATOR_THICKNESS = 8;
 
 /** Innermost hovered frame: the one a click selects, since clicks select deepest-first. */
 const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:hover))`;
@@ -163,7 +163,11 @@ function SelectionFrameController({
     "&[data-drop-target=true]::after": {
       opacity: 1,
       borderColor: Colors.purple,
-      borderWidth: "2px",
+      borderWidth: "3px",
+      // A wash over the whole target, not just a line around it. Two blocks
+      // sitting flush in a row leave the eye nowhere to notice a border, and a
+      // reorder inside one row is the move that felt like nothing happened.
+      backgroundColor: "rgba(123, 112, 245, 0.16)",
       boxShadow: "none",
     },
 
@@ -218,6 +222,7 @@ function SelectionFrameController({
       boxShadow: `inset 0 0 0 2px ${Colors.purple}`,
       borderRadius: "2px",
     },
+
 
     // The grip is revealed by the same hover that reveals the label, so picking a
     // block up still takes no prior selection — it just takes aiming at a control
