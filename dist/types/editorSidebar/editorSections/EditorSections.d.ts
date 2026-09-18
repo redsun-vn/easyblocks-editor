@@ -33,7 +33,7 @@ export type TTemplateCategoryEntry = {
     name: string | null;
 };
 export type TSectionEntry = {
-    /** Stable key for hover state and for the per-entry template cache. */
+    /** Stable key for the selection and for the per-entry template cache. */
     id: string;
     /** Already localized. */
     label: string;

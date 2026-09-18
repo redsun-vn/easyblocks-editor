@@ -105,7 +105,7 @@ export type TTemplateCategoryEntry = {
 };
 
 export type TSectionEntry = {
-  /** Stable key for hover state and for the per-entry template cache. */
+  /** Stable key for the selection and for the per-entry template cache. */
   id: string;
   /** Already localized. */
   label: string;
@@ -356,8 +356,8 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   const editorContext = useEditorContext();
   const toaster = useToaster();
   const { t } = useTranslation();
-  const [hoveredSection, setHoveredSection] = useState<string>("");
-  // Drawer is closed until the user hovers a section; click-outside closes it.
+  const [selectedSection, setSelectedSection] = useState<string>("");
+  // Drawer is closed until a row is clicked.
   const [isOpen, setIsOpen] = useState(false);
   const sectionListRef = useRef<HTMLDivElement | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
@@ -431,18 +431,18 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     return map;
   }, [entries]);
 
-  const hoveredEntry = entriesById[hoveredSection];
+  const selectedEntry = entriesById[selectedSection];
 
   // Local-definition templates for the hovered built-in category (the default
   // "Empty X" templates built from the accepted components). Synchronous.
   const localTemplates = useMemo<TSectionTemplate[]>(() => {
-    if (!hoveredEntry || hoveredEntry.source !== "builtin") return [];
+    if (!selectedEntry || selectedEntry.source !== "builtin") return [];
 
     return localComponents
       .filter(
         (component: any) =>
           component.visible !== false &&
-          (component.group || "others") === hoveredEntry.group,
+          (component.group || "others") === selectedEntry.group,
       )
       .map((component: any) => {
         const template = getDefaultTemplateForDefinition(
@@ -456,7 +456,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
           template,
         } as unknown as TSectionTemplate;
       });
-  }, [hoveredEntry, localComponents]);
+  }, [selectedEntry, localComponents]);
 
   /**
    * One page of one remote library. Returns null when the library is not
@@ -650,17 +650,29 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   // Re-runs when the entries arrive, and also when a panel switch leaves the
   // selection pointing at a row this panel does not have.
   useEffect(() => {
-    if (entries.some((entry) => entry.id === hoveredSection)) return;
+    if (entries.some((entry) => entry.id === selectedSection)) return;
 
     const first = entries[0]?.id;
-    if (first) setHoveredSection(first);
-  }, [entries, hoveredSection]);
+    if (first) setSelectedSection(first);
+  }, [entries, selectedSection]);
 
-  // Hovering a section selects it and opens the drawer.
-  const handleHoverSection = useCallback((id: string) => {
-    setHoveredSection(id);
-    setIsOpen(true);
-  }, []);
+  /**
+   * Clicking a row opens its drawer; clicking the open row closes it again.
+   *
+   * Opening on hover made the drawer appear whenever the pointer crossed the
+   * list on its way somewhere else, and each of those opened a category the
+   * user had not asked for and fetched its first page. It also had no matching
+   * way out — the drawer stayed until something was clicked — and closing on
+   * mouse-leave instead would have pulled it away mid-drag, exactly when the
+   * pointer must travel from a card to the canvas.
+   */
+  const handleSelectSection = useCallback(
+    (id: string) => {
+      setIsOpen((wasOpen) => !(wasOpen && id === selectedSection));
+      setSelectedSection(id);
+    },
+    [selectedSection],
+  );
 
   // Close the drawer when clicking outside both the section list and the drawer.
   useEffect(() => {
@@ -695,11 +707,11 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   // First page for the hovered template entry. Cached per entry so re-hovering
   // is instant; built-in entries never reach here.
   useEffect(() => {
-    if (!hoveredEntry || hoveredEntry.source === "builtin") return;
-    if (remoteByEntry[hoveredEntry.id]) return;
+    if (!selectedEntry || selectedEntry.source === "builtin") return;
+    if (remoteByEntry[selectedEntry.id]) return;
 
-    const entryId = hoveredEntry.id;
-    const request = fetchCategoryPage(hoveredEntry, 1);
+    const entryId = selectedEntry.id;
+    const request = fetchCategoryPage(selectedEntry, 1);
 
     if (!request) {
       // No reader for this source: record an empty, complete page so the
@@ -740,19 +752,19 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     return () => {
       cancelled = true;
     };
-  }, [hoveredEntry, fetchCategoryPage]);
+  }, [selectedEntry, fetchCategoryPage]);
 
   // Whether the hovered entry has more remote templates to load (remote only;
   // local templates aren't paginated).
   const hasMore = useMemo(() => {
-    const state = remoteByEntry[hoveredSection];
+    const state = remoteByEntry[selectedSection];
     return !!state && state.items.length < state.total;
-  }, [remoteByEntry, hoveredSection]);
+  }, [remoteByEntry, selectedSection]);
 
   // Load the next page of remote templates for the hovered entry (infinite
   // scroll). Appends to the existing items.
   const onLoadMore = useCallback(() => {
-    const entry = hoveredEntry;
+    const entry = selectedEntry;
     const state = entry ? remoteByEntry[entry.id] : undefined;
     if (!entry || !state || isFetching || isLoadingMore) return;
     if (entry.source === "builtin") return;
@@ -784,7 +796,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
       })
       .finally(() => setIsLoadingMore(false));
   }, [
-    hoveredEntry,
+    selectedEntry,
     remoteByEntry,
     isFetching,
     isLoadingMore,
@@ -796,12 +808,12 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   // "Empty X" templates, template entries show what their source returned.
   // The two are never combined — that is the separation this phase is about.
   const drawerTemplates = useMemo(() => {
-    if (!hoveredEntry) return [];
+    if (!selectedEntry) return [];
 
     const source =
-      hoveredEntry.source === "builtin"
+      selectedEntry.source === "builtin"
         ? localTemplates
-        : (remoteByEntry[hoveredEntry.id]?.items ?? []);
+        : (remoteByEntry[selectedEntry.id]?.items ?? []);
 
     const seen = new Set<string>();
     const result: TSectionTemplate[] = [];
@@ -815,9 +827,9 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     });
 
     return result;
-  }, [hoveredEntry, localTemplates, remoteByEntry]);
+  }, [selectedEntry, localTemplates, remoteByEntry]);
 
-  const drawerTitle = hoveredEntry?.label;
+  const drawerTitle = selectedEntry?.label;
 
   // Built-in categories are derived from the form, which is still empty on the
   // first paint, so an empty components list means "not ready yet". Template
@@ -845,12 +857,12 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
               key={entry.id}
               id={entry.id}
               name={entry.label}
-              hovered={hoveredSection === entry.id}
-              onHoverSection={handleHoverSection}
+              selected={selectedSection === entry.id}
+              onSelectSection={handleSelectSection}
             />
           ))}
       </StyledEditorSectionGroup>
-      {isOpen && hoveredEntry ? (
+      {isOpen && selectedEntry ? (
         <EditorSectionDrawer
           templates={drawerTemplates}
           isFetching={isFetching && drawerTemplates.length === 0}

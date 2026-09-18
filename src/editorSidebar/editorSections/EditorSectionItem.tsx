@@ -11,14 +11,14 @@ import {
 /** What an entry in the section list stands for. */
 export type TSectionItemKind = "builtin" | "template";
 
-const StyledRow = styled.div<{ hovered: boolean }>`
+const StyledRow = styled.div<{ selected: boolean }>`
   display: flex;
   align-items: center;
   max-width: 174px;
   cursor: pointer;
   border-radius: 2px;
   padding: 4px;
-  ${({ hovered }) => `${hovered ? `background: ${Colors.black10};` : ""}`}
+  ${({ selected }) => `${selected ? `background: ${Colors.black10};` : ""}`}
 `;
 
 const StyledEditorSectionName = styled.div`
@@ -41,13 +41,13 @@ const StyledEditorSectionName = styled.div`
 export const EditorSectionItem = ({
   id,
   name,
-  hovered,
-  onHoverSection,
+  selected,
+  onSelectSection,
 }: {
   id: string;
-  hovered: boolean;
+  selected: boolean;
   name: string;
-  onHoverSection: (id: string) => void;
+  onSelectSection: (id: string) => void;
 }) => {
   const { isOpen, tooltipProps, triggerProps, arrowProps } = useTooltip();
 
@@ -55,8 +55,8 @@ export const EditorSectionItem = ({
     <>
       <StyledRow
         id={id}
-        hovered={hovered}
-        onMouseEnter={() => onHoverSection(id)}
+        selected={selected}
+        onClick={() => onSelectSection(id)}
         {...triggerProps}
       >
         <StyledEditorSectionName>{name}</StyledEditorSectionName>

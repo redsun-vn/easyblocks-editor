@@ -9,10 +9,10 @@ export type TSectionItemKind = "builtin" | "template";
  * title above, so a glyph on every row would repeat it once per line and eat
  * width the category names need.
  */
-export declare const EditorSectionItem: ({ id, name, hovered, onHoverSection, }: {
+export declare const EditorSectionItem: ({ id, name, selected, onSelectSection, }: {
     id: string;
-    hovered: boolean;
+    selected: boolean;
     name: string;
-    onHoverSection: (id: string) => void;
+    onSelectSection: (id: string) => void;
 }) => React.JSX.Element;
 //# sourceMappingURL=EditorSectionItem.d.ts.map

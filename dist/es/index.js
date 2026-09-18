@@ -7820,8 +7820,8 @@ const StyledRow = styled$1.div.withConfig({
   displayName: "EditorSectionItem__StyledRow",
   componentId: "sc-1li16rj-0"
 })(["display:flex;align-items:center;max-width:174px;cursor:pointer;border-radius:2px;padding:4px;", ""], ({
-  hovered
-}) => `${hovered ? `background: ${Colors.black10};` : ""}`);
+  selected
+}) => `${selected ? `background: ${Colors.black10};` : ""}`);
 const StyledEditorSectionName = styled$1.div.withConfig({
   displayName: "EditorSectionItem__StyledEditorSectionName",
   componentId: "sc-1li16rj-1"
@@ -7838,8 +7838,8 @@ const StyledEditorSectionName = styled$1.div.withConfig({
 const EditorSectionItem = ({
   id,
   name,
-  hovered,
-  onHoverSection
+  selected,
+  onSelectSection
 }) => {
   const {
     isOpen,
@@ -7849,8 +7849,8 @@ const EditorSectionItem = ({
   } = useTooltip();
   return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledRow, _extends({
     id: id,
-    hovered: hovered,
-    onMouseEnter: () => onHoverSection(id)
+    selected: selected,
+    onClick: () => onSelectSection(id)
   }, triggerProps), /*#__PURE__*/React__default.createElement(StyledEditorSectionName, null, name)), isOpen && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, name)));
 };
 
@@ -8104,8 +8104,8 @@ const EditorSections = ({
   const {
     t
   } = useTranslation();
-  const [hoveredSection, setHoveredSection] = useState("");
-  // Drawer is closed until the user hovers a section; click-outside closes it.
+  const [selectedSection, setSelectedSection] = useState("");
+  // Drawer is closed until a row is clicked.
   const [isOpen, setIsOpen] = useState(false);
   const sectionListRef = useRef(null);
   const drawerRef = useRef(null);
@@ -8153,13 +8153,13 @@ const EditorSections = ({
     });
     return map;
   }, [entries]);
-  const hoveredEntry = entriesById[hoveredSection];
+  const selectedEntry = entriesById[selectedSection];
 
   // Local-definition templates for the hovered built-in category (the default
   // "Empty X" templates built from the accepted components). Synchronous.
   const localTemplates = useMemo(() => {
-    if (!hoveredEntry || hoveredEntry.source !== "builtin") return [];
-    return localComponents.filter(component => component.visible !== false && (component.group || "others") === hoveredEntry.group).map(component => {
+    if (!selectedEntry || selectedEntry.source !== "builtin") return [];
+    return localComponents.filter(component => component.visible !== false && (component.group || "others") === selectedEntry.group).map(component => {
       const template = getDefaultTemplateForDefinition(component, editorContext);
       return {
         ...component,
@@ -8167,7 +8167,7 @@ const EditorSections = ({
         template
       };
     });
-  }, [hoveredEntry, localComponents]);
+  }, [selectedEntry, localComponents]);
 
   /**
    * One page of one remote library. Returns null when the library is not
@@ -8321,16 +8321,25 @@ const EditorSections = ({
   // Re-runs when the entries arrive, and also when a panel switch leaves the
   // selection pointing at a row this panel does not have.
   useEffect(() => {
-    if (entries.some(entry => entry.id === hoveredSection)) return;
+    if (entries.some(entry => entry.id === selectedSection)) return;
     const first = entries[0]?.id;
-    if (first) setHoveredSection(first);
-  }, [entries, hoveredSection]);
+    if (first) setSelectedSection(first);
+  }, [entries, selectedSection]);
 
-  // Hovering a section selects it and opens the drawer.
-  const handleHoverSection = useCallback(id => {
-    setHoveredSection(id);
-    setIsOpen(true);
-  }, []);
+  /**
+   * Clicking a row opens its drawer; clicking the open row closes it again.
+   *
+   * Opening on hover made the drawer appear whenever the pointer crossed the
+   * list on its way somewhere else, and each of those opened a category the
+   * user had not asked for and fetched its first page. It also had no matching
+   * way out — the drawer stayed until something was clicked — and closing on
+   * mouse-leave instead would have pulled it away mid-drag, exactly when the
+   * pointer must travel from a card to the canvas.
+   */
+  const handleSelectSection = useCallback(id => {
+    setIsOpen(wasOpen => !(wasOpen && id === selectedSection));
+    setSelectedSection(id);
+  }, [selectedSection]);
 
   // Close the drawer when clicking outside both the section list and the drawer.
   useEffect(() => {
@@ -8360,10 +8369,10 @@ const EditorSections = ({
   // First page for the hovered template entry. Cached per entry so re-hovering
   // is instant; built-in entries never reach here.
   useEffect(() => {
-    if (!hoveredEntry || hoveredEntry.source === "builtin") return;
-    if (remoteByEntry[hoveredEntry.id]) return;
-    const entryId = hoveredEntry.id;
-    const request = fetchCategoryPage(hoveredEntry, 1);
+    if (!selectedEntry || selectedEntry.source === "builtin") return;
+    if (remoteByEntry[selectedEntry.id]) return;
+    const entryId = selectedEntry.id;
+    const request = fetchCategoryPage(selectedEntry, 1);
     if (!request) {
       // No reader for this source: record an empty, complete page so the
       // drawer settles on "no data" instead of retrying on every hover.
@@ -8408,19 +8417,19 @@ const EditorSections = ({
     return () => {
       cancelled = true;
     };
-  }, [hoveredEntry, fetchCategoryPage]);
+  }, [selectedEntry, fetchCategoryPage]);
 
   // Whether the hovered entry has more remote templates to load (remote only;
   // local templates aren't paginated).
   const hasMore = useMemo(() => {
-    const state = remoteByEntry[hoveredSection];
+    const state = remoteByEntry[selectedSection];
     return !!state && state.items.length < state.total;
-  }, [remoteByEntry, hoveredSection]);
+  }, [remoteByEntry, selectedSection]);
 
   // Load the next page of remote templates for the hovered entry (infinite
   // scroll). Appends to the existing items.
   const onLoadMore = useCallback(() => {
-    const entry = hoveredEntry;
+    const entry = selectedEntry;
     const state = entry ? remoteByEntry[entry.id] : undefined;
     if (!entry || !state || isFetching || isLoadingMore) return;
     if (entry.source === "builtin") return;
@@ -8445,14 +8454,14 @@ const EditorSections = ({
     }).catch(() => {
       toaster.error(t("editor.sidebar.sections.load.error"));
     }).finally(() => setIsLoadingMore(false));
-  }, [hoveredEntry, remoteByEntry, isFetching, isLoadingMore, mapRemoteItems, fetchCategoryPage]);
+  }, [selectedEntry, remoteByEntry, isFetching, isLoadingMore, mapRemoteItems, fetchCategoryPage]);
 
   // Drawer content for the hovered entry: built-in entries show the local
   // "Empty X" templates, template entries show what their source returned.
   // The two are never combined — that is the separation this phase is about.
   const drawerTemplates = useMemo(() => {
-    if (!hoveredEntry) return [];
-    const source = hoveredEntry.source === "builtin" ? localTemplates : remoteByEntry[hoveredEntry.id]?.items ?? [];
+    if (!selectedEntry) return [];
+    const source = selectedEntry.source === "builtin" ? localTemplates : remoteByEntry[selectedEntry.id]?.items ?? [];
     const seen = new Set();
     const result = [];
     source.forEach(template => {
@@ -8463,8 +8472,8 @@ const EditorSections = ({
       }
     });
     return result;
-  }, [hoveredEntry, localTemplates, remoteByEntry]);
-  const drawerTitle = hoveredEntry?.label;
+  }, [selectedEntry, localTemplates, remoteByEntry]);
+  const drawerTitle = selectedEntry?.label;
 
   // Built-in categories are derived from the form, which is still empty on the
   // first paint, so an empty components list means "not ready yet". Template
@@ -8482,9 +8491,9 @@ const EditorSections = ({
     key: entry.id,
     id: entry.id,
     name: entry.label,
-    hovered: hoveredSection === entry.id,
-    onHoverSection: handleHoverSection
-  }))), isOpen && hoveredEntry ? /*#__PURE__*/React__default.createElement(EditorSectionDrawer, {
+    selected: selectedSection === entry.id,
+    onSelectSection: handleSelectSection
+  }))), isOpen && selectedEntry ? /*#__PURE__*/React__default.createElement(EditorSectionDrawer, {
     templates: drawerTemplates,
     isFetching: isFetching && drawerTemplates.length === 0,
     isLoadingMore: isLoadingMore,
