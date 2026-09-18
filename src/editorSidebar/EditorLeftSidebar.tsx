@@ -101,13 +101,23 @@ export const EditorLeftSidebar = ({
         };
       }
 
-      case "sections": {
+      case "components": {
         return {
-          id: "editor-sections",
-          title: t("editor.sidebar.blocksAndSections"),
+          id: "editor-components",
+          title: t("editor.sidebar.sections.components"),
           width: "200px",
           enableScroll: false,
-          Component: <EditorSections />,
+          Component: <EditorSections panel="components" />,
+        };
+      }
+
+      case "templates": {
+        return {
+          id: "editor-templates",
+          title: t("editor.sidebar.sections.templates"),
+          width: "200px",
+          enableScroll: false,
+          Component: <EditorSections panel="templates" />,
         };
       }
 

@@ -83,7 +83,12 @@ export type InternalWidgetComponentProps = Omit<WidgetComponentProps, "onChange"
     resourceKey?: string;
     path: string;
 };
-export type TLeftSidebar = "global-sections" | "layers" | "sections";
+/**
+ * Which left panel is open. Built-in components and saved templates are two
+ * separate panels with their own rail button, not two areas inside one panel:
+ * they are different kinds of thing and the user picks one or the other.
+ */
+export type TLeftSidebar = "components" | "templates" | "global-sections" | "layers";
 export type TEasyblocksEditorMode = "admin" | "admin-template" | "user";
 export {};
 //# sourceMappingURL=types.d.ts.map

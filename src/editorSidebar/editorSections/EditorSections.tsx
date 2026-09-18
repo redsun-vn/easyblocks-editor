@@ -30,6 +30,7 @@ import { EditorSectionsSkeleton } from "./EditorSectionsSkeleton";
 import { TOP_BAR_HEIGHT } from "../../EditorTopBar";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import { useTranslation } from "../../useTranslation";
+import { TEasyblocksEditorMode } from "../../types";
 
 export interface IComponentGroups {
   [key: string]: {
@@ -76,7 +77,7 @@ type TPublicTemplateSource = {
 /** Where an entry in the section list reads its templates from. */
 type TSectionSource = "builtin" | "shop" | "public";
 
-type TSectionEntry = {
+export type TSectionEntry = {
   /** Stable key for hover state and for the per-entry template cache. */
   id: string;
   /** Already localized; the raw category string is kept in `group`. */
@@ -87,11 +88,12 @@ type TSectionEntry = {
   kind: TSectionItemKind;
 };
 
-type TSectionArea = {
-  id: string;
-  title: string;
-  entries: TSectionEntry[];
-};
+/**
+ * Which of the two panels this instance is. Built-in components and saved
+ * templates each own a rail button and a panel, so one instance only ever
+ * builds and renders one of the two lists.
+ */
+export type TSectionPanel = "components" | "templates";
 
 // Accumulated remote templates for one entry plus its paging cursor.
 type TEntryRemoteState = {
@@ -123,6 +125,69 @@ export function getSectionInsertionIndex(
   return Math.min(Number(rootSectionIndex) + 1, sectionCount);
 }
 
+/**
+ * The entries of one panel, and only that panel.
+ *
+ * The two kinds are built from separate sources and never merged, which is the
+ * whole point: the previous `[...new Set([...localGroups, ...remoteGroups])]`
+ * put a shop's own group called "Layout" into the same row as the built-in
+ * Layout category, so a saved template looked like a stock component.
+ *
+ * Each template source stays a single entry instead of being expanded into its
+ * group names. A shop that saved templates under "Layout" would otherwise
+ * reintroduce the collision one level down, with the same word appearing in
+ * both panels. The group string survives as a per-template label in the picker.
+ */
+export function buildSectionEntries({
+  panel,
+  mode,
+  localGroups,
+  t,
+}: {
+  panel: TSectionPanel;
+  mode: TEasyblocksEditorMode;
+  localGroups: string[];
+  t: (key: string) => string;
+}): TSectionEntry[] {
+  if (panel === "components") {
+    return [...localGroups].sort().map((group) => ({
+      id: `builtin:${group}`,
+      label: getCategoryLabel(t, group),
+      group,
+      source: "builtin",
+      kind: "builtin",
+    }));
+  }
+
+  // Admin edits the REDSUN library directly, so its own path already holds
+  // exactly those templates and a second public read would be a duplicate.
+  if (mode === "user") {
+    return [
+      {
+        id: "public:redsun",
+        label: t("editor.sidebar.sections.templates.redsun"),
+        source: "public",
+        kind: "template",
+      },
+      {
+        id: "shop:own",
+        label: t("editor.sidebar.sections.templates.shop"),
+        source: "shop",
+        kind: "template",
+      },
+    ];
+  }
+
+  return [
+    {
+      id: "shop:own",
+      label: t("editor.sidebar.sections.templates.redsun"),
+      source: "shop",
+      kind: "template",
+    },
+  ];
+}
+
 /** Total matched documents across every group bucket of a count response. */
 function sumMatchedCount(count: TTemplateListResult["count"]): number {
   return Object.values(count ?? {}).reduce(
@@ -140,23 +205,9 @@ const StyledEditorSectionGroup = styled.div`
   );
 `;
 
-// Heading of one area. Built-in components and templates are two different
-// kinds of thing, so they get two labelled regions rather than one list with
-// mixed icons — the icon alone is too weak a signal to tell them apart.
-const StyledAreaTitle = styled(Typography)`
-  display: block;
-  padding: 4px;
-  margin-top: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.6;
-
-  &:first-child {
-    margin-top: 0;
-  }
-`;
-
-export const EditorSections: React.FC = () => {
+export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
+  panel,
+}) => {
   const editorContext = useEditorContext();
   const toaster = useToaster();
   const { t } = useTranslation();
@@ -211,80 +262,24 @@ export const EditorSections: React.FC = () => {
     [localComponents],
   );
 
-  /**
-   * The list, split into a built-in area and a template area.
-   *
-   * The two areas are built from separate sources and never merged, which is
-   * the whole point: the previous
-   * `[...new Set([...localGroups, ...remoteGroups])]` put a shop's own group
-   * called "Layout" into the same row as the built-in Layout category, so a
-   * saved template looked like a stock component.
-   *
-   * Each template source stays a single entry instead of being expanded into
-   * its group names. A shop that saved templates under "Layout" would otherwise
-   * reintroduce the collision one level down, with the same word appearing in
-   * both areas. The group string survives as a per-template label in the picker.
-   */
-  const areas = useMemo<TSectionArea[]>(() => {
-    const builtinEntries: TSectionEntry[] = [...localGroups]
-      .sort()
-      .map((group) => ({
-        id: `builtin:${group}`,
-        label: getCategoryLabel(t, group),
-        group,
-        source: "builtin",
-        kind: "builtin",
-      }));
-
-    const templateEntries: TSectionEntry[] = [];
-
-    // Admin edits the REDSUN library directly, so its own path already holds
-    // exactly those templates and a second public read would be a duplicate.
-    if (editorContext.mode === "user") {
-      templateEntries.push({
-        id: "public:redsun",
-        label: t("editor.sidebar.sections.templates.redsun"),
-        source: "public",
-        kind: "template",
-      });
-      templateEntries.push({
-        id: "shop:own",
-        label: t("editor.sidebar.sections.templates.shop"),
-        source: "shop",
-        kind: "template",
-      });
-    } else {
-      templateEntries.push({
-        id: "shop:own",
-        label: t("editor.sidebar.sections.templates.redsun"),
-        source: "shop",
-        kind: "template",
-      });
-    }
-
-    return [
-      {
-        id: "components",
-        title: t("editor.sidebar.sections.components"),
-        entries: builtinEntries,
-      },
-      {
-        id: "templates",
-        title: t("editor.sidebar.sections.templates"),
-        entries: templateEntries,
-      },
-    ];
-  }, [localGroups, editorContext.mode, t]);
+  const entries = useMemo<TSectionEntry[]>(
+    () =>
+      buildSectionEntries({
+        panel,
+        mode: editorContext.mode,
+        localGroups,
+        t,
+      }),
+    [panel, localGroups, editorContext.mode, t],
+  );
 
   const entriesById = useMemo(() => {
     const map: Record<string, TSectionEntry> = {};
-    areas.forEach((area) =>
-      area.entries.forEach((entry) => {
-        map[entry.id] = entry;
-      }),
-    );
+    entries.forEach((entry) => {
+      map[entry.id] = entry;
+    });
     return map;
-  }, [areas]);
+  }, [entries]);
 
   const hoveredEntry = entriesById[hoveredSection];
 
@@ -370,7 +365,7 @@ export const EditorSections: React.FC = () => {
     (template: TSectionTemplate) => {
       const entry = template.template?.entry;
       if (!entry) {
-        toaster.error(t("editor.sidebar.blocksAndSections.add.error"));
+        toaster.error(t("editor.sidebar.sections.add.error"));
         return;
       }
 
@@ -391,7 +386,7 @@ export const EditorSections: React.FC = () => {
         block: normalizedEntry,
       });
 
-      toaster.success(t("editor.sidebar.blocksAndSections.add.success"));
+      toaster.success(t("editor.sidebar.sections.add.success"));
 
       // Scroll the canvas to wherever the new section landed.
       const data = (editorContext.form.values?.data ?? []) as Array<{
@@ -403,9 +398,9 @@ export const EditorSections: React.FC = () => {
     [editorContext, scrollCanvasToComponent],
   );
 
-  // Preselect the first built-in category so the drawer has something to show.
+  // Preselect this panel's first entry so the drawer has something to show.
   useEffect(() => {
-    const first = areas[0]?.entries[0]?.id;
+    const first = entries[0]?.id;
     if (first) setHoveredSection(first);
   }, []);
 
@@ -488,7 +483,7 @@ export const EditorSections: React.FC = () => {
           ...prev,
           [entryId]: { items: [], page: 1, total: 0 },
         }));
-        toaster.error(t("editor.sidebar.blocksAndSections.load.error"));
+        toaster.error(t("editor.sidebar.sections.load.error"));
       })
       .finally(() => {
         if (!cancelled) setIsFetching(false);
@@ -537,7 +532,7 @@ export const EditorSections: React.FC = () => {
         });
       })
       .catch(() => {
-        toaster.error(t("editor.sidebar.blocksAndSections.load.error"));
+        toaster.error(t("editor.sidebar.sections.load.error"));
       })
       .finally(() => setIsLoadingMore(false));
   }, [
@@ -574,36 +569,33 @@ export const EditorSections: React.FC = () => {
     return result;
   }, [hoveredEntry, localTemplates, remoteByEntry]);
 
-  const isLoadingList = areas.every((area) => area.entries.length === 0);
+  // Built-in categories are derived from the form, which is still empty on the
+  // first paint, so an empty components list means "not ready yet". The
+  // template list is static, so an empty one is genuinely "nothing here".
+  const isLoadingList = panel === "components" && entries.length === 0;
 
   return (
     <>
       <StyledEditorSectionGroup ref={sectionListRef}>
-        {isLoadingList ? (
-          <EditorSectionsSkeleton />
-        ) : (
-          areas.map((area) => (
-            <div key={area.id}>
-              <StyledAreaTitle variant="label">{area.title}</StyledAreaTitle>
-              {area.entries.length ? (
-                area.entries.map((entry) => (
-                  <EditorSectionItem
-                    key={entry.id}
-                    id={entry.id}
-                    name={entry.label}
-                    kind={entry.kind}
-                    hovered={hoveredSection === entry.id}
-                    onHoverSection={handleHoverSection}
-                  />
-                ))
-              ) : (
-                <Typography variant="body" style={{ paddingLeft: 4 }}>
-                  {t("noData")}!
-                </Typography>
-              )}
-            </div>
-          ))
+        {isLoadingList && <EditorSectionsSkeleton />}
+
+        {!isLoadingList && entries.length === 0 && (
+          <Typography variant="body" style={{ paddingLeft: 4 }}>
+            {t("noData")}!
+          </Typography>
         )}
+
+        {!isLoadingList &&
+          entries.map((entry) => (
+            <EditorSectionItem
+              key={entry.id}
+              id={entry.id}
+              name={entry.label}
+              kind={entry.kind}
+              hovered={hoveredSection === entry.id}
+              onHoverSection={handleHoverSection}
+            />
+          ))}
       </StyledEditorSectionGroup>
       {isOpen && hoveredEntry ? (
         <EditorSectionDrawer
