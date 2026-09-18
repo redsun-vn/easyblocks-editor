@@ -26,8 +26,8 @@ type SelectionFrameControllerProps = {
   dropIndicatorEdge: DropIndicatorEdge;
   /** This block is the one the dragged block would land inside. */
   isDropContainer: boolean;
-  /** A drag is in progress and this block would accept it. */
-  isDropCandidate: boolean;
+  /** The drop would land against this block. */
+  isDropTarget: boolean;
   /**
    * Droppables marking the outer edges of the collection. They are positioned against this
    * frame, so they belong inside it: the frame is the only box that knows where the edge is.
@@ -86,7 +86,7 @@ function SelectionFrameController({
   dropRejectionMessage,
   dropIndicatorEdge,
   isDropContainer,
-  isDropCandidate,
+  isDropTarget,
   edgeDropTargets,
 }: SelectionFrameControllerProps) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
@@ -156,11 +156,11 @@ function SelectionFrameController({
       opacity: 0.5,
     },
 
-    // Mid-drag, the block under the pointer states plainly that it would take the
-    // drop. A half-opacity hairline — the same one hovering shows when nothing is
-    // being dragged — read as "nothing is happening here", which is why aiming at
-    // a target felt like aiming at a place that would not accept anything.
-    [`&[data-drop-candidate=true]${HOVERED_TARGET_FRAME}::after`]: {
+    // Mid-drag, the block the drop would land against states plainly that it
+    // would take it. A half-opacity hairline — the same one hovering shows when
+    // nothing is being dragged — read as "nothing is happening here", which is
+    // why aiming at a target felt like aiming somewhere that refuses drops.
+    "&[data-drop-target=true]::after": {
       opacity: 1,
       borderColor: Colors.purple,
       borderWidth: "2px",
@@ -324,7 +324,7 @@ function SelectionFrameController({
       data-draggable-dragging={sortable.active !== null}
       data-drop-indicator={dropIndicatorEdge ?? "none"}
       data-drop-container={isDropContainer}
-      data-drop-candidate={isDropCandidate}
+      data-drop-target={isDropTarget}
       data-draggable-active={
         sortable.active !== null && sortable.active?.id === id
       }

@@ -170,9 +170,13 @@ export function EasyblocksCanvas({
   // Name of the block currently being carried; null when no drag is in flight.
   const [draggedLabel, setDraggedLabel] = useState<string | null>(null);
   const { forceRerender } = useForceRerender();
+  // Ten pixels was the price of the whole block being the handle: any press that
+  // drifted had to be assumed accidental. Now that a drag starts from a grip, the
+  // press is already deliberate, and a shorter threshold is what makes the block
+  // answer the gesture instead of lagging behind it.
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
-      distance: 10,
+      distance: 4,
     },
   });
   // Touch needs a hold instead of a distance: on a touch screen a short drag is how the
@@ -277,7 +281,7 @@ export function EasyblocksCanvas({
             </SortableContext>
             {/* No drop animation: the chip is not the block, so flying it into
                 the block's new position would animate the wrong object. */}
-            <DragOverlay dropAnimation={null}>
+            <DragOverlay dropAnimation={null} style={{ pointerEvents: "none" }}>
               {draggedLabel !== null ? (
                 <DragPreview label={draggedLabel} />
               ) : null}

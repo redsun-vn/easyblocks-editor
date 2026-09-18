@@ -12342,7 +12342,7 @@ function SelectionFrameController({
   dropRejectionMessage,
   dropIndicatorEdge,
   isDropContainer,
-  isDropCandidate,
+  isDropTarget,
   edgeDropTargets
 }) {
   const [node, setNode] = useState(null);
@@ -12411,11 +12411,11 @@ function SelectionFrameController({
     [`&[data-active=false]${HOVERED_TARGET_FRAME}::after`]: {
       opacity: 0.5
     },
-    // Mid-drag, the block under the pointer states plainly that it would take the
-    // drop. A half-opacity hairline — the same one hovering shows when nothing is
-    // being dragged — read as "nothing is happening here", which is why aiming at
-    // a target felt like aiming at a place that would not accept anything.
-    [`&[data-drop-candidate=true]${HOVERED_TARGET_FRAME}::after`]: {
+    // Mid-drag, the block the drop would land against states plainly that it
+    // would take it. A half-opacity hairline — the same one hovering shows when
+    // nothing is being dragged — read as "nothing is happening here", which is
+    // why aiming at a target felt like aiming somewhere that refuses drops.
+    "&[data-drop-target=true]::after": {
       opacity: 1,
       borderColor: Colors.purple,
       borderWidth: "2px",
@@ -12552,7 +12552,7 @@ function SelectionFrameController({
     "data-draggable-dragging": sortable.active !== null,
     "data-drop-indicator": dropIndicatorEdge ?? "none",
     "data-drop-container": isDropContainer,
-    "data-drop-candidate": isDropCandidate,
+    "data-drop-target": isDropTarget,
     "data-draggable-active": sortable.active !== null && sortable.active?.id === id,
     className: wrapperClassName().className,
     ref: node => {
@@ -12751,9 +12751,21 @@ function BlocksControls({
   // what is the question a drop over a three-column footer actually raises.
   const overPath = dndContext.over?.data.current?.path;
   const isDropContainer = !!sortable.active && !!overPath && overPath !== path && parsePath(overPath, form).parent?.path === path;
+  const overId = dndContext.over ? String(dndContext.over.id) : null;
+
+  /**
+   * This block is the one the drop would land against.
+   *
+   * Read off `over` rather than off CSS `:hover`, which is what the first
+   * attempt used and why no border ever appeared: during a drag the overlay
+   * chip travels under the cursor, so `:hover` lands on the chip instead of on
+   * the block beneath it. `over` is also the value the drop itself uses, so the
+   * border cannot disagree with where the block actually goes.
+   */
+  const isDropTarget = !!sortable.active && !isDroppableDisabled && !isBlockBeingDragged && (overId === id || overId === `${id}.before` || overId === `${id}.after`);
   const dropIndicatorEdge = resolveDropIndicatorEdge({
     id,
-    overId: dndContext.over ? String(dndContext.over.id) : null,
+    overId,
     activeIndex: sortable.activeIndex,
     index: sortable.index,
     isDroppableDisabled,
@@ -12772,7 +12784,7 @@ function BlocksControls({
     dropRejectionMessage: dropRejectionMessage,
     dropIndicatorEdge: dropIndicatorEdge,
     isDropContainer: isDropContainer,
-    isDropCandidate: !!sortable.active && !isDroppableDisabled && !isBlockBeingDragged,
+    isDropTarget: isDropTarget,
     edgeDropTargets: /*#__PURE__*/React__default.createElement(Fragment, null, hasCollectionStartTarget && /*#__PURE__*/React__default.createElement(CollectionEdgeDropTarget, {
       id: id,
       direction: direction,
@@ -13230,9 +13242,13 @@ function EasyblocksCanvas({
   const {
     forceRerender
   } = useForceRerender();
+  // Ten pixels was the price of the whole block being the handle: any press that
+  // drifted had to be assumed accidental. Now that a drag starts from a grip, the
+  // press is already deliberate, and a shorter threshold is what makes the block
+  // answer the gesture instead of lagging behind it.
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
-      distance: 10
+      distance: 4
     }
   });
   // Touch needs a hold instead of a distance: on a touch screen a short drag is how the
@@ -13309,7 +13325,10 @@ function EasyblocksCanvas({
       Placeholder: TypePlaceholder
     }
   })), /*#__PURE__*/React__default.createElement(DragOverlay, {
-    dropAnimation: null
+    dropAnimation: null,
+    style: {
+      pointerEvents: "none"
+    }
   }, draggedLabel !== null ? /*#__PURE__*/React__default.createElement(DragPreview, {
     label: draggedLabel
   }) : null)))));

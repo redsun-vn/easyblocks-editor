@@ -234,9 +234,26 @@ export function BlocksControls({
     overPath !== path &&
     parsePath(overPath, form).parent?.path === path;
 
+  const overId = dndContext.over ? String(dndContext.over.id) : null;
+
+  /**
+   * This block is the one the drop would land against.
+   *
+   * Read off `over` rather than off CSS `:hover`, which is what the first
+   * attempt used and why no border ever appeared: during a drag the overlay
+   * chip travels under the cursor, so `:hover` lands on the chip instead of on
+   * the block beneath it. `over` is also the value the drop itself uses, so the
+   * border cannot disagree with where the block actually goes.
+   */
+  const isDropTarget =
+    !!sortable.active &&
+    !isDroppableDisabled &&
+    !isBlockBeingDragged &&
+    (overId === id || overId === `${id}.before` || overId === `${id}.after`);
+
   const dropIndicatorEdge = resolveDropIndicatorEdge({
     id,
-    overId: dndContext.over ? String(dndContext.over.id) : null,
+    overId,
     activeIndex: sortable.activeIndex,
     index: sortable.index,
     isDroppableDisabled,
@@ -257,9 +274,7 @@ export function BlocksControls({
       dropRejectionMessage={dropRejectionMessage}
       dropIndicatorEdge={dropIndicatorEdge}
       isDropContainer={isDropContainer}
-      isDropCandidate={
-        !!sortable.active && !isDroppableDisabled && !isBlockBeingDragged
-      }
+      isDropTarget={isDropTarget}
       edgeDropTargets={
         <Fragment>
           {hasCollectionStartTarget && (
