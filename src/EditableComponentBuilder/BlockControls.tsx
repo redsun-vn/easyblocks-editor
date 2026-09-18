@@ -4,6 +4,7 @@ import {
   horizontalListSortingStrategy,
   useSortable,
   verticalListSortingStrategy,
+  type SortingStrategy,
 } from "@dnd-kit/sortable";
 import {
   CompiledCustomComponentConfig,
@@ -112,6 +113,10 @@ export function BlocksControls({
 
   const componentLabel = getComponentLabel(templateId, editorContext, t);
 
+  const activeDragPath = dndContext.active?.data.current?.path as
+    | string
+    | undefined;
+
   const sortable = useSortable({
     id,
     // `label` rides along so the drag preview in the canvas can name what is
@@ -121,10 +126,11 @@ export function BlocksControls({
       label: componentLabel,
     },
     disabled: sortableDisabledState,
-    strategy:
-      direction === "horizontal"
-        ? horizontalListSortingStrategy
-        : verticalListSortingStrategy,
+    strategy: getSortingStrategy({
+      direction,
+      isSortingWithinThisCollection:
+        !!activeDragPath && isPathsParentEqual(activeDragPath, path),
+    }),
   });
 
   if (disabled) {
@@ -405,6 +411,37 @@ export function getAllowedComponentTypes(
  * the move-to-another-parent case: they need the extra before/after placeholders, and the
  * parent window resolves them through insert + remove instead of a plain reorder.
  */
+/** A strategy that moves nothing, for blocks a drag does not concern. */
+export const noSortingStrategy: SortingStrategy = () => null;
+
+/**
+ * How this block should shift while something is being dragged.
+ *
+ * Sorting strategies work off positions in the sortable list, and that list
+ * holds every collection on the page at once. Within one collection the entries
+ * are consecutive, so the arithmetic lands on the real siblings and a reorder
+ * opens a gap where the block will go — the movement that was missing, and the
+ * reason a drag felt like nothing was happening. Across two collections those
+ * positions describe unrelated blocks, so asking them to shift would scatter
+ * parts of the page that the drop will not touch; they stay put instead, and
+ * the insertion line is what says where the block lands.
+ */
+export function getSortingStrategy({
+  direction,
+  isSortingWithinThisCollection,
+}: {
+  direction: "horizontal" | "vertical";
+  isSortingWithinThisCollection: boolean;
+}): SortingStrategy {
+  if (!isSortingWithinThisCollection) {
+    return noSortingStrategy;
+  }
+
+  return direction === "horizontal"
+    ? horizontalListSortingStrategy
+    : verticalListSortingStrategy;
+}
+
 export function isPathsParentEqual(path1: string, path2: string) {
   const activePathParts = path1.split(".");
   const currentPathParts = path2.split(".");

@@ -1,28 +1,28 @@
 "use client";
-import { getDefaultLocale, isTrulyResponsiveValue, getExternalReferenceLocationKey, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, getBrightnessColor, validateColor, isNoCodeComponentOfType, globalSectionGroups, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$2, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
+import { getDefaultLocale, isTrulyResponsiveValue, isNoCodeComponentOfType, globalSectionGroups, getExternalReferenceLocationKey, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, getBrightnessColor, validateColor, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$2, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
 import * as React from 'react';
-import React__default, { useState, useRef, useContext, createContext, useEffect, forwardRef, useMemo, Fragment, useLayoutEffect, useCallback, useDeferredValue, memo } from 'react';
+import React__default, { useState, useRef, useContext, useMemo, useEffect, createContext, forwardRef, Fragment, useLayoutEffect, useCallback, useDeferredValue, memo } from 'react';
 import isPropValid from '@emotion/is-prop-valid';
 import { Modal, ModalContext, GlobalModalStyles } from '@redsun-vn/easyblocks-design-system/modals';
 import { useToaster, Toaster } from '@redsun-vn/easyblocks-design-system/Toaster';
 import { Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, TooltipProvider } from '@redsun-vn/easyblocks-design-system/Tooltip';
-import styled$1, { styled, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
+import styled, { styled as styled$1, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
-import { findComponentDefinition, parsePath, findComponentDefinitionById, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, isExternalSchemaProp, useTextValue, richTextChangedEvent, duplicateConfig, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, normalize as normalize$1, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, RichTextEditor, TextEditor, configTraverse, itemMoved } from '@redsun-vn/easyblocks-core/_internals';
+import { findComponentDefinition, parsePath, findComponentDefinitionById, duplicateConfig, normalize as normalize$1, isSchemaPropTextModifier, isSchemaPropActionTextModifier, stripRichTextPartSelection, isExternalSchemaProp, useTextValue, richTextChangedEvent, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, RichTextEditor, TextEditor, configTraverse, itemMoved } from '@redsun-vn/easyblocks-core/_internals';
 import { Colors, Fonts } from '@redsun-vn/easyblocks-design-system';
 import throttle from 'lodash.throttle';
 import debounce$1 from 'lodash/debounce';
 import Modal$1 from 'react-modal';
-import { debounce } from 'lodash';
-import { ButtonSecondary, ButtonGhost, ButtonPrimary, ButtonDanger, ButtonGhostColor } from '@redsun-vn/easyblocks-design-system/buttons';
 import { Icons } from '@redsun-vn/easyblocks-design-system/icons';
-import { Input, InputColor, ColorPicker, InputFile } from '@redsun-vn/easyblocks-design-system/Input';
+import { Loader } from '@redsun-vn/easyblocks-design-system/Loader';
 import { Typography } from '@redsun-vn/easyblocks-design-system/Typography';
+import { ButtonGhost, ButtonSecondary, ButtonPrimary, ButtonDanger, ButtonGhostColor } from '@redsun-vn/easyblocks-design-system/buttons';
+import { Input, InputColor, ColorPicker, InputFile } from '@redsun-vn/easyblocks-design-system/Input';
+import { debounce } from 'lodash';
 import { ThumbnailButton } from '@redsun-vn/easyblocks-design-system/ThumbnailButton';
 import ReactDOM, { createPortal } from 'react-dom';
 import { useTooltipTrigger } from '@react-aria/tooltip';
 import { usePopper } from 'react-popper';
-import { Loader } from '@redsun-vn/easyblocks-design-system/Loader';
 import { Select, SelectSeparator, SelectItem } from '@redsun-vn/easyblocks-design-system/Select';
 import * as RadixRadioGroup from '@radix-ui/react-radio-group';
 import { Toggle as Toggle$1 } from '@redsun-vn/easyblocks-design-system/Toggle';
@@ -265,6 +265,1042 @@ function useEditorContext() {
   }
   return context;
 }
+
+function last(collection) {
+  return collection[collection.length - 1];
+}
+
+const takeNumbers = path => path.split(".").map(x => parseInt(x, 10)).filter(x => !Number.isNaN(x));
+const preOrderPathComparator = (direction = "ascending") => (pathA, pathB) => {
+  const order = direction === "ascending" ? 1 : -1;
+  const numbersA = takeNumbers(pathA);
+  const numbersB = takeNumbers(pathB);
+  const numberALength = numbersA.length;
+  const numberBLength = numbersB.length;
+  if (numberALength === 0 || numberBLength === 0) {
+    throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
+  }
+  const shorterLength = Math.min(numberALength, numberBLength);
+  let index = 0;
+  while (index < shorterLength) {
+    const valueA = numbersA[index];
+    const valueB = numbersB[index];
+    if (valueA !== valueB) {
+      return order * Math.sign(valueA - valueB);
+    }
+    index++;
+  }
+  return order * Math.sign(numberBLength - numberALength);
+};
+
+function duplicateItem(form, {
+  name,
+  sourceIndex,
+  targetIndex
+}, compilationContext) {
+  // Placeholders are not copyable
+  if (isPlaceholder(name + "." + sourceIndex, form.values)) {
+    return;
+  }
+  const configToDuplicate = dotNotationGet(form.values, name + "." + sourceIndex);
+  form.mutators.insert(name, targetIndex, duplicateConfig(configToDuplicate, compilationContext));
+}
+function pasteItems({
+  what,
+  where,
+  resolveDestination,
+  pasteCommand
+}) {
+  const successfulInsertsPaths = [];
+  takeLastOfEachParent(where).sort(preOrderPathComparator()).map(initialDestination => {
+    const destination = successfulInsertsPaths.reduce((acc, current) => shiftPath(acc, current, "downward"), initialDestination);
+    const resolvedDestinations = resolveDestination(destination);
+    return pasteCommand(resolvedDestinations);
+  }).forEach(paste => {
+    what.forEach(item => {
+      const insertedPath = paste(item);
+      if (insertedPath) {
+        successfulInsertsPaths.push(insertedPath);
+      }
+    });
+  });
+  return successfulInsertsPaths.length !== 0 ? successfulInsertsPaths : where;
+}
+
+/**
+ * Duplicates fields given in `fieldNames` within given `form`.
+ * `compilationContext` is used to properly duplicate elements associated with given names.
+ * @returns Array of fields to focus
+ */
+function duplicateItems(form, fieldNames, compilationContext) {
+  const duplicatableFieldNames = fieldNames.filter(fieldName => isFieldDuplicatable(fieldName, form, compilationContext));
+  if (duplicatableFieldNames.length === 0) {
+    return;
+  }
+  const fieldsGroupedByParentPath = groupFieldsByParentPath(duplicatableFieldNames, "ascending");
+  const nextFocusedFieldsPerGroup = [];
+  Object.values(fieldsGroupedByParentPath).forEach((sortedFields, fieldsGroupIndex) => {
+    nextFocusedFieldsPerGroup.push([]);
+    const lastFieldIndex = getFieldPathIndex(last(sortedFields));
+    sortedFields.forEach((focusedField, fieldIndex) => {
+      const sourceIndex = getFieldPathIndex(focusedField);
+      const targetIndex = lastFieldIndex + 1 + fieldIndex;
+      const parentPath = getParentPath(focusedField);
+      duplicateItem(form, {
+        name: parentPath,
+        sourceIndex,
+        targetIndex
+      }, compilationContext);
+      nextFocusedFieldsPerGroup[fieldsGroupIndex].push(`${parentPath}.${lastFieldIndex + 1 + fieldIndex}`);
+    });
+  });
+  return nextFocusedFieldsPerGroup.flat();
+}
+function moveItem(form, {
+  from,
+  to,
+  name
+}) {
+  // Placeholders are not movable
+  if (isPlaceholder(name + "." + from, form.values)) {
+    return;
+  }
+  form.mutators.move(name, from, to);
+}
+
+/**
+ * Moves fields given in `fieldNamesToRemove` within given `form` in given `direction`.
+ * @returns Array of fields to focus.
+ */
+function moveItems(form, fieldsToMove, direction) {
+  const nextFocusedFields = [];
+  const isMovingMultipleFields = fieldsToMove.length > 1;
+  if (direction === "top" || direction === "left") {
+    const fieldsGroupedByParentPath = groupFieldsByParentPath(fieldsToMove, "ascending");
+    Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
+      let wasAnyFieldWithinCurrentGroupMoved = false;
+      sortedFields.forEach((fieldName, fieldNameIndex) => {
+        const index = getFieldPathIndex(fieldName);
+        const parentPath = getParentPath(fieldName);
+        if (isFirst(fieldName)) {
+          if (isMovingMultipleFields) {
+            nextFocusedFields.push(fieldName);
+          }
+          return;
+        }
+        if (isMovingMultipleFields && fieldNameIndex > 0 && !wasAnyFieldWithinCurrentGroupMoved) {
+          nextFocusedFields.push(fieldName);
+          return;
+        }
+        moveItem(form, {
+          from: index,
+          name: parentPath,
+          to: index - 1
+        });
+        if (!wasAnyFieldWithinCurrentGroupMoved) {
+          wasAnyFieldWithinCurrentGroupMoved = true;
+        }
+        nextFocusedFields.push(`${parentPath}.${index - 1}`);
+      });
+    });
+    if (nextFocusedFields.length > 0) {
+      return nextFocusedFields;
+    }
+  } else {
+    const fieldsGroupedByParentPath = groupFieldsByParentPath(fieldsToMove, "descending");
+    Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
+      let wasAnyFieldWithinCurrentGroupMoved = false;
+      sortedFields.forEach((fieldName, fieldNameIndex) => {
+        if (isLast(fieldName, form)) {
+          if (isMovingMultipleFields) {
+            nextFocusedFields.push(fieldName);
+          }
+          return;
+        }
+        if (isMovingMultipleFields && fieldNameIndex > 0 && !wasAnyFieldWithinCurrentGroupMoved) {
+          nextFocusedFields.push(fieldName);
+          return;
+        }
+        const index = getFieldPathIndex(fieldName);
+        const parentPath = getParentPath(fieldName);
+        moveItem(form, {
+          name: parentPath,
+          from: index,
+          to: index + 1
+        });
+        if (!wasAnyFieldWithinCurrentGroupMoved) {
+          wasAnyFieldWithinCurrentGroupMoved = true;
+        }
+        nextFocusedFields.push(`${parentPath}.${index + 1}`);
+      });
+    });
+    if (nextFocusedFields.length > 0) {
+      return nextFocusedFields;
+    }
+  }
+}
+function removeItem(form, {
+  index,
+  name
+}) {
+  const configPathToRemove = name + "." + index;
+
+  // Placeholders are not removable
+  if (isPlaceholder(configPathToRemove, form.values)) {
+    return;
+  }
+  const componentConfigValue = dotNotationGet(form.values, name);
+  if (componentConfigValue.length === 1) {
+    form.change(name, []);
+  } else {
+    form.mutators.remove(name, index);
+  }
+}
+
+/**
+ * Removes fields given in `fieldNamesToRemove` from given `form`.
+ * @returns Array of fields to focus
+ */
+function removeItems(form, fieldNamesToRemove, editorContext) {
+  const removableFieldNames = fieldNamesToRemove.filter(fieldName => isFieldRemovable(fieldName, form, editorContext));
+  if (removableFieldNames.length === 0) {
+    return;
+  }
+  const isRemovingMultipleFields = removableFieldNames.length > 1;
+  const fieldsGroupedByParentPath = groupFieldsByParentPath(removableFieldNames, "descending");
+  if (!isRemovingMultipleFields) {
+    const {
+      index,
+      parent,
+      templateId
+    } = parsePath(removableFieldNames[0], form);
+    if (index === undefined || !parent) {
+      throw new Error("Invalid path");
+    }
+    const fieldPath = `${parent.path}${parent.path === "" ? "" : "."}${parent.fieldName}`;
+    const itemsLength = dotNotationGet(form.values, fieldPath).length;
+    const isOnlyItem = itemsLength === 1;
+    const isLastItem = itemsLength - 1 === index;
+    removeItem(form, {
+      index,
+      name: fieldPath
+    });
+    const definition = findComponentDefinitionById(templateId, editorContext);
+    const isTextWrapper = definition && isNoCodeComponentOfType(definition, "@easyblocks/text-wrapper");
+
+    // If we're removing item from the text wrapper field let's focus the component holding that field for better UX
+    // TODO: We shouldn't decide based on the component type but rather on the source of the removal (canvas vs sidebar)
+    if (isTextWrapper) {
+      return [parent.path];
+    }
+    if (isOnlyItem) {
+      return [];
+    } else if (isLastItem) {
+      return [`${fieldPath}.${index - 1}`];
+    } else {
+      return [`${fieldPath}.${index}`];
+    }
+  }
+  Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
+    sortedFields.forEach(focusedField => {
+      const field = dotNotationGet(form.values, focusedField);
+
+      // Field could be already removed if its parent element was also selected
+      if (!field) {
+        return;
+      }
+      const index = getFieldPathIndex(focusedField);
+      const parentPath = getParentPath(focusedField);
+      removeItem(form, {
+        index,
+        name: parentPath
+      });
+    });
+  });
+  return [];
+}
+function replaceItems(paths, newConfig, editorContext) {
+  paths.forEach(path => {
+    dotNotationGet(editorContext.form.values, path);
+    editorContext.form.change(path, duplicateConfig(
+    // newConfig && oldConfig
+    //   ? changeComponentConfig(oldConfig, newConfig, editorContext)
+    //   : newConfig,
+    newConfig, editorContext));
+  });
+}
+function logItems(form, configPaths) {
+  const configValues = configPaths.map(configPath => {
+    return dotNotationGet(form.values, configPath);
+  });
+  configValues.forEach((config, index) => {
+    console.log("Config for", configPaths[index], config);
+  });
+}
+function groupFieldsByParentPath(fields, sortDirection) {
+  const fieldsIndicesGroupedByParentPath = fields.reduce((accumulator, currentField) => {
+    const index = getFieldPathIndex(currentField);
+    const parentPath = getParentPath(currentField);
+    const indices = accumulator[parentPath];
+    if (indices) {
+      accumulator[parentPath] = [...indices, index].sort((a, b) => {
+        return sortDirection === "descending" ? b - a : a - b;
+      });
+      return accumulator;
+    }
+    accumulator[parentPath] = [index];
+    return accumulator;
+  }, {});
+  return Object.fromEntries(Object.entries(fieldsIndicesGroupedByParentPath).map(([parentPath, indices]) => {
+    return [parentPath, indices.map(index => parentPath + "." + index)];
+  }));
+}
+function getFieldPathIndex(fieldPath) {
+  const index = +last(fieldPath.split("."));
+  if (Number.isNaN(index)) {
+    return -1;
+  }
+  return index;
+}
+function getParentPath(fieldPath) {
+  const fieldPathParts = fieldPath.split(".");
+  return fieldPathParts.slice(0, -1).join(".");
+}
+function isFirst(fieldPath) {
+  const index = getFieldPathIndex(fieldPath);
+  return index === 0;
+}
+function isLast(fieldPath, form) {
+  const index = getFieldPathIndex(fieldPath);
+  const parentPath = getParentPath(fieldPath);
+  const parentFieldElementsCount = dotNotationGet(form.values, parentPath).length;
+  return index === parentFieldElementsCount - 1;
+}
+function isPlaceholder(path, values) {
+  const templateId = dotNotationGet(values, path)._component;
+  return templateId.startsWith("$Placeholder");
+}
+function isFieldRemovable(fieldName, form, compilationContext) {
+  const {
+    parent
+  } = parsePath(fieldName, form);
+  if (parent) {
+    const parentComponentDefinition = findComponentDefinitionById(parent.templateId, compilationContext);
+    const fieldNameParent = last(getParentPath(fieldName).split("."));
+    const fieldSchema = parentComponentDefinition?.schema.find(schema => schema.prop === fieldNameParent);
+    if (fieldSchema && fieldSchema.type === "component" && fieldSchema.required) {
+      return false;
+    }
+  }
+  return true;
+}
+function isFieldDuplicatable(fieldName, form, compilationContext) {
+  return isFieldRemovable(fieldName, form, compilationContext);
+}
+const shiftPath = (originalPath, shiftingPath, direction = "downward") => {
+  const directionFactor = direction === "downward" ? 1 : -1;
+  const original = shiftingPath.split(".");
+  const shifting = originalPath.split(".");
+  if (original.length < 2) {
+    return originalPath;
+  }
+  let index = 0;
+  while (index < original.length - 1 && index < shifting.length - 1) {
+    if (shifting[index] !== original[index]) {
+      return originalPath;
+    }
+    if (shifting[index + 1] !== original[index + 1]) {
+      const numberA = Number(original[index + 1]);
+      const numberB = Number(shifting[index + 1]);
+      if (numberA < numberB && (index + 1 == original.length - 1 || index + 1 === shifting.length - 1)) {
+        shifting.splice(index + 1, 1, String(numberB + directionFactor));
+        return shifting.join(".");
+      } else {
+        return originalPath;
+      }
+    }
+    index += 2;
+  }
+  return originalPath;
+};
+function takeLastOfEachParent(where) {
+  const lastOfEachParent = where.reduce((acc, curr) => {
+    const trimmed = getParentPath(curr);
+    const index = getFieldPathIndex(curr);
+    acc[trimmed] = Math.max(index, acc[trimmed] ?? Number.MIN_SAFE_INTEGER);
+    return acc;
+  }, {});
+  return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
+}
+
+const SelectionMoreActionsContainer = styled.div.withConfig({
+  displayName: "Menu__SelectionMoreActionsContainer",
+  componentId: "sc-7fauqp-0"
+})(["", " border-radius:4px;box-shadow:var(--tina-shadow-big);width:max-content;background:", ";pointer-events:all;"], ({
+  styles
+}) => `
+    position: ${styles?.top && styles?.left ? "absolute" : "unset"};
+    top: ${styles?.top ?? "unset"};
+    left: ${styles?.left ?? "unset"};
+  `, Colors.white);
+const SelectionMoreActionsGroupButtons = styled.div.withConfig({
+  displayName: "Menu__SelectionMoreActionsGroupButtons",
+  componentId: "sc-7fauqp-1"
+})(["height:36px;position:relative;padding:0px 16px;display:flex;align-items:center;gap:2px;cursor:pointer;&:hover{background:", ";}"], Colors.black10);
+const MenuItem = ({
+  menu
+}) => {
+  const [isHoverMenu, setIsHoverMenu] = useState(false);
+  const menuItemRef = useRef(null);
+  const onClickMenu = () => {
+    if (!menu.isLoading) {
+      return !menu?.children?.length ? menu?.onClick?.() : undefined;
+    }
+  };
+  return /*#__PURE__*/React__default.createElement(SelectionMoreActionsGroupButtons, {
+    ref: menuItemRef,
+    onMouseEnter: () => setIsHoverMenu(true),
+    onMouseLeave: () => setIsHoverMenu(false),
+    onClick: onClickMenu
+  }, /*#__PURE__*/React__default.createElement(Typography, {
+    style: {
+      cursor: "pointer"
+    },
+    variant: "body",
+    component: "label"
+  }, menu.isLoading ? /*#__PURE__*/React__default.createElement(Loader, null) : menu.label), menu?.children?.length ? /*#__PURE__*/React__default.createElement(Icons.ChevronRight, {
+    size: 18
+  }) : null, isHoverMenu && menu?.children ? /*#__PURE__*/React__default.createElement(Menu, {
+    styles: {
+      top: "0px",
+      left: `${menuItemRef.current?.offsetWidth ?? 0}px`
+    },
+    menus: menu.children
+  }) : null);
+};
+const Menu = ({
+  menus,
+  styles
+}) => {
+  return /*#__PURE__*/React__default.createElement(SelectionMoreActionsContainer, {
+    styles: styles
+  }, menus.filter(menu => !menu.isHidden).map(menu => /*#__PURE__*/React__default.createElement(MenuItem, {
+    key: menu.id,
+    menu: menu
+  })));
+};
+
+function includesAny(a, b) {
+  return a.some(i => b.includes(i));
+}
+
+function normalizeToStringArray(arg) {
+  return typeof arg === "string" ? [arg] : Array.isArray(arg) ? arg : [];
+}
+
+function reconcile({
+  context,
+  templateId,
+  fieldName
+}) {
+  return item => {
+    if (!fieldName || !templateId) {
+      return item;
+    }
+    const contextMatches = item._itemProps?.[templateId]?.[fieldName] !== undefined;
+    if (contextMatches) {
+      return item;
+    }
+    return normalize$1({
+      ...item,
+      _itemProps: {
+        [templateId]: {
+          [fieldName]: {}
+        }
+      }
+    }, context);
+  };
+}
+
+const getTypes = schema => {
+  if (schema?.type === "component-collection" || schema?.type === "component") {
+    return schema.accepts;
+  }
+  return [];
+};
+const insertCommand = ({
+  context,
+  form,
+  schema,
+  templateId
+}) => {
+  const types = getTypes(schema);
+  const reconcileItem = reconcile({
+    context,
+    templateId,
+    fieldName: schema?.prop
+  });
+  return (path, index, item) => {
+    const itemDefinition = findComponentDefinition(item, context);
+    if (!itemDefinition) {
+      return null;
+    }
+    const itemTypes = [itemDefinition.id, ...normalizeToStringArray(itemDefinition.type)];
+    if (!includesAny(types, itemTypes)) {
+      return null;
+    }
+    const reconciledItem = reconcileItem(item);
+    const duplicatedItem = duplicateConfig(reconciledItem, context);
+    form.mutators.insert(path, index, duplicatedItem);
+    return `${path}.${index}`;
+  };
+};
+
+function getSchema(path, context) {
+  const parentDefinition = findComponentDefinitionById(path.parent?.templateId ?? "", context);
+  const schema = (parentDefinition?.schema ?? []).find(s => s.prop === path.parent?.fieldName);
+  return schema;
+}
+const toName = destination => [destination.parent?.path, destination.parent?.fieldName].filter(Boolean).join(".");
+const fixIndexInCollection = (index = 0, schema) => {
+  if (schema?.type === "component-collection") {
+    return index + 1;
+  }
+  return index;
+};
+function destinationResolver({
+  form,
+  context
+}) {
+  return function (initialDestinationPath) {
+    const resolvedDestinations = [];
+    const resolvedPaths = new Set();
+    const pathsQueue = [initialDestinationPath];
+    while (pathsQueue.length > 0) {
+      const path = pathsQueue.shift();
+      if (!path) {
+        continue;
+      }
+      if (resolvedPaths.has(path)) {
+        continue;
+      }
+      if (!dotNotationGet(form.values, path)) {
+        continue;
+      }
+      const parsed = parsePath(path, form);
+      const definition = findComponentDefinitionById(parsed.templateId ?? "", context);
+      if (!definition) {
+        continue;
+      }
+      const schema = getSchema(parsed, context);
+      resolvedDestinations.push({
+        index: fixIndexInCollection(parsed.index, schema),
+        name: toName(parsed),
+        insert: insertCommand({
+          context,
+          form,
+          schema,
+          templateId: parsed.parent?.templateId
+        })
+      });
+      for (const slot of definition.pasteSlots ?? []) {
+        const slotSchema = definition.schema.find(({
+          prop
+        }) => prop === slot);
+        if (!slotSchema) {
+          continue;
+        }
+        const slotPath = `${path}.${slot}`;
+        const slotValues = dotNotationGet(form.values, slotPath) ?? [];
+        if (slotValues.length === 0) {
+          resolvedDestinations.push({
+            name: slotPath,
+            index: 0,
+            insert: insertCommand({
+              context,
+              form,
+              schema: slotSchema,
+              templateId: definition.id
+            })
+          });
+        } else if (slotSchema.type === "component") {
+          pathsQueue.push(`${slotPath}.0`);
+        } else if (slotSchema.type === "component-collection") {
+          pathsQueue.push(...Array.from(Array(slotValues.length).keys()).map(idx => `${slotPath}.${idx}`).reverse());
+        }
+      }
+    }
+    return resolvedDestinations;
+  };
+}
+
+function pasteManager() {
+  const inserts = new Map();
+  return destinations => item => {
+    let i = 0;
+    while (i < destinations.length) {
+      const {
+        index,
+        name,
+        insert
+      } = destinations[i];
+      const path = `${name}.${index}`;
+      const latestDestinationInserts = inserts.get(path) ?? 0;
+      const result = insert(name, index + latestDestinationInserts, item);
+      if (result) {
+        inserts.set(path, latestDestinationInserts + 1);
+        return result;
+      }
+      i++;
+    }
+    return null;
+  };
+}
+
+function editorVariable(name) {
+  return `--shopstory-editor-${name}`;
+}
+const BEFORE_ADD_BUTTON_DISPLAY = editorVariable("before-add-button-display");
+const BEFORE_ADD_BUTTON_TOP = editorVariable("before-add-button-top");
+const BEFORE_ADD_BUTTON_LEFT = editorVariable("before-add-button-left");
+const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
+const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
+const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
+
+const fallbackTranslation = "en-US";
+const getTranslation = editorContext => {
+  const {
+    translationFiles = {},
+    contextParams
+  } = editorContext;
+  const {
+    locale
+  } = contextParams;
+  const t = key => {
+    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
+    return files?.[key] ?? key;
+  };
+  return {
+    t
+  };
+};
+const useTranslation = () => {
+  const {
+    translationFiles = {},
+    contextParams
+  } = useEditorContext();
+  const {
+    locale
+  } = contextParams;
+  const t = key => {
+    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
+    return files?.[key] ?? key;
+  };
+  return {
+    t
+  };
+};
+
+function pathToCompiledPath(path, editorContext) {
+  const pathInfo = parsePath(path, editorContext.form);
+  if (pathInfo.parent) {
+    const definition = findComponentDefinitionById(pathInfo.parent.templateId, editorContext);
+    const schemaProp = definition.schema.find(schemaProp => schemaProp.prop === pathInfo.parent.fieldName);
+    const result = `${pathToCompiledPath(pathInfo.parent.path, editorContext)}.${getPropertyNameFromSchemaProp(schemaProp)}.${pathInfo.parent.fieldName}.${pathInfo.index}`;
+    if (result.startsWith(".")) {
+      return result.substring(1);
+    }
+    return result;
+  }
+  return "";
+}
+function getPropertyNameFromSchemaProp(schemaProp) {
+  if (isSchemaPropTextModifier(schemaProp) || isSchemaPropActionTextModifier(schemaProp)) {
+    return "textModifiers";
+  }
+  return "components";
+}
+
+const RICH_TEXT_PART_CONFIG_PATH_REGEXP = /\.elements\.[a-z(\-_A-Z)?]+\.\d+(\.elements\.\d+){2,3}(\.\{\d+,\d+\})?$/;
+function isConfigPathRichTextPart(configPath) {
+  return RICH_TEXT_PART_CONFIG_PATH_REGEXP.test(configPath);
+}
+
+/**
+ * A selected rich text part is framed by its $richText component, so moving the
+ * selection around starts from that component.
+ */
+function getFramedPath(path) {
+  return isConfigPathRichTextPart(path) ? path.replace(RICH_TEXT_PART_CONFIG_PATH_REGEXP, "") : path;
+}
+
+/**
+ * A path that no longer points at a component entry (e.g. the item was just removed)
+ * resolves to its closest existing ancestor with a leftover field name.
+ */
+function isComponentPath(path, editorContext) {
+  return parsePath(path, editorContext.form).fieldName === undefined;
+}
+
+/**
+ * Whether the component at `path` renders inside a selection frame on the canvas.
+ * Mirrors rendering: the page root has no frame, children of `noInline` slots are built
+ * without EditableComponentBuilder, and BlocksControls skips the frame for compiled
+ * components marked `noInline` (`selectable: false` in editing info).
+ */
+function hasSelectionFrame(path, editorContext) {
+  const {
+    parent
+  } = parsePath(path, editorContext.form);
+  if (!parent) {
+    return false;
+  }
+  const schemaProp = findComponentDefinitionById(parent.templateId, editorContext)?.schema.find(schemaProp => schemaProp.prop === parent.fieldName);
+  if (!schemaProp || "noInline" in schemaProp && schemaProp.noInline) {
+    return false;
+  }
+  const compiledComponent = dotNotationGet(editorContext.compiledComponentConfig, pathToCompiledPath(path, editorContext));
+  return compiledComponent !== undefined && !compiledComponent.__editing?.noInline;
+}
+
+/**
+ * Framed components that contain `path`, nearest first: the layers a user can move the
+ * selection up to from the canvas.
+ */
+function getSelectableAncestorPaths(path, editorContext) {
+  const ancestorPaths = [];
+  try {
+    const framedPath = getFramedPath(path);
+    if (!isComponentPath(framedPath, editorContext)) {
+      return [];
+    }
+    if (framedPath !== path && hasSelectionFrame(framedPath, editorContext)) {
+      ancestorPaths.push(framedPath);
+    }
+    let parent = parsePath(framedPath, editorContext.form).parent;
+    while (parent) {
+      if (hasSelectionFrame(parent.path, editorContext)) {
+        ancestorPaths.push(parent.path);
+      }
+      parent = parsePath(parent.path, editorContext.form).parent;
+    }
+  } catch {
+    return [];
+  }
+  return ancestorPaths;
+}
+
+/**
+ * Focus after "select parent": the nearest framed ancestor of every focused item, once
+ * each. Top-level sections have no framed parent, so selecting their parent clears focus.
+ */
+function getParentFocusedFields(focusedFields, editorContext) {
+  const parentPaths = focusedFields.flatMap(focusedField => getSelectableAncestorPaths(focusedField, editorContext).slice(0, 1));
+  return Array.from(new Set(parentPaths));
+}
+
+/**
+ * Component name shown by canvas selection UI (hover label, breadcrumb). Falls back to
+ * the component id when its definition has no label.
+ */
+function getComponentLabel(templateId, editorContext, translate) {
+  const definition = findComponentDefinitionById(templateId, editorContext);
+  return translate(definition?.label ?? templateId);
+}
+
+/**
+ * Breadcrumb for a focused path: framed ancestors outermost first, then the framed
+ * selection itself. Empty when the path no longer points at a component.
+ */
+function getSelectionBreadcrumb(path, editorContext, translate) {
+  try {
+    const framedPath = getFramedPath(path);
+    if (!isComponentPath(framedPath, editorContext)) {
+      return [];
+    }
+    return getSelectableAncestorPaths(framedPath, editorContext).reverse().concat(framedPath).map(crumbPath => ({
+      path: crumbPath,
+      label: getComponentLabel(parsePath(crumbPath, editorContext.form).templateId, editorContext, translate)
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Moving a block is an insert followed by a remove, and each of those shifts the indices of
+ * everything after it in the same collection. Replaying those shifts is what makes the block
+ * that gets removed the original one rather than a neighbour that slid into its place.
+ *
+ * The insert happens first on purpose: if no collection in the chosen section accepts the
+ * block the document is simply left alone, whereas removing first would destroy it.
+ */
+function planMoveAfterInsert(sourcePath, insertedPath) {
+  const sourceToRemove = shiftPath(sourcePath, insertedPath, "downward");
+  return {
+    sourceToRemove,
+    pathToFocus: shiftPath(insertedPath, sourceToRemove, "upward")
+  };
+}
+const SelectionFrameActionsContainer = styled.div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
+  componentId: "sc-1fta8jo-0"
+})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, Colors.white);
+const SelectionFrameActionsGroupButtons = styled.div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
+  componentId: "sc-1fta8jo-1"
+})(["display:flex;gap:2px;"]);
+const StyledButtonGroup$3 = styled.div.withConfig({
+  displayName: "SelectionFrameActions__StyledButtonGroup",
+  componentId: "sc-1fta8jo-2"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const StyledMenu = styled.div.withConfig({
+  displayName: "SelectionFrameActions__StyledMenu",
+  componentId: "sc-1fta8jo-3"
+})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
+const SelectionMoreActions = ({
+  t
+}) => {
+  const editorContext = useEditorContext();
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+  const toaster = useToaster();
+  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef(null);
+  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
+  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
+  const onRemoveGlobalSection = () => {
+    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
+    const groupName = currentSection?.[0];
+    if (groupName) {
+      setIsLoading(true);
+      editorContext.onGlobalSectionChange?.({
+        mode: "update",
+        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
+        label: currentSection?.[1].entities[currentEntry._id].label,
+        groupName,
+        entry: currentEntry
+      }).then(() => {
+        toaster.success(`${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`, {
+          duration: 5000
+        });
+        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
+          ...currentEntry,
+          _id: uniqueId()
+        });
+      }).catch(reason => {
+        toaster.error(reason);
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    }
+  };
+  const menus = [{
+    id: "set-global",
+    label: t("editor.sidebar.globalSections.setGlobal"),
+    children: globalSectionGroups.map(globalSectionGroup => ({
+      id: globalSectionGroup.id,
+      label: globalSectionGroup.name,
+      onClick: () => setOpenConfirmGlobalSection({
+        groupName: globalSectionGroup.name
+      })
+    })),
+    isHidden: isAddedToPage
+  }, {
+    id: "remove-global",
+    label: t("editor.sidebar.globalSections.removeGlobal"),
+    isLoading,
+    isHidden: !isAddedToPage,
+    onClick: onRemoveGlobalSection
+  }];
+  const onClose = () => {
+    if (!isLoading) {
+      setOpenConfirmGlobalSection(null);
+    }
+  };
+  const onConfirmSetGlobalSection = () => {
+    if (!inputRef?.current?.value) {
+      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
+      return;
+    }
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      groupName: openConfirmGlobalSection?.groupName ?? "",
+      label: inputRef?.current?.value,
+      entry: currentEntry
+    }).then(() => {
+      setIsLoading(false);
+      toaster.success(`${t("editor.sidebar.globalSections.setGlobal.success")} ${t("saveBeforeExit")}`, {
+        duration: 5000
+      });
+      onClose();
+    }).catch(reason => {
+      setIsLoading(false);
+      toaster.error(reason);
+    });
+  };
+  const onEnter = e => {
+    if (e.code === "Enter" || e.code === "NumpadEnter") {
+      e.preventDefault();
+      e.stopPropagation();
+      onConfirmSetGlobalSection();
+    }
+  };
+  useEffect(() => {
+    if (openConfirmGlobalSection?.groupName) {
+      queueMicrotask(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [openConfirmGlobalSection]);
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledMenu, null, /*#__PURE__*/React__default.createElement(Menu, {
+    menus: menus,
+    styles: {
+      top: "40px",
+      left: "80%"
+    }
+  })), /*#__PURE__*/React__default.createElement(Modal, {
+    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
+    isOpen: !!openConfirmGlobalSection,
+    onRequestClose: onClose,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+      onClick: onClose
+    }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
+      isLoading: isLoading,
+      disabled: isLoading,
+      onClick: onConfirmSetGlobalSection
+    }, t("template.save.default")))
+  }, /*#__PURE__*/React__default.createElement(Input, {
+    ref: inputRef,
+    withBorder: true,
+    style: {
+      width: 300
+    },
+    onKeyDown: onEnter
+  })));
+};
+const SelectionFrameActions = ({
+  focussedField,
+  actions,
+  translationFiles,
+  contextParams,
+  editorMode
+}) => {
+  const {
+    t
+  } = getTranslation({
+    translationFiles,
+    contextParams
+  });
+  const [showMore, setShowMore] = useState(false);
+  const [showMoveTo, setShowMoveTo] = useState(false);
+  const editorContext = useEditorContext();
+  const toaster = useToaster();
+  const parentFocusedFields = getParentFocusedFields(focussedField, editorContext);
+
+  // Moving carries one block: the block is inserted into the chosen section and removed from
+  // where it was, and a multi-selection has no single source path to remove. Several blocks
+  // are still moved together with cut and paste.
+  const sourcePath = focussedField.length === 1 ? focussedField[0] : undefined;
+  const moveTo = destinationPath => {
+    setShowMoveTo(false);
+    if (!sourcePath) {
+      return;
+    }
+    const sourceEntry = dotNotationGet(editorContext.form.values, sourcePath);
+    if (!sourceEntry) {
+      return;
+    }
+    const block = duplicateConfig(sourceEntry, editorContext);
+    let wasRejected = false;
+    editorContext.actions.runChange(() => {
+      const insertedPath = pasteManager()(destinationResolver({
+        form: editorContext.form,
+        context: editorContext
+      })(destinationPath))(block);
+      if (!insertedPath) {
+        // Nothing in the chosen section accepts this block, so the document is untouched.
+        wasRejected = true;
+        return [sourcePath];
+      }
+      const {
+        sourceToRemove,
+        pathToFocus
+      } = planMoveAfterInsert(sourcePath, insertedPath);
+      editorContext.actions.removeItems([sourceToRemove]);
+      return [pathToFocus];
+    });
+    if (wasRejected) {
+      toaster.error(t("editor.canvas.action.moveTo.rejected"));
+    }
+  };
+
+  // Every other top level section is offered as a destination. The section the block is
+  // already in, and any section inside the block itself, are not destinations.
+  const moveDestinations = useMemo(() => {
+    if (!sourcePath) {
+      return [];
+    }
+    const sections = editorContext.form.values?.data ?? [];
+    return sections.map((_, index) => `data.${index}`).filter(destinationPath => destinationPath !== sourcePath && !destinationPath.startsWith(`${sourcePath}.`) && !sourcePath.startsWith(`${destinationPath}.`)).map((destinationPath, _, all) => ({
+      id: destinationPath,
+      // Sections repeat, so the position disambiguates two blocks with the same name.
+      label: `${all.indexOf(destinationPath) + 1}. ${getComponentLabel(parsePath(destinationPath, editorContext.form).templateId, editorContext, t)}`,
+      onClick: () => moveTo(destinationPath)
+    }));
+  }, [sourcePath, editorContext.form.values, t]);
+  return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, parentFocusedFields.length > 0 && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.LayerGroup,
+    hideLabel: true,
+    onClick: () => editorContext.setFocussedField(parentFocusedFields)
+  }, t("selectParent")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Duplicate,
+    hideLabel: true,
+    onClick: () => actions.duplicateItems(focussedField)
+  }, t("duplicate")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Trash,
+    hideLabel: true,
+    onClick: () => actions.removeItems(focussedField)
+  }, t("delete")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ArrowUp,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "top")
+  }, t("editor.canvas.action.moveUp")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ArrowDown,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "bottom")
+  }, t("editor.canvas.action.moveDown")), moveDestinations.length > 0 && /*#__PURE__*/React__default.createElement(ButtonGhost
+  // Not the drag grip, although it used to wear its icon: this opens a
+  // list of destinations. The grip lives on the block frame, and two
+  // controls that look alike is how people ended up dragging this one.
+  , {
+    icon: Icons.ArrowRight,
+    hideLabel: true,
+    onClick: () => setShowMoveTo(prev => !prev)
+  }, t("editor.canvas.action.moveTo")), editorMode !== "admin-template" && /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.ThreeDotsHorizontal,
+    showTooltip: false,
+    hideLabel: true,
+    onClick: () => setShowMore(prev => !prev)
+  })), showMoveTo && moveDestinations.length > 0 ? /*#__PURE__*/React__default.createElement(StyledMenu, null, /*#__PURE__*/React__default.createElement(Menu, {
+    menus: moveDestinations,
+    styles: {
+      top: "40px",
+      left: "0%"
+    }
+  })) : null, editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default.createElement(SelectionMoreActions, {
+    t: t
+  }) : null);
+};
 
 const ExternalDataContext = /*#__PURE__*/createContext({});
 function EditorExternalDataProvider({
@@ -1297,11 +2333,11 @@ function DesktopFrame({
     strokeWidth: "1"
   }));
 }
-const FrameWrap = styled.div.withConfig({
+const FrameWrap = styled$1.div.withConfig({
   displayName: "DeviceFrame__FrameWrap",
   componentId: "sc-tojvsf-0"
 })(["position:absolute;inset:0;display:grid;justify-content:center;align-items:center;pointer-events:none;z-index:10;overflow:visible;"]);
-const FrameBox = styled.div.withConfig({
+const FrameBox = styled$1.div.withConfig({
   displayName: "DeviceFrame__FrameBox",
   componentId: "sc-tojvsf-1"
 })(["width:", "px;height:", "px;transform:", ";transform-origin:center;position:relative;flex-shrink:0;overflow:visible;"], p => p.$width, p => p.$height, p => p.$transform);
@@ -1408,38 +2444,18 @@ function EditorIframe({
     visible: showDeviceFrame
   })));
 }
-const IframeContainer = styled.div.withConfig({
+const IframeContainer = styled$1.div.withConfig({
   displayName: "EditorIframe__IframeContainer",
   componentId: "sc-1k2h6r-0"
 })(["position:relative;flex:1 1 auto;background:", ";isolation:isolate;"], Colors.black100);
-const IframeInnerContainer = styled.div.withConfig({
+const IframeInnerContainer = styled$1.div.withConfig({
   displayName: "EditorIframe__IframeInnerContainer",
   componentId: "sc-1k2h6r-1"
 })(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;justify-content:center;align-items:center;"]);
-const Iframe = styled.iframe.withConfig({
+const Iframe = styled$1.iframe.withConfig({
   displayName: "EditorIframe__Iframe",
   componentId: "sc-1k2h6r-2"
 })(["background:white;border:none;transform-origin:center;"]);
-
-function pathToCompiledPath(path, editorContext) {
-  const pathInfo = parsePath(path, editorContext.form);
-  if (pathInfo.parent) {
-    const definition = findComponentDefinitionById(pathInfo.parent.templateId, editorContext);
-    const schemaProp = definition.schema.find(schemaProp => schemaProp.prop === pathInfo.parent.fieldName);
-    const result = `${pathToCompiledPath(pathInfo.parent.path, editorContext)}.${getPropertyNameFromSchemaProp(schemaProp)}.${pathInfo.parent.fieldName}.${pathInfo.index}`;
-    if (result.startsWith(".")) {
-      return result.substring(1);
-    }
-    return result;
-  }
-  return "";
-}
-function getPropertyNameFromSchemaProp(schemaProp) {
-  if (isSchemaPropTextModifier(schemaProp) || isSchemaPropActionTextModifier(schemaProp)) {
-    return "textModifiers";
-  }
-  return "components";
-}
 
 function isFieldPortal(x) {
   return "portal" in x;
@@ -1507,40 +2523,6 @@ function internalBuildTinaFields(path, editorContext, fieldsFilter) {
   return [...nonAnalyticsFields, ...analyticsFields];
 }
 
-const fallbackTranslation = "en-US";
-const getTranslation = editorContext => {
-  const {
-    translationFiles = {},
-    contextParams
-  } = editorContext;
-  const {
-    locale
-  } = contextParams;
-  const t = key => {
-    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
-    return files?.[key] ?? key;
-  };
-  return {
-    t
-  };
-};
-const useTranslation = () => {
-  const {
-    translationFiles = {},
-    contextParams
-  } = useEditorContext();
-  const {
-    locale
-  } = contextParams;
-  const t = key => {
-    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
-    return files?.[key] ?? key;
-  };
-  return {
-    t
-  };
-};
-
 function SaveAsPicker({
   mode,
   Component,
@@ -1585,23 +2567,23 @@ async function copyToClipboard(textToCopy) {
   }
 }
 
-const SidebarFooterContainer = styled.div.withConfig({
+const SidebarFooterContainer = styled$1.div.withConfig({
   displayName: "SidebarFooter__SidebarFooterContainer",
   componentId: "sc-17xf0ak-0"
 })(["position:sticky;bottom:0;background:", ";"], Colors.white);
-const HorizontalLine$4 = styled.div.withConfig({
+const HorizontalLine$4 = styled$1.div.withConfig({
   displayName: "SidebarFooter__HorizontalLine",
   componentId: "sc-17xf0ak-1"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
-const IdWrapper = styled.div.withConfig({
+const IdWrapper = styled$1.div.withConfig({
   displayName: "SidebarFooter__IdWrapper",
   componentId: "sc-17xf0ak-2"
 })(["padding:12px 16px;gap:16px;", " color:", ";"], Fonts.body, Colors.black40);
-const ButtonWrapper = styled.div.withConfig({
+const ButtonWrapper = styled$1.div.withConfig({
   displayName: "SidebarFooter__ButtonWrapper",
   componentId: "sc-17xf0ak-3"
 })(["display:flex;justify-content:end;gap:8px;"]);
-const StyledButtonCopyTemplate = styled(ButtonSecondary).withConfig({
+const StyledButtonCopyTemplate = styled$1(ButtonSecondary).withConfig({
   displayName: "SidebarFooter__StyledButtonCopyTemplate",
   componentId: "sc-17xf0ak-4"
 })(["min-width:auto !important;& svg{width:14px !important;height:14px !important;}"]);
@@ -1712,7 +2694,7 @@ const Toggle = ({
   };
   return /*#__PURE__*/React__default.createElement(ToggleFieldWrapper, null, /*#__PURE__*/React__default.createElement(Toggle$1, toggleProps));
 };
-const ToggleFieldWrapper = styled.div.withConfig({
+const ToggleFieldWrapper = styled$1.div.withConfig({
   displayName: "Toggle__ToggleFieldWrapper",
   componentId: "sc-1ldymt4-0"
 })(["display:flex;justify-content:flex-end;"]);
@@ -1844,11 +2826,11 @@ const Tooltip = /*#__PURE__*/forwardRef(({
   }, rest), children), document.body);
 });
 Tooltip.displayName = "Tooltip";
-const TooltipBody = styled.div.withConfig({
+const TooltipBody = styled$1.div.withConfig({
   displayName: "Tooltip__TooltipBody",
   componentId: "sc-tkogle-0"
 })(["position:relative;top:6px;display:flex;flex-direction:row;justify-content:center;align-items:center;padding:6px 8px;background:", ";border-radius:2px;", " color:", ";"], Colors.black800, Fonts.body, Colors.white);
-const TooltipArrow = styled.div.withConfig({
+const TooltipArrow = styled$1.div.withConfig({
   displayName: "Tooltip__TooltipArrow",
   componentId: "sc-tkogle-1"
 })(["width:12px;height:6px;margin:0 auto;background:", ";clip-path:polygon(50% 0%,0% 100%,100% 100%);"], Colors.black800);
@@ -2108,7 +3090,7 @@ function isMixedValueSupportedByComponent(component) {
   }
   return false;
 }
-const TextButton = styled(Typography).withConfig({
+const TextButton = styled$1(Typography).withConfig({
   displayName: "wrapFieldWithMeta__TextButton",
   componentId: "sc-1asy4oy-0"
 })(["padding:0;margin:0;background:transparent;border:0;font-weight:500;&:hover{color:black;cursor:pointer;text-decoration:underline;}"]);
@@ -2117,7 +3099,7 @@ function wrapFieldsWithMeta(Field, extraProps) {
     return /*#__PURE__*/React__default.createElement(FieldMetaWrapper, _extends({}, props, extraProps), /*#__PURE__*/React__default.createElement(Field, props));
   };
 }
-const FieldWrapper$1 = styled.div.withConfig({
+const FieldWrapper$1 = styled$1.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldWrapper",
   componentId: "sc-1asy4oy-1"
 })(["display:flex;flex-direction:", ";gap:", ";justify-content:space-between;align-items:flex-start;", " position:relative;padding:4px 16px;"], ({
@@ -2130,7 +3112,7 @@ const FieldWrapper$1 = styled.div.withConfig({
 }) => layout === "column" && css`
       flex-grow: 1;
     `);
-const FieldLabelWrapper = styled.div.withConfig({
+const FieldLabelWrapper = styled$1.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelWrapper",
   componentId: "sc-1asy4oy-2"
 })(["all:unset;", ",position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], ({
@@ -2142,21 +3124,21 @@ const FieldLabelWrapper = styled.div.withConfig({
 }) => isFullWidth && {
   width: "100%"
 });
-const FieldLabel$1 = styled.label.withConfig({
+const FieldLabel$1 = styled$1.label.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabel",
   componentId: "sc-1asy4oy-3"
 })(["all:unset;", ";color:", ";text-overflow:ellipsis;overflow:hidden;cursor:default;"], Fonts.body, ({
   isError
 }) => isError ? "red" : "#000");
-const FieldLabelIconWrapper = styled.span.withConfig({
+const FieldLabelIconWrapper = styled$1.span.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelIconWrapper",
   componentId: "sc-1asy4oy-4"
 })(["display:flex;font-size:14px;line-height:1;margin-left:auto;padding-left:8px;svg{width:14px;height:14px;flex-shrink:0;}"]);
-const FieldError = styled.span.withConfig({
+const FieldError = styled$1.span.withConfig({
   displayName: "wrapFieldWithMeta__FieldError",
   componentId: "sc-1asy4oy-5"
 })(["display:block;color:red;font-size:var(--tina-font-size-1);margin-top:8px;font-weight:var(--tina-font-weight-regular);"]);
-const FieldInputWrapper = styled.div.withConfig({
+const FieldInputWrapper = styled$1.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldInputWrapper",
   componentId: "sc-1asy4oy-6"
 })(["display:flex;justify-content:flex-end;align-items:center;text-align:end;", ";min-height:28px;"], ({
@@ -2247,19 +3229,19 @@ const useTokenTypes = () => {
   return tokenTypes;
 };
 
-const ColorCustomFieldsStyle = styled$1.div.withConfig({
+const ColorCustomFieldsStyle = styled.div.withConfig({
   displayName: "ColorCustomFields__ColorCustomFieldsStyle",
   componentId: "sc-83vwfl-0"
 })(["display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px;"]);
-const ColorCustomFieldsWrapper = styled$1.div.withConfig({
+const ColorCustomFieldsWrapper = styled.div.withConfig({
   displayName: "ColorCustomFields__ColorCustomFieldsWrapper",
   componentId: "sc-83vwfl-1"
 })(["display:flex;justify-content:flex-end;align-items:center;gap:10px;"]);
-const InputStyle = styled$1(InputColor).withConfig({
+const InputStyle = styled(InputColor).withConfig({
   displayName: "ColorCustomFields__InputStyle",
   componentId: "sc-83vwfl-2"
 })(["width:100%;height:100%;"]);
-const InputStyleWrapper = styled$1.div.withConfig({
+const InputStyleWrapper = styled.div.withConfig({
   displayName: "ColorCustomFields__InputStyleWrapper",
   componentId: "sc-83vwfl-3"
 })(["width:100px;height:20px;"]);
@@ -2290,7 +3272,7 @@ const ColorCustomFields = ({
   }))));
 };
 
-const Root$1 = styled$1.div.withConfig({
+const Root$1 = styled.div.withConfig({
   displayName: "FontCustomFieldInput__Root",
   componentId: "sc-122q2iv-0"
 })(["display:flex;flex-direction:column;align-items:flex-end;", ""], ({
@@ -2377,11 +3359,11 @@ const FontCustomFieldInput = ({
   }
 };
 
-const FieldLabel = styled$1.label.withConfig({
+const FieldLabel = styled.label.withConfig({
   displayName: "FontCustomFields__FieldLabel",
   componentId: "sc-opt9vi-0"
 })(["all:unset;", ";color:#000;text-overflow:ellipsis;overflow:hidden;cursor:default;"], Fonts.body);
-const FontCustomFieldsStyle = styled$1.div.withConfig({
+const FontCustomFieldsStyle = styled.div.withConfig({
   displayName: "FontCustomFields__FontCustomFieldsStyle",
   componentId: "sc-opt9vi-1"
 })(["display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px;"]);
@@ -2514,15 +3496,15 @@ const CustomField = ({
   }
 };
 
-const Trigger = styled$1(RadixSelectTrigger).withConfig({
+const Trigger = styled(RadixSelectTrigger).withConfig({
   displayName: "ColorFieldPlugin__Trigger",
   componentId: "sc-19dwflf-0"
 })(["all:unset;display:flex;align-items:center;", ";display:flex;gap:4px;max-width:100%;box-sizing:border-box;height:28px;padding:0 2px 0 6px;border-radius:2px;@media (hover:hover){&:hover{box-shadow:0 0 0 1px ", ";}}"], Fonts.body, Colors.black10);
-const Content$2 = styled$1(RadixSelectContent).withConfig({
+const Content$2 = styled(RadixSelectContent).withConfig({
   displayName: "ColorFieldPlugin__Content",
   componentId: "sc-19dwflf-1"
 })(["overflow:hidden;background-color:white;border-radius:2px;border:1px solid #ddd;box-shadow:0px 4px 12px #0000001a;padding:4px 0;width:250px;"]);
-const Viewport = styled$1(RadixSelectViewport).withConfig({
+const Viewport = styled(RadixSelectViewport).withConfig({
   displayName: "ColorFieldPlugin__Viewport",
   componentId: "sc-19dwflf-2"
 })(["display:grid;grid-template-columns:", ";padding:", ";max-height:200px;overflow:auto;justify-items:center;justify-content:center;"], ({
@@ -2530,7 +3512,7 @@ const Viewport = styled$1(RadixSelectViewport).withConfig({
 }) => `repeat(${shape === "circle" ? "8" : "5"}, ${shape === "circle" ? "30px" : "46px"})`, ({
   shape
 }) => shape === "circle" ? "2px" : "2px 8px");
-const Item = styled$1(RadixSelectItem).withConfig({
+const Item = styled(RadixSelectItem).withConfig({
   displayName: "ColorFieldPlugin__Item",
   componentId: "sc-19dwflf-3"
 })(["position:relative;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transform:scale(1.2);width:8px;height:8px;outline:none;margin:10px;&[data-highlighted]{background-color:#f2f2f2;}&[data-state=\"checked\"]{cursor:pointer;transform:scale(1.4);", ";", ";z-index:1;}@media (hover:hover){&:hover{background-color:transparent;border:none;cursor:pointer;transform:scale(1.4);z-index:2;}}"], ({
@@ -2538,11 +3520,11 @@ const Item = styled$1(RadixSelectItem).withConfig({
 }) => shape === "circle" ? "box-shadow: 0 0 1px 2px #fff, 0 0 0 4px #7e8796;" : "", ({
   shape
 }) => shape === "circle" ? "border-radius: 100%" : "");
-const ItemText = styled$1(RadixSelectItemText).withConfig({
+const ItemText = styled(RadixSelectItemText).withConfig({
   displayName: "ColorFieldPlugin__ItemText",
   componentId: "sc-19dwflf-4"
 })(["@media (hover:hover){&:hover{border:none;background-color:transparent;}}"]);
-const SelectTitle = styled$1.div.withConfig({
+const SelectTitle = styled.div.withConfig({
   displayName: "ColorFieldPlugin__SelectTitle",
   componentId: "sc-19dwflf-5"
 })(["padding:8px 8px 2px 8px;", ";font-size:14px;"], Fonts.body);
@@ -2886,7 +3868,7 @@ function stripPxUnit(value) {
 function isValidFontTokenValue(value) {
   return typeof value === "object" && value !== null && "fontSize" in value && "lineHeight" in value;
 }
-const Root = styled.div.withConfig({
+const Root = styled$1.div.withConfig({
   displayName: "TokenFieldPlugin__Root",
   componentId: "sc-1hbwipe-0"
 })(["display:flex;flex-direction:column;align-items:flex-end;", ""], ({
@@ -2925,15 +3907,6 @@ const SelectColorTokenItem = /*#__PURE__*/forwardRef((props, ref) => {
   })), /*#__PURE__*/React__default.createElement("span", null, props.children)));
 });
 SelectColorTokenItem.displayName = "SelectColorTokenItem";
-
-const RICH_TEXT_PART_CONFIG_PATH_REGEXP = /\.elements\.[a-z(\-_A-Z)?]+\.\d+(\.elements\.\d+){2,3}(\.\{\d+,\d+\})?$/;
-function isConfigPathRichTextPart(configPath) {
-  return RICH_TEXT_PART_CONFIG_PATH_REGEXP.test(configPath);
-}
-
-function last(collection) {
-  return collection[collection.length - 1];
-}
 
 /**
  *
@@ -3213,7 +4186,7 @@ function getSidebarPreview(componentDefinition, entryAfterAuto, externalData, ed
     externalData
   });
 }
-const Error$2 = styled.div.withConfig({
+const Error$2 = styled$1.div.withConfig({
   displayName: "BlockFieldPlugin__Error",
   componentId: "sc-5mryxt-0"
 })(["", " padding:7px 6px 7px;color:hsl(0deg 0% 50% / 0.8);white-space:normal;background:hsl(0deg 100% 50% / 0.2);margin-right:10px;border-radius:2px;"], Fonts.body);
@@ -3254,7 +4227,7 @@ const BlockFieldPlugin = {
   name: "block",
   Component: BlockField
 };
-const PanelBody = styled.div.withConfig({
+const PanelBody = styled$1.div.withConfig({
   displayName: "BlockFieldPlugin__PanelBody",
   componentId: "sc-5mryxt-1"
 })(["background:white;position:relative;height:100%;overflow-y:auto;"]);
@@ -3266,7 +4239,7 @@ const GroupPanelKeyframes = keyframes`
     transform: translate3d( 0, 0, 0 );
   }
 `;
-const GroupPanel = styled.div.withConfig({
+const GroupPanel = styled$1.div.withConfig({
   displayName: "BlockFieldPlugin__GroupPanel",
   componentId: "sc-5mryxt-2"
 })(["position:absolute;width:100%;top:0;bottom:0;left:0;overflow:hidden;pointer-events:", ";> *{", ";", ";}"], p => p.isExpanded ? "all" : "none", p => p.isExpanded && css`
@@ -3281,15 +4254,15 @@ const GroupPanel = styled.div.withConfig({
         transform: translate3d(100%, 0, 0);
       `);
 
-const HorizontalLine$3 = styled$1.div.withConfig({
+const HorizontalLine$3 = styled.div.withConfig({
   displayName: "IdentityFieldPlugin__HorizontalLine",
   componentId: "sc-ayv92b-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
-const IdentityFieldWrapper = styled$1.div.withConfig({
+const IdentityFieldWrapper = styled.div.withConfig({
   displayName: "IdentityFieldPlugin__IdentityFieldWrapper",
   componentId: "sc-ayv92b-1"
 })(["display:flex;gap:8px;min-height:28px;padding:10px;background:", ";"], Colors.white);
-const IdentityFieldContainer = styled$1.div.withConfig({
+const IdentityFieldContainer = styled.div.withConfig({
   displayName: "IdentityFieldPlugin__IdentityFieldContainer",
   componentId: "sc-ayv92b-2"
 })([""]);
@@ -3689,15 +4662,15 @@ const ResponsiveFieldPlugin = {
   name: "responsive2",
   Component: ResponsiveField
 };
-const AutoLabel = styled.div.withConfig({
+const AutoLabel = styled$1.div.withConfig({
   displayName: "ResponsiveFieldPlugin__AutoLabel",
   componentId: "sc-1m7fdh0-0"
 })(["", ";color:", ";text-align:", ";&:hover{color:black;cursor:pointer;text-decoration:underline;}"], Fonts.body, Colors.black40, props => props.align);
-const ResetButton = styled.button.withConfig({
+const ResetButton = styled$1.button.withConfig({
   displayName: "ResponsiveFieldPlugin__ResetButton",
   componentId: "sc-1m7fdh0-1"
 })(["display:flex;align-items:center;gap:4px;background-color:transparent;border:0;padding:0;color:", ";cursor:pointer;"], Colors.purple);
-const ResetButtonLabel = styled.span.withConfig({
+const ResetButtonLabel = styled$1.span.withConfig({
   displayName: "ResponsiveFieldPlugin__ResetButtonLabel",
   componentId: "sc-1m7fdh0-2"
 })(["", ";line-height:16px;"], Fonts.body);
@@ -3864,7 +4837,7 @@ const LocalFieldPlugin = {
   })
 };
 
-const StyledRadioItem = styled(RadixRadioGroup.Item).withConfig({
+const StyledRadioItem = styled$1(RadixRadioGroup.Item).withConfig({
   displayName: "PositionPickerInput__StyledRadioItem",
   componentId: "sc-1uvtpi7-0"
 })(["all:unset;position:relative;display:flex;justify-content:", ";align-items:", ";box-sizing:border-box;width:20px;height:20px;padding:8px;&:hover > div{opacity:", ";}"], props => horizontalPositionToFlexJustifyContentValue(props.horizontal), props => verticalPositionToFlexAlignItemsValue(props.vertical), props => props.p.value === props.position ? 1 : 0.5);
@@ -3972,7 +4945,7 @@ function PositionPickerInput({
     })));
   }));
 }
-const PositionIndicator = styled.div.withConfig({
+const PositionIndicator = styled$1.div.withConfig({
   displayName: "PositionPickerInput__PositionIndicator",
   componentId: "sc-1uvtpi7-1"
 })(["width:", ";height:4px;background-color:#202123;"], p => p.$size === "full" ? "100%" : "75%");
@@ -4353,11 +5326,11 @@ function FieldBuilder({
 
 /** Diacritics-insensitive so "mau" finds "Màu". */
 const normalize = value => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-const SearchBar = styled.div.withConfig({
+const SearchBar = styled$1.div.withConfig({
   displayName: "fields-builder__SearchBar",
   componentId: "sc-ignixa-0"
 })(["position:relative;padding:8px 12px;border-bottom:1px solid ", ";input{padding-right:26px;}"], Colors.black10);
-const SearchClearButton = styled.button.withConfig({
+const SearchClearButton = styled$1.button.withConfig({
   displayName: "fields-builder__SearchClearButton",
   componentId: "sc-ignixa-1"
 })(["all:unset;box-sizing:border-box;position:absolute;top:8px;bottom:8px;right:14px;display:flex;align-items:center;justify-content:center;width:20px;border-radius:4px;cursor:pointer;color:", ";&:hover{color:", ";}&:focus-visible{box-shadow:0 0 0 2px ", ";}"], Colors.black40, Colors.black700, Colors.blue60);
@@ -4373,22 +5346,22 @@ const tabs = [{
 }];
 
 // Underline-style tab bar (flat text buttons sitting on a baseline track).
-const TabsBar = styled.div.withConfig({
+const TabsBar = styled$1.div.withConfig({
   displayName: "fields-builder__TabsBar",
   componentId: "sc-ignixa-2"
 })(["display:flex;justify-content:space-between;border-bottom:1px solid ", ";"], Colors.black10);
 
 // Active tab: faint Colors.black5 underline + bold/dark text so it stays
 // distinguishable even though the underline color is subtle.
-const TabButton = styled.button.withConfig({
+const TabButton = styled$1.button.withConfig({
   displayName: "fields-builder__TabButton",
   componentId: "sc-ignixa-3"
 })(["padding:8px 16px;margin-bottom:-1px;border:none;border-bottom:2px solid ", ";background:transparent;cursor:pointer;font-size:12px;font-weight:", ";color:", ";transition:all 0.15s ease;white-space:nowrap;&:hover{color:black;}"], p => p.$active ? Colors.black500 : "transparent", p => p.$active ? "600" : "400", p => p.$active ? "black" : Colors.black40);
-const NoData = styled(Typography).withConfig({
+const NoData = styled$1(Typography).withConfig({
   displayName: "fields-builder__NoData",
   componentId: "sc-ignixa-4"
 })(["padding:20px 16px;"]);
-const HorizontalLine$2 = styled.div.withConfig({
+const HorizontalLine$2 = styled$1.div.withConfig({
   displayName: "fields-builder__HorizontalLine",
   componentId: "sc-ignixa-5"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
@@ -4489,15 +5462,15 @@ function generateFieldKey(field, breakpointIndex) {
   const key = `${toArray(field.name).join("_")}_${field.schemaProp.type}${breakpointIndex ? `_${breakpointIndex}` : ""}`;
   return key;
 }
-const FieldWrapper = styled.div.withConfig({
+const FieldWrapper = styled$1.div.withConfig({
   displayName: "fields-builder__FieldWrapper",
   componentId: "sc-ignixa-6"
 })(["margin-bottom:", ";"], props => props.isLast ? "8px" : 0);
-const FieldsGroupLabel = styled.div.withConfig({
+const FieldsGroupLabel = styled$1.div.withConfig({
   displayName: "fields-builder__FieldsGroupLabel",
   componentId: "sc-ignixa-7"
 })(["display:flex;align-items:center;padding:20px 16px 10px 16px;", ";color:#000;"], Fonts.label);
-const FieldsGroup = styled.div.withConfig({
+const FieldsGroup = styled$1.div.withConfig({
   displayName: "fields-builder__FieldsGroup",
   componentId: "sc-ignixa-8"
 })(["position:relative;display:block;width:100%;padding:0;white-space:nowrap;overflow:unset;"]);
@@ -4505,18 +5478,18 @@ const FieldsGroup = styled.div.withConfig({
 const theme = css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Roboto\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
 const GlobalStyles = createGlobalStyle(["", ";"], theme);
 const tina_reset_styles = css(["*{font-family:\"Roboto\",sans-serif;&::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:transparent;border-left:1px solid var(--tina-color-grey-2);}&::-webkit-scrollbar-thumb{background-color:var(--tina-color-grey-3);border-radius:0;border:none;}}*,*:before,*:after{box-sizing:border-box;}hr{border-color:var(--tina-color-grey-2);color:var(--tina-color-grey-2);margin-bottom:var(--tina-padding-big);margin-left:calc(var(--tina-padding-big) * -1);margin-right:calc(var(--tina-padding-big) * -1);border-top:1px solid var(--tina-color-grey-2);border-bottom:none;height:0;box-sizing:content-box;}h1,h2,h3,h4,h5,h6,p{:not([class]){font-family:\"Roboto\",sans-serif;&:first-child{margin-top:0;}&:last-child{margin-bottom:0;}}}td,th{padding:0;width:auto;height:auto;border:inherit;margin:0;}h1,h2,h3,h4,h5,h6{:not([class]){font-weight:var(--tina-font-weight-bold);}}h1:not([class]){font-size:var(--tina-font-size-8);}h2:not([class]){font-size:var(--tina-font-size-7);}h3:not([class]){font-size:var(--tina-font-size-5);}h4:not([class]){font-size:var(--tina-font-size-4);}h5:not([class]){font-size:var(--tina-font-size-3);}h6:not([class]){font-size:var(--tina-font-size-2);}"]);
-const StyleReset = styled.div.withConfig({
+const StyleReset = styled$1.div.withConfig({
   displayName: "Styles__StyleReset",
   componentId: "sc-1igvyu7-0"
 })(["", ""], tina_reset_styles);
 
-const Button = styled.button.withConfig({
+const Button = styled$1.button.withConfig({
   displayName: "Button",
   componentId: "sc-qplww2-0"
 })(["text-align:center;border:0;border-radius:var(--tina-radius-big);box-shadow:var(--tina-shadow-small);background-color:var(--tina-color-grey-0);border:1px solid var(--tina-color-grey-2);color:var(--tina-color-primary);fill:var(--tina-color-primary);font-weight:var(--tina-font-weight-regular);cursor:pointer;font-size:var(--tina-font-size-1);height:40px;padding:0 var(--tina-padding-big);transition:all 85ms ease-out;&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);outline:none;}", ";", ";", ";", ";", ";", ";"], p => p.disabled && css(["opacity:0.3;pointer:not-allowed;pointer-events:none;"]), p => p.primary && css(["background-color:var(--tina-color-primary);color:var(--tina-color-grey-0);fill:var(--tina-color-grey-0);border:none;&:hover{background-color:var(--tina-color-primary-light);}&:active{background-color:var(--tina-color-primary-dark);}"]), p => p.small && css(["height:32px;font-size:var(--tina-font-size-0);padding:0 var(--tina-padding-big);"]), p => p.margin && css(["&:not(:first-child){margin-left:8px;}"]), p => p.grow && css(["flex-grow:1;"]), p => p.busy && css(["cursor:wait;"]));
 const ICON_BUTTON_SIZE = 18;
 const ICON_SIZE = 18;
-const IconButton = styled(Button).withConfig({
+const IconButton = styled$1(Button).withConfig({
   displayName: "Button__IconButton",
   componentId: "sc-qplww2-1"
 })(["padding:0;width:", "px;height:", "px;margin:0;position:relative;transform-origin:50% 50%;transition:all 150ms ease-out;padding:2px;display:flex;flex-shrink:0;justify-content:center;align-items:center;svg{width:", "px;height:", "px;transition:all 150ms ease-out;}", ";"], ICON_BUTTON_SIZE, ICON_BUTTON_SIZE, ICON_SIZE, ICON_SIZE, props => props.open && css(["background-color:var(--tina-color-grey-0);border-color:var(--tina-color-grey-2);outline:none;fill:var(--tina-color-primary);svg{transform:rotate(45deg);}&:hover{background-color:var(--tina-color-grey-1);}&:active{background-color:var(--tina-color-grey-2);}"]));
@@ -4561,20 +5534,20 @@ function SettingsContent({
     SaveAsPicker: SaveAsPicker
   })));
 }
-const FormBody = styled.div.withConfig({
+const FormBody = styled$1.div.withConfig({
   displayName: "inline-settings__FormBody",
   componentId: "sc-fe5cee-0"
 })(["position:relative;flex:1 1 auto;display:flex;flex-direction:column;width:100%;height:100%;border-top:1px solid var(--tina-color-grey-2);background-color:white;"]);
-const Wrapper$1 = styled.div.withConfig({
+const Wrapper$1 = styled$1.div.withConfig({
   displayName: "inline-settings__Wrapper",
   componentId: "sc-fe5cee-1"
 })(["display:block;margin:0 auto;width:100%;height:100%;overflow-y:auto;"]);
 
-const Error$1 = styled.div.withConfig({
+const Error$1 = styled$1.div.withConfig({
   displayName: "EditorSidebar__Error",
   componentId: "sc-xkxfa3-0"
 })(["", " padding:7px 6px 7px;color:hsl(0deg 0% 50% / 0.8);white-space:normal;background:hsl(0deg 100% 50% / 0.2);margin-right:10px;border-radius:2px;margin:16px;"], Fonts.body);
-const EmptyState = styled.div.withConfig({
+const EmptyState = styled$1.div.withConfig({
   displayName: "EditorSidebar__EmptyState",
   componentId: "sc-xkxfa3-1"
 })(["", " padding:24px;color:hsl(0deg 0% 50% / 0.8);text-align:center;white-space:normal;"], Fonts.body);
@@ -4620,23 +5593,23 @@ const EditorSidebar = props => {
   }));
 };
 
-const ColorConfigurationsContainer = styled$1.div.withConfig({
+const ColorConfigurationsContainer = styled.div.withConfig({
   displayName: "ColorConfigurations__ColorConfigurationsContainer",
   componentId: "sc-qln4q1-0"
 })(["width:100%;display:flex;flex-direction:column;gap:20px;"]);
-const StyledColorWrapper = styled$1.div.withConfig({
+const StyledColorWrapper = styled.div.withConfig({
   displayName: "ColorConfigurations__StyledColorWrapper",
   componentId: "sc-qln4q1-1"
 })([""]);
-const StyledColorCardWrapper = styled$1.div.withConfig({
+const StyledColorCardWrapper = styled.div.withConfig({
   displayName: "ColorConfigurations__StyledColorCardWrapper",
   componentId: "sc-qln4q1-2"
 })(["max-width:500px;width:100%;display:flex;overflow:hidden;border:1px solid ", ";border-radius:4px;"], Colors.black100);
-const StyledColorContentWrapper = styled$1.div.withConfig({
+const StyledColorContentWrapper = styled.div.withConfig({
   displayName: "ColorConfigurations__StyledColorContentWrapper",
   componentId: "sc-qln4q1-3"
 })(["display:flex;flex-direction:column;gap:10px;"]);
-const StyledColorCard = styled$1.div.withConfig({
+const StyledColorCard = styled.div.withConfig({
   displayName: "ColorConfigurations__StyledColorCard",
   componentId: "sc-qln4q1-4"
 })(["display:flex;justify-content:center;align-items:center;width:100%;height:40px;background:", ";& > div{display:none;color:", ";}&:hover{cursor:pointer;& > div{display:block;}}"], ({
@@ -4644,23 +5617,23 @@ const StyledColorCard = styled$1.div.withConfig({
 }) => background, ({
   background
 }) => getBrightnessColor(background));
-const StyledInputWrapper = styled$1.div.withConfig({
+const StyledInputWrapper = styled.div.withConfig({
   displayName: "ColorConfigurations__StyledInputWrapper",
   componentId: "sc-qln4q1-5"
 })(["margin-top:10px;"]);
-const StyledInputColor = styled$1(Input).withConfig({
+const StyledInputColor = styled(Input).withConfig({
   displayName: "ColorConfigurations__StyledInputColor",
   componentId: "sc-qln4q1-6"
 })(["box-shadow:0 0 0 1px ", ";width:100% !important;border-radius:2px;&:focus{outline:none;}"], Colors.black10);
-const StyledButtonGroup$3 = styled$1.div.withConfig({
+const StyledButtonGroup$2 = styled.div.withConfig({
   displayName: "ColorConfigurations__StyledButtonGroup",
   componentId: "sc-qln4q1-7"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
-const StyleColorTitle = styled$1.div.withConfig({
+const StyleColorTitle = styled.div.withConfig({
   displayName: "ColorConfigurations__StyleColorTitle",
   componentId: "sc-qln4q1-8"
 })(["color:", ";text-transform:uppercase;margin-bottom:10px;", " font-size:14px;font-weight:500;"], Colors.black40, Fonts.bodyLarge);
-const StyleColorError = styled$1.div.withConfig({
+const StyleColorError = styled.div.withConfig({
   displayName: "ColorConfigurations__StyleColorError",
   componentId: "sc-qln4q1-9"
 })(["position:absolute;color:", ";margin-top:10px;", " font-size:11px;"], Colors.red, Fonts.body);
@@ -4823,7 +5796,7 @@ const ColorConfigurations = ({
     mode: "fit",
     onRequestClose: closeEditColor,
     maxHeight: "auto",
-    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
       onClick: closeEditColor
     }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
       isLoading: isLoadingEdit,
@@ -4857,7 +5830,7 @@ const ColorConfigurations = ({
     onRequestClose: onCloseConfirmReset,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
       onClick: onCloseConfirmReset
     }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonDanger, {
       isLoading: isLoadingReset,
@@ -4871,59 +5844,59 @@ const ColorConfigurations = ({
 };
 
 const stringKeys = ["fontFamily"];
-const StyledButtonGroup$2 = styled$1.div.withConfig({
+const StyledButtonGroup$1 = styled.div.withConfig({
   displayName: "FontConfigurations__StyledButtonGroup",
   componentId: "sc-1rpaqke-0"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
-const Container = styled$1.div.withConfig({
+const Container = styled.div.withConfig({
   displayName: "FontConfigurations__Container",
   componentId: "sc-1rpaqke-1"
 })(["background-color:#ffffff;max-height:100vh;font-family:system-ui,-apple-system,sans-serif;"]);
-const FontGrid = styled$1.div.withConfig({
+const FontGrid = styled.div.withConfig({
   displayName: "FontConfigurations__FontGrid",
   componentId: "sc-1rpaqke-2"
 })(["display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;"]);
-const FontCard = styled$1.div.withConfig({
+const FontCard = styled.div.withConfig({
   displayName: "FontConfigurations__FontCard",
   componentId: "sc-1rpaqke-3"
 })(["width:230px;border:1px solid transparent;padding:4px;cursor:pointer;transition:border-color 0.2s ease;&:hover{border-color:", ";}"], Colors.black10);
-const FontPreviewBox = styled$1.div.withConfig({
+const FontPreviewBox = styled.div.withConfig({
   displayName: "FontConfigurations__FontPreviewBox",
   componentId: "sc-1rpaqke-4"
 })(["height:120px;display:flex;align-items:center;justify-content:center;background-color:", ";padding:32px;overflow:hidden;"], Colors.black10);
-const FontPreviewText = styled$1.div.withConfig({
+const FontPreviewText = styled.div.withConfig({
   displayName: "FontConfigurations__FontPreviewText",
   componentId: "sc-1rpaqke-5"
 })(["font-size:", "px;font-family:", ";font-weight:", ";line-height:", ";color:#000;text-align:center;user-select:none;max-width:100%;word-break:break-word;overflow-wrap:break-word;overflow:hidden;"], f => f.fontSize, f => f.fontFamily, f => f.fontWeight, f => f.lineHeight);
-const FontDetails = styled$1.div.withConfig({
+const FontDetails = styled.div.withConfig({
   displayName: "FontConfigurations__FontDetails",
   componentId: "sc-1rpaqke-6"
 })(["margin-top:8px;background-color:white;font-size:12px;line-height:16px;color:#000;text-align:center;"]);
-const Content$1 = styled$1.div.withConfig({
+const Content$1 = styled.div.withConfig({
   displayName: "FontConfigurations__Content",
   componentId: "sc-1rpaqke-7"
 })(["::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:", ";border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#9ca3af;}scrollbar-width:thin;scrollbar-color:", " #f1f1f1;"], Colors.black10, Colors.black10);
-const Form$1 = styled$1.form.withConfig({
+const Form$1 = styled.form.withConfig({
   displayName: "FontConfigurations__Form",
   componentId: "sc-1rpaqke-8"
 })(["display:flex;flex-direction:column;gap:12px;margin-top:2px;"]);
-const Row = styled$1.div.withConfig({
+const Row = styled.div.withConfig({
   displayName: "FontConfigurations__Row",
   componentId: "sc-1rpaqke-9"
 })(["display:grid;grid-template-columns:2fr 1fr 2fr 1fr;gap:12px;& > button{justify-content:flex-end;overflow:hidden;box-shadow:0 0 0 1px ", ";cursor:pointer;& > span{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;& > div{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}}}"], Colors.black10);
-const PreviewTextarea = styled$1.textarea.withConfig({
+const PreviewTextarea = styled.textarea.withConfig({
   displayName: "FontConfigurations__PreviewTextarea",
   componentId: "sc-1rpaqke-10"
 })(["border-radius:4px;width:100%;height:17vh;background-color:", ";resize:none;outline:none;padding:1rem;font-family:", ";font-size:", "px;font-weight:", ";line-height:", ";"], Colors.black10, f => f.fontFamily, f => f.fontSize, f => f.fontWeight, f => f.lineHeight);
-const StyledSelect = styled$1(Select).withConfig({
+const StyledSelect = styled(Select).withConfig({
   displayName: "FontConfigurations__StyledSelect",
   componentId: "sc-1rpaqke-11"
 })(["display:flex;flex-direction:column;align-items:flex-end;min-width:0;cursor:pointer;border:1px solid ", ";border-radius:4px;"], Colors.black10);
-const StyledFontWrapper = styled$1.div.withConfig({
+const StyledFontWrapper = styled.div.withConfig({
   displayName: "FontConfigurations__StyledFontWrapper",
   componentId: "sc-1rpaqke-12"
 })([""]);
-const StyleFontTitle = styled$1.div.withConfig({
+const StyleFontTitle = styled.div.withConfig({
   displayName: "FontConfigurations__StyleFontTitle",
   componentId: "sc-1rpaqke-13"
 })(["color:", ";text-transform:uppercase;margin-bottom:10px;", " font-size:14px;font-weight:500;"], Colors.black40, Fonts.bodyLarge);
@@ -5067,7 +6040,7 @@ const FontConfigurations = ({
     onRequestClose: onCloseConfirmReset,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
       onClick: onCloseConfirmReset
     }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonDanger, {
       isLoading: isLoadingReset,
@@ -5147,27 +6120,27 @@ const FontConfigurations = ({
   }, t("theme.font.save")))))) : null);
 };
 
-const ModalRoot$1 = styled$1.div.withConfig({
+const ModalRoot$1 = styled.div.withConfig({
   displayName: "FontColorConfigsModal__ModalRoot",
   componentId: "sc-1xvfmbx-0"
 })(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;grid-template-columns:200px 1fr;overflow:hidden;"]);
-const Sidebar$1 = styled$1.div.withConfig({
+const Sidebar$1 = styled.div.withConfig({
   displayName: "FontColorConfigsModal__Sidebar",
   componentId: "sc-1xvfmbx-1"
 })(["overflow-x:hidden;overflow-y:auto;border-right:1px solid ", ";height:100%;"], Colors.black5);
-const ContentWrapper = styled$1.div.withConfig({
+const ContentWrapper = styled.div.withConfig({
   displayName: "FontColorConfigsModal__ContentWrapper",
   componentId: "sc-1xvfmbx-2"
 })(["padding:1rem;padding-right:0;overflow:hidden;height:100%;"]);
-const Content = styled$1.div.withConfig({
+const Content = styled.div.withConfig({
   displayName: "FontColorConfigsModal__Content",
   componentId: "sc-1xvfmbx-3"
 })(["overflow-x:hidden;overflow-y:auto;height:100%;"]);
-const SidebarContent$1 = styled$1.div.withConfig({
+const SidebarContent$1 = styled.div.withConfig({
   displayName: "FontColorConfigsModal__SidebarContent",
   componentId: "sc-1xvfmbx-4"
 })(["padding:24px 4px;display:flex;flex-direction:column;"]);
-const SidebarButton$1 = styled$1.button.withConfig({
+const SidebarButton$1 = styled.button.withConfig({
   displayName: "FontColorConfigsModal__SidebarButton",
   componentId: "sc-1xvfmbx-5"
 })(["all:unset;height:38px;", " display:flex;padding-left:16px;align-items:center;&:hover{background:", ";}background:", ";cursor:pointer;"], Fonts.body, Colors.black5, ({
@@ -5268,35 +6241,35 @@ function getFlagUrl(locale, size) {
 }
 
 const TOP_BAR_HEIGHT = 40;
-const TopBar = styled.div.withConfig({
+const TopBar = styled$1.div.withConfig({
   displayName: "EditorTopBar__TopBar",
   componentId: "sc-726nw9-0"
 })(["position:relative;box-sizing:border-box;background-color:white;border-bottom:1px solid #eaeaea;padding:0 64px;min-height:", "px;display:flex;flex-direction:row;justify-content:center;align-items:center;"], TOP_BAR_HEIGHT);
-const Label = styled.div.withConfig({
+const Label = styled$1.div.withConfig({
   displayName: "EditorTopBar__Label",
   componentId: "sc-726nw9-1"
 })(["background:", ";height:24px;", " display:flex;justify-content:center;align-items:center;padding-left:12px;padding-right:12px;border-radius:12px;color:white;"], Colors.purple, Fonts.label);
-const TopBarLeft = styled.div.withConfig({
+const TopBarLeft = styled$1.div.withConfig({
   displayName: "EditorTopBar__TopBarLeft",
   componentId: "sc-726nw9-2"
 })(["position:absolute;top:0;left:4px;height:100%;display:flex;flex-direction:row;align-items:center;gap:4px;"]);
-const TopBarRight = styled.div.withConfig({
+const TopBarRight = styled$1.div.withConfig({
   displayName: "EditorTopBar__TopBarRight",
   componentId: "sc-726nw9-3"
 })(["position:absolute;top:0;right:8px;height:100%;display:flex;flex-direction:row;align-items:center;gap:16px;"]);
-const TopBarCenter = styled.div.withConfig({
+const TopBarCenter = styled$1.div.withConfig({
   displayName: "EditorTopBar__TopBarCenter",
   componentId: "sc-726nw9-4"
 })(["position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:row;align-items:center;gap:8px;white-space:nowrap;"]);
-const ImageContainer$1 = styled.div.withConfig({
+const ImageContainer$1 = styled$1.div.withConfig({
   displayName: "EditorTopBar__ImageContainer",
   componentId: "sc-726nw9-5"
 })(["position:relative;width:20px;height:20px;"]);
-const Image = styled.img.withConfig({
+const Image = styled$1.img.withConfig({
   displayName: "EditorTopBar__Image",
   componentId: "sc-726nw9-6"
 })(["width:100%;height:100%;object-fit:contain;"]);
-const VerticalLine = styled.div.withConfig({
+const VerticalLine = styled$1.div.withConfig({
   displayName: "EditorTopBar__VerticalLine",
   componentId: "sc-726nw9-7"
 })(["width:1px;height:20px;background-color:", ";"], Colors.black10);
@@ -5683,10 +6656,6 @@ function DeviceSwitch({
   }, "Fit screen"))));
 }
 
-function normalizeToStringArray(arg) {
-  return typeof arg === "string" ? [arg] : Array.isArray(arg) ? arg : [];
-}
-
 function getAllComponentTypes(editorContext) {
   const componentTypes = getComponentTypesFromDefinitions(editorContext.definitions.components);
   return Array.from(new Set([...componentTypes]));
@@ -5859,23 +6828,23 @@ const ModalPicker = ({
 };
 
 const shimmer$1 = keyframes(["0%{background-position:-800px 0;}100%{background-position:800px 0;}"]);
-const SkeletonBox$1 = styled$1.div.withConfig({
+const SkeletonBox$1 = styled.div.withConfig({
   displayName: "SkeletonEditorCanvasArea__SkeletonBox",
   componentId: "sc-10zd21k-0"
 })(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || '100%', props => props.height || '20px', shimmer$1, props => props.borderRadius || '4px');
-const SkeletonCanvas = styled$1.div.withConfig({
+const SkeletonCanvas = styled.div.withConfig({
   displayName: "SkeletonEditorCanvasArea__SkeletonCanvas",
   componentId: "sc-10zd21k-1"
 })(["width:100%;max-width:1300px;background:white;padding:32px;display:flex;flex-direction:column;gap:24px;"]);
-const SkeletonItem = styled$1.div.withConfig({
+const SkeletonItem = styled.div.withConfig({
   displayName: "SkeletonEditorCanvasArea__SkeletonItem",
   componentId: "sc-10zd21k-2"
 })(["display:flex;gap:16px;padding:16px;border-radius:8px;"]);
-const SkeletonContent = styled$1.div.withConfig({
+const SkeletonContent = styled.div.withConfig({
   displayName: "SkeletonEditorCanvasArea__SkeletonContent",
   componentId: "sc-10zd21k-3"
 })(["flex:1;display:flex;flex-direction:column;gap:8px;"]);
-const SkeletonMeta = styled$1.div.withConfig({
+const SkeletonMeta = styled.div.withConfig({
   displayName: "SkeletonEditorCanvasArea__SkeletonMeta",
   componentId: "sc-10zd21k-4"
 })(["display:flex;gap:12px;margin-top:4px;"]);
@@ -5949,45 +6918,45 @@ const SkeletonEditorCanvasArea = () => {
 var SkeletonEditorCanvasArea$1 = SkeletonEditorCanvasArea;
 
 const shimmer = keyframes(["0%{background-position:-800px 0;}100%{background-position:800px 0;}"]);
-const SkeletonBox = styled$1.div.withConfig({
+const SkeletonBox = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonBox",
   componentId: "sc-133np0d-0"
 })(["width:", ";height:", ";background:linear-gradient( to right,#f0f0f0 0%,#e0e0e0 20%,#f0f0f0 40%,#f0f0f0 100% );background-size:800px 100px;animation:", " 3s infinite linear;border-radius:", ";"], props => props.width || "100%", props => props.height || "20px", shimmer, props => props.borderRadius || "4px");
 
 // Mimic the actual editor structure
-const SkeletonEditorContainer = styled$1.div.withConfig({
+const SkeletonEditorContainer = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonEditorContainer",
   componentId: "sc-133np0d-1"
 })(["height:100vh;width:100%;display:flex;flex-direction:column;background:#fafafa;"]);
-const SkeletonTopBar = styled$1.div.withConfig({
+const SkeletonTopBar = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonTopBar",
   componentId: "sc-133np0d-2"
 })(["height:40px;background:", ";border-bottom:1px solid ", ";display:flex;align-items:center;justify-content:space-between;padding:0 4px;gap:16px;"], Colors.white, Colors.black100);
-const SkeletonTopBarLeft = styled$1.div.withConfig({
+const SkeletonTopBarLeft = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonTopBarLeft",
   componentId: "sc-133np0d-3"
 })(["display:flex;gap:8px;align-items:center;"]);
-const SkeletonTopBarCenter = styled$1.div.withConfig({
+const SkeletonTopBarCenter = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonTopBarCenter",
   componentId: "sc-133np0d-4"
 })(["display:flex;gap:8px;align-items:center;"]);
-const SkeletonTopBarRight = styled$1.div.withConfig({
+const SkeletonTopBarRight = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonTopBarRight",
   componentId: "sc-133np0d-5"
 })(["display:flex;gap:16px;align-items:center;"]);
-const SkeletonMainContent = styled$1.div.withConfig({
+const SkeletonMainContent = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonMainContent",
   componentId: "sc-133np0d-6"
 })(["flex:1;display:flex;overflow:hidden;"]);
-const SkeletonCanvasArea = styled$1.div.withConfig({
+const SkeletonCanvasArea = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonCanvasArea",
   componentId: "sc-133np0d-7"
 })(["flex:1;background:", ";padding:32px;padding-top:64px;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;"], Colors.black10);
-const SkeletonSidebar = styled$1.div.withConfig({
+const SkeletonSidebar = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonSidebar",
   componentId: "sc-133np0d-8"
 })(["flex:0 0 240px;background:", ";border-left:1px solid ", ";padding:16px;display:flex;flex-direction:column;gap:24px;"], Colors.white, Colors.black100);
-const SkeletonSection = styled$1.div.withConfig({
+const SkeletonSection = styled.div.withConfig({
   displayName: "SkeletonEditor__SkeletonSection",
   componentId: "sc-133np0d-9"
 })(["display:flex;flex-direction:column;gap:12px;"]);
@@ -6550,447 +7519,27 @@ const TemplateModal = props => {
   }, t("template.delete.default")))))));
 };
 
-const takeNumbers = path => path.split(".").map(x => parseInt(x, 10)).filter(x => !Number.isNaN(x));
-const preOrderPathComparator = (direction = "ascending") => (pathA, pathB) => {
-  const order = direction === "ascending" ? 1 : -1;
-  const numbersA = takeNumbers(pathA);
-  const numbersB = takeNumbers(pathB);
-  const numberALength = numbersA.length;
-  const numberBLength = numbersB.length;
-  if (numberALength === 0 || numberBLength === 0) {
-    throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
-  }
-  const shorterLength = Math.min(numberALength, numberBLength);
-  let index = 0;
-  while (index < shorterLength) {
-    const valueA = numbersA[index];
-    const valueB = numbersB[index];
-    if (valueA !== valueB) {
-      return order * Math.sign(valueA - valueB);
-    }
-    index++;
-  }
-  return order * Math.sign(numberBLength - numberALength);
-};
-
-function duplicateItem(form, {
-  name,
-  sourceIndex,
-  targetIndex
-}, compilationContext) {
-  // Placeholders are not copyable
-  if (isPlaceholder(name + "." + sourceIndex, form.values)) {
-    return;
-  }
-  const configToDuplicate = dotNotationGet(form.values, name + "." + sourceIndex);
-  form.mutators.insert(name, targetIndex, duplicateConfig(configToDuplicate, compilationContext));
-}
-function pasteItems({
-  what,
-  where,
-  resolveDestination,
-  pasteCommand
-}) {
-  const successfulInsertsPaths = [];
-  takeLastOfEachParent(where).sort(preOrderPathComparator()).map(initialDestination => {
-    const destination = successfulInsertsPaths.reduce((acc, current) => shiftPath(acc, current, "downward"), initialDestination);
-    const resolvedDestinations = resolveDestination(destination);
-    return pasteCommand(resolvedDestinations);
-  }).forEach(paste => {
-    what.forEach(item => {
-      const insertedPath = paste(item);
-      if (insertedPath) {
-        successfulInsertsPaths.push(insertedPath);
-      }
-    });
-  });
-  return successfulInsertsPaths.length !== 0 ? successfulInsertsPaths : where;
-}
-
-/**
- * Duplicates fields given in `fieldNames` within given `form`.
- * `compilationContext` is used to properly duplicate elements associated with given names.
- * @returns Array of fields to focus
- */
-function duplicateItems(form, fieldNames, compilationContext) {
-  const duplicatableFieldNames = fieldNames.filter(fieldName => isFieldDuplicatable(fieldName, form, compilationContext));
-  if (duplicatableFieldNames.length === 0) {
-    return;
-  }
-  const fieldsGroupedByParentPath = groupFieldsByParentPath(duplicatableFieldNames, "ascending");
-  const nextFocusedFieldsPerGroup = [];
-  Object.values(fieldsGroupedByParentPath).forEach((sortedFields, fieldsGroupIndex) => {
-    nextFocusedFieldsPerGroup.push([]);
-    const lastFieldIndex = getFieldPathIndex(last(sortedFields));
-    sortedFields.forEach((focusedField, fieldIndex) => {
-      const sourceIndex = getFieldPathIndex(focusedField);
-      const targetIndex = lastFieldIndex + 1 + fieldIndex;
-      const parentPath = getParentPath(focusedField);
-      duplicateItem(form, {
-        name: parentPath,
-        sourceIndex,
-        targetIndex
-      }, compilationContext);
-      nextFocusedFieldsPerGroup[fieldsGroupIndex].push(`${parentPath}.${lastFieldIndex + 1 + fieldIndex}`);
-    });
-  });
-  return nextFocusedFieldsPerGroup.flat();
-}
-function moveItem(form, {
-  from,
-  to,
-  name
-}) {
-  // Placeholders are not movable
-  if (isPlaceholder(name + "." + from, form.values)) {
-    return;
-  }
-  form.mutators.move(name, from, to);
-}
-
-/**
- * Moves fields given in `fieldNamesToRemove` within given `form` in given `direction`.
- * @returns Array of fields to focus.
- */
-function moveItems(form, fieldsToMove, direction) {
-  const nextFocusedFields = [];
-  const isMovingMultipleFields = fieldsToMove.length > 1;
-  if (direction === "top" || direction === "left") {
-    const fieldsGroupedByParentPath = groupFieldsByParentPath(fieldsToMove, "ascending");
-    Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
-      let wasAnyFieldWithinCurrentGroupMoved = false;
-      sortedFields.forEach((fieldName, fieldNameIndex) => {
-        const index = getFieldPathIndex(fieldName);
-        const parentPath = getParentPath(fieldName);
-        if (isFirst(fieldName)) {
-          if (isMovingMultipleFields) {
-            nextFocusedFields.push(fieldName);
-          }
-          return;
-        }
-        if (isMovingMultipleFields && fieldNameIndex > 0 && !wasAnyFieldWithinCurrentGroupMoved) {
-          nextFocusedFields.push(fieldName);
-          return;
-        }
-        moveItem(form, {
-          from: index,
-          name: parentPath,
-          to: index - 1
-        });
-        if (!wasAnyFieldWithinCurrentGroupMoved) {
-          wasAnyFieldWithinCurrentGroupMoved = true;
-        }
-        nextFocusedFields.push(`${parentPath}.${index - 1}`);
-      });
-    });
-    if (nextFocusedFields.length > 0) {
-      return nextFocusedFields;
-    }
-  } else {
-    const fieldsGroupedByParentPath = groupFieldsByParentPath(fieldsToMove, "descending");
-    Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
-      let wasAnyFieldWithinCurrentGroupMoved = false;
-      sortedFields.forEach((fieldName, fieldNameIndex) => {
-        if (isLast(fieldName, form)) {
-          if (isMovingMultipleFields) {
-            nextFocusedFields.push(fieldName);
-          }
-          return;
-        }
-        if (isMovingMultipleFields && fieldNameIndex > 0 && !wasAnyFieldWithinCurrentGroupMoved) {
-          nextFocusedFields.push(fieldName);
-          return;
-        }
-        const index = getFieldPathIndex(fieldName);
-        const parentPath = getParentPath(fieldName);
-        moveItem(form, {
-          name: parentPath,
-          from: index,
-          to: index + 1
-        });
-        if (!wasAnyFieldWithinCurrentGroupMoved) {
-          wasAnyFieldWithinCurrentGroupMoved = true;
-        }
-        nextFocusedFields.push(`${parentPath}.${index + 1}`);
-      });
-    });
-    if (nextFocusedFields.length > 0) {
-      return nextFocusedFields;
-    }
-  }
-}
-function removeItem(form, {
-  index,
-  name
-}) {
-  const configPathToRemove = name + "." + index;
-
-  // Placeholders are not removable
-  if (isPlaceholder(configPathToRemove, form.values)) {
-    return;
-  }
-  const componentConfigValue = dotNotationGet(form.values, name);
-  if (componentConfigValue.length === 1) {
-    form.change(name, []);
-  } else {
-    form.mutators.remove(name, index);
-  }
-}
-
-/**
- * Removes fields given in `fieldNamesToRemove` from given `form`.
- * @returns Array of fields to focus
- */
-function removeItems(form, fieldNamesToRemove, editorContext) {
-  const removableFieldNames = fieldNamesToRemove.filter(fieldName => isFieldRemovable(fieldName, form, editorContext));
-  if (removableFieldNames.length === 0) {
-    return;
-  }
-  const isRemovingMultipleFields = removableFieldNames.length > 1;
-  const fieldsGroupedByParentPath = groupFieldsByParentPath(removableFieldNames, "descending");
-  if (!isRemovingMultipleFields) {
-    const {
-      index,
-      parent,
-      templateId
-    } = parsePath(removableFieldNames[0], form);
-    if (index === undefined || !parent) {
-      throw new Error("Invalid path");
-    }
-    const fieldPath = `${parent.path}${parent.path === "" ? "" : "."}${parent.fieldName}`;
-    const itemsLength = dotNotationGet(form.values, fieldPath).length;
-    const isOnlyItem = itemsLength === 1;
-    const isLastItem = itemsLength - 1 === index;
-    removeItem(form, {
-      index,
-      name: fieldPath
-    });
-    const definition = findComponentDefinitionById(templateId, editorContext);
-    const isTextWrapper = definition && isNoCodeComponentOfType(definition, "@easyblocks/text-wrapper");
-
-    // If we're removing item from the text wrapper field let's focus the component holding that field for better UX
-    // TODO: We shouldn't decide based on the component type but rather on the source of the removal (canvas vs sidebar)
-    if (isTextWrapper) {
-      return [parent.path];
-    }
-    if (isOnlyItem) {
-      return [];
-    } else if (isLastItem) {
-      return [`${fieldPath}.${index - 1}`];
-    } else {
-      return [`${fieldPath}.${index}`];
-    }
-  }
-  Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
-    sortedFields.forEach(focusedField => {
-      const field = dotNotationGet(form.values, focusedField);
-
-      // Field could be already removed if its parent element was also selected
-      if (!field) {
-        return;
-      }
-      const index = getFieldPathIndex(focusedField);
-      const parentPath = getParentPath(focusedField);
-      removeItem(form, {
-        index,
-        name: parentPath
-      });
-    });
-  });
-  return [];
-}
-function replaceItems(paths, newConfig, editorContext) {
-  paths.forEach(path => {
-    dotNotationGet(editorContext.form.values, path);
-    editorContext.form.change(path, duplicateConfig(
-    // newConfig && oldConfig
-    //   ? changeComponentConfig(oldConfig, newConfig, editorContext)
-    //   : newConfig,
-    newConfig, editorContext));
-  });
-}
-function logItems(form, configPaths) {
-  const configValues = configPaths.map(configPath => {
-    return dotNotationGet(form.values, configPath);
-  });
-  configValues.forEach((config, index) => {
-    console.log("Config for", configPaths[index], config);
-  });
-}
-function groupFieldsByParentPath(fields, sortDirection) {
-  const fieldsIndicesGroupedByParentPath = fields.reduce((accumulator, currentField) => {
-    const index = getFieldPathIndex(currentField);
-    const parentPath = getParentPath(currentField);
-    const indices = accumulator[parentPath];
-    if (indices) {
-      accumulator[parentPath] = [...indices, index].sort((a, b) => {
-        return sortDirection === "descending" ? b - a : a - b;
-      });
-      return accumulator;
-    }
-    accumulator[parentPath] = [index];
-    return accumulator;
-  }, {});
-  return Object.fromEntries(Object.entries(fieldsIndicesGroupedByParentPath).map(([parentPath, indices]) => {
-    return [parentPath, indices.map(index => parentPath + "." + index)];
-  }));
-}
-function getFieldPathIndex(fieldPath) {
-  const index = +last(fieldPath.split("."));
-  if (Number.isNaN(index)) {
-    return -1;
-  }
-  return index;
-}
-function getParentPath(fieldPath) {
-  const fieldPathParts = fieldPath.split(".");
-  return fieldPathParts.slice(0, -1).join(".");
-}
-function isFirst(fieldPath) {
-  const index = getFieldPathIndex(fieldPath);
-  return index === 0;
-}
-function isLast(fieldPath, form) {
-  const index = getFieldPathIndex(fieldPath);
-  const parentPath = getParentPath(fieldPath);
-  const parentFieldElementsCount = dotNotationGet(form.values, parentPath).length;
-  return index === parentFieldElementsCount - 1;
-}
-function isPlaceholder(path, values) {
-  const templateId = dotNotationGet(values, path)._component;
-  return templateId.startsWith("$Placeholder");
-}
-function isFieldRemovable(fieldName, form, compilationContext) {
-  const {
-    parent
-  } = parsePath(fieldName, form);
-  if (parent) {
-    const parentComponentDefinition = findComponentDefinitionById(parent.templateId, compilationContext);
-    const fieldNameParent = last(getParentPath(fieldName).split("."));
-    const fieldSchema = parentComponentDefinition?.schema.find(schema => schema.prop === fieldNameParent);
-    if (fieldSchema && fieldSchema.type === "component" && fieldSchema.required) {
-      return false;
-    }
-  }
-  return true;
-}
-function isFieldDuplicatable(fieldName, form, compilationContext) {
-  return isFieldRemovable(fieldName, form, compilationContext);
-}
-const shiftPath = (originalPath, shiftingPath, direction = "downward") => {
-  const directionFactor = direction === "downward" ? 1 : -1;
-  const original = shiftingPath.split(".");
-  const shifting = originalPath.split(".");
-  if (original.length < 2) {
-    return originalPath;
-  }
-  let index = 0;
-  while (index < original.length - 1 && index < shifting.length - 1) {
-    if (shifting[index] !== original[index]) {
-      return originalPath;
-    }
-    if (shifting[index + 1] !== original[index + 1]) {
-      const numberA = Number(original[index + 1]);
-      const numberB = Number(shifting[index + 1]);
-      if (numberA < numberB && (index + 1 == original.length - 1 || index + 1 === shifting.length - 1)) {
-        shifting.splice(index + 1, 1, String(numberB + directionFactor));
-        return shifting.join(".");
-      } else {
-        return originalPath;
-      }
-    }
-    index += 2;
-  }
-  return originalPath;
-};
-function takeLastOfEachParent(where) {
-  const lastOfEachParent = where.reduce((acc, curr) => {
-    const trimmed = getParentPath(curr);
-    const index = getFieldPathIndex(curr);
-    acc[trimmed] = Math.max(index, acc[trimmed] ?? Number.MIN_SAFE_INTEGER);
-    return acc;
-  }, {});
-  return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
-}
-
-const SelectionMoreActionsContainer = styled$1.div.withConfig({
-  displayName: "Menu__SelectionMoreActionsContainer",
-  componentId: "sc-7fauqp-0"
-})(["", " border-radius:4px;box-shadow:var(--tina-shadow-big);width:max-content;background:", ";pointer-events:all;"], ({
-  styles
-}) => `
-    position: ${styles?.top && styles?.left ? "absolute" : "unset"};
-    top: ${styles?.top ?? "unset"};
-    left: ${styles?.left ?? "unset"};
-  `, Colors.white);
-const SelectionMoreActionsGroupButtons = styled$1.div.withConfig({
-  displayName: "Menu__SelectionMoreActionsGroupButtons",
-  componentId: "sc-7fauqp-1"
-})(["height:36px;position:relative;padding:0px 16px;display:flex;align-items:center;gap:2px;cursor:pointer;&:hover{background:", ";}"], Colors.black10);
-const MenuItem = ({
-  menu
-}) => {
-  const [isHoverMenu, setIsHoverMenu] = useState(false);
-  const menuItemRef = useRef(null);
-  const onClickMenu = () => {
-    if (!menu.isLoading) {
-      return !menu?.children?.length ? menu?.onClick?.() : undefined;
-    }
-  };
-  return /*#__PURE__*/React__default.createElement(SelectionMoreActionsGroupButtons, {
-    ref: menuItemRef,
-    onMouseEnter: () => setIsHoverMenu(true),
-    onMouseLeave: () => setIsHoverMenu(false),
-    onClick: onClickMenu
-  }, /*#__PURE__*/React__default.createElement(Typography, {
-    style: {
-      cursor: "pointer"
-    },
-    variant: "body",
-    component: "label"
-  }, menu.isLoading ? /*#__PURE__*/React__default.createElement(Loader, null) : menu.label), menu?.children?.length ? /*#__PURE__*/React__default.createElement(Icons.ChevronRight, {
-    size: 18
-  }) : null, isHoverMenu && menu?.children ? /*#__PURE__*/React__default.createElement(Menu, {
-    styles: {
-      top: "0px",
-      left: `${menuItemRef.current?.offsetWidth ?? 0}px`
-    },
-    menus: menu.children
-  }) : null);
-};
-const Menu = ({
-  menus,
-  styles
-}) => {
-  return /*#__PURE__*/React__default.createElement(SelectionMoreActionsContainer, {
-    styles: styles
-  }, menus.filter(menu => !menu.isHidden).map(menu => /*#__PURE__*/React__default.createElement(MenuItem, {
-    key: menu.id,
-    menu: menu
-  })));
-};
-
-const StyledEditorGlobalSectionItem = styled$1.div.withConfig({
+const StyledEditorGlobalSectionItem = styled.div.withConfig({
   displayName: "EditorGlobalSectionItem__StyledEditorGlobalSectionItem",
   componentId: "sc-5k1508-0"
 })(["display:flex;align-items:center;justify-content:space-between;padding:0px 10px 0px 16px;height:38px;"]);
-const StyledWrapperMenu = styled$1.div.withConfig({
+const StyledWrapperMenu = styled.div.withConfig({
   displayName: "EditorGlobalSectionItem__StyledWrapperMenu",
   componentId: "sc-5k1508-1"
 })(["position:relative;display:flex;align-items:center;gap:4px;"]);
-const StyledWrapperCheckIcon = styled$1.div.withConfig({
+const StyledWrapperCheckIcon = styled.div.withConfig({
   displayName: "EditorGlobalSectionItem__StyledWrapperCheckIcon",
   componentId: "sc-5k1508-2"
 })(["cursor:pointer;"]);
-const StyledWrapperThreeDotsIcon = styled$1.div.withConfig({
+const StyledWrapperThreeDotsIcon = styled.div.withConfig({
   displayName: "EditorGlobalSectionItem__StyledWrapperThreeDotsIcon",
   componentId: "sc-5k1508-3"
 })(["cursor:pointer;&:hover{transform:scale(1.2);}"]);
-const StyledWrapperMenuDialog = styled$1.div.withConfig({
+const StyledWrapperMenuDialog = styled.div.withConfig({
   displayName: "EditorGlobalSectionItem__StyledWrapperMenuDialog",
   componentId: "sc-5k1508-4"
 })(["position:absolute;top:20px;right:0px;z-index:1;"]);
-const StyledWrapperAddToPage = styled$1(Typography).withConfig({
+const StyledWrapperAddToPage = styled(Typography).withConfig({
   displayName: "EditorGlobalSectionItem__StyledWrapperAddToPage",
   componentId: "sc-5k1508-5"
 })(["font-weight:500;cursor:pointer;color:", " !important;", ""], Colors.blue60, ({
@@ -7003,11 +7552,11 @@ const StyledWrapperAddToPage = styled$1(Typography).withConfig({
       &:hover {
         color: ${Colors.blue50};
       }`);
-const StyledWrapperLabel = styled$1.div.withConfig({
+const StyledWrapperLabel = styled.div.withConfig({
   displayName: "EditorGlobalSectionItem__StyledWrapperLabel",
   componentId: "sc-5k1508-6"
 })(["width:190px;"]);
-const StyledLabel$1 = styled$1(Typography).withConfig({
+const StyledLabel$1 = styled(Typography).withConfig({
   displayName: "EditorGlobalSectionItem__StyledLabel",
   componentId: "sc-5k1508-7"
 })(["text-overflow:ellipsis;white-space:nowrap;overflow:hidden;"]);
@@ -7108,19 +7657,19 @@ const EditorGlobalSectionItem = ({
   })) : null));
 };
 
-const HorizontalLine$1 = styled$1.div.withConfig({
+const HorizontalLine$1 = styled.div.withConfig({
   displayName: "EditorGlobalSections__HorizontalLine",
   componentId: "sc-1fxbds7-0"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
-const StyledEditorGlobalSectionsDescription = styled$1(Typography).withConfig({
+const StyledEditorGlobalSectionsDescription = styled(Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionsDescription",
   componentId: "sc-1fxbds7-1"
 })(["padding-bottom:20px;padding-left:12px;padding-right:12px;"]);
-const StyledEditorGlobalSectionGroup = styled$1(Typography).withConfig({
+const StyledEditorGlobalSectionGroup = styled(Typography).withConfig({
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
   componentId: "sc-1fxbds7-2"
 })(["padding:10px 0px;"]);
-const StyledButtonGroup$1 = styled$1.div.withConfig({
+const StyledButtonGroup = styled.div.withConfig({
   displayName: "EditorGlobalSections__StyledButtonGroup",
   componentId: "sc-1fxbds7-3"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
@@ -7222,7 +7771,7 @@ const EditorGlobalSections = ({
       onRequestClose: onCloseConfirm,
       mode: "fit",
       height: "auto",
-      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
         onClick: onCloseConfirm
       }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
         isLoading: isLoading,
@@ -7238,7 +7787,7 @@ const EditorGlobalSections = ({
       onRequestClose: onCloseEditSection,
       mode: "fit",
       height: "auto",
-      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
+      endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
         onClick: onCloseEditSection
       }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
         isLoading: isLoading,
@@ -7292,7 +7841,7 @@ const normalizeComponentLayers = (components, prefix = "data", _rootParentId) =>
   return [];
 };
 
-const StyledEditorLayerLabel$1 = styled$1(Typography).withConfig({
+const StyledEditorLayerLabel$1 = styled(Typography).withConfig({
   displayName: "EditorLayerChildren__StyledEditorLayerLabel",
   componentId: "sc-1ntcvip-0"
 })(["display:block;cursor:pointer;", ""], ({
@@ -7300,7 +7849,7 @@ const StyledEditorLayerLabel$1 = styled$1(Typography).withConfig({
 }) => `
     font-weight: ${isFocus ? 700 : 400};
   `);
-const StyledEditorLayerComponent$1 = styled$1(Typography).withConfig({
+const StyledEditorLayerComponent$1 = styled(Typography).withConfig({
   displayName: "EditorLayerChildren__StyledEditorLayerComponent",
   componentId: "sc-1ntcvip-1"
 })(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
@@ -7332,7 +7881,7 @@ const EditorLayerChildren = ({
   }, layer.component));
 };
 
-const StyledEditorLayerLabel = styled$1(Typography).withConfig({
+const StyledEditorLayerLabel = styled(Typography).withConfig({
   displayName: "EditorLayerGroup__StyledEditorLayerLabel",
   componentId: "sc-1n61cll-0"
 })(["display:block;cursor:pointer;", ""], ({
@@ -7340,7 +7889,7 @@ const StyledEditorLayerLabel = styled$1(Typography).withConfig({
 }) => `
     font-weight: ${isFocus ? 700 : 400};
   `);
-const StyledEditorLayerComponent = styled$1(Typography).withConfig({
+const StyledEditorLayerComponent = styled(Typography).withConfig({
   displayName: "EditorLayerGroup__StyledEditorLayerComponent",
   componentId: "sc-1n61cll-1"
 })(["display:flex;align-items:center;width:fit-content;min-width:100%;cursor:pointer;padding:6px 10px;gap:2px;", " &:hover{background:", ";}"], ({
@@ -7348,13 +7897,13 @@ const StyledEditorLayerComponent = styled$1(Typography).withConfig({
 }) => `
     background: ${isFocus ? Colors.black10 : "transparent"};
   `, Colors.black10);
-const StyledWrapperChevronIcon = styled$1(Typography).withConfig({
+const StyledWrapperChevronIcon = styled(Typography).withConfig({
   displayName: "EditorLayerGroup__StyledWrapperChevronIcon",
   componentId: "sc-1n61cll-2"
 })(["transition:transform 0.2s ease;", ""], ({
   isOpen
 }) => `transform: rotate(${isOpen ? 180 : 0}deg);`);
-const StyledWrapperEditorLayerDetail = styled$1.div.withConfig({
+const StyledWrapperEditorLayerDetail = styled.div.withConfig({
   displayName: "EditorLayerGroup__StyledWrapperEditorLayerDetail",
   componentId: "sc-1n61cll-3"
 })(["padding-left:18px;", ""], ({
@@ -7622,23 +8171,23 @@ const getCategoryLabel = (t, group) => {
 // Single template card shown in the section drawer gallery.
 // Preview box renders the template thumbnail when available, otherwise
 // falls back to the centered label text (e.g. "Empty Banner Section").
-const StyledCard$1 = styled$1.div.withConfig({
+const StyledCard$1 = styled.div.withConfig({
   displayName: "EditorSectionDrawerCard__StyledCard",
   componentId: "sc-1g9htdu-0"
 })(["display:flex;flex-direction:column;gap:8px;cursor:", ";"], ({
   isLoading
 }) => isLoading ? "default" : "pointer");
-const StyledPreview$1 = styled$1.div.withConfig({
+const StyledPreview$1 = styled.div.withConfig({
   displayName: "EditorSectionDrawerCard__StyledPreview",
   componentId: "sc-1g9htdu-1"
 })(["position:relative;width:100%;aspect-ratio:16 / 10;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;border-radius:2px;background:", ";color:", ";overflow:hidden;box-sizing:border-box;", ":hover &{outline:2px solid ", ";}"], Colors.black10, Colors.black500, StyledCard$1, Colors.blue50);
 
 // Centered spinner shown over the preview box while the section is being added.
-const StyledLoadingOverlay = styled$1.div.withConfig({
+const StyledLoadingOverlay = styled.div.withConfig({
   displayName: "EditorSectionDrawerCard__StyledLoadingOverlay",
   componentId: "sc-1g9htdu-2"
 })(["position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.6);"]);
-const StyledThumbnail = styled$1.img.withConfig({
+const StyledThumbnail = styled.img.withConfig({
   displayName: "EditorSectionDrawerCard__StyledThumbnail",
   componentId: "sc-1g9htdu-3"
 })(["width:100%;height:100%;object-fit:cover;"]);
@@ -7646,13 +8195,13 @@ const StyledThumbnail = styled$1.img.withConfig({
 // Fallback label shown inside the preview box when there's no thumbnail.
 // Clamps to 2 lines then ellipsis (the box has vertical room from its
 // aspect-ratio). Full text is available via the card's title tooltip.
-const StyledPlaceholderLabel = styled$1(Typography).withConfig({
+const StyledPlaceholderLabel = styled(Typography).withConfig({
   displayName: "EditorSectionDrawerCard__StyledPlaceholderLabel",
   componentId: "sc-1g9htdu-4"
 })(["max-width:90px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;"]);
 
 // Bottom label: single line then ellipsis. Full text via the card's title.
-const StyledLabel = styled$1(Typography).withConfig({
+const StyledLabel = styled(Typography).withConfig({
   displayName: "EditorSectionDrawerCard__StyledLabel",
   componentId: "sc-1g9htdu-5"
 })(["max-width:180px;text-align:center !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
@@ -7682,23 +8231,23 @@ const EditorSectionDrawerCard = ({
 // title + close header persistently, so it is not part of this skeleton.
 const SKELETON_CARDS = 6;
 const pulse$1 = keyframes(["0%,100%{opacity:1;}50%{opacity:0.4;}"]);
-const StyledRoot = styled$1.div.withConfig({
+const StyledRoot = styled.div.withConfig({
   displayName: "EditorSectionDrawerSkeleton__StyledRoot",
   componentId: "sc-1lbe0dn-0"
 })(["display:flex;flex-direction:column;gap:16px;animation:", " 1.2s ease-in-out infinite;"], pulse$1);
-const StyledGrid$1 = styled$1.div.withConfig({
+const StyledGrid$1 = styled.div.withConfig({
   displayName: "EditorSectionDrawerSkeleton__StyledGrid",
   componentId: "sc-1lbe0dn-1"
 })(["display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px;"]);
-const StyledCard = styled$1.div.withConfig({
+const StyledCard = styled.div.withConfig({
   displayName: "EditorSectionDrawerSkeleton__StyledCard",
   componentId: "sc-1lbe0dn-2"
 })(["display:flex;flex-direction:column;gap:8px;align-items:center;"]);
-const StyledPreview = styled$1.div.withConfig({
+const StyledPreview = styled.div.withConfig({
   displayName: "EditorSectionDrawerSkeleton__StyledPreview",
   componentId: "sc-1lbe0dn-3"
 })(["width:100%;aspect-ratio:16 / 10;border-radius:2px;background:", ";"], Colors.black10);
-const StyledPill = styled$1.div.withConfig({
+const StyledPill = styled.div.withConfig({
   displayName: "EditorSectionDrawerSkeleton__StyledPill",
   componentId: "sc-1lbe0dn-4"
 })(["width:70%;height:12px;border-radius:2px;background:", ";"], Colors.black10);
@@ -7711,7 +8260,7 @@ const EditorSectionDrawerSkeleton = () => /*#__PURE__*/React__default.createElem
 // Trigger load-more when scrolled within this many px of the bottom.
 const SCROLL_THRESHOLD = 80;
 const DRAWER_WIDTH = 600;
-const StyledEditorSectionDrawer = styled$1.div.withConfig({
+const StyledEditorSectionDrawer = styled.div.withConfig({
   displayName: "EditorSectionDrawer__StyledEditorSectionDrawer",
   componentId: "sc-bycoqx-0"
 })(["position:absolute;top:47px;left:198px;width:", "px;max-height:calc(100vh - 120px);display:flex;flex-direction:column;overflow:hidden;background:", ";border:1px solid ", ";box-shadow:var(--tina-shadow-big);z-index:var(--tina-z-index-5);border-top-right-radius:2px;border-bottom-right-radius:2px;"], DRAWER_WIDTH, Colors.white, Colors.black100);
@@ -7719,11 +8268,11 @@ const StyledEditorSectionDrawer = styled$1.div.withConfig({
 // Scrollable body region. The drawer header lives outside this element so it
 // stays pinned while only the section grid scrolls. min-height: 0 lets this
 // flex child shrink below its content size so overflow-y can actually scroll.
-const StyledBody = styled$1.div.withConfig({
+const StyledBody = styled.div.withConfig({
   displayName: "EditorSectionDrawer__StyledBody",
   componentId: "sc-bycoqx-1"
 })(["flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;padding:16px;padding-top:8px;"]);
-const StyledGrid = styled$1.div.withConfig({
+const StyledGrid = styled.div.withConfig({
   displayName: "EditorSectionDrawer__StyledGrid",
   componentId: "sc-bycoqx-2"
 })(["display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px;"]);
@@ -7731,18 +8280,18 @@ const StyledGrid = styled$1.div.withConfig({
 // Persistent drawer header: section group title on the left, close button on the
 // right. Rendered in every state (loading/empty/loaded) so the close control is
 // always available and content never jumps.
-const StyledHeader = styled$1.div.withConfig({
+const StyledHeader = styled.div.withConfig({
   displayName: "EditorSectionDrawer__StyledHeader",
   componentId: "sc-bycoqx-3"
 })(["display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px;padding-bottom:8px;"]);
 
 // Truncate long group names with an ellipsis so the close button stays put and
 // the header never wraps to a second line in the fixed-width drawer.
-const StyledTitle = styled$1(Typography).withConfig({
+const StyledTitle = styled(Typography).withConfig({
   displayName: "EditorSectionDrawer__StyledTitle",
   componentId: "sc-bycoqx-4"
 })(["flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
-const StyledLoadMore = styled$1.div.withConfig({
+const StyledLoadMore = styled.div.withConfig({
   displayName: "EditorSectionDrawer__StyledLoadMore",
   componentId: "sc-bycoqx-5"
 })(["display:flex;justify-content:center;padding:16px 0 4px;"]);
@@ -7816,13 +8365,13 @@ const EditorSectionDrawer = ({
 
 /** What an entry in the section list stands for. */
 
-const StyledRow = styled$1.div.withConfig({
+const StyledRow = styled.div.withConfig({
   displayName: "EditorSectionItem__StyledRow",
   componentId: "sc-1li16rj-0"
 })(["display:flex;align-items:center;max-width:174px;cursor:pointer;border-radius:2px;padding:4px;", ""], ({
   selected
 }) => `${selected ? `background: ${Colors.black10};` : ""}`);
-const StyledEditorSectionName = styled$1.div.withConfig({
+const StyledEditorSectionName = styled.div.withConfig({
   displayName: "EditorSectionItem__StyledEditorSectionName",
   componentId: "sc-1li16rj-1"
 })(["font-size:var(--tina-font-size-0);flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;"]);
@@ -7860,7 +8409,7 @@ const EditorSectionItem = ({
 
 const SKELETON_ROWS = 20;
 const pulse = keyframes(["0%,100%{opacity:1;}50%{opacity:0.4;}"]);
-const SkeletonBar = styled$1.div.withConfig({
+const SkeletonBar = styled.div.withConfig({
   displayName: "EditorSectionsSkeleton__SkeletonBar",
   componentId: "sc-1kea448-0"
 })(["padding-top:4px;padding-left:4px;height:26px;border-radius:2px;background-color:", ";animation:", " 1.2s ease-in-out infinite;"], Colors.black10, pulse);
@@ -8096,7 +8645,7 @@ async function discoverTemplateCategories(fetchPage, listCategories, sources) {
     failed: failed || probed.some(result => result.failed)
   };
 }
-const StyledEditorSectionGroup = styled$1.div.withConfig({
+const StyledEditorSectionGroup = styled.div.withConfig({
   displayName: "EditorSections__StyledEditorSectionGroup",
   componentId: "sc-1nr6ndr-0"
 })(["padding-left:12px;padding-right:12px;overflow-y:auto;max-height:calc( 100vh - ", "px );"], TOP_BAR_HEIGHT + TITLE_HEIGHT + PADDING_TOP_HEIGHT);
@@ -8517,7 +9066,7 @@ const EMPTY_SIDEBAR_CONFIG = {
   width: "280px",
   Component: null
 };
-const StyledEditorLeftSidebarRoot = styled$1.div.withConfig({
+const StyledEditorLeftSidebarRoot = styled.div.withConfig({
   displayName: "EditorLeftSidebar__StyledEditorLeftSidebarRoot",
   componentId: "sc-16mpetx-0"
 })(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;", " > *{box-sizing:border-box;}"], ({
@@ -8530,15 +9079,15 @@ const StyledEditorLeftSidebarRoot = styled$1.div.withConfig({
 `flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`, Colors.white, Colors.black100, Colors.black100, ({
   enableScroll = true
 }) => enableScroll ? `overflow-y: auto;` : "");
-const StyledEditorLeftSidebarTitle = styled$1(Typography).withConfig({
+const StyledEditorLeftSidebarTitle = styled(Typography).withConfig({
   displayName: "EditorLeftSidebar__StyledEditorLeftSidebarTitle",
   componentId: "sc-16mpetx-1"
 })(["line-height:14px;font-weight:700;padding:17px 12px;"]);
-const HorizontalLine = styled$1.div.withConfig({
+const HorizontalLine = styled.div.withConfig({
   displayName: "EditorLeftSidebar__HorizontalLine",
   componentId: "sc-16mpetx-2"
 })(["height:1px;margin-top:-1px;background-color:", ";"], Colors.black10);
-const StyledEditorLeftSidebarGroup = styled$1.div.withConfig({
+const StyledEditorLeftSidebarGroup = styled.div.withConfig({
   displayName: "EditorLeftSidebar__StyledEditorLeftSidebarGroup",
   componentId: "sc-16mpetx-3"
 })(["padding-top:20px;padding-bottom:20px;> div{min-height:0;}"]);
@@ -8616,280 +9165,16 @@ const EditorLeftSidebar = ({
   }, /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarTitle, null, sidebarConfig.title), /*#__PURE__*/React__default.createElement(HorizontalLine, null), /*#__PURE__*/React__default.createElement(StyledEditorLeftSidebarGroup, null, sidebarConfig.Component));
 };
 
-function includesAny(a, b) {
-  return a.some(i => b.includes(i));
-}
-
-function reconcile({
-  context,
-  templateId,
-  fieldName
-}) {
-  return item => {
-    if (!fieldName || !templateId) {
-      return item;
-    }
-    const contextMatches = item._itemProps?.[templateId]?.[fieldName] !== undefined;
-    if (contextMatches) {
-      return item;
-    }
-    return normalize$1({
-      ...item,
-      _itemProps: {
-        [templateId]: {
-          [fieldName]: {}
-        }
-      }
-    }, context);
-  };
-}
-
-const getTypes = schema => {
-  if (schema?.type === "component-collection" || schema?.type === "component") {
-    return schema.accepts;
-  }
-  return [];
-};
-const insertCommand = ({
-  context,
-  form,
-  schema,
-  templateId
-}) => {
-  const types = getTypes(schema);
-  const reconcileItem = reconcile({
-    context,
-    templateId,
-    fieldName: schema?.prop
-  });
-  return (path, index, item) => {
-    const itemDefinition = findComponentDefinition(item, context);
-    if (!itemDefinition) {
-      return null;
-    }
-    const itemTypes = [itemDefinition.id, ...normalizeToStringArray(itemDefinition.type)];
-    if (!includesAny(types, itemTypes)) {
-      return null;
-    }
-    const reconciledItem = reconcileItem(item);
-    const duplicatedItem = duplicateConfig(reconciledItem, context);
-    form.mutators.insert(path, index, duplicatedItem);
-    return `${path}.${index}`;
-  };
-};
-
-function getSchema(path, context) {
-  const parentDefinition = findComponentDefinitionById(path.parent?.templateId ?? "", context);
-  const schema = (parentDefinition?.schema ?? []).find(s => s.prop === path.parent?.fieldName);
-  return schema;
-}
-const toName = destination => [destination.parent?.path, destination.parent?.fieldName].filter(Boolean).join(".");
-const fixIndexInCollection = (index = 0, schema) => {
-  if (schema?.type === "component-collection") {
-    return index + 1;
-  }
-  return index;
-};
-function destinationResolver({
-  form,
-  context
-}) {
-  return function (initialDestinationPath) {
-    const resolvedDestinations = [];
-    const resolvedPaths = new Set();
-    const pathsQueue = [initialDestinationPath];
-    while (pathsQueue.length > 0) {
-      const path = pathsQueue.shift();
-      if (!path) {
-        continue;
-      }
-      if (resolvedPaths.has(path)) {
-        continue;
-      }
-      if (!dotNotationGet(form.values, path)) {
-        continue;
-      }
-      const parsed = parsePath(path, form);
-      const definition = findComponentDefinitionById(parsed.templateId ?? "", context);
-      if (!definition) {
-        continue;
-      }
-      const schema = getSchema(parsed, context);
-      resolvedDestinations.push({
-        index: fixIndexInCollection(parsed.index, schema),
-        name: toName(parsed),
-        insert: insertCommand({
-          context,
-          form,
-          schema,
-          templateId: parsed.parent?.templateId
-        })
-      });
-      for (const slot of definition.pasteSlots ?? []) {
-        const slotSchema = definition.schema.find(({
-          prop
-        }) => prop === slot);
-        if (!slotSchema) {
-          continue;
-        }
-        const slotPath = `${path}.${slot}`;
-        const slotValues = dotNotationGet(form.values, slotPath) ?? [];
-        if (slotValues.length === 0) {
-          resolvedDestinations.push({
-            name: slotPath,
-            index: 0,
-            insert: insertCommand({
-              context,
-              form,
-              schema: slotSchema,
-              templateId: definition.id
-            })
-          });
-        } else if (slotSchema.type === "component") {
-          pathsQueue.push(`${slotPath}.0`);
-        } else if (slotSchema.type === "component-collection") {
-          pathsQueue.push(...Array.from(Array(slotValues.length).keys()).map(idx => `${slotPath}.${idx}`).reverse());
-        }
-      }
-    }
-    return resolvedDestinations;
-  };
-}
-
-function pasteManager() {
-  const inserts = new Map();
-  return destinations => item => {
-    let i = 0;
-    while (i < destinations.length) {
-      const {
-        index,
-        name,
-        insert
-      } = destinations[i];
-      const path = `${name}.${index}`;
-      const latestDestinationInserts = inserts.get(path) ?? 0;
-      const result = insert(name, index + latestDestinationInserts, item);
-      if (result) {
-        inserts.set(path, latestDestinationInserts + 1);
-        return result;
-      }
-      i++;
-    }
-    return null;
-  };
-}
-
-/**
- * A selected rich text part is framed by its $richText component, so moving the
- * selection around starts from that component.
- */
-function getFramedPath(path) {
-  return isConfigPathRichTextPart(path) ? path.replace(RICH_TEXT_PART_CONFIG_PATH_REGEXP, "") : path;
-}
-
-/**
- * A path that no longer points at a component entry (e.g. the item was just removed)
- * resolves to its closest existing ancestor with a leftover field name.
- */
-function isComponentPath(path, editorContext) {
-  return parsePath(path, editorContext.form).fieldName === undefined;
-}
-
-/**
- * Whether the component at `path` renders inside a selection frame on the canvas.
- * Mirrors rendering: the page root has no frame, children of `noInline` slots are built
- * without EditableComponentBuilder, and BlocksControls skips the frame for compiled
- * components marked `noInline` (`selectable: false` in editing info).
- */
-function hasSelectionFrame(path, editorContext) {
-  const {
-    parent
-  } = parsePath(path, editorContext.form);
-  if (!parent) {
-    return false;
-  }
-  const schemaProp = findComponentDefinitionById(parent.templateId, editorContext)?.schema.find(schemaProp => schemaProp.prop === parent.fieldName);
-  if (!schemaProp || "noInline" in schemaProp && schemaProp.noInline) {
-    return false;
-  }
-  const compiledComponent = dotNotationGet(editorContext.compiledComponentConfig, pathToCompiledPath(path, editorContext));
-  return compiledComponent !== undefined && !compiledComponent.__editing?.noInline;
-}
-
-/**
- * Framed components that contain `path`, nearest first: the layers a user can move the
- * selection up to from the canvas.
- */
-function getSelectableAncestorPaths(path, editorContext) {
-  const ancestorPaths = [];
-  try {
-    const framedPath = getFramedPath(path);
-    if (!isComponentPath(framedPath, editorContext)) {
-      return [];
-    }
-    if (framedPath !== path && hasSelectionFrame(framedPath, editorContext)) {
-      ancestorPaths.push(framedPath);
-    }
-    let parent = parsePath(framedPath, editorContext.form).parent;
-    while (parent) {
-      if (hasSelectionFrame(parent.path, editorContext)) {
-        ancestorPaths.push(parent.path);
-      }
-      parent = parsePath(parent.path, editorContext.form).parent;
-    }
-  } catch {
-    return [];
-  }
-  return ancestorPaths;
-}
-
-/**
- * Focus after "select parent": the nearest framed ancestor of every focused item, once
- * each. Top-level sections have no framed parent, so selecting their parent clears focus.
- */
-function getParentFocusedFields(focusedFields, editorContext) {
-  const parentPaths = focusedFields.flatMap(focusedField => getSelectableAncestorPaths(focusedField, editorContext).slice(0, 1));
-  return Array.from(new Set(parentPaths));
-}
-
-/**
- * Component name shown by canvas selection UI (hover label, breadcrumb). Falls back to
- * the component id when its definition has no label.
- */
-function getComponentLabel(templateId, editorContext, translate) {
-  const definition = findComponentDefinitionById(templateId, editorContext);
-  return translate(definition?.label ?? templateId);
-}
-
-/**
- * Breadcrumb for a focused path: framed ancestors outermost first, then the framed
- * selection itself. Empty when the path no longer points at a component.
- */
-function getSelectionBreadcrumb(path, editorContext, translate) {
-  try {
-    const framedPath = getFramedPath(path);
-    if (!isComponentPath(framedPath, editorContext)) {
-      return [];
-    }
-    return getSelectableAncestorPaths(framedPath, editorContext).reverse().concat(framedPath).map(crumbPath => ({
-      path: crumbPath,
-      label: getComponentLabel(parsePath(crumbPath, editorContext.form).templateId, editorContext, translate)
-    }));
-  } catch {
-    return [];
-  }
-}
-
 // Fixed height, rendered even without a selection, so selecting never resizes the canvas.
-const BreadcrumbBar = styled.nav.withConfig({
+const BreadcrumbBar = styled$1.nav.withConfig({
   displayName: "SelectionBreadcrumb__BreadcrumbBar",
   componentId: "sc-1hwunmc-0"
 })(["flex:0 0 36px;display:flex;align-items:center;gap:2px;padding:0 12px;overflow-x:auto;border-top:1px solid ", ";background:", ";white-space:nowrap;"], Colors.black10, Colors.white);
-const Crumb = styled.button.withConfig({
+const Crumb = styled$1.button.withConfig({
   displayName: "SelectionBreadcrumb__Crumb",
   componentId: "sc-1hwunmc-1"
 })(["flex-shrink:0;padding:2px 6px;border:0;border-radius:4px;background:transparent;cursor:pointer;&:hover{background:", ";}"], Colors.black10);
-const CrumbLabel = styled(Typography).withConfig({
+const CrumbLabel = styled$1(Typography).withConfig({
   displayName: "SelectionBreadcrumb__CrumbLabel",
   componentId: "sc-1hwunmc-2"
 })(["cursor:pointer;font-weight:", ";"], ({
@@ -8929,291 +9214,6 @@ function SelectionBreadcrumb() {
     }, crumb.label)));
   }));
 }
-
-function editorVariable(name) {
-  return `--shopstory-editor-${name}`;
-}
-const BEFORE_ADD_BUTTON_DISPLAY = editorVariable("before-add-button-display");
-const BEFORE_ADD_BUTTON_TOP = editorVariable("before-add-button-top");
-const BEFORE_ADD_BUTTON_LEFT = editorVariable("before-add-button-left");
-const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
-const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
-const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
-
-/**
- * Moving a block is an insert followed by a remove, and each of those shifts the indices of
- * everything after it in the same collection. Replaying those shifts is what makes the block
- * that gets removed the original one rather than a neighbour that slid into its place.
- *
- * The insert happens first on purpose: if no collection in the chosen section accepts the
- * block the document is simply left alone, whereas removing first would destroy it.
- */
-function planMoveAfterInsert(sourcePath, insertedPath) {
-  const sourceToRemove = shiftPath(sourcePath, insertedPath, "downward");
-  return {
-    sourceToRemove,
-    pathToFocus: shiftPath(insertedPath, sourceToRemove, "upward")
-  };
-}
-const SelectionFrameActionsContainer = styled$1.div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
-  componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, Colors.white);
-const SelectionFrameActionsGroupButtons = styled$1.div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
-  componentId: "sc-1fta8jo-1"
-})(["display:flex;gap:2px;"]);
-const StyledButtonGroup = styled$1.div.withConfig({
-  displayName: "SelectionFrameActions__StyledButtonGroup",
-  componentId: "sc-1fta8jo-2"
-})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
-const StyledMenu = styled$1.div.withConfig({
-  displayName: "SelectionFrameActions__StyledMenu",
-  componentId: "sc-1fta8jo-3"
-})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
-const SelectionMoreActions = ({
-  t
-}) => {
-  const editorContext = useEditorContext();
-  const router = new URLSearchParams(window.location.search);
-  const currentDocument = router.get("document") ?? "";
-  const toaster = useToaster();
-  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const inputRef = useRef(null);
-  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
-  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
-  const onRemoveGlobalSection = () => {
-    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
-    const groupName = currentSection?.[0];
-    if (groupName) {
-      setIsLoading(true);
-      editorContext.onGlobalSectionChange?.({
-        mode: "update",
-        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
-        label: currentSection?.[1].entities[currentEntry._id].label,
-        groupName,
-        entry: currentEntry
-      }).then(() => {
-        toaster.success(`${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`, {
-          duration: 5000
-        });
-        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
-          ...currentEntry,
-          _id: uniqueId()
-        });
-      }).catch(reason => {
-        toaster.error(reason);
-      }).finally(() => {
-        setIsLoading(false);
-      });
-    }
-  };
-  const menus = [{
-    id: "set-global",
-    label: t("editor.sidebar.globalSections.setGlobal"),
-    children: globalSectionGroups.map(globalSectionGroup => ({
-      id: globalSectionGroup.id,
-      label: globalSectionGroup.name,
-      onClick: () => setOpenConfirmGlobalSection({
-        groupName: globalSectionGroup.name
-      })
-    })),
-    isHidden: isAddedToPage
-  }, {
-    id: "remove-global",
-    label: t("editor.sidebar.globalSections.removeGlobal"),
-    isLoading,
-    isHidden: !isAddedToPage,
-    onClick: onRemoveGlobalSection
-  }];
-  const onClose = () => {
-    if (!isLoading) {
-      setOpenConfirmGlobalSection(null);
-    }
-  };
-  const onConfirmSetGlobalSection = () => {
-    if (!inputRef?.current?.value) {
-      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
-      return;
-    }
-    if (isLoading) {
-      return;
-    }
-    setIsLoading(true);
-    editorContext.onGlobalSectionChange?.({
-      mode: "update",
-      groupName: openConfirmGlobalSection?.groupName ?? "",
-      label: inputRef?.current?.value,
-      entry: currentEntry
-    }).then(() => {
-      setIsLoading(false);
-      toaster.success(`${t("editor.sidebar.globalSections.setGlobal.success")} ${t("saveBeforeExit")}`, {
-        duration: 5000
-      });
-      onClose();
-    }).catch(reason => {
-      setIsLoading(false);
-      toaster.error(reason);
-    });
-  };
-  const onEnter = e => {
-    if (e.code === "Enter" || e.code === "NumpadEnter") {
-      e.preventDefault();
-      e.stopPropagation();
-      onConfirmSetGlobalSection();
-    }
-  };
-  useEffect(() => {
-    if (openConfirmGlobalSection?.groupName) {
-      queueMicrotask(() => {
-        inputRef.current?.focus();
-      });
-    }
-  }, [openConfirmGlobalSection]);
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledMenu, null, /*#__PURE__*/React__default.createElement(Menu, {
-    menus: menus,
-    styles: {
-      top: "40px",
-      left: "80%"
-    }
-  })), /*#__PURE__*/React__default.createElement(Modal, {
-    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
-    isOpen: !!openConfirmGlobalSection,
-    onRequestClose: onClose,
-    mode: "fit",
-    height: "auto",
-    endAdornment: /*#__PURE__*/React__default.createElement(StyledButtonGroup, null, /*#__PURE__*/React__default.createElement(ButtonSecondary, {
-      onClick: onClose
-    }, t("cancel")), /*#__PURE__*/React__default.createElement(ButtonPrimary, {
-      isLoading: isLoading,
-      disabled: isLoading,
-      onClick: onConfirmSetGlobalSection
-    }, t("template.save.default")))
-  }, /*#__PURE__*/React__default.createElement(Input, {
-    ref: inputRef,
-    withBorder: true,
-    style: {
-      width: 300
-    },
-    onKeyDown: onEnter
-  })));
-};
-const SelectionFrameActions = ({
-  focussedField,
-  actions,
-  translationFiles,
-  contextParams,
-  editorMode
-}) => {
-  const {
-    t
-  } = getTranslation({
-    translationFiles,
-    contextParams
-  });
-  const [showMore, setShowMore] = useState(false);
-  const [showMoveTo, setShowMoveTo] = useState(false);
-  const editorContext = useEditorContext();
-  const toaster = useToaster();
-  const parentFocusedFields = getParentFocusedFields(focussedField, editorContext);
-
-  // Moving carries one block: the block is inserted into the chosen section and removed from
-  // where it was, and a multi-selection has no single source path to remove. Several blocks
-  // are still moved together with cut and paste.
-  const sourcePath = focussedField.length === 1 ? focussedField[0] : undefined;
-  const moveTo = destinationPath => {
-    setShowMoveTo(false);
-    if (!sourcePath) {
-      return;
-    }
-    const sourceEntry = dotNotationGet(editorContext.form.values, sourcePath);
-    if (!sourceEntry) {
-      return;
-    }
-    const block = duplicateConfig(sourceEntry, editorContext);
-    let wasRejected = false;
-    editorContext.actions.runChange(() => {
-      const insertedPath = pasteManager()(destinationResolver({
-        form: editorContext.form,
-        context: editorContext
-      })(destinationPath))(block);
-      if (!insertedPath) {
-        // Nothing in the chosen section accepts this block, so the document is untouched.
-        wasRejected = true;
-        return [sourcePath];
-      }
-      const {
-        sourceToRemove,
-        pathToFocus
-      } = planMoveAfterInsert(sourcePath, insertedPath);
-      editorContext.actions.removeItems([sourceToRemove]);
-      return [pathToFocus];
-    });
-    if (wasRejected) {
-      toaster.error(t("editor.canvas.action.moveTo.rejected"));
-    }
-  };
-
-  // Every other top level section is offered as a destination. The section the block is
-  // already in, and any section inside the block itself, are not destinations.
-  const moveDestinations = useMemo(() => {
-    if (!sourcePath) {
-      return [];
-    }
-    const sections = editorContext.form.values?.data ?? [];
-    return sections.map((_, index) => `data.${index}`).filter(destinationPath => destinationPath !== sourcePath && !destinationPath.startsWith(`${sourcePath}.`) && !sourcePath.startsWith(`${destinationPath}.`)).map((destinationPath, _, all) => ({
-      id: destinationPath,
-      // Sections repeat, so the position disambiguates two blocks with the same name.
-      label: `${all.indexOf(destinationPath) + 1}. ${getComponentLabel(parsePath(destinationPath, editorContext.form).templateId, editorContext, t)}`,
-      onClick: () => moveTo(destinationPath)
-    }));
-  }, [sourcePath, editorContext.form.values, t]);
-  return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, {
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, parentFocusedFields.length > 0 && /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.LayerGroup,
-    hideLabel: true,
-    onClick: () => editorContext.setFocussedField(parentFocusedFields)
-  }, t("selectParent")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.Duplicate,
-    hideLabel: true,
-    onClick: () => actions.duplicateItems(focussedField)
-  }, t("duplicate")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.Trash,
-    hideLabel: true,
-    onClick: () => actions.removeItems(focussedField)
-  }, t("delete")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.ArrowUp,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "top")
-  }, t("editor.canvas.action.moveUp")), /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.ArrowDown,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("editor.canvas.action.moveDown")), moveDestinations.length > 0 && /*#__PURE__*/React__default.createElement(ButtonGhost
-  // Not the drag grip, although it used to wear its icon: this opens a
-  // list of destinations. The grip lives on the block frame, and two
-  // controls that look alike is how people ended up dragging this one.
-  , {
-    icon: Icons.ArrowRight,
-    hideLabel: true,
-    onClick: () => setShowMoveTo(prev => !prev)
-  }, t("editor.canvas.action.moveTo")), editorMode !== "admin-template" && /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.ThreeDotsHorizontal,
-    showTooltip: false,
-    hideLabel: true,
-    onClick: () => setShowMore(prev => !prev)
-  })), showMoveTo && moveDestinations.length > 0 ? /*#__PURE__*/React__default.createElement(StyledMenu, null, /*#__PURE__*/React__default.createElement(Menu, {
-    menus: moveDestinations,
-    styles: {
-      top: "40px",
-      left: "0%"
-    }
-  })) : null, editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default.createElement(SelectionMoreActions, {
-    t: t
-  }) : null);
-};
 
 function AddButton({
   position,
@@ -9279,13 +9279,13 @@ function AddButton({
     stroke: "currentColor"
   }))));
 }
-const AddIconButton = styled(IconButton).withConfig({
+const AddIconButton = styled$1(IconButton).withConfig({
   displayName: "AddButton__AddIconButton",
   componentId: "sc-79bcl2-0"
 })(["display:flex;align-items:center;&:focus{outline:none !important;}", ";"], props => props.isOpen && css`
       pointer-events: none;
     `);
-const AddButtonWrapper = styled.div.withConfig({
+const AddButtonWrapper = styled$1.div.withConfig({
   displayName: "AddButton__AddButtonWrapper",
   componentId: "sc-79bcl2-1"
 })(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;&:hover{transform:scale(1.2);transition:transform 0.1s ease-in-out;}"], ({
@@ -9296,11 +9296,11 @@ const AddButtonWrapper = styled.div.withConfig({
   position
 }) => position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY);
 
-const Wrapper = styled.div.withConfig({
+const Wrapper = styled$1.div.withConfig({
   displayName: "SelectionFramestyles__Wrapper",
   componentId: "sc-xqih8j-0"
 })(["position:absolute;top:0;left:0;bottom:0;right:0;display:grid;place-items:center;pointer-events:none;"]);
-const FrameWrapper = styled.div.attrs(({
+const FrameWrapper = styled$1.div.attrs(({
   width,
   height,
   transform
@@ -10375,19 +10375,19 @@ const DEVICE_FRAME_PADDING_PX = 48;
 
 /** A fixed zoom level, or "fit" to always scale the device down to the container. */
 
-const CanvasColumn = styled.div.withConfig({
+const CanvasColumn = styled$1.div.withConfig({
   displayName: "Editor__CanvasColumn",
   componentId: "sc-t95yuf-0"
 })(["flex:1 1 auto;display:flex;flex-direction:column;"]);
-const ContentContainer = styled.div.withConfig({
+const ContentContainer = styled$1.div.withConfig({
   displayName: "Editor__ContentContainer",
   componentId: "sc-t95yuf-1"
 })(["position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;"]);
-const SidebarAndContentContainer = styled.div.withConfig({
+const SidebarAndContentContainer = styled$1.div.withConfig({
   displayName: "Editor__SidebarAndContentContainer",
   componentId: "sc-t95yuf-2"
 })(["height:", ";width:100%;background:#fafafa;display:flex;flex-direction:row;align-items:stretch;"], props => `calc(${props.height} - ${TOP_BAR_HEIGHT}px)`);
-const SidebarContainer = styled.div.withConfig({
+const SidebarContainer = styled$1.div.withConfig({
   displayName: "Editor__SidebarContainer",
   componentId: "sc-t95yuf-3"
 })(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
@@ -10399,19 +10399,19 @@ const SidebarContainer = styled.div.withConfig({
 // max-width clamps that automatic minimum, which pins the width without
 // clipping: overflow here would cut off any popover a field opens.
 `flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`, Colors.white, Colors.black100, Colors.black100);
-const DataSaverRoot = styled.div.withConfig({
+const DataSaverRoot = styled$1.div.withConfig({
   displayName: "Editor__DataSaverRoot",
   componentId: "sc-t95yuf-4"
 })(["position:fixed;width:100%;height:100%;z-index:100000;display:flex;justify-content:center;align-items:center;"]);
-const DataSaverOverlay = styled.div.withConfig({
+const DataSaverOverlay = styled$1.div.withConfig({
   displayName: "Editor__DataSaverOverlay",
   componentId: "sc-t95yuf-5"
 })(["z-index:-1;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.25);"]);
-const DataSaverModal = styled.div.withConfig({
+const DataSaverModal = styled$1.div.withConfig({
   displayName: "Editor__DataSaverModal",
   componentId: "sc-t95yuf-6"
 })(["background:white;padding:32px;border-radius:8px;display:flex;justify-content:center;align-items:center;", " font-size:16px;"], Fonts.body);
-const AuthenticationScreen = styled.div.withConfig({
+const AuthenticationScreen = styled$1.div.withConfig({
   displayName: "Editor__AuthenticationScreen",
   componentId: "sc-t95yuf-7"
 })(["width:100vw;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px;text-align:center;", ""], Fonts.bodyLarge);
@@ -11183,9 +11183,20 @@ const EditorContent = ({
           actions.runChange(() => {
             const newConfig = duplicateConfig(dotNotationGet(form.values, fromPath), editorContext);
             const insertionIndex = calculateInsertionIndex(fromPath, toPath, placement, form);
+
+            // The insert lands first, and it renumbers everything after it in
+            // the collection it lands in. `fromPath` was read before that, so
+            // removing it directly deleted whichever block had slid into that
+            // index — which is how a dragged block could vanish while one of
+            // its old neighbours ended up duplicated. The "move to" menu has
+            // always replayed the shift; the drag path now does too.
+            const {
+              sourceToRemove,
+              pathToFocus
+            } = planMoveAfterInsert(fromPath, `${insertionPath}.${insertionIndex}`);
             form.mutators.insert(insertionPath, insertionIndex, newConfig);
-            actions.removeItems([fromPath]);
-            return [isToPathPlaceholder ? `${insertionPath}.0` : `${insertionPath}.${insertionIndex}`];
+            actions.removeItems([sourceToRemove]);
+            return [pathToFocus];
           });
         }
       }
@@ -11512,43 +11523,43 @@ const SearchableSmallPickerModal = ({
  * CARD
  */
 
-const CardRoot = styled.div.withConfig({
+const CardRoot = styled$1.div.withConfig({
   displayName: "SectionPicker__CardRoot",
   componentId: "sc-5szert-0"
 })(["&:hover{outline:1px solid ", ";outline-offset:8px;}.editButton{opacity:0;}&:hover{.editButton{opacity:1;}}"], Colors.black10);
-const ImageContainer = styled.div.withConfig({
+const ImageContainer = styled$1.div.withConfig({
   displayName: "SectionPicker__ImageContainer",
   componentId: "sc-5szert-1"
 })(["position:relative;background-color:", ";margin-bottom:8px;padding-bottom:", ";cursor:pointer;"], Colors.black10, p => p.mode === "large-3" ? "90%" : "60%");
-const CardImg = styled.img.withConfig({
+const CardImg = styled$1.img.withConfig({
   displayName: "SectionPicker__CardImg",
   componentId: "sc-5szert-2"
 })(["position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;padding:24px;box-sizing:border-box;"]);
-const CardImgPlaceholder = styled.div.withConfig({
+const CardImgPlaceholder = styled$1.div.withConfig({
   displayName: "SectionPicker__CardImgPlaceholder",
   componentId: "sc-5szert-3"
 })(["position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;"]);
-const CardFooter = styled.div.withConfig({
+const CardFooter = styled$1.div.withConfig({
   displayName: "SectionPicker__CardFooter",
   componentId: "sc-5szert-4"
 })(["display:flex;flex-direction:row;justify-content:space-between;align-items:center;margin-top:8px;"]);
-const CardLabelContainer = styled.div.withConfig({
+const CardLabelContainer = styled$1.div.withConfig({
   displayName: "SectionPicker__CardLabelContainer",
   componentId: "sc-5szert-5"
 })(["display:flex;flex-direction:row;align-items:center;"]);
-const CardLabelTemplateName = styled.div.withConfig({
+const CardLabelTemplateName = styled$1.div.withConfig({
   displayName: "SectionPicker__CardLabelTemplateName",
   componentId: "sc-5szert-6"
 })(["", ";color:black;"], Fonts.body);
-const Title = styled.div.withConfig({
+const Title = styled$1.div.withConfig({
   displayName: "SectionPicker__Title",
   componentId: "sc-5szert-7"
 })(["", ""], Fonts.label);
-const TitleContainer = styled.div.withConfig({
+const TitleContainer = styled$1.div.withConfig({
   displayName: "SectionPicker__TitleContainer",
   componentId: "sc-5szert-8"
 })(["display:flex;flex-direction:row;gap:8px;align-items:center;margin-bottom:24px;"]);
-const Message = styled.div.withConfig({
+const Message = styled$1.div.withConfig({
   displayName: "SectionPicker__Message",
   componentId: "sc-5szert-9"
 })(["padding-top:32px;", ";"], Fonts.body);
@@ -11621,27 +11632,27 @@ const SectionCard = ({
  * MODAL
  */
 
-const ModalRoot = styled.div.withConfig({
+const ModalRoot = styled$1.div.withConfig({
   displayName: "SectionPicker__ModalRoot",
   componentId: "sc-5szert-10"
 })(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;grid-template-columns:200px 1fr;"]);
-const ModalGridRoot = styled.div.withConfig({
+const ModalGridRoot = styled$1.div.withConfig({
   displayName: "SectionPicker__ModalGridRoot",
   componentId: "sc-5szert-11"
 })(["display:grid;grid-template-columns:", ";grid-column-gap:16px;grid-row-gap:30px;"], p => p.mode === "large-3" ? "1fr 1fr 1fr" : "1fr 1fr");
-const Sidebar = styled.div.withConfig({
+const Sidebar = styled$1.div.withConfig({
   displayName: "SectionPicker__Sidebar",
   componentId: "sc-5szert-12"
 })(["overflow-y:hidden;overflow-x:hidden;border-right:1px solid ", ";height:100%;"], Colors.black5);
-const SidebarContent = styled.div.withConfig({
+const SidebarContent = styled$1.div.withConfig({
   displayName: "SectionPicker__SidebarContent",
   componentId: "sc-5szert-13"
 })(["padding:24px 4px;display:flex;flex-direction:column;gap:8px;"]);
-const SidebarButton = styled.button.withConfig({
+const SidebarButton = styled$1.button.withConfig({
   displayName: "SectionPicker__SidebarButton",
   componentId: "sc-5szert-14"
 })(["all:unset;height:38px;", " display:flex;padding-left:16px;align-items:center;&:hover{background:", ";}cursor:pointer;"], Fonts.body, Colors.black5);
-const GridRoot = styled.div.withConfig({
+const GridRoot = styled$1.div.withConfig({
   displayName: "SectionPicker__GridRoot",
   componentId: "sc-5szert-15"
 })(["padding:0px 16px;height:100%;overflow-x:hidden;overflow-y:auto;"]);
@@ -12293,6 +12304,58 @@ function resolveDropIndicatorEdge({
   return activeIndex > index ? "before" : "after";
 }
 
+const CSS = /*#__PURE__*/Object.freeze({
+  Translate: {
+    toString(transform) {
+      if (!transform) {
+        return;
+      }
+
+      const {
+        x,
+        y
+      } = transform;
+      return "translate3d(" + (x ? Math.round(x) : 0) + "px, " + (y ? Math.round(y) : 0) + "px, 0)";
+    }
+
+  },
+  Scale: {
+    toString(transform) {
+      if (!transform) {
+        return;
+      }
+
+      const {
+        scaleX,
+        scaleY
+      } = transform;
+      return "scaleX(" + scaleX + ") scaleY(" + scaleY + ")";
+    }
+
+  },
+  Transform: {
+    toString(transform) {
+      if (!transform) {
+        return;
+      }
+
+      return [CSS.Translate.toString(transform), CSS.Scale.toString(transform)].join(' ');
+    }
+
+  },
+  Transition: {
+    toString(_ref) {
+      let {
+        property,
+        duration,
+        easing
+      } = _ref;
+      return property + " " + duration + "ms " + easing;
+    }
+
+  }
+});
+
 /**
  * Thickness of the insertion line, in canvas pixels. The canvas is scaled down by the zoom
  * control, so the line is drawn thinner than this wherever the device does not fit the
@@ -12558,7 +12621,17 @@ function SelectionFrameController({
     "data-drop-container": isDropContainer,
     "data-drop-target": isDropTarget,
     "data-draggable-active": sortable.active !== null && sortable.active?.id === id,
-    className: wrapperClassName().className,
+    className: wrapperClassName().className
+    // The block actually moves. Until now the sortable transform was computed
+    // and thrown away, so a reorder showed a dimmed block sitting exactly
+    // where it started while its neighbours stayed put — the page looked
+    // frozen for the whole gesture. The strategy that produces this only
+    // answers for the collection being sorted, so nothing outside it shifts.
+    ,
+    style: {
+      transform: CSS.Translate.toString(sortable.transform),
+      transition: sortable.transition
+    },
     ref: node => {
       setNode(node);
       sortable.setNodeRef(node);
@@ -12683,6 +12756,7 @@ function BlocksControls({
   });
   const isDroppableDisabled = sortableDisabledState.droppable;
   const componentLabel = getComponentLabel(templateId, editorContext, t);
+  const activeDragPath = dndContext.active?.data.current?.path;
   const sortable = useSortable({
     id,
     // `label` rides along so the drag preview in the canvas can name what is
@@ -12692,7 +12766,10 @@ function BlocksControls({
       label: componentLabel
     },
     disabled: sortableDisabledState,
-    strategy: direction === "horizontal" ? horizontalListSortingStrategy : verticalListSortingStrategy
+    strategy: getSortingStrategy({
+      direction,
+      isSortingWithinThisCollection: !!activeDragPath && isPathsParentEqual(activeDragPath, path)
+    })
   });
   if (disabled) {
     return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, children);
@@ -12868,6 +12945,30 @@ function getAllowedComponentTypes(componentDefinition) {
  * the move-to-another-parent case: they need the extra before/after placeholders, and the
  * parent window resolves them through insert + remove instead of a plain reorder.
  */
+/** A strategy that moves nothing, for blocks a drag does not concern. */
+const noSortingStrategy = () => null;
+
+/**
+ * How this block should shift while something is being dragged.
+ *
+ * Sorting strategies work off positions in the sortable list, and that list
+ * holds every collection on the page at once. Within one collection the entries
+ * are consecutive, so the arithmetic lands on the real siblings and a reorder
+ * opens a gap where the block will go — the movement that was missing, and the
+ * reason a drag felt like nothing was happening. Across two collections those
+ * positions describe unrelated blocks, so asking them to shift would scatter
+ * parts of the page that the drop will not touch; they stay put instead, and
+ * the insertion line is what says where the block lands.
+ */
+function getSortingStrategy({
+  direction,
+  isSortingWithinThisCollection
+}) {
+  if (!isSortingWithinThisCollection) {
+    return noSortingStrategy;
+  }
+  return direction === "horizontal" ? horizontalListSortingStrategy : verticalListSortingStrategy;
+}
 function isPathsParentEqual(path1, path2) {
   const activePathParts = path1.split(".");
   const currentPathParts = path2.split(".");

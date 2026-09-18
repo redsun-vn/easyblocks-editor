@@ -16,16 +16,16 @@ var easyblocksDesignSystem = require('@redsun-vn/easyblocks-design-system');
 var throttle = require('lodash.throttle');
 var debounce = require('lodash/debounce');
 var Modal = require('react-modal');
-var lodash = require('lodash');
-var buttons = require('@redsun-vn/easyblocks-design-system/buttons');
 var icons = require('@redsun-vn/easyblocks-design-system/icons');
-var Input = require('@redsun-vn/easyblocks-design-system/Input');
+var Loader = require('@redsun-vn/easyblocks-design-system/Loader');
 var Typography = require('@redsun-vn/easyblocks-design-system/Typography');
+var buttons = require('@redsun-vn/easyblocks-design-system/buttons');
+var Input = require('@redsun-vn/easyblocks-design-system/Input');
+var lodash = require('lodash');
 var ThumbnailButton = require('@redsun-vn/easyblocks-design-system/ThumbnailButton');
 var ReactDOM = require('react-dom');
 var tooltip = require('@react-aria/tooltip');
 var reactPopper = require('react-popper');
-var Loader = require('@redsun-vn/easyblocks-design-system/Loader');
 var Select = require('@redsun-vn/easyblocks-design-system/Select');
 var RadixRadioGroup = require('@radix-ui/react-radio-group');
 var Toggle$1 = require('@redsun-vn/easyblocks-design-system/Toggle');
@@ -300,6 +300,1042 @@ function useEditorContext() {
   }
   return context;
 }
+
+function last(collection) {
+  return collection[collection.length - 1];
+}
+
+const takeNumbers = path => path.split(".").map(x => parseInt(x, 10)).filter(x => !Number.isNaN(x));
+const preOrderPathComparator = (direction = "ascending") => (pathA, pathB) => {
+  const order = direction === "ascending" ? 1 : -1;
+  const numbersA = takeNumbers(pathA);
+  const numbersB = takeNumbers(pathB);
+  const numberALength = numbersA.length;
+  const numberBLength = numbersB.length;
+  if (numberALength === 0 || numberBLength === 0) {
+    throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
+  }
+  const shorterLength = Math.min(numberALength, numberBLength);
+  let index = 0;
+  while (index < shorterLength) {
+    const valueA = numbersA[index];
+    const valueB = numbersB[index];
+    if (valueA !== valueB) {
+      return order * Math.sign(valueA - valueB);
+    }
+    index++;
+  }
+  return order * Math.sign(numberBLength - numberALength);
+};
+
+function duplicateItem(form, {
+  name,
+  sourceIndex,
+  targetIndex
+}, compilationContext) {
+  // Placeholders are not copyable
+  if (isPlaceholder(name + "." + sourceIndex, form.values)) {
+    return;
+  }
+  const configToDuplicate = dotNotationGet(form.values, name + "." + sourceIndex);
+  form.mutators.insert(name, targetIndex, _internals.duplicateConfig(configToDuplicate, compilationContext));
+}
+function pasteItems({
+  what,
+  where,
+  resolveDestination,
+  pasteCommand
+}) {
+  const successfulInsertsPaths = [];
+  takeLastOfEachParent(where).sort(preOrderPathComparator()).map(initialDestination => {
+    const destination = successfulInsertsPaths.reduce((acc, current) => shiftPath(acc, current, "downward"), initialDestination);
+    const resolvedDestinations = resolveDestination(destination);
+    return pasteCommand(resolvedDestinations);
+  }).forEach(paste => {
+    what.forEach(item => {
+      const insertedPath = paste(item);
+      if (insertedPath) {
+        successfulInsertsPaths.push(insertedPath);
+      }
+    });
+  });
+  return successfulInsertsPaths.length !== 0 ? successfulInsertsPaths : where;
+}
+
+/**
+ * Duplicates fields given in `fieldNames` within given `form`.
+ * `compilationContext` is used to properly duplicate elements associated with given names.
+ * @returns Array of fields to focus
+ */
+function duplicateItems(form, fieldNames, compilationContext) {
+  const duplicatableFieldNames = fieldNames.filter(fieldName => isFieldDuplicatable(fieldName, form, compilationContext));
+  if (duplicatableFieldNames.length === 0) {
+    return;
+  }
+  const fieldsGroupedByParentPath = groupFieldsByParentPath(duplicatableFieldNames, "ascending");
+  const nextFocusedFieldsPerGroup = [];
+  Object.values(fieldsGroupedByParentPath).forEach((sortedFields, fieldsGroupIndex) => {
+    nextFocusedFieldsPerGroup.push([]);
+    const lastFieldIndex = getFieldPathIndex(last(sortedFields));
+    sortedFields.forEach((focusedField, fieldIndex) => {
+      const sourceIndex = getFieldPathIndex(focusedField);
+      const targetIndex = lastFieldIndex + 1 + fieldIndex;
+      const parentPath = getParentPath(focusedField);
+      duplicateItem(form, {
+        name: parentPath,
+        sourceIndex,
+        targetIndex
+      }, compilationContext);
+      nextFocusedFieldsPerGroup[fieldsGroupIndex].push(`${parentPath}.${lastFieldIndex + 1 + fieldIndex}`);
+    });
+  });
+  return nextFocusedFieldsPerGroup.flat();
+}
+function moveItem(form, {
+  from,
+  to,
+  name
+}) {
+  // Placeholders are not movable
+  if (isPlaceholder(name + "." + from, form.values)) {
+    return;
+  }
+  form.mutators.move(name, from, to);
+}
+
+/**
+ * Moves fields given in `fieldNamesToRemove` within given `form` in given `direction`.
+ * @returns Array of fields to focus.
+ */
+function moveItems(form, fieldsToMove, direction) {
+  const nextFocusedFields = [];
+  const isMovingMultipleFields = fieldsToMove.length > 1;
+  if (direction === "top" || direction === "left") {
+    const fieldsGroupedByParentPath = groupFieldsByParentPath(fieldsToMove, "ascending");
+    Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
+      let wasAnyFieldWithinCurrentGroupMoved = false;
+      sortedFields.forEach((fieldName, fieldNameIndex) => {
+        const index = getFieldPathIndex(fieldName);
+        const parentPath = getParentPath(fieldName);
+        if (isFirst(fieldName)) {
+          if (isMovingMultipleFields) {
+            nextFocusedFields.push(fieldName);
+          }
+          return;
+        }
+        if (isMovingMultipleFields && fieldNameIndex > 0 && !wasAnyFieldWithinCurrentGroupMoved) {
+          nextFocusedFields.push(fieldName);
+          return;
+        }
+        moveItem(form, {
+          from: index,
+          name: parentPath,
+          to: index - 1
+        });
+        if (!wasAnyFieldWithinCurrentGroupMoved) {
+          wasAnyFieldWithinCurrentGroupMoved = true;
+        }
+        nextFocusedFields.push(`${parentPath}.${index - 1}`);
+      });
+    });
+    if (nextFocusedFields.length > 0) {
+      return nextFocusedFields;
+    }
+  } else {
+    const fieldsGroupedByParentPath = groupFieldsByParentPath(fieldsToMove, "descending");
+    Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
+      let wasAnyFieldWithinCurrentGroupMoved = false;
+      sortedFields.forEach((fieldName, fieldNameIndex) => {
+        if (isLast(fieldName, form)) {
+          if (isMovingMultipleFields) {
+            nextFocusedFields.push(fieldName);
+          }
+          return;
+        }
+        if (isMovingMultipleFields && fieldNameIndex > 0 && !wasAnyFieldWithinCurrentGroupMoved) {
+          nextFocusedFields.push(fieldName);
+          return;
+        }
+        const index = getFieldPathIndex(fieldName);
+        const parentPath = getParentPath(fieldName);
+        moveItem(form, {
+          name: parentPath,
+          from: index,
+          to: index + 1
+        });
+        if (!wasAnyFieldWithinCurrentGroupMoved) {
+          wasAnyFieldWithinCurrentGroupMoved = true;
+        }
+        nextFocusedFields.push(`${parentPath}.${index + 1}`);
+      });
+    });
+    if (nextFocusedFields.length > 0) {
+      return nextFocusedFields;
+    }
+  }
+}
+function removeItem(form, {
+  index,
+  name
+}) {
+  const configPathToRemove = name + "." + index;
+
+  // Placeholders are not removable
+  if (isPlaceholder(configPathToRemove, form.values)) {
+    return;
+  }
+  const componentConfigValue = dotNotationGet(form.values, name);
+  if (componentConfigValue.length === 1) {
+    form.change(name, []);
+  } else {
+    form.mutators.remove(name, index);
+  }
+}
+
+/**
+ * Removes fields given in `fieldNamesToRemove` from given `form`.
+ * @returns Array of fields to focus
+ */
+function removeItems(form, fieldNamesToRemove, editorContext) {
+  const removableFieldNames = fieldNamesToRemove.filter(fieldName => isFieldRemovable(fieldName, form, editorContext));
+  if (removableFieldNames.length === 0) {
+    return;
+  }
+  const isRemovingMultipleFields = removableFieldNames.length > 1;
+  const fieldsGroupedByParentPath = groupFieldsByParentPath(removableFieldNames, "descending");
+  if (!isRemovingMultipleFields) {
+    const {
+      index,
+      parent,
+      templateId
+    } = _internals.parsePath(removableFieldNames[0], form);
+    if (index === undefined || !parent) {
+      throw new Error("Invalid path");
+    }
+    const fieldPath = `${parent.path}${parent.path === "" ? "" : "."}${parent.fieldName}`;
+    const itemsLength = dotNotationGet(form.values, fieldPath).length;
+    const isOnlyItem = itemsLength === 1;
+    const isLastItem = itemsLength - 1 === index;
+    removeItem(form, {
+      index,
+      name: fieldPath
+    });
+    const definition = _internals.findComponentDefinitionById(templateId, editorContext);
+    const isTextWrapper = definition && easyblocksCore.isNoCodeComponentOfType(definition, "@easyblocks/text-wrapper");
+
+    // If we're removing item from the text wrapper field let's focus the component holding that field for better UX
+    // TODO: We shouldn't decide based on the component type but rather on the source of the removal (canvas vs sidebar)
+    if (isTextWrapper) {
+      return [parent.path];
+    }
+    if (isOnlyItem) {
+      return [];
+    } else if (isLastItem) {
+      return [`${fieldPath}.${index - 1}`];
+    } else {
+      return [`${fieldPath}.${index}`];
+    }
+  }
+  Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
+    sortedFields.forEach(focusedField => {
+      const field = dotNotationGet(form.values, focusedField);
+
+      // Field could be already removed if its parent element was also selected
+      if (!field) {
+        return;
+      }
+      const index = getFieldPathIndex(focusedField);
+      const parentPath = getParentPath(focusedField);
+      removeItem(form, {
+        index,
+        name: parentPath
+      });
+    });
+  });
+  return [];
+}
+function replaceItems(paths, newConfig, editorContext) {
+  paths.forEach(path => {
+    dotNotationGet(editorContext.form.values, path);
+    editorContext.form.change(path, _internals.duplicateConfig(
+    // newConfig && oldConfig
+    //   ? changeComponentConfig(oldConfig, newConfig, editorContext)
+    //   : newConfig,
+    newConfig, editorContext));
+  });
+}
+function logItems(form, configPaths) {
+  const configValues = configPaths.map(configPath => {
+    return dotNotationGet(form.values, configPath);
+  });
+  configValues.forEach((config, index) => {
+    console.log("Config for", configPaths[index], config);
+  });
+}
+function groupFieldsByParentPath(fields, sortDirection) {
+  const fieldsIndicesGroupedByParentPath = fields.reduce((accumulator, currentField) => {
+    const index = getFieldPathIndex(currentField);
+    const parentPath = getParentPath(currentField);
+    const indices = accumulator[parentPath];
+    if (indices) {
+      accumulator[parentPath] = [...indices, index].sort((a, b) => {
+        return sortDirection === "descending" ? b - a : a - b;
+      });
+      return accumulator;
+    }
+    accumulator[parentPath] = [index];
+    return accumulator;
+  }, {});
+  return Object.fromEntries(Object.entries(fieldsIndicesGroupedByParentPath).map(([parentPath, indices]) => {
+    return [parentPath, indices.map(index => parentPath + "." + index)];
+  }));
+}
+function getFieldPathIndex(fieldPath) {
+  const index = +last(fieldPath.split("."));
+  if (Number.isNaN(index)) {
+    return -1;
+  }
+  return index;
+}
+function getParentPath(fieldPath) {
+  const fieldPathParts = fieldPath.split(".");
+  return fieldPathParts.slice(0, -1).join(".");
+}
+function isFirst(fieldPath) {
+  const index = getFieldPathIndex(fieldPath);
+  return index === 0;
+}
+function isLast(fieldPath, form) {
+  const index = getFieldPathIndex(fieldPath);
+  const parentPath = getParentPath(fieldPath);
+  const parentFieldElementsCount = dotNotationGet(form.values, parentPath).length;
+  return index === parentFieldElementsCount - 1;
+}
+function isPlaceholder(path, values) {
+  const templateId = dotNotationGet(values, path)._component;
+  return templateId.startsWith("$Placeholder");
+}
+function isFieldRemovable(fieldName, form, compilationContext) {
+  const {
+    parent
+  } = _internals.parsePath(fieldName, form);
+  if (parent) {
+    const parentComponentDefinition = _internals.findComponentDefinitionById(parent.templateId, compilationContext);
+    const fieldNameParent = last(getParentPath(fieldName).split("."));
+    const fieldSchema = parentComponentDefinition?.schema.find(schema => schema.prop === fieldNameParent);
+    if (fieldSchema && fieldSchema.type === "component" && fieldSchema.required) {
+      return false;
+    }
+  }
+  return true;
+}
+function isFieldDuplicatable(fieldName, form, compilationContext) {
+  return isFieldRemovable(fieldName, form, compilationContext);
+}
+const shiftPath = (originalPath, shiftingPath, direction = "downward") => {
+  const directionFactor = direction === "downward" ? 1 : -1;
+  const original = shiftingPath.split(".");
+  const shifting = originalPath.split(".");
+  if (original.length < 2) {
+    return originalPath;
+  }
+  let index = 0;
+  while (index < original.length - 1 && index < shifting.length - 1) {
+    if (shifting[index] !== original[index]) {
+      return originalPath;
+    }
+    if (shifting[index + 1] !== original[index + 1]) {
+      const numberA = Number(original[index + 1]);
+      const numberB = Number(shifting[index + 1]);
+      if (numberA < numberB && (index + 1 == original.length - 1 || index + 1 === shifting.length - 1)) {
+        shifting.splice(index + 1, 1, String(numberB + directionFactor));
+        return shifting.join(".");
+      } else {
+        return originalPath;
+      }
+    }
+    index += 2;
+  }
+  return originalPath;
+};
+function takeLastOfEachParent(where) {
+  const lastOfEachParent = where.reduce((acc, curr) => {
+    const trimmed = getParentPath(curr);
+    const index = getFieldPathIndex(curr);
+    acc[trimmed] = Math.max(index, acc[trimmed] ?? Number.MIN_SAFE_INTEGER);
+    return acc;
+  }, {});
+  return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
+}
+
+const SelectionMoreActionsContainer = styled__default["default"].div.withConfig({
+  displayName: "Menu__SelectionMoreActionsContainer",
+  componentId: "sc-7fauqp-0"
+})(["", " border-radius:4px;box-shadow:var(--tina-shadow-big);width:max-content;background:", ";pointer-events:all;"], ({
+  styles
+}) => `
+    position: ${styles?.top && styles?.left ? "absolute" : "unset"};
+    top: ${styles?.top ?? "unset"};
+    left: ${styles?.left ?? "unset"};
+  `, easyblocksDesignSystem.Colors.white);
+const SelectionMoreActionsGroupButtons = styled__default["default"].div.withConfig({
+  displayName: "Menu__SelectionMoreActionsGroupButtons",
+  componentId: "sc-7fauqp-1"
+})(["height:36px;position:relative;padding:0px 16px;display:flex;align-items:center;gap:2px;cursor:pointer;&:hover{background:", ";}"], easyblocksDesignSystem.Colors.black10);
+const MenuItem = ({
+  menu
+}) => {
+  const [isHoverMenu, setIsHoverMenu] = React.useState(false);
+  const menuItemRef = React.useRef(null);
+  const onClickMenu = () => {
+    if (!menu.isLoading) {
+      return !menu?.children?.length ? menu?.onClick?.() : undefined;
+    }
+  };
+  return /*#__PURE__*/React__default["default"].createElement(SelectionMoreActionsGroupButtons, {
+    ref: menuItemRef,
+    onMouseEnter: () => setIsHoverMenu(true),
+    onMouseLeave: () => setIsHoverMenu(false),
+    onClick: onClickMenu
+  }, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
+    style: {
+      cursor: "pointer"
+    },
+    variant: "body",
+    component: "label"
+  }, menu.isLoading ? /*#__PURE__*/React__default["default"].createElement(Loader.Loader, null) : menu.label), menu?.children?.length ? /*#__PURE__*/React__default["default"].createElement(icons.Icons.ChevronRight, {
+    size: 18
+  }) : null, isHoverMenu && menu?.children ? /*#__PURE__*/React__default["default"].createElement(Menu, {
+    styles: {
+      top: "0px",
+      left: `${menuItemRef.current?.offsetWidth ?? 0}px`
+    },
+    menus: menu.children
+  }) : null);
+};
+const Menu = ({
+  menus,
+  styles
+}) => {
+  return /*#__PURE__*/React__default["default"].createElement(SelectionMoreActionsContainer, {
+    styles: styles
+  }, menus.filter(menu => !menu.isHidden).map(menu => /*#__PURE__*/React__default["default"].createElement(MenuItem, {
+    key: menu.id,
+    menu: menu
+  })));
+};
+
+function includesAny(a, b) {
+  return a.some(i => b.includes(i));
+}
+
+function normalizeToStringArray(arg) {
+  return typeof arg === "string" ? [arg] : Array.isArray(arg) ? arg : [];
+}
+
+function reconcile({
+  context,
+  templateId,
+  fieldName
+}) {
+  return item => {
+    if (!fieldName || !templateId) {
+      return item;
+    }
+    const contextMatches = item._itemProps?.[templateId]?.[fieldName] !== undefined;
+    if (contextMatches) {
+      return item;
+    }
+    return _internals.normalize({
+      ...item,
+      _itemProps: {
+        [templateId]: {
+          [fieldName]: {}
+        }
+      }
+    }, context);
+  };
+}
+
+const getTypes = schema => {
+  if (schema?.type === "component-collection" || schema?.type === "component") {
+    return schema.accepts;
+  }
+  return [];
+};
+const insertCommand = ({
+  context,
+  form,
+  schema,
+  templateId
+}) => {
+  const types = getTypes(schema);
+  const reconcileItem = reconcile({
+    context,
+    templateId,
+    fieldName: schema?.prop
+  });
+  return (path, index, item) => {
+    const itemDefinition = _internals.findComponentDefinition(item, context);
+    if (!itemDefinition) {
+      return null;
+    }
+    const itemTypes = [itemDefinition.id, ...normalizeToStringArray(itemDefinition.type)];
+    if (!includesAny(types, itemTypes)) {
+      return null;
+    }
+    const reconciledItem = reconcileItem(item);
+    const duplicatedItem = _internals.duplicateConfig(reconciledItem, context);
+    form.mutators.insert(path, index, duplicatedItem);
+    return `${path}.${index}`;
+  };
+};
+
+function getSchema(path, context) {
+  const parentDefinition = _internals.findComponentDefinitionById(path.parent?.templateId ?? "", context);
+  const schema = (parentDefinition?.schema ?? []).find(s => s.prop === path.parent?.fieldName);
+  return schema;
+}
+const toName = destination => [destination.parent?.path, destination.parent?.fieldName].filter(Boolean).join(".");
+const fixIndexInCollection = (index = 0, schema) => {
+  if (schema?.type === "component-collection") {
+    return index + 1;
+  }
+  return index;
+};
+function destinationResolver({
+  form,
+  context
+}) {
+  return function (initialDestinationPath) {
+    const resolvedDestinations = [];
+    const resolvedPaths = new Set();
+    const pathsQueue = [initialDestinationPath];
+    while (pathsQueue.length > 0) {
+      const path = pathsQueue.shift();
+      if (!path) {
+        continue;
+      }
+      if (resolvedPaths.has(path)) {
+        continue;
+      }
+      if (!dotNotationGet(form.values, path)) {
+        continue;
+      }
+      const parsed = _internals.parsePath(path, form);
+      const definition = _internals.findComponentDefinitionById(parsed.templateId ?? "", context);
+      if (!definition) {
+        continue;
+      }
+      const schema = getSchema(parsed, context);
+      resolvedDestinations.push({
+        index: fixIndexInCollection(parsed.index, schema),
+        name: toName(parsed),
+        insert: insertCommand({
+          context,
+          form,
+          schema,
+          templateId: parsed.parent?.templateId
+        })
+      });
+      for (const slot of definition.pasteSlots ?? []) {
+        const slotSchema = definition.schema.find(({
+          prop
+        }) => prop === slot);
+        if (!slotSchema) {
+          continue;
+        }
+        const slotPath = `${path}.${slot}`;
+        const slotValues = dotNotationGet(form.values, slotPath) ?? [];
+        if (slotValues.length === 0) {
+          resolvedDestinations.push({
+            name: slotPath,
+            index: 0,
+            insert: insertCommand({
+              context,
+              form,
+              schema: slotSchema,
+              templateId: definition.id
+            })
+          });
+        } else if (slotSchema.type === "component") {
+          pathsQueue.push(`${slotPath}.0`);
+        } else if (slotSchema.type === "component-collection") {
+          pathsQueue.push(...Array.from(Array(slotValues.length).keys()).map(idx => `${slotPath}.${idx}`).reverse());
+        }
+      }
+    }
+    return resolvedDestinations;
+  };
+}
+
+function pasteManager() {
+  const inserts = new Map();
+  return destinations => item => {
+    let i = 0;
+    while (i < destinations.length) {
+      const {
+        index,
+        name,
+        insert
+      } = destinations[i];
+      const path = `${name}.${index}`;
+      const latestDestinationInserts = inserts.get(path) ?? 0;
+      const result = insert(name, index + latestDestinationInserts, item);
+      if (result) {
+        inserts.set(path, latestDestinationInserts + 1);
+        return result;
+      }
+      i++;
+    }
+    return null;
+  };
+}
+
+function editorVariable(name) {
+  return `--shopstory-editor-${name}`;
+}
+const BEFORE_ADD_BUTTON_DISPLAY = editorVariable("before-add-button-display");
+const BEFORE_ADD_BUTTON_TOP = editorVariable("before-add-button-top");
+const BEFORE_ADD_BUTTON_LEFT = editorVariable("before-add-button-left");
+const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
+const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
+const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
+
+const fallbackTranslation = "en-US";
+const getTranslation = editorContext => {
+  const {
+    translationFiles = {},
+    contextParams
+  } = editorContext;
+  const {
+    locale
+  } = contextParams;
+  const t = key => {
+    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
+    return files?.[key] ?? key;
+  };
+  return {
+    t
+  };
+};
+const useTranslation = () => {
+  const {
+    translationFiles = {},
+    contextParams
+  } = useEditorContext();
+  const {
+    locale
+  } = contextParams;
+  const t = key => {
+    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
+    return files?.[key] ?? key;
+  };
+  return {
+    t
+  };
+};
+
+function pathToCompiledPath(path, editorContext) {
+  const pathInfo = _internals.parsePath(path, editorContext.form);
+  if (pathInfo.parent) {
+    const definition = _internals.findComponentDefinitionById(pathInfo.parent.templateId, editorContext);
+    const schemaProp = definition.schema.find(schemaProp => schemaProp.prop === pathInfo.parent.fieldName);
+    const result = `${pathToCompiledPath(pathInfo.parent.path, editorContext)}.${getPropertyNameFromSchemaProp(schemaProp)}.${pathInfo.parent.fieldName}.${pathInfo.index}`;
+    if (result.startsWith(".")) {
+      return result.substring(1);
+    }
+    return result;
+  }
+  return "";
+}
+function getPropertyNameFromSchemaProp(schemaProp) {
+  if (_internals.isSchemaPropTextModifier(schemaProp) || _internals.isSchemaPropActionTextModifier(schemaProp)) {
+    return "textModifiers";
+  }
+  return "components";
+}
+
+const RICH_TEXT_PART_CONFIG_PATH_REGEXP = /\.elements\.[a-z(\-_A-Z)?]+\.\d+(\.elements\.\d+){2,3}(\.\{\d+,\d+\})?$/;
+function isConfigPathRichTextPart(configPath) {
+  return RICH_TEXT_PART_CONFIG_PATH_REGEXP.test(configPath);
+}
+
+/**
+ * A selected rich text part is framed by its $richText component, so moving the
+ * selection around starts from that component.
+ */
+function getFramedPath(path) {
+  return isConfigPathRichTextPart(path) ? path.replace(RICH_TEXT_PART_CONFIG_PATH_REGEXP, "") : path;
+}
+
+/**
+ * A path that no longer points at a component entry (e.g. the item was just removed)
+ * resolves to its closest existing ancestor with a leftover field name.
+ */
+function isComponentPath(path, editorContext) {
+  return _internals.parsePath(path, editorContext.form).fieldName === undefined;
+}
+
+/**
+ * Whether the component at `path` renders inside a selection frame on the canvas.
+ * Mirrors rendering: the page root has no frame, children of `noInline` slots are built
+ * without EditableComponentBuilder, and BlocksControls skips the frame for compiled
+ * components marked `noInline` (`selectable: false` in editing info).
+ */
+function hasSelectionFrame(path, editorContext) {
+  const {
+    parent
+  } = _internals.parsePath(path, editorContext.form);
+  if (!parent) {
+    return false;
+  }
+  const schemaProp = _internals.findComponentDefinitionById(parent.templateId, editorContext)?.schema.find(schemaProp => schemaProp.prop === parent.fieldName);
+  if (!schemaProp || "noInline" in schemaProp && schemaProp.noInline) {
+    return false;
+  }
+  const compiledComponent = dotNotationGet(editorContext.compiledComponentConfig, pathToCompiledPath(path, editorContext));
+  return compiledComponent !== undefined && !compiledComponent.__editing?.noInline;
+}
+
+/**
+ * Framed components that contain `path`, nearest first: the layers a user can move the
+ * selection up to from the canvas.
+ */
+function getSelectableAncestorPaths(path, editorContext) {
+  const ancestorPaths = [];
+  try {
+    const framedPath = getFramedPath(path);
+    if (!isComponentPath(framedPath, editorContext)) {
+      return [];
+    }
+    if (framedPath !== path && hasSelectionFrame(framedPath, editorContext)) {
+      ancestorPaths.push(framedPath);
+    }
+    let parent = _internals.parsePath(framedPath, editorContext.form).parent;
+    while (parent) {
+      if (hasSelectionFrame(parent.path, editorContext)) {
+        ancestorPaths.push(parent.path);
+      }
+      parent = _internals.parsePath(parent.path, editorContext.form).parent;
+    }
+  } catch {
+    return [];
+  }
+  return ancestorPaths;
+}
+
+/**
+ * Focus after "select parent": the nearest framed ancestor of every focused item, once
+ * each. Top-level sections have no framed parent, so selecting their parent clears focus.
+ */
+function getParentFocusedFields(focusedFields, editorContext) {
+  const parentPaths = focusedFields.flatMap(focusedField => getSelectableAncestorPaths(focusedField, editorContext).slice(0, 1));
+  return Array.from(new Set(parentPaths));
+}
+
+/**
+ * Component name shown by canvas selection UI (hover label, breadcrumb). Falls back to
+ * the component id when its definition has no label.
+ */
+function getComponentLabel(templateId, editorContext, translate) {
+  const definition = _internals.findComponentDefinitionById(templateId, editorContext);
+  return translate(definition?.label ?? templateId);
+}
+
+/**
+ * Breadcrumb for a focused path: framed ancestors outermost first, then the framed
+ * selection itself. Empty when the path no longer points at a component.
+ */
+function getSelectionBreadcrumb(path, editorContext, translate) {
+  try {
+    const framedPath = getFramedPath(path);
+    if (!isComponentPath(framedPath, editorContext)) {
+      return [];
+    }
+    return getSelectableAncestorPaths(framedPath, editorContext).reverse().concat(framedPath).map(crumbPath => ({
+      path: crumbPath,
+      label: getComponentLabel(_internals.parsePath(crumbPath, editorContext.form).templateId, editorContext, translate)
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Moving a block is an insert followed by a remove, and each of those shifts the indices of
+ * everything after it in the same collection. Replaying those shifts is what makes the block
+ * that gets removed the original one rather than a neighbour that slid into its place.
+ *
+ * The insert happens first on purpose: if no collection in the chosen section accepts the
+ * block the document is simply left alone, whereas removing first would destroy it.
+ */
+function planMoveAfterInsert(sourcePath, insertedPath) {
+  const sourceToRemove = shiftPath(sourcePath, insertedPath, "downward");
+  return {
+    sourceToRemove,
+    pathToFocus: shiftPath(insertedPath, sourceToRemove, "upward")
+  };
+}
+const SelectionFrameActionsContainer = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
+  componentId: "sc-1fta8jo-0"
+})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, easyblocksDesignSystem.Colors.white);
+const SelectionFrameActionsGroupButtons = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
+  componentId: "sc-1fta8jo-1"
+})(["display:flex;gap:2px;"]);
+const StyledButtonGroup$3 = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__StyledButtonGroup",
+  componentId: "sc-1fta8jo-2"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const StyledMenu = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__StyledMenu",
+  componentId: "sc-1fta8jo-3"
+})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
+const SelectionMoreActions = ({
+  t
+}) => {
+  const editorContext = useEditorContext();
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+  const toaster = Toaster.useToaster();
+  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const inputRef = React.useRef(null);
+  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
+  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
+  const onRemoveGlobalSection = () => {
+    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
+    const groupName = currentSection?.[0];
+    if (groupName) {
+      setIsLoading(true);
+      editorContext.onGlobalSectionChange?.({
+        mode: "update",
+        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
+        label: currentSection?.[1].entities[currentEntry._id].label,
+        groupName,
+        entry: currentEntry
+      }).then(() => {
+        toaster.success(`${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`, {
+          duration: 5000
+        });
+        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
+          ...currentEntry,
+          _id: uniqueId()
+        });
+      }).catch(reason => {
+        toaster.error(reason);
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    }
+  };
+  const menus = [{
+    id: "set-global",
+    label: t("editor.sidebar.globalSections.setGlobal"),
+    children: easyblocksCore.globalSectionGroups.map(globalSectionGroup => ({
+      id: globalSectionGroup.id,
+      label: globalSectionGroup.name,
+      onClick: () => setOpenConfirmGlobalSection({
+        groupName: globalSectionGroup.name
+      })
+    })),
+    isHidden: isAddedToPage
+  }, {
+    id: "remove-global",
+    label: t("editor.sidebar.globalSections.removeGlobal"),
+    isLoading,
+    isHidden: !isAddedToPage,
+    onClick: onRemoveGlobalSection
+  }];
+  const onClose = () => {
+    if (!isLoading) {
+      setOpenConfirmGlobalSection(null);
+    }
+  };
+  const onConfirmSetGlobalSection = () => {
+    if (!inputRef?.current?.value) {
+      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
+      return;
+    }
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      groupName: openConfirmGlobalSection?.groupName ?? "",
+      label: inputRef?.current?.value,
+      entry: currentEntry
+    }).then(() => {
+      setIsLoading(false);
+      toaster.success(`${t("editor.sidebar.globalSections.setGlobal.success")} ${t("saveBeforeExit")}`, {
+        duration: 5000
+      });
+      onClose();
+    }).catch(reason => {
+      setIsLoading(false);
+      toaster.error(reason);
+    });
+  };
+  const onEnter = e => {
+    if (e.code === "Enter" || e.code === "NumpadEnter") {
+      e.preventDefault();
+      e.stopPropagation();
+      onConfirmSetGlobalSection();
+    }
+  };
+  React.useEffect(() => {
+    if (openConfirmGlobalSection?.groupName) {
+      queueMicrotask(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [openConfirmGlobalSection]);
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
+    menus: menus,
+    styles: {
+      top: "40px",
+      left: "80%"
+    }
+  })), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
+    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
+    isOpen: !!openConfirmGlobalSection,
+    onRequestClose: onClose,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
+      onClick: onClose
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
+      isLoading: isLoading,
+      disabled: isLoading,
+      onClick: onConfirmSetGlobalSection
+    }, t("template.save.default")))
+  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
+    ref: inputRef,
+    withBorder: true,
+    style: {
+      width: 300
+    },
+    onKeyDown: onEnter
+  })));
+};
+const SelectionFrameActions = ({
+  focussedField,
+  actions,
+  translationFiles,
+  contextParams,
+  editorMode
+}) => {
+  const {
+    t
+  } = getTranslation({
+    translationFiles,
+    contextParams
+  });
+  const [showMore, setShowMore] = React.useState(false);
+  const [showMoveTo, setShowMoveTo] = React.useState(false);
+  const editorContext = useEditorContext();
+  const toaster = Toaster.useToaster();
+  const parentFocusedFields = getParentFocusedFields(focussedField, editorContext);
+
+  // Moving carries one block: the block is inserted into the chosen section and removed from
+  // where it was, and a multi-selection has no single source path to remove. Several blocks
+  // are still moved together with cut and paste.
+  const sourcePath = focussedField.length === 1 ? focussedField[0] : undefined;
+  const moveTo = destinationPath => {
+    setShowMoveTo(false);
+    if (!sourcePath) {
+      return;
+    }
+    const sourceEntry = dotNotationGet(editorContext.form.values, sourcePath);
+    if (!sourceEntry) {
+      return;
+    }
+    const block = _internals.duplicateConfig(sourceEntry, editorContext);
+    let wasRejected = false;
+    editorContext.actions.runChange(() => {
+      const insertedPath = pasteManager()(destinationResolver({
+        form: editorContext.form,
+        context: editorContext
+      })(destinationPath))(block);
+      if (!insertedPath) {
+        // Nothing in the chosen section accepts this block, so the document is untouched.
+        wasRejected = true;
+        return [sourcePath];
+      }
+      const {
+        sourceToRemove,
+        pathToFocus
+      } = planMoveAfterInsert(sourcePath, insertedPath);
+      editorContext.actions.removeItems([sourceToRemove]);
+      return [pathToFocus];
+    });
+    if (wasRejected) {
+      toaster.error(t("editor.canvas.action.moveTo.rejected"));
+    }
+  };
+
+  // Every other top level section is offered as a destination. The section the block is
+  // already in, and any section inside the block itself, are not destinations.
+  const moveDestinations = React.useMemo(() => {
+    if (!sourcePath) {
+      return [];
+    }
+    const sections = editorContext.form.values?.data ?? [];
+    return sections.map((_, index) => `data.${index}`).filter(destinationPath => destinationPath !== sourcePath && !destinationPath.startsWith(`${sourcePath}.`) && !sourcePath.startsWith(`${destinationPath}.`)).map((destinationPath, _, all) => ({
+      id: destinationPath,
+      // Sections repeat, so the position disambiguates two blocks with the same name.
+      label: `${all.indexOf(destinationPath) + 1}. ${getComponentLabel(_internals.parsePath(destinationPath, editorContext.form).templateId, editorContext, t)}`,
+      onClick: () => moveTo(destinationPath)
+    }));
+  }, [sourcePath, editorContext.form.values, t]);
+  return /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsContainer, {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, parentFocusedFields.length > 0 && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.LayerGroup,
+    hideLabel: true,
+    onClick: () => editorContext.setFocussedField(parentFocusedFields)
+  }, t("selectParent")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Duplicate,
+    hideLabel: true,
+    onClick: () => actions.duplicateItems(focussedField)
+  }, t("duplicate")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Trash,
+    hideLabel: true,
+    onClick: () => actions.removeItems(focussedField)
+  }, t("delete")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ArrowUp,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "top")
+  }, t("editor.canvas.action.moveUp")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ArrowDown,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "bottom")
+  }, t("editor.canvas.action.moveDown")), moveDestinations.length > 0 && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost
+  // Not the drag grip, although it used to wear its icon: this opens a
+  // list of destinations. The grip lives on the block frame, and two
+  // controls that look alike is how people ended up dragging this one.
+  , {
+    icon: icons.Icons.ArrowRight,
+    hideLabel: true,
+    onClick: () => setShowMoveTo(prev => !prev)
+  }, t("editor.canvas.action.moveTo")), editorMode !== "admin-template" && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ThreeDotsHorizontal,
+    showTooltip: false,
+    hideLabel: true,
+    onClick: () => setShowMore(prev => !prev)
+  })), showMoveTo && moveDestinations.length > 0 ? /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
+    menus: moveDestinations,
+    styles: {
+      top: "40px",
+      left: "0%"
+    }
+  })) : null, editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default["default"].createElement(SelectionMoreActions, {
+    t: t
+  }) : null);
+};
 
 const ExternalDataContext = /*#__PURE__*/React.createContext({});
 function EditorExternalDataProvider({
@@ -1456,26 +2492,6 @@ const Iframe = styled.styled.iframe.withConfig({
   componentId: "sc-1k2h6r-2"
 })(["background:white;border:none;transform-origin:center;"]);
 
-function pathToCompiledPath(path, editorContext) {
-  const pathInfo = _internals.parsePath(path, editorContext.form);
-  if (pathInfo.parent) {
-    const definition = _internals.findComponentDefinitionById(pathInfo.parent.templateId, editorContext);
-    const schemaProp = definition.schema.find(schemaProp => schemaProp.prop === pathInfo.parent.fieldName);
-    const result = `${pathToCompiledPath(pathInfo.parent.path, editorContext)}.${getPropertyNameFromSchemaProp(schemaProp)}.${pathInfo.parent.fieldName}.${pathInfo.index}`;
-    if (result.startsWith(".")) {
-      return result.substring(1);
-    }
-    return result;
-  }
-  return "";
-}
-function getPropertyNameFromSchemaProp(schemaProp) {
-  if (_internals.isSchemaPropTextModifier(schemaProp) || _internals.isSchemaPropActionTextModifier(schemaProp)) {
-    return "textModifiers";
-  }
-  return "components";
-}
-
 function isFieldPortal(x) {
   return "portal" in x;
 }
@@ -1541,40 +2557,6 @@ function internalBuildTinaFields(path, editorContext, fieldsFilter) {
   const analyticsFields = allFields.filter(x => x.group === "Analytics");
   return [...nonAnalyticsFields, ...analyticsFields];
 }
-
-const fallbackTranslation = "en-US";
-const getTranslation = editorContext => {
-  const {
-    translationFiles = {},
-    contextParams
-  } = editorContext;
-  const {
-    locale
-  } = contextParams;
-  const t = key => {
-    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
-    return files?.[key] ?? key;
-  };
-  return {
-    t
-  };
-};
-const useTranslation = () => {
-  const {
-    translationFiles = {},
-    contextParams
-  } = useEditorContext();
-  const {
-    locale
-  } = contextParams;
-  const t = key => {
-    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
-    return files?.[key] ?? key;
-  };
-  return {
-    t
-  };
-};
 
 function SaveAsPicker({
   mode,
@@ -2960,15 +3942,6 @@ const SelectColorTokenItem = /*#__PURE__*/React.forwardRef((props, ref) => {
   })), /*#__PURE__*/React__default["default"].createElement("span", null, props.children)));
 });
 SelectColorTokenItem.displayName = "SelectColorTokenItem";
-
-const RICH_TEXT_PART_CONFIG_PATH_REGEXP = /\.elements\.[a-z(\-_A-Z)?]+\.\d+(\.elements\.\d+){2,3}(\.\{\d+,\d+\})?$/;
-function isConfigPathRichTextPart(configPath) {
-  return RICH_TEXT_PART_CONFIG_PATH_REGEXP.test(configPath);
-}
-
-function last(collection) {
-  return collection[collection.length - 1];
-}
 
 /**
  *
@@ -4687,7 +5660,7 @@ const StyledInputColor = styled__default["default"](Input.Input).withConfig({
   displayName: "ColorConfigurations__StyledInputColor",
   componentId: "sc-qln4q1-6"
 })(["box-shadow:0 0 0 1px ", ";width:100% !important;border-radius:2px;&:focus{outline:none;}"], easyblocksDesignSystem.Colors.black10);
-const StyledButtonGroup$3 = styled__default["default"].div.withConfig({
+const StyledButtonGroup$2 = styled__default["default"].div.withConfig({
   displayName: "ColorConfigurations__StyledButtonGroup",
   componentId: "sc-qln4q1-7"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
@@ -4858,7 +5831,7 @@ const ColorConfigurations = ({
     mode: "fit",
     onRequestClose: closeEditColor,
     maxHeight: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
       onClick: closeEditColor
     }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
       isLoading: isLoadingEdit,
@@ -4892,7 +5865,7 @@ const ColorConfigurations = ({
     onRequestClose: onCloseConfirmReset,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
       onClick: onCloseConfirmReset
     }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonDanger, {
       isLoading: isLoadingReset,
@@ -4906,7 +5879,7 @@ const ColorConfigurations = ({
 };
 
 const stringKeys = ["fontFamily"];
-const StyledButtonGroup$2 = styled__default["default"].div.withConfig({
+const StyledButtonGroup$1 = styled__default["default"].div.withConfig({
   displayName: "FontConfigurations__StyledButtonGroup",
   componentId: "sc-1rpaqke-0"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
@@ -5102,7 +6075,7 @@ const FontConfigurations = ({
     onRequestClose: onCloseConfirmReset,
     mode: "fit",
     height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$2, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
       onClick: onCloseConfirmReset
     }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonDanger, {
       isLoading: isLoadingReset,
@@ -5716,10 +6689,6 @@ function DeviceSwitch({
   }, DEVICE_ID_TO_ICON["fit-screen"])), /*#__PURE__*/React__default["default"].createElement(Tooltip$1.TooltipContent, null, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
     color: "white"
   }, "Fit screen"))));
-}
-
-function normalizeToStringArray(arg) {
-  return typeof arg === "string" ? [arg] : Array.isArray(arg) ? arg : [];
 }
 
 function getAllComponentTypes(editorContext) {
@@ -6585,426 +7554,6 @@ const TemplateModal = props => {
   }, t("template.delete.default")))))));
 };
 
-const takeNumbers = path => path.split(".").map(x => parseInt(x, 10)).filter(x => !Number.isNaN(x));
-const preOrderPathComparator = (direction = "ascending") => (pathA, pathB) => {
-  const order = direction === "ascending" ? 1 : -1;
-  const numbersA = takeNumbers(pathA);
-  const numbersB = takeNumbers(pathB);
-  const numberALength = numbersA.length;
-  const numberBLength = numbersB.length;
-  if (numberALength === 0 || numberBLength === 0) {
-    throw new Error(`Cannot compare paths '${pathA}' and '${pathB}'.`);
-  }
-  const shorterLength = Math.min(numberALength, numberBLength);
-  let index = 0;
-  while (index < shorterLength) {
-    const valueA = numbersA[index];
-    const valueB = numbersB[index];
-    if (valueA !== valueB) {
-      return order * Math.sign(valueA - valueB);
-    }
-    index++;
-  }
-  return order * Math.sign(numberBLength - numberALength);
-};
-
-function duplicateItem(form, {
-  name,
-  sourceIndex,
-  targetIndex
-}, compilationContext) {
-  // Placeholders are not copyable
-  if (isPlaceholder(name + "." + sourceIndex, form.values)) {
-    return;
-  }
-  const configToDuplicate = dotNotationGet(form.values, name + "." + sourceIndex);
-  form.mutators.insert(name, targetIndex, _internals.duplicateConfig(configToDuplicate, compilationContext));
-}
-function pasteItems({
-  what,
-  where,
-  resolveDestination,
-  pasteCommand
-}) {
-  const successfulInsertsPaths = [];
-  takeLastOfEachParent(where).sort(preOrderPathComparator()).map(initialDestination => {
-    const destination = successfulInsertsPaths.reduce((acc, current) => shiftPath(acc, current, "downward"), initialDestination);
-    const resolvedDestinations = resolveDestination(destination);
-    return pasteCommand(resolvedDestinations);
-  }).forEach(paste => {
-    what.forEach(item => {
-      const insertedPath = paste(item);
-      if (insertedPath) {
-        successfulInsertsPaths.push(insertedPath);
-      }
-    });
-  });
-  return successfulInsertsPaths.length !== 0 ? successfulInsertsPaths : where;
-}
-
-/**
- * Duplicates fields given in `fieldNames` within given `form`.
- * `compilationContext` is used to properly duplicate elements associated with given names.
- * @returns Array of fields to focus
- */
-function duplicateItems(form, fieldNames, compilationContext) {
-  const duplicatableFieldNames = fieldNames.filter(fieldName => isFieldDuplicatable(fieldName, form, compilationContext));
-  if (duplicatableFieldNames.length === 0) {
-    return;
-  }
-  const fieldsGroupedByParentPath = groupFieldsByParentPath(duplicatableFieldNames, "ascending");
-  const nextFocusedFieldsPerGroup = [];
-  Object.values(fieldsGroupedByParentPath).forEach((sortedFields, fieldsGroupIndex) => {
-    nextFocusedFieldsPerGroup.push([]);
-    const lastFieldIndex = getFieldPathIndex(last(sortedFields));
-    sortedFields.forEach((focusedField, fieldIndex) => {
-      const sourceIndex = getFieldPathIndex(focusedField);
-      const targetIndex = lastFieldIndex + 1 + fieldIndex;
-      const parentPath = getParentPath(focusedField);
-      duplicateItem(form, {
-        name: parentPath,
-        sourceIndex,
-        targetIndex
-      }, compilationContext);
-      nextFocusedFieldsPerGroup[fieldsGroupIndex].push(`${parentPath}.${lastFieldIndex + 1 + fieldIndex}`);
-    });
-  });
-  return nextFocusedFieldsPerGroup.flat();
-}
-function moveItem(form, {
-  from,
-  to,
-  name
-}) {
-  // Placeholders are not movable
-  if (isPlaceholder(name + "." + from, form.values)) {
-    return;
-  }
-  form.mutators.move(name, from, to);
-}
-
-/**
- * Moves fields given in `fieldNamesToRemove` within given `form` in given `direction`.
- * @returns Array of fields to focus.
- */
-function moveItems(form, fieldsToMove, direction) {
-  const nextFocusedFields = [];
-  const isMovingMultipleFields = fieldsToMove.length > 1;
-  if (direction === "top" || direction === "left") {
-    const fieldsGroupedByParentPath = groupFieldsByParentPath(fieldsToMove, "ascending");
-    Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
-      let wasAnyFieldWithinCurrentGroupMoved = false;
-      sortedFields.forEach((fieldName, fieldNameIndex) => {
-        const index = getFieldPathIndex(fieldName);
-        const parentPath = getParentPath(fieldName);
-        if (isFirst(fieldName)) {
-          if (isMovingMultipleFields) {
-            nextFocusedFields.push(fieldName);
-          }
-          return;
-        }
-        if (isMovingMultipleFields && fieldNameIndex > 0 && !wasAnyFieldWithinCurrentGroupMoved) {
-          nextFocusedFields.push(fieldName);
-          return;
-        }
-        moveItem(form, {
-          from: index,
-          name: parentPath,
-          to: index - 1
-        });
-        if (!wasAnyFieldWithinCurrentGroupMoved) {
-          wasAnyFieldWithinCurrentGroupMoved = true;
-        }
-        nextFocusedFields.push(`${parentPath}.${index - 1}`);
-      });
-    });
-    if (nextFocusedFields.length > 0) {
-      return nextFocusedFields;
-    }
-  } else {
-    const fieldsGroupedByParentPath = groupFieldsByParentPath(fieldsToMove, "descending");
-    Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
-      let wasAnyFieldWithinCurrentGroupMoved = false;
-      sortedFields.forEach((fieldName, fieldNameIndex) => {
-        if (isLast(fieldName, form)) {
-          if (isMovingMultipleFields) {
-            nextFocusedFields.push(fieldName);
-          }
-          return;
-        }
-        if (isMovingMultipleFields && fieldNameIndex > 0 && !wasAnyFieldWithinCurrentGroupMoved) {
-          nextFocusedFields.push(fieldName);
-          return;
-        }
-        const index = getFieldPathIndex(fieldName);
-        const parentPath = getParentPath(fieldName);
-        moveItem(form, {
-          name: parentPath,
-          from: index,
-          to: index + 1
-        });
-        if (!wasAnyFieldWithinCurrentGroupMoved) {
-          wasAnyFieldWithinCurrentGroupMoved = true;
-        }
-        nextFocusedFields.push(`${parentPath}.${index + 1}`);
-      });
-    });
-    if (nextFocusedFields.length > 0) {
-      return nextFocusedFields;
-    }
-  }
-}
-function removeItem(form, {
-  index,
-  name
-}) {
-  const configPathToRemove = name + "." + index;
-
-  // Placeholders are not removable
-  if (isPlaceholder(configPathToRemove, form.values)) {
-    return;
-  }
-  const componentConfigValue = dotNotationGet(form.values, name);
-  if (componentConfigValue.length === 1) {
-    form.change(name, []);
-  } else {
-    form.mutators.remove(name, index);
-  }
-}
-
-/**
- * Removes fields given in `fieldNamesToRemove` from given `form`.
- * @returns Array of fields to focus
- */
-function removeItems(form, fieldNamesToRemove, editorContext) {
-  const removableFieldNames = fieldNamesToRemove.filter(fieldName => isFieldRemovable(fieldName, form, editorContext));
-  if (removableFieldNames.length === 0) {
-    return;
-  }
-  const isRemovingMultipleFields = removableFieldNames.length > 1;
-  const fieldsGroupedByParentPath = groupFieldsByParentPath(removableFieldNames, "descending");
-  if (!isRemovingMultipleFields) {
-    const {
-      index,
-      parent,
-      templateId
-    } = _internals.parsePath(removableFieldNames[0], form);
-    if (index === undefined || !parent) {
-      throw new Error("Invalid path");
-    }
-    const fieldPath = `${parent.path}${parent.path === "" ? "" : "."}${parent.fieldName}`;
-    const itemsLength = dotNotationGet(form.values, fieldPath).length;
-    const isOnlyItem = itemsLength === 1;
-    const isLastItem = itemsLength - 1 === index;
-    removeItem(form, {
-      index,
-      name: fieldPath
-    });
-    const definition = _internals.findComponentDefinitionById(templateId, editorContext);
-    const isTextWrapper = definition && easyblocksCore.isNoCodeComponentOfType(definition, "@easyblocks/text-wrapper");
-
-    // If we're removing item from the text wrapper field let's focus the component holding that field for better UX
-    // TODO: We shouldn't decide based on the component type but rather on the source of the removal (canvas vs sidebar)
-    if (isTextWrapper) {
-      return [parent.path];
-    }
-    if (isOnlyItem) {
-      return [];
-    } else if (isLastItem) {
-      return [`${fieldPath}.${index - 1}`];
-    } else {
-      return [`${fieldPath}.${index}`];
-    }
-  }
-  Object.values(fieldsGroupedByParentPath).forEach(sortedFields => {
-    sortedFields.forEach(focusedField => {
-      const field = dotNotationGet(form.values, focusedField);
-
-      // Field could be already removed if its parent element was also selected
-      if (!field) {
-        return;
-      }
-      const index = getFieldPathIndex(focusedField);
-      const parentPath = getParentPath(focusedField);
-      removeItem(form, {
-        index,
-        name: parentPath
-      });
-    });
-  });
-  return [];
-}
-function replaceItems(paths, newConfig, editorContext) {
-  paths.forEach(path => {
-    dotNotationGet(editorContext.form.values, path);
-    editorContext.form.change(path, _internals.duplicateConfig(
-    // newConfig && oldConfig
-    //   ? changeComponentConfig(oldConfig, newConfig, editorContext)
-    //   : newConfig,
-    newConfig, editorContext));
-  });
-}
-function logItems(form, configPaths) {
-  const configValues = configPaths.map(configPath => {
-    return dotNotationGet(form.values, configPath);
-  });
-  configValues.forEach((config, index) => {
-    console.log("Config for", configPaths[index], config);
-  });
-}
-function groupFieldsByParentPath(fields, sortDirection) {
-  const fieldsIndicesGroupedByParentPath = fields.reduce((accumulator, currentField) => {
-    const index = getFieldPathIndex(currentField);
-    const parentPath = getParentPath(currentField);
-    const indices = accumulator[parentPath];
-    if (indices) {
-      accumulator[parentPath] = [...indices, index].sort((a, b) => {
-        return sortDirection === "descending" ? b - a : a - b;
-      });
-      return accumulator;
-    }
-    accumulator[parentPath] = [index];
-    return accumulator;
-  }, {});
-  return Object.fromEntries(Object.entries(fieldsIndicesGroupedByParentPath).map(([parentPath, indices]) => {
-    return [parentPath, indices.map(index => parentPath + "." + index)];
-  }));
-}
-function getFieldPathIndex(fieldPath) {
-  const index = +last(fieldPath.split("."));
-  if (Number.isNaN(index)) {
-    return -1;
-  }
-  return index;
-}
-function getParentPath(fieldPath) {
-  const fieldPathParts = fieldPath.split(".");
-  return fieldPathParts.slice(0, -1).join(".");
-}
-function isFirst(fieldPath) {
-  const index = getFieldPathIndex(fieldPath);
-  return index === 0;
-}
-function isLast(fieldPath, form) {
-  const index = getFieldPathIndex(fieldPath);
-  const parentPath = getParentPath(fieldPath);
-  const parentFieldElementsCount = dotNotationGet(form.values, parentPath).length;
-  return index === parentFieldElementsCount - 1;
-}
-function isPlaceholder(path, values) {
-  const templateId = dotNotationGet(values, path)._component;
-  return templateId.startsWith("$Placeholder");
-}
-function isFieldRemovable(fieldName, form, compilationContext) {
-  const {
-    parent
-  } = _internals.parsePath(fieldName, form);
-  if (parent) {
-    const parentComponentDefinition = _internals.findComponentDefinitionById(parent.templateId, compilationContext);
-    const fieldNameParent = last(getParentPath(fieldName).split("."));
-    const fieldSchema = parentComponentDefinition?.schema.find(schema => schema.prop === fieldNameParent);
-    if (fieldSchema && fieldSchema.type === "component" && fieldSchema.required) {
-      return false;
-    }
-  }
-  return true;
-}
-function isFieldDuplicatable(fieldName, form, compilationContext) {
-  return isFieldRemovable(fieldName, form, compilationContext);
-}
-const shiftPath = (originalPath, shiftingPath, direction = "downward") => {
-  const directionFactor = direction === "downward" ? 1 : -1;
-  const original = shiftingPath.split(".");
-  const shifting = originalPath.split(".");
-  if (original.length < 2) {
-    return originalPath;
-  }
-  let index = 0;
-  while (index < original.length - 1 && index < shifting.length - 1) {
-    if (shifting[index] !== original[index]) {
-      return originalPath;
-    }
-    if (shifting[index + 1] !== original[index + 1]) {
-      const numberA = Number(original[index + 1]);
-      const numberB = Number(shifting[index + 1]);
-      if (numberA < numberB && (index + 1 == original.length - 1 || index + 1 === shifting.length - 1)) {
-        shifting.splice(index + 1, 1, String(numberB + directionFactor));
-        return shifting.join(".");
-      } else {
-        return originalPath;
-      }
-    }
-    index += 2;
-  }
-  return originalPath;
-};
-function takeLastOfEachParent(where) {
-  const lastOfEachParent = where.reduce((acc, curr) => {
-    const trimmed = getParentPath(curr);
-    const index = getFieldPathIndex(curr);
-    acc[trimmed] = Math.max(index, acc[trimmed] ?? Number.MIN_SAFE_INTEGER);
-    return acc;
-  }, {});
-  return Object.entries(lastOfEachParent).map(([key, value]) => `${key}.${value}`);
-}
-
-const SelectionMoreActionsContainer = styled__default["default"].div.withConfig({
-  displayName: "Menu__SelectionMoreActionsContainer",
-  componentId: "sc-7fauqp-0"
-})(["", " border-radius:4px;box-shadow:var(--tina-shadow-big);width:max-content;background:", ";pointer-events:all;"], ({
-  styles
-}) => `
-    position: ${styles?.top && styles?.left ? "absolute" : "unset"};
-    top: ${styles?.top ?? "unset"};
-    left: ${styles?.left ?? "unset"};
-  `, easyblocksDesignSystem.Colors.white);
-const SelectionMoreActionsGroupButtons = styled__default["default"].div.withConfig({
-  displayName: "Menu__SelectionMoreActionsGroupButtons",
-  componentId: "sc-7fauqp-1"
-})(["height:36px;position:relative;padding:0px 16px;display:flex;align-items:center;gap:2px;cursor:pointer;&:hover{background:", ";}"], easyblocksDesignSystem.Colors.black10);
-const MenuItem = ({
-  menu
-}) => {
-  const [isHoverMenu, setIsHoverMenu] = React.useState(false);
-  const menuItemRef = React.useRef(null);
-  const onClickMenu = () => {
-    if (!menu.isLoading) {
-      return !menu?.children?.length ? menu?.onClick?.() : undefined;
-    }
-  };
-  return /*#__PURE__*/React__default["default"].createElement(SelectionMoreActionsGroupButtons, {
-    ref: menuItemRef,
-    onMouseEnter: () => setIsHoverMenu(true),
-    onMouseLeave: () => setIsHoverMenu(false),
-    onClick: onClickMenu
-  }, /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
-    style: {
-      cursor: "pointer"
-    },
-    variant: "body",
-    component: "label"
-  }, menu.isLoading ? /*#__PURE__*/React__default["default"].createElement(Loader.Loader, null) : menu.label), menu?.children?.length ? /*#__PURE__*/React__default["default"].createElement(icons.Icons.ChevronRight, {
-    size: 18
-  }) : null, isHoverMenu && menu?.children ? /*#__PURE__*/React__default["default"].createElement(Menu, {
-    styles: {
-      top: "0px",
-      left: `${menuItemRef.current?.offsetWidth ?? 0}px`
-    },
-    menus: menu.children
-  }) : null);
-};
-const Menu = ({
-  menus,
-  styles
-}) => {
-  return /*#__PURE__*/React__default["default"].createElement(SelectionMoreActionsContainer, {
-    styles: styles
-  }, menus.filter(menu => !menu.isHidden).map(menu => /*#__PURE__*/React__default["default"].createElement(MenuItem, {
-    key: menu.id,
-    menu: menu
-  })));
-};
-
 const StyledEditorGlobalSectionItem = styled__default["default"].div.withConfig({
   displayName: "EditorGlobalSectionItem__StyledEditorGlobalSectionItem",
   componentId: "sc-5k1508-0"
@@ -7155,7 +7704,7 @@ const StyledEditorGlobalSectionGroup = styled__default["default"](Typography.Typ
   displayName: "EditorGlobalSections__StyledEditorGlobalSectionGroup",
   componentId: "sc-1fxbds7-2"
 })(["padding:10px 0px;"]);
-const StyledButtonGroup$1 = styled__default["default"].div.withConfig({
+const StyledButtonGroup = styled__default["default"].div.withConfig({
   displayName: "EditorGlobalSections__StyledButtonGroup",
   componentId: "sc-1fxbds7-3"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
@@ -7257,7 +7806,7 @@ const EditorGlobalSections = ({
       onRequestClose: onCloseConfirm,
       mode: "fit",
       height: "auto",
-      endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
+      endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
         onClick: onCloseConfirm
       }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
         isLoading: isLoading,
@@ -7273,7 +7822,7 @@ const EditorGlobalSections = ({
       onRequestClose: onCloseEditSection,
       mode: "fit",
       height: "auto",
-      endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$1, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
+      endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
         onClick: onCloseEditSection
       }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
         isLoading: isLoading,
@@ -8651,270 +9200,6 @@ const EditorLeftSidebar = ({
   }, /*#__PURE__*/React__default["default"].createElement(StyledEditorLeftSidebarTitle, null, sidebarConfig.title), /*#__PURE__*/React__default["default"].createElement(HorizontalLine, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorLeftSidebarGroup, null, sidebarConfig.Component));
 };
 
-function includesAny(a, b) {
-  return a.some(i => b.includes(i));
-}
-
-function reconcile({
-  context,
-  templateId,
-  fieldName
-}) {
-  return item => {
-    if (!fieldName || !templateId) {
-      return item;
-    }
-    const contextMatches = item._itemProps?.[templateId]?.[fieldName] !== undefined;
-    if (contextMatches) {
-      return item;
-    }
-    return _internals.normalize({
-      ...item,
-      _itemProps: {
-        [templateId]: {
-          [fieldName]: {}
-        }
-      }
-    }, context);
-  };
-}
-
-const getTypes = schema => {
-  if (schema?.type === "component-collection" || schema?.type === "component") {
-    return schema.accepts;
-  }
-  return [];
-};
-const insertCommand = ({
-  context,
-  form,
-  schema,
-  templateId
-}) => {
-  const types = getTypes(schema);
-  const reconcileItem = reconcile({
-    context,
-    templateId,
-    fieldName: schema?.prop
-  });
-  return (path, index, item) => {
-    const itemDefinition = _internals.findComponentDefinition(item, context);
-    if (!itemDefinition) {
-      return null;
-    }
-    const itemTypes = [itemDefinition.id, ...normalizeToStringArray(itemDefinition.type)];
-    if (!includesAny(types, itemTypes)) {
-      return null;
-    }
-    const reconciledItem = reconcileItem(item);
-    const duplicatedItem = _internals.duplicateConfig(reconciledItem, context);
-    form.mutators.insert(path, index, duplicatedItem);
-    return `${path}.${index}`;
-  };
-};
-
-function getSchema(path, context) {
-  const parentDefinition = _internals.findComponentDefinitionById(path.parent?.templateId ?? "", context);
-  const schema = (parentDefinition?.schema ?? []).find(s => s.prop === path.parent?.fieldName);
-  return schema;
-}
-const toName = destination => [destination.parent?.path, destination.parent?.fieldName].filter(Boolean).join(".");
-const fixIndexInCollection = (index = 0, schema) => {
-  if (schema?.type === "component-collection") {
-    return index + 1;
-  }
-  return index;
-};
-function destinationResolver({
-  form,
-  context
-}) {
-  return function (initialDestinationPath) {
-    const resolvedDestinations = [];
-    const resolvedPaths = new Set();
-    const pathsQueue = [initialDestinationPath];
-    while (pathsQueue.length > 0) {
-      const path = pathsQueue.shift();
-      if (!path) {
-        continue;
-      }
-      if (resolvedPaths.has(path)) {
-        continue;
-      }
-      if (!dotNotationGet(form.values, path)) {
-        continue;
-      }
-      const parsed = _internals.parsePath(path, form);
-      const definition = _internals.findComponentDefinitionById(parsed.templateId ?? "", context);
-      if (!definition) {
-        continue;
-      }
-      const schema = getSchema(parsed, context);
-      resolvedDestinations.push({
-        index: fixIndexInCollection(parsed.index, schema),
-        name: toName(parsed),
-        insert: insertCommand({
-          context,
-          form,
-          schema,
-          templateId: parsed.parent?.templateId
-        })
-      });
-      for (const slot of definition.pasteSlots ?? []) {
-        const slotSchema = definition.schema.find(({
-          prop
-        }) => prop === slot);
-        if (!slotSchema) {
-          continue;
-        }
-        const slotPath = `${path}.${slot}`;
-        const slotValues = dotNotationGet(form.values, slotPath) ?? [];
-        if (slotValues.length === 0) {
-          resolvedDestinations.push({
-            name: slotPath,
-            index: 0,
-            insert: insertCommand({
-              context,
-              form,
-              schema: slotSchema,
-              templateId: definition.id
-            })
-          });
-        } else if (slotSchema.type === "component") {
-          pathsQueue.push(`${slotPath}.0`);
-        } else if (slotSchema.type === "component-collection") {
-          pathsQueue.push(...Array.from(Array(slotValues.length).keys()).map(idx => `${slotPath}.${idx}`).reverse());
-        }
-      }
-    }
-    return resolvedDestinations;
-  };
-}
-
-function pasteManager() {
-  const inserts = new Map();
-  return destinations => item => {
-    let i = 0;
-    while (i < destinations.length) {
-      const {
-        index,
-        name,
-        insert
-      } = destinations[i];
-      const path = `${name}.${index}`;
-      const latestDestinationInserts = inserts.get(path) ?? 0;
-      const result = insert(name, index + latestDestinationInserts, item);
-      if (result) {
-        inserts.set(path, latestDestinationInserts + 1);
-        return result;
-      }
-      i++;
-    }
-    return null;
-  };
-}
-
-/**
- * A selected rich text part is framed by its $richText component, so moving the
- * selection around starts from that component.
- */
-function getFramedPath(path) {
-  return isConfigPathRichTextPart(path) ? path.replace(RICH_TEXT_PART_CONFIG_PATH_REGEXP, "") : path;
-}
-
-/**
- * A path that no longer points at a component entry (e.g. the item was just removed)
- * resolves to its closest existing ancestor with a leftover field name.
- */
-function isComponentPath(path, editorContext) {
-  return _internals.parsePath(path, editorContext.form).fieldName === undefined;
-}
-
-/**
- * Whether the component at `path` renders inside a selection frame on the canvas.
- * Mirrors rendering: the page root has no frame, children of `noInline` slots are built
- * without EditableComponentBuilder, and BlocksControls skips the frame for compiled
- * components marked `noInline` (`selectable: false` in editing info).
- */
-function hasSelectionFrame(path, editorContext) {
-  const {
-    parent
-  } = _internals.parsePath(path, editorContext.form);
-  if (!parent) {
-    return false;
-  }
-  const schemaProp = _internals.findComponentDefinitionById(parent.templateId, editorContext)?.schema.find(schemaProp => schemaProp.prop === parent.fieldName);
-  if (!schemaProp || "noInline" in schemaProp && schemaProp.noInline) {
-    return false;
-  }
-  const compiledComponent = dotNotationGet(editorContext.compiledComponentConfig, pathToCompiledPath(path, editorContext));
-  return compiledComponent !== undefined && !compiledComponent.__editing?.noInline;
-}
-
-/**
- * Framed components that contain `path`, nearest first: the layers a user can move the
- * selection up to from the canvas.
- */
-function getSelectableAncestorPaths(path, editorContext) {
-  const ancestorPaths = [];
-  try {
-    const framedPath = getFramedPath(path);
-    if (!isComponentPath(framedPath, editorContext)) {
-      return [];
-    }
-    if (framedPath !== path && hasSelectionFrame(framedPath, editorContext)) {
-      ancestorPaths.push(framedPath);
-    }
-    let parent = _internals.parsePath(framedPath, editorContext.form).parent;
-    while (parent) {
-      if (hasSelectionFrame(parent.path, editorContext)) {
-        ancestorPaths.push(parent.path);
-      }
-      parent = _internals.parsePath(parent.path, editorContext.form).parent;
-    }
-  } catch {
-    return [];
-  }
-  return ancestorPaths;
-}
-
-/**
- * Focus after "select parent": the nearest framed ancestor of every focused item, once
- * each. Top-level sections have no framed parent, so selecting their parent clears focus.
- */
-function getParentFocusedFields(focusedFields, editorContext) {
-  const parentPaths = focusedFields.flatMap(focusedField => getSelectableAncestorPaths(focusedField, editorContext).slice(0, 1));
-  return Array.from(new Set(parentPaths));
-}
-
-/**
- * Component name shown by canvas selection UI (hover label, breadcrumb). Falls back to
- * the component id when its definition has no label.
- */
-function getComponentLabel(templateId, editorContext, translate) {
-  const definition = _internals.findComponentDefinitionById(templateId, editorContext);
-  return translate(definition?.label ?? templateId);
-}
-
-/**
- * Breadcrumb for a focused path: framed ancestors outermost first, then the framed
- * selection itself. Empty when the path no longer points at a component.
- */
-function getSelectionBreadcrumb(path, editorContext, translate) {
-  try {
-    const framedPath = getFramedPath(path);
-    if (!isComponentPath(framedPath, editorContext)) {
-      return [];
-    }
-    return getSelectableAncestorPaths(framedPath, editorContext).reverse().concat(framedPath).map(crumbPath => ({
-      path: crumbPath,
-      label: getComponentLabel(_internals.parsePath(crumbPath, editorContext.form).templateId, editorContext, translate)
-    }));
-  } catch {
-    return [];
-  }
-}
-
 // Fixed height, rendered even without a selection, so selecting never resizes the canvas.
 const BreadcrumbBar = styled.styled.nav.withConfig({
   displayName: "SelectionBreadcrumb__BreadcrumbBar",
@@ -8964,291 +9249,6 @@ function SelectionBreadcrumb() {
     }, crumb.label)));
   }));
 }
-
-function editorVariable(name) {
-  return `--shopstory-editor-${name}`;
-}
-const BEFORE_ADD_BUTTON_DISPLAY = editorVariable("before-add-button-display");
-const BEFORE_ADD_BUTTON_TOP = editorVariable("before-add-button-top");
-const BEFORE_ADD_BUTTON_LEFT = editorVariable("before-add-button-left");
-const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
-const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
-const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
-
-/**
- * Moving a block is an insert followed by a remove, and each of those shifts the indices of
- * everything after it in the same collection. Replaying those shifts is what makes the block
- * that gets removed the original one rather than a neighbour that slid into its place.
- *
- * The insert happens first on purpose: if no collection in the chosen section accepts the
- * block the document is simply left alone, whereas removing first would destroy it.
- */
-function planMoveAfterInsert(sourcePath, insertedPath) {
-  const sourceToRemove = shiftPath(sourcePath, insertedPath, "downward");
-  return {
-    sourceToRemove,
-    pathToFocus: shiftPath(insertedPath, sourceToRemove, "upward")
-  };
-}
-const SelectionFrameActionsContainer = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
-  componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, easyblocksDesignSystem.Colors.white);
-const SelectionFrameActionsGroupButtons = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
-  componentId: "sc-1fta8jo-1"
-})(["display:flex;gap:2px;"]);
-const StyledButtonGroup = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__StyledButtonGroup",
-  componentId: "sc-1fta8jo-2"
-})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
-const StyledMenu = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__StyledMenu",
-  componentId: "sc-1fta8jo-3"
-})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
-const SelectionMoreActions = ({
-  t
-}) => {
-  const editorContext = useEditorContext();
-  const router = new URLSearchParams(window.location.search);
-  const currentDocument = router.get("document") ?? "";
-  const toaster = Toaster.useToaster();
-  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = React.useState(null);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const inputRef = React.useRef(null);
-  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
-  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
-  const onRemoveGlobalSection = () => {
-    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
-    const groupName = currentSection?.[0];
-    if (groupName) {
-      setIsLoading(true);
-      editorContext.onGlobalSectionChange?.({
-        mode: "update",
-        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
-        label: currentSection?.[1].entities[currentEntry._id].label,
-        groupName,
-        entry: currentEntry
-      }).then(() => {
-        toaster.success(`${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`, {
-          duration: 5000
-        });
-        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
-          ...currentEntry,
-          _id: uniqueId()
-        });
-      }).catch(reason => {
-        toaster.error(reason);
-      }).finally(() => {
-        setIsLoading(false);
-      });
-    }
-  };
-  const menus = [{
-    id: "set-global",
-    label: t("editor.sidebar.globalSections.setGlobal"),
-    children: easyblocksCore.globalSectionGroups.map(globalSectionGroup => ({
-      id: globalSectionGroup.id,
-      label: globalSectionGroup.name,
-      onClick: () => setOpenConfirmGlobalSection({
-        groupName: globalSectionGroup.name
-      })
-    })),
-    isHidden: isAddedToPage
-  }, {
-    id: "remove-global",
-    label: t("editor.sidebar.globalSections.removeGlobal"),
-    isLoading,
-    isHidden: !isAddedToPage,
-    onClick: onRemoveGlobalSection
-  }];
-  const onClose = () => {
-    if (!isLoading) {
-      setOpenConfirmGlobalSection(null);
-    }
-  };
-  const onConfirmSetGlobalSection = () => {
-    if (!inputRef?.current?.value) {
-      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
-      return;
-    }
-    if (isLoading) {
-      return;
-    }
-    setIsLoading(true);
-    editorContext.onGlobalSectionChange?.({
-      mode: "update",
-      groupName: openConfirmGlobalSection?.groupName ?? "",
-      label: inputRef?.current?.value,
-      entry: currentEntry
-    }).then(() => {
-      setIsLoading(false);
-      toaster.success(`${t("editor.sidebar.globalSections.setGlobal.success")} ${t("saveBeforeExit")}`, {
-        duration: 5000
-      });
-      onClose();
-    }).catch(reason => {
-      setIsLoading(false);
-      toaster.error(reason);
-    });
-  };
-  const onEnter = e => {
-    if (e.code === "Enter" || e.code === "NumpadEnter") {
-      e.preventDefault();
-      e.stopPropagation();
-      onConfirmSetGlobalSection();
-    }
-  };
-  React.useEffect(() => {
-    if (openConfirmGlobalSection?.groupName) {
-      queueMicrotask(() => {
-        inputRef.current?.focus();
-      });
-    }
-  }, [openConfirmGlobalSection]);
-  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
-    menus: menus,
-    styles: {
-      top: "40px",
-      left: "80%"
-    }
-  })), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
-    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
-    isOpen: !!openConfirmGlobalSection,
-    onRequestClose: onClose,
-    mode: "fit",
-    height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
-      onClick: onClose
-    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
-      isLoading: isLoading,
-      disabled: isLoading,
-      onClick: onConfirmSetGlobalSection
-    }, t("template.save.default")))
-  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
-    ref: inputRef,
-    withBorder: true,
-    style: {
-      width: 300
-    },
-    onKeyDown: onEnter
-  })));
-};
-const SelectionFrameActions = ({
-  focussedField,
-  actions,
-  translationFiles,
-  contextParams,
-  editorMode
-}) => {
-  const {
-    t
-  } = getTranslation({
-    translationFiles,
-    contextParams
-  });
-  const [showMore, setShowMore] = React.useState(false);
-  const [showMoveTo, setShowMoveTo] = React.useState(false);
-  const editorContext = useEditorContext();
-  const toaster = Toaster.useToaster();
-  const parentFocusedFields = getParentFocusedFields(focussedField, editorContext);
-
-  // Moving carries one block: the block is inserted into the chosen section and removed from
-  // where it was, and a multi-selection has no single source path to remove. Several blocks
-  // are still moved together with cut and paste.
-  const sourcePath = focussedField.length === 1 ? focussedField[0] : undefined;
-  const moveTo = destinationPath => {
-    setShowMoveTo(false);
-    if (!sourcePath) {
-      return;
-    }
-    const sourceEntry = dotNotationGet(editorContext.form.values, sourcePath);
-    if (!sourceEntry) {
-      return;
-    }
-    const block = _internals.duplicateConfig(sourceEntry, editorContext);
-    let wasRejected = false;
-    editorContext.actions.runChange(() => {
-      const insertedPath = pasteManager()(destinationResolver({
-        form: editorContext.form,
-        context: editorContext
-      })(destinationPath))(block);
-      if (!insertedPath) {
-        // Nothing in the chosen section accepts this block, so the document is untouched.
-        wasRejected = true;
-        return [sourcePath];
-      }
-      const {
-        sourceToRemove,
-        pathToFocus
-      } = planMoveAfterInsert(sourcePath, insertedPath);
-      editorContext.actions.removeItems([sourceToRemove]);
-      return [pathToFocus];
-    });
-    if (wasRejected) {
-      toaster.error(t("editor.canvas.action.moveTo.rejected"));
-    }
-  };
-
-  // Every other top level section is offered as a destination. The section the block is
-  // already in, and any section inside the block itself, are not destinations.
-  const moveDestinations = React.useMemo(() => {
-    if (!sourcePath) {
-      return [];
-    }
-    const sections = editorContext.form.values?.data ?? [];
-    return sections.map((_, index) => `data.${index}`).filter(destinationPath => destinationPath !== sourcePath && !destinationPath.startsWith(`${sourcePath}.`) && !sourcePath.startsWith(`${destinationPath}.`)).map((destinationPath, _, all) => ({
-      id: destinationPath,
-      // Sections repeat, so the position disambiguates two blocks with the same name.
-      label: `${all.indexOf(destinationPath) + 1}. ${getComponentLabel(_internals.parsePath(destinationPath, editorContext.form).templateId, editorContext, t)}`,
-      onClick: () => moveTo(destinationPath)
-    }));
-  }, [sourcePath, editorContext.form.values, t]);
-  return /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsContainer, {
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, parentFocusedFields.length > 0 && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.LayerGroup,
-    hideLabel: true,
-    onClick: () => editorContext.setFocussedField(parentFocusedFields)
-  }, t("selectParent")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.Duplicate,
-    hideLabel: true,
-    onClick: () => actions.duplicateItems(focussedField)
-  }, t("duplicate")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.Trash,
-    hideLabel: true,
-    onClick: () => actions.removeItems(focussedField)
-  }, t("delete")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.ArrowUp,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "top")
-  }, t("editor.canvas.action.moveUp")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.ArrowDown,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("editor.canvas.action.moveDown")), moveDestinations.length > 0 && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost
-  // Not the drag grip, although it used to wear its icon: this opens a
-  // list of destinations. The grip lives on the block frame, and two
-  // controls that look alike is how people ended up dragging this one.
-  , {
-    icon: icons.Icons.ArrowRight,
-    hideLabel: true,
-    onClick: () => setShowMoveTo(prev => !prev)
-  }, t("editor.canvas.action.moveTo")), editorMode !== "admin-template" && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.ThreeDotsHorizontal,
-    showTooltip: false,
-    hideLabel: true,
-    onClick: () => setShowMore(prev => !prev)
-  })), showMoveTo && moveDestinations.length > 0 ? /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
-    menus: moveDestinations,
-    styles: {
-      top: "40px",
-      left: "0%"
-    }
-  })) : null, editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default["default"].createElement(SelectionMoreActions, {
-    t: t
-  }) : null);
-};
 
 function AddButton({
   position,
@@ -11218,9 +11218,20 @@ const EditorContent = ({
           actions.runChange(() => {
             const newConfig = _internals.duplicateConfig(dotNotationGet(form.values, fromPath), editorContext);
             const insertionIndex = calculateInsertionIndex(fromPath, toPath, placement, form);
+
+            // The insert lands first, and it renumbers everything after it in
+            // the collection it lands in. `fromPath` was read before that, so
+            // removing it directly deleted whichever block had slid into that
+            // index — which is how a dragged block could vanish while one of
+            // its old neighbours ended up duplicated. The "move to" menu has
+            // always replayed the shift; the drag path now does too.
+            const {
+              sourceToRemove,
+              pathToFocus
+            } = planMoveAfterInsert(fromPath, `${insertionPath}.${insertionIndex}`);
             form.mutators.insert(insertionPath, insertionIndex, newConfig);
-            actions.removeItems([fromPath]);
-            return [isToPathPlaceholder ? `${insertionPath}.0` : `${insertionPath}.${insertionIndex}`];
+            actions.removeItems([sourceToRemove]);
+            return [pathToFocus];
           });
         }
       }
@@ -12328,6 +12339,58 @@ function resolveDropIndicatorEdge({
   return activeIndex > index ? "before" : "after";
 }
 
+const CSS = /*#__PURE__*/Object.freeze({
+  Translate: {
+    toString(transform) {
+      if (!transform) {
+        return;
+      }
+
+      const {
+        x,
+        y
+      } = transform;
+      return "translate3d(" + (x ? Math.round(x) : 0) + "px, " + (y ? Math.round(y) : 0) + "px, 0)";
+    }
+
+  },
+  Scale: {
+    toString(transform) {
+      if (!transform) {
+        return;
+      }
+
+      const {
+        scaleX,
+        scaleY
+      } = transform;
+      return "scaleX(" + scaleX + ") scaleY(" + scaleY + ")";
+    }
+
+  },
+  Transform: {
+    toString(transform) {
+      if (!transform) {
+        return;
+      }
+
+      return [CSS.Translate.toString(transform), CSS.Scale.toString(transform)].join(' ');
+    }
+
+  },
+  Transition: {
+    toString(_ref) {
+      let {
+        property,
+        duration,
+        easing
+      } = _ref;
+      return property + " " + duration + "ms " + easing;
+    }
+
+  }
+});
+
 /**
  * Thickness of the insertion line, in canvas pixels. The canvas is scaled down by the zoom
  * control, so the line is drawn thinner than this wherever the device does not fit the
@@ -12593,7 +12656,17 @@ function SelectionFrameController({
     "data-drop-container": isDropContainer,
     "data-drop-target": isDropTarget,
     "data-draggable-active": sortable.active !== null && sortable.active?.id === id,
-    className: wrapperClassName().className,
+    className: wrapperClassName().className
+    // The block actually moves. Until now the sortable transform was computed
+    // and thrown away, so a reorder showed a dimmed block sitting exactly
+    // where it started while its neighbours stayed put — the page looked
+    // frozen for the whole gesture. The strategy that produces this only
+    // answers for the collection being sorted, so nothing outside it shifts.
+    ,
+    style: {
+      transform: CSS.Translate.toString(sortable.transform),
+      transition: sortable.transition
+    },
     ref: node => {
       setNode(node);
       sortable.setNodeRef(node);
@@ -12718,6 +12791,7 @@ function BlocksControls({
   });
   const isDroppableDisabled = sortableDisabledState.droppable;
   const componentLabel = getComponentLabel(templateId, editorContext, t);
+  const activeDragPath = dndContext.active?.data.current?.path;
   const sortable$1 = sortable.useSortable({
     id,
     // `label` rides along so the drag preview in the canvas can name what is
@@ -12727,7 +12801,10 @@ function BlocksControls({
       label: componentLabel
     },
     disabled: sortableDisabledState,
-    strategy: direction === "horizontal" ? sortable.horizontalListSortingStrategy : sortable.verticalListSortingStrategy
+    strategy: getSortingStrategy({
+      direction,
+      isSortingWithinThisCollection: !!activeDragPath && isPathsParentEqual(activeDragPath, path)
+    })
   });
   if (disabled) {
     return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, children);
@@ -12903,6 +12980,30 @@ function getAllowedComponentTypes(componentDefinition) {
  * the move-to-another-parent case: they need the extra before/after placeholders, and the
  * parent window resolves them through insert + remove instead of a plain reorder.
  */
+/** A strategy that moves nothing, for blocks a drag does not concern. */
+const noSortingStrategy = () => null;
+
+/**
+ * How this block should shift while something is being dragged.
+ *
+ * Sorting strategies work off positions in the sortable list, and that list
+ * holds every collection on the page at once. Within one collection the entries
+ * are consecutive, so the arithmetic lands on the real siblings and a reorder
+ * opens a gap where the block will go — the movement that was missing, and the
+ * reason a drag felt like nothing was happening. Across two collections those
+ * positions describe unrelated blocks, so asking them to shift would scatter
+ * parts of the page that the drop will not touch; they stay put instead, and
+ * the insertion line is what says where the block lands.
+ */
+function getSortingStrategy({
+  direction,
+  isSortingWithinThisCollection
+}) {
+  if (!isSortingWithinThisCollection) {
+    return noSortingStrategy;
+  }
+  return direction === "horizontal" ? sortable.horizontalListSortingStrategy : sortable.verticalListSortingStrategy;
+}
 function isPathsParentEqual(path1, path2) {
   const activePathParts = path1.split(".");
   const currentPathParts = path2.split(".");

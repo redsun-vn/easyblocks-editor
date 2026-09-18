@@ -1,3 +1,4 @@
+import { type SortingStrategy } from "@dnd-kit/sortable";
 import { CompiledCustomComponentConfig, CompiledShopstoryComponentConfig, SerializedRenderableComponentDefinition } from "@redsun-vn/easyblocks-core";
 import React from "react";
 interface BlocksControlsProps {
@@ -63,6 +64,24 @@ export declare function getAllowedComponentTypes(componentDefinition: Serialized
  * the move-to-another-parent case: they need the extra before/after placeholders, and the
  * parent window resolves them through insert + remove instead of a plain reorder.
  */
+/** A strategy that moves nothing, for blocks a drag does not concern. */
+export declare const noSortingStrategy: SortingStrategy;
+/**
+ * How this block should shift while something is being dragged.
+ *
+ * Sorting strategies work off positions in the sortable list, and that list
+ * holds every collection on the page at once. Within one collection the entries
+ * are consecutive, so the arithmetic lands on the real siblings and a reorder
+ * opens a gap where the block will go — the movement that was missing, and the
+ * reason a drag felt like nothing was happening. Across two collections those
+ * positions describe unrelated blocks, so asking them to shift would scatter
+ * parts of the page that the drop will not touch; they stay put instead, and
+ * the insertion line is what says where the block lands.
+ */
+export declare function getSortingStrategy({ direction, isSortingWithinThisCollection, }: {
+    direction: "horizontal" | "vertical";
+    isSortingWithinThisCollection: boolean;
+}): SortingStrategy;
 export declare function isPathsParentEqual(path1: string, path2: string): boolean;
 export {};
 //# sourceMappingURL=BlockControls.d.ts.map

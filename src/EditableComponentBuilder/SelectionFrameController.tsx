@@ -1,3 +1,4 @@
+import { CSS } from "@dnd-kit/utilities";
 import type { useSortable } from "@dnd-kit/sortable";
 import { selectionFramePositionChanged } from "@redsun-vn/easyblocks-core/_internals";
 import { Colors } from "@redsun-vn/easyblocks-design-system";
@@ -334,6 +335,15 @@ function SelectionFrameController({
         sortable.active !== null && sortable.active?.id === id
       }
       className={wrapperClassName().className}
+      // The block actually moves. Until now the sortable transform was computed
+      // and thrown away, so a reorder showed a dimmed block sitting exactly
+      // where it started while its neighbours stayed put — the page looked
+      // frozen for the whole gesture. The strategy that produces this only
+      // answers for the collection being sorted, so nothing outside it shifts.
+      style={{
+        transform: CSS.Translate.toString(sortable.transform),
+        transition: sortable.transition,
+      }}
       ref={(node) => {
         setNode(node);
         sortable.setNodeRef(node);

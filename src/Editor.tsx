@@ -65,6 +65,7 @@ import Modal from "react-modal";
 import { styled } from "styled-components";
 import { ConfigAfterAutoContext } from "./ConfigAfterAutoContext";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
+import { planMoveAfterInsert } from "./EditableComponentBuilder/SelectionFrameActions";
 import { EditorContext, EditorContextType } from "./EditorContext";
 import { EditorExternalDataProvider } from "./EditorExternalDataProvider";
 import { EditorIframe } from "./EditorIframe";
@@ -1306,15 +1307,22 @@ const EditorContent = ({
               form,
             );
 
+            // The insert lands first, and it renumbers everything after it in
+            // the collection it lands in. `fromPath` was read before that, so
+            // removing it directly deleted whichever block had slid into that
+            // index — which is how a dragged block could vanish while one of
+            // its old neighbours ended up duplicated. The "move to" menu has
+            // always replayed the shift; the drag path now does too.
+            const { sourceToRemove, pathToFocus } = planMoveAfterInsert(
+              fromPath,
+              `${insertionPath}.${insertionIndex}`,
+            );
+
             form.mutators.insert(insertionPath, insertionIndex, newConfig);
 
-            actions.removeItems([fromPath]);
+            actions.removeItems([sourceToRemove]);
 
-            return [
-              isToPathPlaceholder
-                ? `${insertionPath}.0`
-                : `${insertionPath}.${insertionIndex}`,
-            ];
+            return [pathToFocus];
           });
         }
       }
