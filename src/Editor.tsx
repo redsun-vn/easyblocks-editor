@@ -1282,17 +1282,7 @@ const EditorContent = ({
           });
         } else {
           // TODO: We should reuse logic of pasting items here, but we need to handle the case of pasting into placeholder (empty array)
-          const isToPathPlaceholder = toPathParseResult.fieldName !== undefined;
-
-          const insertionPath = `${
-            toPathParseResult.parent.path === ""
-              ? ""
-              : toPathParseResult.parent.path + "."
-          }${toPathParseResult.parent.fieldName}${
-            isToPathPlaceholder
-              ? `.${toPathParseResult.index}.${toPathParseResult.fieldName}`
-              : ""
-          }`;
+          const insertionPath = getCrossParentInsertionPath(toPathParseResult);
 
           actions.runChange(() => {
             const newConfig = duplicateConfig(
@@ -1513,7 +1503,28 @@ function adaptRemoteConfig(
   return normalized;
 }
 
-function calculateInsertionIndex(
+/**
+ * The collection a block dropped onto `toPath` should be inserted into.
+ *
+ * Dropping onto a block means becoming its sibling, so the target is the
+ * collection that block lives in. Dropping onto an empty collection's
+ * placeholder is the other case: there `parsePath` reports a `fieldName`,
+ * because the path ends at the field rather than at an item inside it, and the
+ * collection has to be rebuilt from the entry that owns it.
+ */
+export function getCrossParentInsertionPath(
+  toPathParseResult: ReturnType<typeof parsePath>,
+): string {
+  const parent = toPathParseResult.parent!;
+  const prefix = parent.path === "" ? "" : `${parent.path}.`;
+  const isPlaceholder = toPathParseResult.fieldName !== undefined;
+
+  return isPlaceholder
+    ? `${prefix}${parent.fieldName}.${toPathParseResult.index}.${toPathParseResult.fieldName}`
+    : `${prefix}${parent.fieldName}`;
+}
+
+export function calculateInsertionIndex(
   fromPath: string,
   toPath: string,
   placement: "before" | "after" | undefined,

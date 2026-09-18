@@ -244,16 +244,33 @@ function SelectionFrameController({
         pointerEvents: "auto",
       },
 
-    "&[data-drop-rejected=true]": {
-      cursor: "no-drop",
-    },
+    // A block that refuses the drag says so while the pointer is on it. dnd-kit
+    // drops a refusing block out of its own targeting entirely, so it can never
+    // be the drag's `over` and the refusal has to hang off the pointer instead.
+    // Without this the pointer simply found nothing there, which reads as "this
+    // spot does nothing" rather than "this spot will not take it".
+    [`&[data-drop-rejected=true][data-draggable-dragging=true]${HOVERED_TARGET_FRAME}`]:
+      {
+        cursor: "no-drop",
+      },
+
+    [`&[data-drop-rejected=true][data-draggable-dragging=true]${HOVERED_TARGET_FRAME}::after`]:
+      {
+        opacity: 1,
+        borderColor: Colors.red,
+        borderWidth: "2px",
+        borderStyle: "dashed",
+        backgroundColor: "rgba(234, 0, 30, 0.12)",
+        boxShadow: "none",
+      },
 
     // The refusal only concerns the block actually under the pointer, and `>`
     // keeps it that way: a descendant match would reveal every nested block's
     // bubble as well.
-    [`&${HOVERED_TARGET_FRAME} > [${DROP_REJECTION_ATTRIBUTE}]`]: {
-      opacity: 1,
-    },
+    [`&[data-draggable-dragging=true]${HOVERED_TARGET_FRAME} > [${DROP_REJECTION_ATTRIBUTE}]`]:
+      {
+        opacity: 1,
+      },
   });
 
   const dragHandleClassName = stitches.css({

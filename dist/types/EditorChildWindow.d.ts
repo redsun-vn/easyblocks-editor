@@ -52,18 +52,25 @@ export declare function squaredDistanceToRect(pointer: {
 /**
  * The block a drop is aimed at.
  *
- * Whatever is under the pointer wins, and when nothing is, the nearest block to
- * the pointer does. The fallback matters more than it sounds: blocks are
+ * Whatever is under the pointer wins, and when nothing is, the nearest block
+ * within arm's reach does. The fallback matters more than it sounds: blocks are
  * separated by margins, padding and grid gaps that belong to no block at all,
  * and aiming into one of those gaps used to leave the drag with no target — no
- * border, no insertion line, nothing to say the drop would work. Every gap now
- * belongs to whichever block is closest, which is the same thing as giving each
- * block a hit area that reaches halfway into the space around it.
+ * border, no insertion line, nothing to say the drop would work.
  *
- * The rectangle intersection this replaced could not do that job. It measures
- * the dragged block's own rectangle, and the dragged block never moves — the
- * canvas draws no ghost, it carries a chip instead — so that rectangle stayed
- * at the position the drag started from and answered with the neighbours of
+ * Two limits keep that fallback honest, and both were learnt the hard way: a
+ * block dropped into a gap landed somewhere the eye could not find it, still
+ * present in the layer tree but rendered nowhere. It has to skip blocks that
+ * refuse the drag, because dnd-kit only excludes those from its own algorithms
+ * and not from this list, and a collection that cannot hold the block will not
+ * show it either. And it has to stop at a fixed reach, because "nearest" across
+ * a whole page is not aim, it is a guess — past that the drag has no target and
+ * the drop leaves the document alone.
+ *
+ * The rectangle intersection this replaced could not do the job at all. It
+ * measures the dragged block's own rectangle, and the dragged block never
+ * moves — the canvas draws no ghost, it carries a chip instead — so that
+ * rectangle stayed where the drag began and answered with the neighbours of
  * where the block already was.
  */
 export declare function pointerNearestCollisionDetection(args: Parameters<CollisionDetection>[0]): import("@dnd-kit/core").Collision[];

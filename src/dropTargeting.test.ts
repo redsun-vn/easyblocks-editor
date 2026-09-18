@@ -33,3 +33,22 @@ describe("how far the pointer is from a block", () => {
     );
   });
 });
+
+describe("how far the fallback may reach", () => {
+  // The reach exists so a pointer in a gutter still aims at the block beside
+  // it. Anything further is a guess, and a guess drops the block somewhere the
+  // eye cannot find it — present in the layer tree, rendered nowhere.
+  const REACH = 64;
+
+  it("still claims a pointer sitting in the gutter beside a block", () => {
+    expect(squaredDistanceToRect({ x: 60, y: 70 }, rect)).toBeLessThanOrEqual(
+      REACH * REACH,
+    );
+  });
+
+  it("lets go of a pointer half a page away", () => {
+    expect(squaredDistanceToRect({ x: 600, y: 70 }, rect)).toBeGreaterThan(
+      REACH * REACH,
+    );
+  });
+});
