@@ -6,6 +6,7 @@ import {
   CANVAS_FRAME_LABEL_ATTRIBUTE,
   CANVAS_FRAME_PATH_ATTRIBUTE,
 } from "./canvasLayers";
+import type { DropIndicatorEdge } from "./dropIndicator";
 
 type SelectionFrameControllerProps = {
   isActive: boolean;
@@ -21,7 +22,21 @@ type SelectionFrameControllerProps = {
   isDraggable: boolean;
   /** Why this block refuses the block being dragged, if it refuses it. */
   dropRejectionMessage?: string;
+  /** Edge of this block the dragged block would land on, or `null` when it would land elsewhere. */
+  dropIndicatorEdge: DropIndicatorEdge;
+  /**
+   * Droppables marking the outer edges of the collection. They are positioned against this
+   * frame, so they belong inside it: the frame is the only box that knows where the edge is.
+   */
+  edgeDropTargets?: ReactNode;
 };
+
+/**
+ * Thickness of the insertion line, in canvas pixels. The canvas is scaled down by the zoom
+ * control, so the line is drawn thinner than this wherever the device does not fit the
+ * viewport at 1:1, which is what made a hairline unreadable.
+ */
+const DROP_INDICATOR_THICKNESS = 6;
 
 /** Innermost hovered frame: the one a click selects, since clicks select deepest-first. */
 const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:hover))`;
@@ -41,6 +56,8 @@ function SelectionFrameController({
   label,
   isDraggable,
   dropRejectionMessage,
+  dropIndicatorEdge,
+  edgeDropTargets,
 }: SelectionFrameControllerProps) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
 
@@ -49,7 +66,31 @@ function SelectionFrameController({
     isDisabled: !isActive,
   });
 
-  const isInsertingBefore = sortable.activeIndex > sortable.index;
+  // The line straddles the boundary the block will land on, so half of it sits outside this
+  // frame and half inside: it reads as a gap between two blocks rather than a border of one.
+  const dropIndicatorBar = {
+    content: `''`,
+    display: "block",
+    position: "absolute",
+    zIndex: 9999999,
+    pointerEvents: "none",
+    userSelect: "none",
+    borderRadius: "2px",
+    backgroundColor: Colors.purple,
+    // Purple is the one accent the canvas does not already use: the selection and hover
+    // frames, the add-block placeholders and the sidebar are all the same blue, which is
+    // what made the insertion line indistinguishable from the rest of the drag feedback.
+    // The double ring carries it over customer content: the white one holds up on a dark
+    // section, the dark one on a light section.
+    boxShadow: `0 0 0 2px ${Colors.white}, 0 0 0 3px ${Colors.black900}`,
+    ...(direction === "horizontal"
+      ? { top: 0, bottom: 0, width: `${DROP_INDICATOR_THICKNESS}px` }
+      : { left: 0, right: 0, height: `${DROP_INDICATOR_THICKNESS}px` }),
+  };
+
+  const leadingEdge = direction === "horizontal" ? "left" : "top";
+  const trailingEdge = direction === "horizontal" ? "right" : "bottom";
+  const dropIndicatorOffset = `-${DROP_INDICATOR_THICKNESS / 2}px`;
 
   const wrapperClassName = stitches.css({
     position: "relative",
@@ -108,31 +149,14 @@ function SelectionFrameController({
       userSelect: "none",
     },
 
-    "&[data-draggable-over=true]::before": {
-      position: "absolute",
-      ...(direction === "horizontal"
-        ? {
-            top: 0,
-            bottom: 0,
-            [isInsertingBefore ? "left" : "right"]: "0px",
-            height: "100%",
-            width: "4px",
-          }
-        : {
-            left: 0,
-            right: 0,
-            [isInsertingBefore ? "top" : "bottom"]: "0px",
-            width: "100%",
-            height: "4px",
-          }),
+    "&[data-drop-indicator=before]::before": {
+      ...dropIndicatorBar,
+      [leadingEdge]: dropIndicatorOffset,
+    },
 
-      display: "block",
-      content: "''",
-      backgroundColor: Colors.blue50,
-      borderRadius: "2px",
-      // Halo, so the insertion line stays readable on a background of any colour.
-      boxShadow: `0 0 0 1px ${Colors.white}`,
-      zIndex: 9999999,
+    "&[data-drop-indicator=after]::before": {
+      ...dropIndicatorBar,
+      [trailingEdge]: dropIndicatorOffset,
     },
 
     "&[data-draggable-active=true]": {
@@ -204,7 +228,7 @@ function SelectionFrameController({
       data-draggable-enabled={isDraggable}
       data-drop-rejected={dropRejectionMessage !== undefined}
       data-draggable-dragging={sortable.active !== null}
-      data-draggable-over={sortable.isOver}
+      data-drop-indicator={dropIndicatorEdge ?? "none"}
       data-draggable-active={
         sortable.active !== null && sortable.active?.id === id
       }
@@ -217,6 +241,7 @@ function SelectionFrameController({
       {...sortable.attributes}
       {...sortable.listeners}
     >
+      {edgeDropTargets}
       {dropRejectionMessage !== undefined && (
         <div
           {...{ [DROP_REJECTION_ATTRIBUTE]: "" }}

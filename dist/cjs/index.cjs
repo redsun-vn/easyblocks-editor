@@ -12021,6 +12021,78 @@ const globalEditorRendererStyles = `
   }
 `;
 
+/**
+ * Which edge of a block the insertion line is drawn on while a drag is in progress.
+ *
+ * `before` is the leading edge of the block — its top in a collection that stacks
+ * vertically, its left in one that flows horizontally — and `after` the trailing edge.
+ * `null` means the dragged block would not land next to this block at all.
+ */
+
+/**
+ * Suffixes of the extra droppables that mark the outer edges of a collection. They are the
+ * only way to express "put it before the first item" or "after the last one", because a
+ * plain block id leaves the placement to be worked out from the order of the two paths.
+ */
+const EDGE_DROPPABLE_SUFFIX = {
+  before: ".before",
+  after: ".after"
+};
+/**
+ * Where the block being dragged would land, seen from a single block.
+ *
+ * Every block runs this against the one droppable `@dnd-kit` reports as hovered, so exactly
+ * one line is on screen at a time and it sits on the boundary the block will land on —
+ * including a reorder inside one collection and a gap between two middle items, neither of
+ * which used to be marked at all.
+ *
+ * When the hovered droppable is a block rather than a collection edge, the landing side
+ * follows the order of the two blocks, which is what the document itself does with the drop:
+ * a reorder inside one collection takes the block out and puts it back at the target's
+ * index, so dragging downwards lands after the target and dragging upwards lands before it.
+ */
+function resolveDropIndicatorEdge({
+  id,
+  overId,
+  activeIndex,
+  index,
+  isDroppableDisabled,
+  isBeingDragged
+}) {
+  if (overId === null || isDroppableDisabled) {
+    return null;
+  }
+
+  // Dropping a block onto itself changes nothing, so it gets no line.
+  if (isBeingDragged) {
+    return null;
+  }
+  if (overId === `${id}${EDGE_DROPPABLE_SUFFIX.before}`) {
+    return "before";
+  }
+  if (overId === `${id}${EDGE_DROPPABLE_SUFFIX.after}`) {
+    return "after";
+  }
+
+  // Another block is hovered: its own line is the one to show.
+  if (overId !== id) {
+    return null;
+  }
+
+  // A block missing from the sortable list, or hovering itself, gives no usable order.
+  if (activeIndex === -1 || index === -1 || activeIndex === index) {
+    return null;
+  }
+  return activeIndex > index ? "before" : "after";
+}
+
+/**
+ * Thickness of the insertion line, in canvas pixels. The canvas is scaled down by the zoom
+ * control, so the line is drawn thinner than this wherever the device does not fit the
+ * viewport at 1:1, which is what made a hairline unreadable.
+ */
+const DROP_INDICATOR_THICKNESS = 6;
+
 /** Innermost hovered frame: the one a click selects, since clicks select deepest-first. */
 const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:hover))`;
 
@@ -12037,14 +12109,46 @@ function SelectionFrameController({
   path,
   label,
   isDraggable,
-  dropRejectionMessage
+  dropRejectionMessage,
+  dropIndicatorEdge,
+  edgeDropTargets
 }) {
   const [node, setNode] = React.useState(null);
   useUpdateFramePosition({
     node,
     isDisabled: !isActive
   });
-  const isInsertingBefore = sortable.activeIndex > sortable.index;
+
+  // The line straddles the boundary the block will land on, so half of it sits outside this
+  // frame and half inside: it reads as a gap between two blocks rather than a border of one.
+  const dropIndicatorBar = {
+    content: `''`,
+    display: "block",
+    position: "absolute",
+    zIndex: 9999999,
+    pointerEvents: "none",
+    userSelect: "none",
+    borderRadius: "2px",
+    backgroundColor: easyblocksDesignSystem.Colors.purple,
+    // Purple is the one accent the canvas does not already use: the selection and hover
+    // frames, the add-block placeholders and the sidebar are all the same blue, which is
+    // what made the insertion line indistinguishable from the rest of the drag feedback.
+    // The double ring carries it over customer content: the white one holds up on a dark
+    // section, the dark one on a light section.
+    boxShadow: `0 0 0 2px ${easyblocksDesignSystem.Colors.white}, 0 0 0 3px ${easyblocksDesignSystem.Colors.black900}`,
+    ...(direction === "horizontal" ? {
+      top: 0,
+      bottom: 0,
+      width: `${DROP_INDICATOR_THICKNESS}px`
+    } : {
+      left: 0,
+      right: 0,
+      height: `${DROP_INDICATOR_THICKNESS}px`
+    })
+  };
+  const leadingEdge = direction === "horizontal" ? "left" : "top";
+  const trailingEdge = direction === "horizontal" ? "right" : "bottom";
+  const dropIndicatorOffset = `-${DROP_INDICATOR_THICKNESS / 2}px`;
   const wrapperClassName = stitches.css({
     position: "relative",
     display: "grid",
@@ -12096,28 +12200,13 @@ function SelectionFrameController({
       pointerEvents: "none",
       userSelect: "none"
     },
-    "&[data-draggable-over=true]::before": {
-      position: "absolute",
-      ...(direction === "horizontal" ? {
-        top: 0,
-        bottom: 0,
-        [isInsertingBefore ? "left" : "right"]: "0px",
-        height: "100%",
-        width: "4px"
-      } : {
-        left: 0,
-        right: 0,
-        [isInsertingBefore ? "top" : "bottom"]: "0px",
-        width: "100%",
-        height: "4px"
-      }),
-      display: "block",
-      content: "''",
-      backgroundColor: easyblocksDesignSystem.Colors.blue50,
-      borderRadius: "2px",
-      // Halo, so the insertion line stays readable on a background of any colour.
-      boxShadow: `0 0 0 1px ${easyblocksDesignSystem.Colors.white}`,
-      zIndex: 9999999
+    "&[data-drop-indicator=before]::before": {
+      ...dropIndicatorBar,
+      [leadingEdge]: dropIndicatorOffset
+    },
+    "&[data-drop-indicator=after]::before": {
+      ...dropIndicatorBar,
+      [trailingEdge]: dropIndicatorOffset
     },
     "&[data-draggable-active=true]": {
       opacity: 0.5
@@ -12172,7 +12261,7 @@ function SelectionFrameController({
     "data-draggable-enabled": isDraggable,
     "data-drop-rejected": dropRejectionMessage !== undefined,
     "data-draggable-dragging": sortable.active !== null,
-    "data-draggable-over": sortable.isOver,
+    "data-drop-indicator": dropIndicatorEdge ?? "none",
     "data-draggable-active": sortable.active !== null && sortable.active?.id === id,
     className: wrapperClassName().className,
     ref: node => {
@@ -12180,7 +12269,7 @@ function SelectionFrameController({
       sortable.setNodeRef(node);
     },
     onClick: onSelect
-  }, sortable.attributes, sortable.listeners), dropRejectionMessage !== undefined && /*#__PURE__*/React__default["default"].createElement("div", {
+  }, sortable.attributes, sortable.listeners), edgeDropTargets, dropRejectionMessage !== undefined && /*#__PURE__*/React__default["default"].createElement("div", {
     [DROP_REJECTION_ATTRIBUTE]: "",
     role: "tooltip",
     className: dropRejectionClassName().className
@@ -12347,12 +12436,20 @@ function BlocksControls({
     t
   }) : undefined;
   const isActivePathInDifferentCollection = sortable$1.active && !isPathsParentEqual(sortable$1.active.data.current.path, path);
-  return /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, !isDroppableDisabled && isActivePathInDifferentCollection && sortable$1.activeIndex < sortable$1.index && index === 0 && /*#__PURE__*/React__default["default"].createElement(DroppablePlaceholder, {
-    id: id,
-    direction: direction,
-    path: path,
-    position: "before"
-  }), /*#__PURE__*/React__default["default"].createElement(SelectionFrameController, {
+
+  // A drag coming from another collection is the only one that cannot reach the outer edges
+  // of this one by hovering a block: the order of the two paths already decides that side.
+  const hasCollectionStartTarget = !isDroppableDisabled && isActivePathInDifferentCollection && sortable$1.activeIndex < sortable$1.index && index === 0;
+  const hasCollectionEndTarget = !isDroppableDisabled && isActivePathInDifferentCollection && sortable$1.activeIndex > sortable$1.index && index === length - 1;
+  const dropIndicatorEdge = resolveDropIndicatorEdge({
+    id,
+    overId: dndContext.over ? String(dndContext.over.id) : null,
+    activeIndex: sortable$1.activeIndex,
+    index: sortable$1.index,
+    isDroppableDisabled,
+    isBeingDragged: isBlockBeingDragged
+  });
+  return /*#__PURE__*/React__default["default"].createElement(SelectionFrameController, {
     isActive: isActive,
     onSelect: focusOnBlock,
     stitches: meta.stitches,
@@ -12362,13 +12459,20 @@ function BlocksControls({
     path: path,
     label: getComponentLabel(templateId, editorContext, t),
     isDraggable: !sortableDisabledState.draggable,
-    dropRejectionMessage: dropRejectionMessage
-  }, children), !isDroppableDisabled && isActivePathInDifferentCollection && sortable$1.activeIndex > sortable$1.index && index === length - 1 && /*#__PURE__*/React__default["default"].createElement(DroppablePlaceholder, {
-    id: id,
-    direction: direction,
-    path: path,
-    position: "after"
-  }));
+    dropRejectionMessage: dropRejectionMessage,
+    dropIndicatorEdge: dropIndicatorEdge,
+    edgeDropTargets: /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, hasCollectionStartTarget && /*#__PURE__*/React__default["default"].createElement(CollectionEdgeDropTarget, {
+      id: id,
+      direction: direction,
+      path: path,
+      position: "before"
+    }), hasCollectionEndTarget && /*#__PURE__*/React__default["default"].createElement(CollectionEdgeDropTarget, {
+      id: id,
+      direction: direction,
+      path: path,
+      position: "after"
+    }))
+  }, children);
 }
 
 /** `@dnd-kit` reads both flags as *disabled*: `true` switches the capability off. */
@@ -12441,7 +12545,24 @@ function isPathsParentEqual(path1, path2) {
   const currentPathParts = path2.split(".");
   return activePathParts.slice(0, -1).join(".") === currentPathParts.slice(0, -1).join(".");
 }
-function DroppablePlaceholder({
+
+/**
+ * How wide the band straddling a collection edge is, in canvas pixels. Wide enough to aim at,
+ * narrow enough that the middle of the block still means "drop next to this block".
+ */
+const EDGE_DROP_TARGET_SIZE = 24;
+
+/**
+ * Hit area for the outer edge of a collection, registered as `<id>.before` / `<id>.after` so
+ * a finished drag carries an explicit placement.
+ *
+ * It draws nothing: the frame around the block owns the insertion line, because the frame is
+ * the box whose edge the block will land on. This element used to place itself with
+ * `top`/`left: -100%`, which resolves against the nearest positioned ancestor rather than the
+ * block — with an unpositioned collection container that put the hit area, and the line it
+ * used to draw, an arbitrary distance away from the edge it stands for.
+ */
+function CollectionEdgeDropTarget({
   id,
   direction,
   path,
@@ -12458,47 +12579,28 @@ function DroppablePlaceholder({
       droppable: false
     }
   });
-  const isInsertingBefore = sortable$1.activeIndex > sortable$1.index;
+  const isHorizontal = direction === "horizontal";
+  const edge = position === "before" ? isHorizontal ? "left" : "top" : isHorizontal ? "right" : "bottom";
   const wrapperStyles = meta.stitches.css({
     position: "absolute",
-    [position === "before" ? "top" : "bottom"]: direction === "vertical" ? "-100%" : 0,
-    [position === "before" ? "left" : "right"]: direction === "horizontal" ? "-100%" : 0,
-    height: "100%",
-    background: "transparent",
-    width: "100%",
-    "&::before": {
-      display: "block",
-      content: "''",
-      backgroundColor: easyblocksDesignSystem.Colors.blue50,
-      zIndex: 9999999,
-      position: "absolute",
-      opacity: 0
-    },
-    "&[data-draggable-over=true]::before": {
-      opacity: 1,
-      borderRadius: "2px",
-      // Halo, so the insertion line stays readable on a background of any colour.
-      boxShadow: `0 0 0 1px ${easyblocksDesignSystem.Colors.white}`,
-      ...(direction === "horizontal" ? {
-        top: 0,
-        bottom: 0,
-        [isInsertingBefore ? "left" : "right"]: "0px",
-        height: "100%",
-        width: "4px"
-      } : {
-        left: 0,
-        right: 0,
-        [isInsertingBefore ? "top" : "bottom"]: "0px",
-        width: "100%",
-        height: "4px"
-      })
-    }
+    [edge]: `-${EDGE_DROP_TARGET_SIZE / 2}px`,
+    ...(isHorizontal ? {
+      top: 0,
+      bottom: 0,
+      width: `${EDGE_DROP_TARGET_SIZE}px`
+    } : {
+      left: 0,
+      right: 0,
+      height: `${EDGE_DROP_TARGET_SIZE}px`
+    }),
+    // Collisions are resolved from measured rectangles, not from hit testing, so the band
+    // still catches the drag while staying out of the way of clicks on the block itself.
+    pointerEvents: "none"
   });
-  return /*#__PURE__*/React__default["default"].createElement("div", _extends__default["default"]({
-    "data-draggable-over": sortable$1.isOver,
+  return /*#__PURE__*/React__default["default"].createElement("div", {
     className: wrapperStyles().className,
-    ref: sortable$1.setNodeRef
-  }, sortable$1.attributes, sortable$1.listeners));
+    ref: sortable$1.setDroppableNodeRef
+  });
 }
 
 function EditableComponentBuilder(props) {
