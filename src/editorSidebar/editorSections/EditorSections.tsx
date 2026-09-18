@@ -8,7 +8,6 @@ import {
   findComponentDefinitionById,
   normalize,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { Colors } from "@redsun-vn/easyblocks-design-system";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
 import React, {
   useCallback,
@@ -51,12 +50,11 @@ const TITLE_HEIGHT = 50;
 const PADDING_TOP_HEIGHT = 20;
 // Page size for the per-entry remote template fetch (infinite scroll).
 const TEMPLATES_LIMIT = 30;
-// Category discovery only reads the group buckets, never the items, so it asks
-// for the smallest page the endpoint will answer with.
-const CATEGORY_DISCOVERY_LIMIT = 1;
-// The bucket a template with no category falls into, exactly as the group count
-// map keys it. The host's list route translates it back to "no group".
-const UNCATEGORIZED_GROUP = "others";
+// Discovery only asks whether a category holds anything at all, never what, so
+// it requests the smallest page the endpoint will answer with.
+const CATEGORY_PROBE_LIMIT = 1;
+// Translation key for the row collecting templates filed under no category.
+const UNCATEGORIZED_LABEL_KEY = "others";
 
 /** Shape both remote template endpoints answer with. */
 type TTemplateListResult = {
@@ -64,50 +62,62 @@ type TTemplateListResult = {
   count?: Record<string, { matchedCount: number; total: number }>;
 };
 
+/** One entry of the template taxonomy, as the host's backend returns it. */
+type TTemplateCategoryOption = { id: string; name: string };
+
 /**
- * The public template path, exposed by the host app's backend on top of the
- * `Backend` contract.
+ * The two template readers the host app's backend adds on top of the `Backend`
+ * contract. Both optional, because `easyblocks-core` does not declare them: a
+ * host that implements neither shows an empty Templates panel instead of
+ * breaking.
  *
- * System templates have no `shop_id`, and every shop-side query is pinned to a
- * shop id down in Elasticsearch, so they can never come back through
- * `templates.getAll`. Showing them needs a genuinely different endpoint — the
- * public one, which only ever returns what an admin switched on — not a filter
- * applied to the shop result.
+ * `getAllPublic` reads the system library. System templates have no `shop_id`,
+ * and every shop-side query is pinned to a shop id down in Elasticsearch, so
+ * they can never come back through `templates.getAll`; showing them needs a
+ * genuinely different endpoint, not a filter applied to the shop result.
  *
- * Optional because the contract in `easyblocks-core` does not carry it: a host
- * that does not implement it simply has no system section, instead of breaking.
+ * `getCategories` reads the template taxonomy — the same list the save dialog
+ * files a template under, which is what the panel's rows are built from.
  */
-type TPublicTemplateSource = {
+type THostTemplateApi = {
   getAllPublic?: (query: TemplateQueryType) => Promise<TTemplateListResult>;
+  getCategories?: () => Promise<TTemplateCategoryOption[]>;
 };
 
-/** Where an entry in the section list reads its templates from. */
-type TSectionSource = "builtin" | "shop" | "public";
+/** Which list a section row draws from: local definitions, or the store. */
+type TSectionSource = "builtin" | "template";
 
 /**
- * A remote template library. `builtin` is derived from the local component
- * definitions and never appears here.
+ * A remote template library. Both feed the same category rows; which of them a
+ * mode may read is `getTemplateSources`.
  */
-export type TTemplateSource = Exclude<TSectionSource, "builtin">;
+export type TTemplateSource = "shop" | "public";
 
-/** The categories each template library turned out to contain. */
-export type TTemplateCategories = Partial<Record<TTemplateSource, string[]>>;
+/**
+ * A category row of the Templates panel.
+ *
+ * `uuid` is null on the one row that is not a category at all: the remainder
+ * holding every template filed under none.
+ */
+export type TTemplateCategoryEntry = {
+  uuid: string | null;
+  name: string | null;
+};
 
 export type TSectionEntry = {
   /** Stable key for hover state and for the per-entry template cache. */
   id: string;
-  /** Already localized; the raw category string is kept in `group`. */
+  /** Already localized. */
   label: string;
-  /** Raw `.group` value: a built-in category, or a template category name. */
+  /** Raw `.group` value of a built-in category. Component rows only. */
   group?: string;
+  /**
+   * Template category to filter by. Template rows only, and absent on the
+   * uncategorized row, which filters on "no category" instead.
+   */
+  categoryUuid?: string;
   source: TSectionSource;
   kind: TSectionItemKind;
-  /**
-   * Heading the row sits under. Only template rows carry one: the Templates
-   * panel groups its categories by the library they came from, while the
-   * Components panel is a single flat list with no heading at all.
-   */
-  sourceLabel?: string;
 };
 
 /**
@@ -148,54 +158,25 @@ export function getSectionInsertionIndex(
 }
 
 /**
- * The template libraries a mode may read, in the order the panel lists them.
+ * The template libraries a mode may read.
  *
  * Admin edits the system library directly, so its own shop path already holds
  * exactly those templates and a second public read would be a duplicate.
  */
 export function getTemplateSources(
   mode: TEasyblocksEditorMode,
-): Array<{ source: TTemplateSource; labelKey: string }> {
-  if (mode === "user") {
-    return [
-      {
-        source: "public",
-        labelKey: "editor.sidebar.sections.templates.system",
-      },
-      { source: "shop", labelKey: "editor.sidebar.sections.templates.shop" },
-    ];
-  }
-
-  return [
-    { source: "shop", labelKey: "editor.sidebar.sections.templates.system" },
-  ];
-}
-
-/**
- * Row label for a template category.
- *
- * A category name is data somebody typed, so it is shown verbatim — unlike a
- * built-in component group, which is one of a fixed set the translation file
- * knows by name. The single exception is the uncategorized bucket: that key is
- * this editor's own sentinel rather than a name anybody chose, so it takes the
- * localized "others" label.
- */
-function getTemplateCategoryLabel(
-  t: (key: string) => string,
-  group: string,
-): string {
-  return group === UNCATEGORIZED_GROUP
-    ? getCategoryLabel(t, UNCATEGORIZED_GROUP)
-    : group;
+): TTemplateSource[] {
+  return mode === "user" ? ["public", "shop"] : ["shop"];
 }
 
 /** Categories A→Z, uncategorized last because it is the remainder, not a name. */
-function sortTemplateCategories(categories: string[]): string[] {
+function sortTemplateCategories(
+  categories: TTemplateCategoryEntry[],
+): TTemplateCategoryEntry[] {
   return [...categories].sort((a, b) => {
-    if (a === b) return 0;
-    if (a === UNCATEGORIZED_GROUP) return 1;
-    if (b === UNCATEGORIZED_GROUP) return -1;
-    return a.localeCompare(b, "vi");
+    if (a.uuid === null) return b.uuid === null ? 0 : 1;
+    if (b.uuid === null) return -1;
+    return (a.name ?? "").localeCompare(b.name ?? "", "vi");
   });
 }
 
@@ -207,29 +188,24 @@ function sortTemplateCategories(categories: string[]): string[] {
  * put a shop's own group called "Layout" into the same row as the built-in
  * Layout category, so a saved template looked like a stock component.
  *
- * A template library is expanded into one row per category it actually
- * contains, mirroring how the Components panel lists its built-in categories.
- * The collision the split was made to prevent is held off by `sourceLabel`
- * instead: category rows sit under a heading naming their library, so a shop
- * category called "Layout" reads as the shop's, never as the built-in one, and
- * the two libraries may each carry a category of the same name without the
- * panel showing two rows that look identical.
- *
- * A library with no categories contributes nothing — no heading, no row —
- * because `categoriesBySource` only ever lists buckets that matched something.
+ * The Templates panel lists the template taxonomy — the very categories the
+ * save dialog files a template under — rather than the free-text `group`
+ * column it used to read. `group` is whatever anybody once typed, so it grew
+ * near-duplicates ("product" beside "Product") that are not categories at all.
+ * The rows carry no library heading: which library a template came from is not
+ * how the user looks for one, and both libraries file into the same taxonomy,
+ * so a category holds whatever the caller is allowed to see under that name.
  */
 export function buildSectionEntries({
   panel,
-  mode,
   localGroups,
-  categoriesBySource,
+  templateCategories,
   t,
 }: {
   panel: TSectionPanel;
-  mode: TEasyblocksEditorMode;
   localGroups: string[];
-  /** Discovered per library; absent until the discovery read has answered. */
-  categoriesBySource?: TTemplateCategories | null;
+  /** Discovered categories; absent until the discovery read has answered. */
+  templateCategories?: TTemplateCategoryEntry[] | null;
   t: (key: string) => string;
 }): TSectionEntry[] {
   if (panel === "components") {
@@ -242,24 +218,20 @@ export function buildSectionEntries({
     }));
   }
 
-  return getTemplateSources(mode).flatMap(({ source, labelKey }) => {
-    const categories = sortTemplateCategories(
-      categoriesBySource?.[source] ?? [],
-    );
-
-    if (categories.length === 0) return [];
-
-    const sourceLabel = t(labelKey);
-
-    return categories.map<TSectionEntry>((group) => ({
-      id: `${source}:${group}`,
-      label: getTemplateCategoryLabel(t, group),
-      group,
-      source,
+  return sortTemplateCategories(templateCategories ?? []).map<TSectionEntry>(
+    (category) => ({
+      id: `category:${category.uuid ?? UNCATEGORIZED_LABEL_KEY}`,
+      // A category name is data somebody typed, so it is shown verbatim. The
+      // remainder row is this editor's own construct, so it is localized.
+      label:
+        category.uuid === null
+          ? getCategoryLabel(t, UNCATEGORIZED_LABEL_KEY)
+          : (category.name ?? ""),
+      categoryUuid: category.uuid ?? undefined,
+      source: "template",
       kind: "template",
-      sourceLabel,
-    }));
-  });
+    }),
+  );
 }
 
 /** Total matched documents across every group bucket of a count response. */
@@ -276,44 +248,97 @@ function sumMatchedCount(count: TTemplateListResult["count"]): number {
  * empty library instead of an error.
  */
 type TFetchRemotePage = (
-  source: TSectionSource,
+  source: TTemplateSource,
   page: number,
-  options?: { group?: string; limit?: number },
+  /** `categoryUuid: null` asks for the templates filed under no category. */
+  options?: { categoryUuid?: string | null; limit?: number },
 ) => Promise<TTemplateListResult> | null;
 
 /**
- * The categories one template library actually contains.
+ * Whether one category holds at least one template the caller may see.
  *
- * No extra endpoint is involved: every list response already carries the group
- * bucket map the host builds for its counters, and those buckets are keyed by
- * the template's `group` — the very category name the save dialog writes. Only
- * `matchedCount` is consulted, because `total` counts the whole index while
- * `matchedCount` counts what the caller's own scope matched, so an empty
- * category never produces a row the drawer cannot fill.
+ * Asked of every library at once and answered by the smallest page the list
+ * route will serve, because only the existence of a row matters here. A
+ * category the caller cannot fill is left out rather than shown as a row whose
+ * drawer opens empty.
  */
-async function readSourceCategories(
+async function categoryHasTemplates(
   fetchPage: TFetchRemotePage,
-  source: TTemplateSource,
-): Promise<{ source: TTemplateSource; categories: string[]; failed: boolean }> {
-  // Never rejects: the panel waits on all of these at once, so one library
+  sources: TTemplateSource[],
+  categoryUuid: string | null,
+): Promise<{ hasTemplates: boolean; failed: boolean }> {
+  // Never rejects: discovery waits on all of these at once, so one library
   // throwing — even synchronously, before its promise exists — must not strand
-  // the others behind a skeleton that has nothing left to resolve it.
-  try {
-    const request = fetchPage(source, 1, { limit: CATEGORY_DISCOVERY_LIMIT });
+  // the panel behind a skeleton that has nothing left to resolve it.
+  const results = await Promise.all(
+    sources.map(async (source) => {
+      try {
+        const request = fetchPage(source, 1, {
+          categoryUuid,
+          limit: CATEGORY_PROBE_LIMIT,
+        });
 
-    // No reader for this source on this host: it contributes no rows, which is
-    // not a failure and must not raise an error toast.
-    if (!request) return { source, categories: [], failed: false };
+        // No reader for this source on this host: it contributes nothing,
+        // which is not a failure and must not raise an error toast.
+        if (!request) return { found: false, failed: false };
 
-    const count = (await request).count ?? {};
-    const categories = Object.keys(count).filter(
-      (group) => (count[group]?.matchedCount ?? 0) > 0,
-    );
+        return { found: ((await request).items ?? []).length > 0, failed: false };
+      } catch {
+        return { found: false, failed: true };
+      }
+    }),
+  );
 
-    return { source, categories, failed: false };
-  } catch {
-    return { source, categories: [], failed: true };
+  return {
+    hasTemplates: results.some((result) => result.found),
+    failed: results.some((result) => result.failed),
+  };
+}
+
+/**
+ * The category rows the Templates panel shows.
+ *
+ * The taxonomy comes from the host backend, which is the same list the save
+ * dialog offers, so a row exists for a category exactly when somebody could
+ * have filed a template under it. The uncategorized remainder is appended
+ * because it is not part of the taxonomy but still has to be reachable —
+ * without it every template saved before the taxonomy existed would be
+ * invisible.
+ */
+async function discoverTemplateCategories(
+  fetchPage: TFetchRemotePage,
+  listCategories: (() => Promise<TTemplateCategoryOption[]>) | undefined,
+  sources: TTemplateSource[],
+): Promise<{ categories: TTemplateCategoryEntry[]; failed: boolean }> {
+  let taxonomy: TTemplateCategoryOption[] = [];
+  let failed = false;
+
+  if (listCategories) {
+    try {
+      taxonomy = await listCategories();
+    } catch {
+      failed = true;
+    }
   }
+
+  const candidates: TTemplateCategoryEntry[] = [
+    ...taxonomy.map(({ id, name }) => ({ uuid: id, name })),
+    { uuid: null, name: null },
+  ];
+
+  const probed = await Promise.all(
+    candidates.map(async (candidate) => ({
+      candidate,
+      ...(await categoryHasTemplates(fetchPage, sources, candidate.uuid)),
+    })),
+  );
+
+  return {
+    categories: probed
+      .filter((result) => result.hasTemplates)
+      .map((result) => result.candidate),
+    failed: failed || probed.some((result) => result.failed),
+  };
 }
 
 const StyledEditorSectionGroup = styled.div`
@@ -323,24 +348,6 @@ const StyledEditorSectionGroup = styled.div`
   max-height: calc(
     100vh - ${TOP_BAR_HEIGHT + TITLE_HEIGHT + PADDING_TOP_HEIGHT}px
   );
-`;
-
-// Names the library a run of category rows belongs to. Muted and uppercase so
-// it reads as a heading rather than as one more clickable row; the panel is
-// only 200px wide, so the source is said once here instead of being prefixed
-// onto every row, where it would push the category names into an ellipsis.
-const StyledSourceHeading = styled.div`
-  font-size: var(--tina-font-size-0);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: ${Colors.black40};
-  padding: 4px;
-  margin-top: 12px;
-
-  &:first-child {
-    margin-top: 0;
-  }
 `;
 
 export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
@@ -361,16 +368,17 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   >({});
   const [isFetching, setIsFetching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  // Categories per template library. `null` while the discovery read is still
-  // in flight, which is what tells the Templates panel to show its skeleton.
-  const [categoriesBySource, setCategoriesBySource] =
-    useState<TTemplateCategories | null>(null);
+  // The category rows. `null` while the discovery read is still in flight,
+  // which is what tells the Templates panel to show its skeleton.
+  const [templateCategories, setTemplateCategories] = useState<
+    TTemplateCategoryEntry[] | null
+  >(null);
 
-  // The host backend, widened with the optional public-template reader. An
+  // The host backend, widened with the optional template readers. An
   // intersection rather than a cast: every added member is optional, so the
   // plain contract still satisfies it and a missing implementation stays a
   // runtime-checkable `undefined` instead of a lie to the type checker.
-  const templatesApi: Backend["templates"] & TPublicTemplateSource =
+  const templatesApi: Backend["templates"] & THostTemplateApi =
     editorContext.backend.templates;
 
   // Map raw API templates to the shape the drawer/card consume.
@@ -408,12 +416,11 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     () =>
       buildSectionEntries({
         panel,
-        mode: editorContext.mode,
         localGroups,
-        categoriesBySource,
+        templateCategories,
         t,
       }),
-    [panel, localGroups, editorContext.mode, categoriesBySource, t],
+    [panel, localGroups, templateCategories, t],
   );
 
   const entriesById = useMemo(() => {
@@ -452,14 +459,13 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   }, [hoveredEntry, localComponents]);
 
   /**
-   * One page of a remote source. Returns null when the source is not reachable,
-   * which is how a host without the public reader ends up with an empty system
-   * section rather than an error.
+   * One page of one remote library. Returns null when the library is not
+   * reachable, which is how a host without the public reader ends up with an
+   * empty system section rather than an error.
    *
-   * `group` narrows the page to one category. It is sent on `group.keyword`
-   * rather than `group` because that is the exact-match field the host's list
-   * route accepts, and the uncategorized sentinel travels as-is: the host
-   * translates it back into "no group" on its way to the index.
+   * `categoryUuid` narrows the page to one category; `null` asks for the
+   * templates filed under none, which the list route expresses as "the column
+   * does not exist" rather than as a value to match.
    */
   const fetchRemotePage = useCallback<TFetchRemotePage>(
     (source, page, options) => {
@@ -468,21 +474,54 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
         limit: options?.limit ?? TEMPLATES_LIMIT,
       };
 
-      if (options?.group) {
-        query.filters = `group.keyword:eq:${options.group}`;
+      if (options?.categoryUuid) {
+        query.filters = `category_uuid:eq:${options.categoryUuid}`;
+      } else if (options?.categoryUuid === null) {
+        query.filters = "category_uuid:isnull";
       }
 
       if (source === "shop") {
         return templatesApi.getAll(query);
       }
 
-      if (source === "public") {
-        return templatesApi.getAllPublic?.(query) ?? null;
-      }
-
-      return null;
+      return templatesApi.getAllPublic?.(query) ?? null;
     },
     [templatesApi],
+  );
+
+  /**
+   * One page of a category row, across every library the mode may read.
+   *
+   * The libraries are paged in lockstep rather than one after the other: they
+   * file into the same taxonomy, so a category row is their union, and asking
+   * each for the same page number keeps that union growing until every library
+   * is exhausted — at which point the accumulated item count reaches the summed
+   * total and paging stops on its own.
+   */
+  const fetchCategoryPage = useCallback(
+    (
+      entry: TSectionEntry,
+      page: number,
+    ): Promise<{ items: Template[]; total: number }> | null => {
+      const requests = getTemplateSources(editorContext.mode)
+        .map((source) =>
+          fetchRemotePage(source, page, {
+            categoryUuid: entry.categoryUuid ?? null,
+          }),
+        )
+        .filter((request): request is Promise<TTemplateListResult> => !!request);
+
+      if (requests.length === 0) return null;
+
+      return Promise.all(requests).then((results) => ({
+        items: results.flatMap((result) => result.items ?? []),
+        total: results.reduce(
+          (sum, result) => sum + sumMatchedCount(result.count),
+          0,
+        ),
+      }));
+    },
+    [editorContext.mode, fetchRemotePage],
   );
 
   // Held in a ref so the discovery effect below can depend on the panel and the
@@ -490,6 +529,10 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   // the dependency array would restart the discovery read on every such render.
   const fetchRemotePageRef = useRef<TFetchRemotePage>(fetchRemotePage);
   fetchRemotePageRef.current = fetchRemotePage;
+
+  // Same reason: the taxonomy reader is a member of that same rebuilt object.
+  const listCategoriesRef = useRef(templatesApi.getCategories);
+  listCategoriesRef.current = templatesApi.getCategories;
 
   // Smoothly scroll the editor canvas to a component by its config id. The
   // canvas renders asynchronously after insert, so poll briefly for the node.
@@ -559,30 +602,25 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     [editorContext, scrollCanvasToComponent],
   );
 
-  // Which categories each template library holds. One read per library, issued
-  // once per panel and mode; the per-category pages come later, on hover.
+  // The category rows, discovered once per panel and mode. The templates
+  // themselves come later, on hover.
   useEffect(() => {
     if (panel !== "templates") return;
 
     let cancelled = false;
-    setCategoriesBySource(null);
+    setTemplateCategories(null);
 
-    Promise.all(
-      getTemplateSources(editorContext.mode).map(({ source }) =>
-        readSourceCategories(fetchRemotePageRef.current, source),
-      ),
-    ).then((results) => {
+    discoverTemplateCategories(
+      fetchRemotePageRef.current,
+      listCategoriesRef.current,
+      getTemplateSources(editorContext.mode),
+    ).then(({ categories, failed }) => {
       if (cancelled) return;
 
-      const next: TTemplateCategories = {};
-      results.forEach(({ source, categories }) => {
-        next[source] = categories;
-      });
-
-      // One message however many libraries failed: the user can only retry the
-      // panel as a whole, so a toast per library would just repeat itself.
-      setCategoriesBySource(next);
-      if (results.some(({ failed }) => failed)) {
+      // One message however many reads failed: the user can only retry the
+      // panel as a whole, so a toast per read would just repeat itself.
+      setTemplateCategories(categories);
+      if (failed) {
         toaster.error(t("editor.sidebar.sections.load.error"));
       }
     });
@@ -645,9 +683,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     if (remoteByEntry[hoveredEntry.id]) return;
 
     const entryId = hoveredEntry.id;
-    const request = fetchRemotePage(hoveredEntry.source, 1, {
-      group: hoveredEntry.group,
-    });
+    const request = fetchCategoryPage(hoveredEntry, 1);
 
     if (!request) {
       // No reader for this source: record an empty, complete page so the
@@ -666,14 +702,10 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
       .then((res) => {
         if (cancelled) return;
 
-        const items = mapRemoteItems(res.items ?? []);
+        const items = mapRemoteItems(res.items);
         setRemoteByEntry((prev) => ({
           ...prev,
-          [entryId]: {
-            items,
-            page: 1,
-            total: sumMatchedCount(res.count) || items.length,
-          },
+          [entryId]: { items, page: 1, total: res.total || items.length },
         }));
       })
       .catch(() => {
@@ -692,7 +724,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     return () => {
       cancelled = true;
     };
-  }, [hoveredEntry, fetchRemotePage]);
+  }, [hoveredEntry, fetchCategoryPage]);
 
   // Whether the hovered entry has more remote templates to load (remote only;
   // local templates aren't paginated).
@@ -711,16 +743,14 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     if (state.items.length >= state.total) return;
 
     const nextPage = state.page + 1;
-    const request = fetchRemotePage(entry.source, nextPage, {
-      group: entry.group,
-    });
+    const request = fetchCategoryPage(entry, nextPage);
     if (!request) return;
 
     setIsLoadingMore(true);
 
     request
       .then((res) => {
-        const more = mapRemoteItems(res.items ?? []);
+        const more = mapRemoteItems(res.items);
         setRemoteByEntry((prev) => {
           const existing = prev[entry.id]?.items ?? [];
           return {
@@ -728,7 +758,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
             [entry.id]: {
               items: [...existing, ...more],
               page: nextPage,
-              total: sumMatchedCount(res.count) || prev[entry.id]?.total || 0,
+              total: res.total || prev[entry.id]?.total || 0,
             },
           };
         });
@@ -743,7 +773,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     isFetching,
     isLoadingMore,
     mapRemoteItems,
-    fetchRemotePage,
+    fetchCategoryPage,
   ]);
 
   // Drawer content for the hovered entry: built-in entries show the local
@@ -771,12 +801,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     return result;
   }, [hoveredEntry, localTemplates, remoteByEntry]);
 
-  // The drawer names the library as well as the category. Two libraries may
-  // each hold a category of the same name, and the drawer is where the user
-  // actually picks, so "which library is this?" has to be answerable there too.
-  const drawerTitle = hoveredEntry?.sourceLabel
-    ? `${hoveredEntry.sourceLabel} · ${hoveredEntry.label}`
-    : hoveredEntry?.label;
+  const drawerTitle = hoveredEntry?.label;
 
   // Built-in categories are derived from the form, which is still empty on the
   // first paint, so an empty components list means "not ready yet". Template
@@ -785,7 +810,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   const isLoadingList =
     panel === "components"
       ? entries.length === 0
-      : categoriesBySource === null;
+      : templateCategories === null;
 
   return (
     <>
@@ -799,27 +824,15 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
         )}
 
         {!isLoadingList &&
-          entries.map((entry, index) => {
-            // A heading opens each run of rows belonging to a new library.
-            const startsLibrary =
-              !!entry.sourceLabel &&
-              entry.source !== entries[index - 1]?.source;
-
-            return (
-              <React.Fragment key={entry.id}>
-                {startsLibrary && (
-                  <StyledSourceHeading>{entry.sourceLabel}</StyledSourceHeading>
-                )}
-                <EditorSectionItem
-                  id={entry.id}
-                  name={entry.label}
-                  kind={entry.kind}
-                  hovered={hoveredSection === entry.id}
-                  onHoverSection={handleHoverSection}
-                />
-              </React.Fragment>
-            );
-          })}
+          entries.map((entry) => (
+            <EditorSectionItem
+              key={entry.id}
+              id={entry.id}
+              name={entry.label}
+              hovered={hoveredSection === entry.id}
+              onHoverSection={handleHoverSection}
+            />
+          ))}
       </StyledEditorSectionGroup>
       {isOpen && hoveredEntry ? (
         <EditorSectionDrawer
