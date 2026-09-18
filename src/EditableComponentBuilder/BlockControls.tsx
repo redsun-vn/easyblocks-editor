@@ -110,10 +110,15 @@ export function BlocksControls({
 
   const isDroppableDisabled = sortableDisabledState.droppable;
 
+  const componentLabel = getComponentLabel(templateId, editorContext, t);
+
   const sortable = useSortable({
     id,
+    // `label` rides along so the drag preview in the canvas can name what is
+    // being carried without resolving the path a second time.
     data: {
       path,
+      label: componentLabel,
     },
     disabled: sortableDisabledState,
     strategy:
@@ -236,7 +241,7 @@ export function BlocksControls({
       id={id}
       direction={direction}
       path={path}
-      label={getComponentLabel(templateId, editorContext, t)}
+      label={componentLabel}
       isDraggable={!sortableDisabledState.draggable}
       dropRejectionMessage={dropRejectionMessage}
       dropIndicatorEdge={dropIndicatorEdge}

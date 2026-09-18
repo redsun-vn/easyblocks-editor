@@ -44,6 +44,30 @@ const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:h
 /** Marks the refusal bubble so the frame around it can reveal it on hover. */
 const DROP_REJECTION_ATTRIBUTE = "data-easyblocks-drop-rejection";
 
+/** Marks the drag grip so the frame around it can reveal it on hover. */
+const DRAG_HANDLE_ATTRIBUTE = "data-easyblocks-drag-handle";
+
+/** Edge length of the square grip, in canvas pixels. */
+const DRAG_HANDLE_SIZE = 20;
+
+/** Six dots, the conventional "pick this up" mark. */
+function DragHandleGlyph() {
+  return (
+    <svg
+      width="10"
+      height="14"
+      viewBox="0 0 10 14"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {[2, 7, 12].flatMap((cy) =>
+        [2, 8].map((cx) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.5" />),
+      )}
+    </svg>
+  );
+}
+
 function SelectionFrameController({
   isActive,
   children,
@@ -134,7 +158,7 @@ function SelectionFrameController({
       content: `attr(${CANVAS_FRAME_LABEL_ATTRIBUTE})`,
       position: "absolute",
       top: 0,
-      left: 0,
+      left: `${DRAG_HANDLE_SIZE}px`,
       zIndex: "var(--tina-z-index-2)",
       padding: "0 6px",
       borderBottomRightRadius: "4px",
@@ -163,15 +187,20 @@ function SelectionFrameController({
       opacity: 0.5,
     },
 
-    "&[data-draggable-dragging=true]": {
-      cursor: "grabbing",
-    },
-
-    // Any block can be picked up without being selected first, so the click target
-    // advertises it while nothing is being dragged yet.
-    [`&[data-draggable-enabled=true][data-draggable-dragging=false]${HOVERED_TARGET_FRAME}`]:
+    // The grip is revealed by the same hover that reveals the label, so picking a
+    // block up still takes no prior selection — it just takes aiming at a control
+    // instead of at the block, which is what stopped a press-and-nudge anywhere
+    // inside a section from turning into a drag.
+    [`&[data-draggable-enabled=true][data-draggable-dragging=false]${HOVERED_TARGET_FRAME} [${DRAG_HANDLE_ATTRIBUTE}]`]:
       {
-        cursor: "grab",
+        opacity: 1,
+        pointerEvents: "auto",
+      },
+
+    [`&[data-active=true][data-draggable-dragging=false] [${DRAG_HANDLE_ATTRIBUTE}]`]:
+      {
+        opacity: 1,
+        pointerEvents: "auto",
       },
 
     "&[data-drop-rejected=true]": {
@@ -181,6 +210,34 @@ function SelectionFrameController({
     // The refusal only concerns the block actually under the pointer.
     [`&${HOVERED_TARGET_FRAME} [${DROP_REJECTION_ATTRIBUTE}]`]: {
       opacity: 1,
+    },
+  });
+
+  const dragHandleClassName = stitches.css({
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 9999999,
+    boxSizing: "border-box",
+    width: `${DRAG_HANDLE_SIZE}px`,
+    height: `${DRAG_HANDLE_SIZE}px`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomRightRadius: "4px",
+    backgroundColor: "var(--tina-color-primary)",
+    color: "#fff",
+    cursor: "grab",
+    opacity: 0,
+    // Hidden means untouchable: a transparent 20px box sitting on every block's
+    // top-left corner would swallow clicks meant for the content under it.
+    pointerEvents: "none",
+    transition: "opacity 100ms",
+    userSelect: "none",
+    touchAction: "none",
+
+    "&:active": {
+      cursor: "grabbing",
     },
   });
 
@@ -238,9 +295,21 @@ function SelectionFrameController({
         sortable.setNodeRef(node);
       }}
       onClick={onSelect}
-      {...sortable.attributes}
-      {...sortable.listeners}
     >
+      {isDraggable && (
+        <div
+          {...{ [DRAG_HANDLE_ATTRIBUTE]: "" }}
+          className={dragHandleClassName().className}
+          title={label}
+          // Selecting is the frame's job; grabbing the grip must not also
+          // change what the sidebar is editing.
+          onClick={(event) => event.stopPropagation()}
+          {...sortable.attributes}
+          {...sortable.listeners}
+        >
+          <DragHandleGlyph />
+        </div>
+      )}
       {edgeDropTargets}
       {dropRejectionMessage !== undefined && (
         <div

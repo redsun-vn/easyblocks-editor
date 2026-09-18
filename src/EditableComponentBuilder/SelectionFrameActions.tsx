@@ -429,7 +429,10 @@ export const SelectionFrameActions = ({
         </ButtonGhost>
         {moveDestinations.length > 0 && (
           <ButtonGhost
-            icon={Icons.Drag}
+            // Not the drag grip, although it used to wear its icon: this opens a
+            // list of destinations. The grip lives on the block frame, and two
+            // controls that look alike is how people ended up dragging this one.
+            icon={Icons.ArrowRight}
             hideLabel
             onClick={() => setShowMoveTo((prev) => !prev)}
           >

@@ -2,6 +2,7 @@ import { useForceRerender } from "@/utils/hooks/useForceRerender";
 import {
   CollisionDetection,
   DndContext,
+  DragOverlay,
   MouseSensor,
   TouchSensor,
   UniqueIdentifier,
@@ -29,10 +30,68 @@ import SkeletonEditorCanvasArea from "./SkeletonEditorCanvasArea";
 
 const dragDataSchema = z.object({
   path: z.string(),
+  // Written by the block being dragged so the preview can name itself. Optional
+  // because a drag can start before the block has resolved its own label.
+  label: z.string().optional(),
   sortable: z.object({
     index: z.number(),
   }),
 });
+
+/**
+ * What the pointer carries while a block is being dragged.
+ *
+ * Until this existed a drag moved nothing on screen: the source block dimmed in
+ * place and an insertion line appeared on whatever was hovered, so there was no
+ * object under the cursor and nothing tying the two halves of the gesture
+ * together. It wears the same purple as the insertion line for that reason —
+ * what you are carrying and where it will land read as one thing.
+ *
+ * A chip rather than a copy of the block: a section is as wide as the page, and
+ * a page-wide ghost following the cursor hides the very boundary being aimed at.
+ */
+function DragPreview({ label }: { label: string }) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        maxWidth: "260px",
+        padding: "4px 10px",
+        borderRadius: "4px",
+        backgroundColor: "#7B70F5",
+        color: "#fff",
+        fontFamily: "var(--tina-font-family)",
+        fontSize: "12px",
+        fontWeight: 600,
+        lineHeight: "18px",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+        cursor: "grabbing",
+        pointerEvents: "none",
+      }}
+    >
+      <svg
+        width="10"
+        height="14"
+        viewBox="0 0 10 14"
+        fill="currentColor"
+        aria-hidden="true"
+        focusable="false"
+      >
+        {[2, 7, 12].flatMap((cy) =>
+          [2, 8].map((cx) => (
+            <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.5" />
+          )),
+        )}
+      </svg>
+      {label}
+    </div>
+  );
+}
 
 /**
  * Minimal structural view of a `@dnd-kit` drag end event. `data.current` is `unknown`
@@ -108,6 +167,8 @@ export function EasyblocksCanvas({
 
   const [enabled, setEnabled] = useState(false);
   const activeDraggedEntryPath = useRef<string | null>(null);
+  // Name of the block currently being carried; null when no drag is in flight.
+  const [draggedLabel, setDraggedLabel] = useState<string | null>(null);
   const { forceRerender } = useForceRerender();
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -165,15 +226,16 @@ export function EasyblocksCanvas({
             collisionDetection={customCollisionDetection}
             onDragStart={(event) => {
               document.documentElement.style.cursor = "grabbing";
-              activeDraggedEntryPath.current = dragDataSchema.parse(
-                event.active.data.current,
-              ).path;
+              const activeData = dragDataSchema.parse(event.active.data.current);
+              activeDraggedEntryPath.current = activeData.path;
+              setDraggedLabel(activeData.label ?? null);
               window.parent.editorWindowAPI?.editorContext?.setFocussedField(
                 [],
               );
             }}
             onDragEnd={(event) => {
               document.documentElement.style.cursor = "";
+              setDraggedLabel(null);
 
               const outcome = resolveDragEndOutcome(event);
 
@@ -190,6 +252,7 @@ export function EasyblocksCanvas({
             }}
             onDragCancel={(event) => {
               document.documentElement.style.cursor = "";
+              setDraggedLabel(null);
               // If the drag was canceled, we want to refocus dragged item.
               window.parent.editorWindowAPI?.editorContext?.setFocussedField(
                 dragDataSchema.parse(event.active.data.current).path,
@@ -212,6 +275,13 @@ export function EasyblocksCanvas({
                 }}
               />
             </SortableContext>
+            {/* No drop animation: the chip is not the block, so flying it into
+                the block's new position would animate the wrong object. */}
+            <DragOverlay dropAnimation={null}>
+              {draggedLabel !== null ? (
+                <DragPreview label={draggedLabel} />
+              ) : null}
+            </DragOverlay>
           </DndContext>
         </CanvasRoot>
       </TooltipProvider>

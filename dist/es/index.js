@@ -36,7 +36,7 @@ import { AccordionGroup } from '@redsun-vn/easyblocks-design-system/AccordionGro
 import { createForm as createForm$1, FORM_ERROR } from 'final-form';
 import arrayMutators from 'final-form-arrays';
 import { BasicRow } from '@redsun-vn/easyblocks-design-system/rows';
-import { useDndContext, useSensor, MouseSensor, TouchSensor, DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core';
+import { useDndContext, useSensor, MouseSensor, TouchSensor, DndContext, DragOverlay, pointerWithin, rectIntersection } from '@dnd-kit/core';
 import { useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { z } from 'zod';
 
@@ -9187,8 +9187,12 @@ const SelectionFrameActions = ({
     icon: Icons.ArrowDown,
     hideLabel: true,
     onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("editor.canvas.action.moveDown")), moveDestinations.length > 0 && /*#__PURE__*/React__default.createElement(ButtonGhost, {
-    icon: Icons.Drag,
+  }, t("editor.canvas.action.moveDown")), moveDestinations.length > 0 && /*#__PURE__*/React__default.createElement(ButtonGhost
+  // Not the drag grip, although it used to wear its icon: this opens a
+  // list of destinations. The grip lives on the block frame, and two
+  // controls that look alike is how people ended up dragging this one.
+  , {
+    icon: Icons.ArrowRight,
     hideLabel: true,
     onClick: () => setShowMoveTo(prev => !prev)
   }, t("editor.canvas.action.moveTo")), editorMode !== "admin-template" && /*#__PURE__*/React__default.createElement(ButtonGhost, {
@@ -12297,6 +12301,29 @@ const HOVERED_TARGET_FRAME = `:hover:not(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]:h
 
 /** Marks the refusal bubble so the frame around it can reveal it on hover. */
 const DROP_REJECTION_ATTRIBUTE = "data-easyblocks-drop-rejection";
+
+/** Marks the drag grip so the frame around it can reveal it on hover. */
+const DRAG_HANDLE_ATTRIBUTE = "data-easyblocks-drag-handle";
+
+/** Edge length of the square grip, in canvas pixels. */
+const DRAG_HANDLE_SIZE = 20;
+
+/** Six dots, the conventional "pick this up" mark. */
+function DragHandleGlyph() {
+  return /*#__PURE__*/React__default.createElement("svg", {
+    width: "10",
+    height: "14",
+    viewBox: "0 0 10 14",
+    fill: "currentColor",
+    "aria-hidden": "true",
+    focusable: "false"
+  }, [2, 7, 12].flatMap(cy => [2, 8].map(cx => /*#__PURE__*/React__default.createElement("circle", {
+    key: `${cx}-${cy}`,
+    cx: cx,
+    cy: cy,
+    r: "1.5"
+  }))));
+}
 function SelectionFrameController({
   isActive,
   children,
@@ -12385,7 +12412,7 @@ function SelectionFrameController({
       content: `attr(${CANVAS_FRAME_LABEL_ATTRIBUTE})`,
       position: "absolute",
       top: 0,
-      left: 0,
+      left: `${DRAG_HANDLE_SIZE}px`,
       zIndex: "var(--tina-z-index-2)",
       padding: "0 6px",
       borderBottomRightRadius: "4px",
@@ -12410,13 +12437,17 @@ function SelectionFrameController({
     "&[data-draggable-active=true]": {
       opacity: 0.5
     },
-    "&[data-draggable-dragging=true]": {
-      cursor: "grabbing"
+    // The grip is revealed by the same hover that reveals the label, so picking a
+    // block up still takes no prior selection — it just takes aiming at a control
+    // instead of at the block, which is what stopped a press-and-nudge anywhere
+    // inside a section from turning into a drag.
+    [`&[data-draggable-enabled=true][data-draggable-dragging=false]${HOVERED_TARGET_FRAME} [${DRAG_HANDLE_ATTRIBUTE}]`]: {
+      opacity: 1,
+      pointerEvents: "auto"
     },
-    // Any block can be picked up without being selected first, so the click target
-    // advertises it while nothing is being dragged yet.
-    [`&[data-draggable-enabled=true][data-draggable-dragging=false]${HOVERED_TARGET_FRAME}`]: {
-      cursor: "grab"
+    [`&[data-active=true][data-draggable-dragging=false] [${DRAG_HANDLE_ATTRIBUTE}]`]: {
+      opacity: 1,
+      pointerEvents: "auto"
     },
     "&[data-drop-rejected=true]": {
       cursor: "no-drop"
@@ -12424,6 +12455,32 @@ function SelectionFrameController({
     // The refusal only concerns the block actually under the pointer.
     [`&${HOVERED_TARGET_FRAME} [${DROP_REJECTION_ATTRIBUTE}]`]: {
       opacity: 1
+    }
+  });
+  const dragHandleClassName = stitches.css({
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 9999999,
+    boxSizing: "border-box",
+    width: `${DRAG_HANDLE_SIZE}px`,
+    height: `${DRAG_HANDLE_SIZE}px`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomRightRadius: "4px",
+    backgroundColor: "var(--tina-color-primary)",
+    color: "#fff",
+    cursor: "grab",
+    opacity: 0,
+    // Hidden means untouchable: a transparent 20px box sitting on every block's
+    // top-left corner would swallow clicks meant for the content under it.
+    pointerEvents: "none",
+    transition: "opacity 100ms",
+    userSelect: "none",
+    touchAction: "none",
+    "&:active": {
+      cursor: "grabbing"
     }
   });
   const dropRejectionClassName = stitches.css({
@@ -12453,7 +12510,7 @@ function SelectionFrameController({
       }
     };
   });
-  return /*#__PURE__*/React__default.createElement("div", _extends({
+  return /*#__PURE__*/React__default.createElement("div", {
     [CANVAS_FRAME_PATH_ATTRIBUTE]: path,
     [CANVAS_FRAME_LABEL_ATTRIBUTE]: label,
     "data-active": isActive,
@@ -12468,7 +12525,15 @@ function SelectionFrameController({
       sortable.setNodeRef(node);
     },
     onClick: onSelect
-  }, sortable.attributes, sortable.listeners), edgeDropTargets, dropRejectionMessage !== undefined && /*#__PURE__*/React__default.createElement("div", {
+  }, isDraggable && /*#__PURE__*/React__default.createElement("div", _extends({
+    [DRAG_HANDLE_ATTRIBUTE]: "",
+    className: dragHandleClassName().className,
+    title: label
+    // Selecting is the frame's job; grabbing the grip must not also
+    // change what the sidebar is editing.
+    ,
+    onClick: event => event.stopPropagation()
+  }, sortable.attributes, sortable.listeners), /*#__PURE__*/React__default.createElement(DragHandleGlyph, null)), edgeDropTargets, dropRejectionMessage !== undefined && /*#__PURE__*/React__default.createElement("div", {
     [DROP_REJECTION_ATTRIBUTE]: "",
     role: "tooltip",
     className: dropRejectionClassName().className
@@ -12578,10 +12643,14 @@ function BlocksControls({
     canAcceptDraggedComponent: canDraggedComponentBeDropped
   });
   const isDroppableDisabled = sortableDisabledState.droppable;
+  const componentLabel = getComponentLabel(templateId, editorContext, t);
   const sortable = useSortable({
     id,
+    // `label` rides along so the drag preview in the canvas can name what is
+    // being carried without resolving the path a second time.
     data: {
-      path
+      path,
+      label: componentLabel
     },
     disabled: sortableDisabledState,
     strategy: direction === "horizontal" ? horizontalListSortingStrategy : verticalListSortingStrategy
@@ -12656,7 +12725,7 @@ function BlocksControls({
     id: id,
     direction: direction,
     path: path,
-    label: getComponentLabel(templateId, editorContext, t),
+    label: componentLabel,
     isDraggable: !sortableDisabledState.draggable,
     dropRejectionMessage: dropRejectionMessage,
     dropIndicatorEdge: dropIndicatorEdge,
@@ -12985,10 +13054,64 @@ function TypePlaceholder(props) {
 
 const dragDataSchema = z.object({
   path: z.string(),
+  // Written by the block being dragged so the preview can name itself. Optional
+  // because a drag can start before the block has resolved its own label.
+  label: z.string().optional(),
   sortable: z.object({
     index: z.number()
   })
 });
+
+/**
+ * What the pointer carries while a block is being dragged.
+ *
+ * Until this existed a drag moved nothing on screen: the source block dimmed in
+ * place and an insertion line appeared on whatever was hovered, so there was no
+ * object under the cursor and nothing tying the two halves of the gesture
+ * together. It wears the same purple as the insertion line for that reason —
+ * what you are carrying and where it will land read as one thing.
+ *
+ * A chip rather than a copy of the block: a section is as wide as the page, and
+ * a page-wide ghost following the cursor hides the very boundary being aimed at.
+ */
+function DragPreview({
+  label
+}) {
+  return /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "6px",
+      maxWidth: "260px",
+      padding: "4px 10px",
+      borderRadius: "4px",
+      backgroundColor: "#7B70F5",
+      color: "#fff",
+      fontFamily: "var(--tina-font-family)",
+      fontSize: "12px",
+      fontWeight: 600,
+      lineHeight: "18px",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+      cursor: "grabbing",
+      pointerEvents: "none"
+    }
+  }, /*#__PURE__*/React__default.createElement("svg", {
+    width: "10",
+    height: "14",
+    viewBox: "0 0 10 14",
+    fill: "currentColor",
+    "aria-hidden": "true",
+    focusable: "false"
+  }, [2, 7, 12].flatMap(cy => [2, 8].map(cx => /*#__PURE__*/React__default.createElement("circle", {
+    key: `${cx}-${cy}`,
+    cx: cx,
+    cy: cy,
+    r: "1.5"
+  })))), label);
+}
 
 /**
  * Minimal structural view of a `@dnd-kit` drag end event. `data.current` is `unknown`
@@ -13058,6 +13181,8 @@ function EasyblocksCanvas({
   } = window.parent.editorWindowAPI;
   const [enabled, setEnabled] = useState(false);
   const activeDraggedEntryPath = useRef(null);
+  // Name of the block currently being carried; null when no drag is in flight.
+  const [draggedLabel, setDraggedLabel] = useState(null);
   const {
     forceRerender
   } = useForceRerender();
@@ -13101,11 +13226,14 @@ function EasyblocksCanvas({
     collisionDetection: customCollisionDetection,
     onDragStart: event => {
       document.documentElement.style.cursor = "grabbing";
-      activeDraggedEntryPath.current = dragDataSchema.parse(event.active.data.current).path;
+      const activeData = dragDataSchema.parse(event.active.data.current);
+      activeDraggedEntryPath.current = activeData.path;
+      setDraggedLabel(activeData.label ?? null);
       window.parent.editorWindowAPI?.editorContext?.setFocussedField([]);
     },
     onDragEnd: event => {
       document.documentElement.style.cursor = "";
+      setDraggedLabel(null);
       const outcome = resolveDragEndOutcome(event);
       if (outcome.type === "refocus") {
         window.parent.editorWindowAPI?.editorContext?.setFocussedField(outcome.path);
@@ -13117,6 +13245,7 @@ function EasyblocksCanvas({
     },
     onDragCancel: event => {
       document.documentElement.style.cursor = "";
+      setDraggedLabel(null);
       // If the drag was canceled, we want to refocus dragged item.
       window.parent.editorWindowAPI?.editorContext?.setFocussedField(dragDataSchema.parse(event.active.data.current).path);
     }
@@ -13135,7 +13264,11 @@ function EasyblocksCanvas({
       "EditableComponentBuilder.editor": EditableComponentBuilder,
       Placeholder: TypePlaceholder
     }
-  }))))));
+  })), /*#__PURE__*/React__default.createElement(DragOverlay, {
+    dropAnimation: null
+  }, draggedLabel !== null ? /*#__PURE__*/React__default.createElement(DragPreview, {
+    label: draggedLabel
+  }) : null)))));
 }
 
 /**
