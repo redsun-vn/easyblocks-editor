@@ -12476,19 +12476,24 @@ function SelectionFrameController({
     // block up still takes no prior selection — it just takes aiming at a control
     // instead of at the block, which is what stopped a press-and-nudge anywhere
     // inside a section from turning into a drag.
-    [`&[data-draggable-enabled=true][data-draggable-dragging=false]${HOVERED_TARGET_FRAME} [${DRAG_HANDLE_ATTRIBUTE}]`]: {
+    // `>` and not a descendant selector: every nested block carries a grip of its
+    // own, and those grips are descendants of this frame too. Matching them all
+    // lit up one per child and buried the section under a grid of handles.
+    [`&[data-draggable-enabled=true][data-draggable-dragging=false]${HOVERED_TARGET_FRAME} > [${DRAG_HANDLE_ATTRIBUTE}]`]: {
       opacity: 1,
       pointerEvents: "auto"
     },
-    [`&[data-active=true][data-draggable-dragging=false] [${DRAG_HANDLE_ATTRIBUTE}]`]: {
+    [`&[data-active=true][data-draggable-dragging=false] > [${DRAG_HANDLE_ATTRIBUTE}]`]: {
       opacity: 1,
       pointerEvents: "auto"
     },
     "&[data-drop-rejected=true]": {
       cursor: "no-drop"
     },
-    // The refusal only concerns the block actually under the pointer.
-    [`&${HOVERED_TARGET_FRAME} [${DROP_REJECTION_ATTRIBUTE}]`]: {
+    // The refusal only concerns the block actually under the pointer, and `>`
+    // keeps it that way: a descendant match would reveal every nested block's
+    // bubble as well.
+    [`&${HOVERED_TARGET_FRAME} > [${DROP_REJECTION_ATTRIBUTE}]`]: {
       opacity: 1
     }
   });
