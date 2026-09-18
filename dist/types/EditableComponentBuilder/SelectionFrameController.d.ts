@@ -1,5 +1,6 @@
 import type { useSortable } from "@dnd-kit/sortable";
 import React, { MouseEvent, ReactNode } from "react";
+import type { DropIndicatorEdge } from "./dropIndicator";
 type SelectionFrameControllerProps = {
     isActive: boolean;
     onSelect: (event: MouseEvent<HTMLElement>) => void;
@@ -14,7 +15,14 @@ type SelectionFrameControllerProps = {
     isDraggable: boolean;
     /** Why this block refuses the block being dragged, if it refuses it. */
     dropRejectionMessage?: string;
+    /** Edge of this block the dragged block would land on, or `null` when it would land elsewhere. */
+    dropIndicatorEdge: DropIndicatorEdge;
+    /**
+     * Droppables marking the outer edges of the collection. They are positioned against this
+     * frame, so they belong inside it: the frame is the only box that knows where the edge is.
+     */
+    edgeDropTargets?: ReactNode;
 };
-declare function SelectionFrameController({ isActive, children, onSelect, stitches, sortable, id, direction, path, label, isDraggable, dropRejectionMessage, }: SelectionFrameControllerProps): React.JSX.Element;
+declare function SelectionFrameController({ isActive, children, onSelect, stitches, sortable, id, direction, path, label, isDraggable, dropRejectionMessage, dropIndicatorEdge, edgeDropTargets, }: SelectionFrameControllerProps): React.JSX.Element;
 export { SelectionFrameController };
 //# sourceMappingURL=SelectionFrameController.d.ts.map
