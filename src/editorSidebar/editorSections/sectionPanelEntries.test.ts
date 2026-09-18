@@ -7,7 +7,7 @@ const t = (key: string): string =>
     ({
       "definition.category.layout": "Bố cục",
       "definition.category.content": "Nội dung",
-      "editor.sidebar.sections.templates.redsun": "Mẫu REDSUN",
+      "editor.sidebar.sections.templates.system": "Mẫu hệ thống",
       "editor.sidebar.sections.templates.shop": "Mẫu của khách hàng",
     }) as Record<string, string>
   )[key] ?? key;
@@ -79,7 +79,7 @@ describe("entries shown in the components panel", () => {
 });
 
 describe("entries shown in the templates panel", () => {
-  it("gives a shop both the REDSUN library and its own templates", () => {
+  it("gives a shop both the system library and its own templates", () => {
     const entries = buildSectionEntries({
       panel: "templates",
       mode: "user",
@@ -90,7 +90,7 @@ describe("entries shown in the templates panel", () => {
     expect(entries).toEqual([
       {
         id: "public:redsun",
-        label: "Mẫu REDSUN",
+        label: "Mẫu hệ thống",
         source: "public",
         kind: "template",
       },
@@ -103,7 +103,7 @@ describe("entries shown in the templates panel", () => {
     ]);
   });
 
-  it("gives an admin one entry, because its own path is the REDSUN library", () => {
+  it("gives an admin one entry, because its own path is the system library", () => {
     const entries = buildSectionEntries({
       panel: "templates",
       mode: "admin",
@@ -114,7 +114,7 @@ describe("entries shown in the templates panel", () => {
     expect(entries).toEqual([
       {
         id: "shop:own",
-        label: "Mẫu REDSUN",
+        label: "Mẫu hệ thống",
         source: "shop",
         kind: "template",
       },

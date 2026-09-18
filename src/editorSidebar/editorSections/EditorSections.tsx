@@ -61,14 +61,14 @@ type TTemplateListResult = {
  * The public template path, exposed by the host app's backend on top of the
  * `Backend` contract.
  *
- * REDSUN templates have no `shop_id`, and every shop-side query is pinned to a
+ * System templates have no `shop_id`, and every shop-side query is pinned to a
  * shop id down in Elasticsearch, so they can never come back through
  * `templates.getAll`. Showing them needs a genuinely different endpoint — the
  * public one, which only ever returns what an admin switched on — not a filter
  * applied to the shop result.
  *
  * Optional because the contract in `easyblocks-core` does not carry it: a host
- * that does not implement it simply has no REDSUN section, instead of breaking.
+ * that does not implement it simply has no system section, instead of breaking.
  */
 type TPublicTemplateSource = {
   getAllPublic?: (query: TemplateQueryType) => Promise<TTemplateListResult>;
@@ -159,13 +159,13 @@ export function buildSectionEntries({
     }));
   }
 
-  // Admin edits the REDSUN library directly, so its own path already holds
+  // Admin edits the system library directly, so its own path already holds
   // exactly those templates and a second public read would be a duplicate.
   if (mode === "user") {
     return [
       {
         id: "public:redsun",
-        label: t("editor.sidebar.sections.templates.redsun"),
+        label: t("editor.sidebar.sections.templates.system"),
         source: "public",
         kind: "template",
       },
@@ -181,7 +181,7 @@ export function buildSectionEntries({
   return [
     {
       id: "shop:own",
-      label: t("editor.sidebar.sections.templates.redsun"),
+      label: t("editor.sidebar.sections.templates.system"),
       source: "shop",
       kind: "template",
     },
@@ -310,7 +310,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
 
   /**
    * One page of a remote source. Returns null when the source is not reachable,
-   * which is how a host without the public reader ends up with an empty REDSUN
+   * which is how a host without the public reader ends up with an empty system
    * section rather than an error.
    */
   const fetchRemotePage = useCallback(
