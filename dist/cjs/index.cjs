@@ -13201,6 +13201,35 @@ function Placeholder(props) {
     }
   }), content);
 }
+
+/**
+ * Whether an empty slot takes the block being dragged over it.
+ *
+ * Two behaviours live here on purpose. The default one compares the dragged
+ * block against `type`, a single string that `ComponentBuilder` derives by
+ * collapsing the slot's whole `accepts` list down to one entry. That collapse
+ * is lossy: no list yields a `type` that lets both a `button` and an `item`
+ * through, so slots holding a mixed list silently refuse half of what their
+ * picker offers.
+ *
+ * A slot opts out of the collapse with `placeholderStrictAccepts`, which makes
+ * `ComponentBuilder` pass the full `accepts` list as `accepts` here. The slot
+ * then takes exactly what its picker offers, because it reads `accepts` the way
+ * `unrollAcceptsFieldIntoComponents` does: an entry naming a component type
+ * matches every component of that type, and an entry naming a component id
+ * matches that one component.
+ *
+ * Slots that do not opt in never reach the second branch, so their behaviour —
+ * including the refusals they have today — stays exactly as it was.
+ */
+function canDropIntoPlaceholder({
+  draggedId,
+  draggedTypes,
+  type,
+  accepts
+}) {
+  return accepts ? accepts.includes(draggedId) || includesAny(draggedTypes, accepts) : draggedTypes.includes(type);
+}
 function TypePlaceholder(props) {
   const {
     form
@@ -13209,7 +13238,12 @@ function TypePlaceholder(props) {
   const dndContext = core.useDndContext();
   const draggedEntryPathParseResult = dndContext.active ? _internals.parsePath(dndContext.active.data.current.path, form) : null;
   const draggedComponentDefinition = draggedEntryPathParseResult ? meta.vars.definitions.components.find(c => c.id === draggedEntryPathParseResult.templateId) : null;
-  const canDraggedComponentBeDropped = draggedComponentDefinition ? toArray(draggedComponentDefinition.type ?? []).includes(props.type) : true;
+  const canDraggedComponentBeDropped = !draggedComponentDefinition ? true : canDropIntoPlaceholder({
+    draggedId: draggedComponentDefinition.id,
+    draggedTypes: toArray(draggedComponentDefinition.type ?? []),
+    type: props.type,
+    accepts: props.accepts
+  });
   const sortable$1 = sortable.useSortable({
     id: `placeholder.${props.id}`,
     data: {
