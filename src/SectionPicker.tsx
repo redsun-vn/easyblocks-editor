@@ -6,6 +6,7 @@ import React, { useRef } from "react";
 import { styled } from "styled-components";
 import { EditorContextType, useEditorContext } from "./EditorContext";
 import { TemplatePicker } from "./TemplatePicker";
+import { useTranslation } from "./useTranslation";
 
 type VisualProps = {
   mode: string;
@@ -125,6 +126,35 @@ function getTemplatePreviewImage(
   // }
 }
 
+/**
+ * The name shown on a card.
+ *
+ * A template's `label` is written in the definition, in English, and there are
+ * more than a hundred of them; turning each into a translation key would mean
+ * editing every file and would leave the frozen set with keys nobody is going
+ * to translate. So the id is the key and the written label is the fallback: a
+ * template with a translation shows it, one without reads exactly as before.
+ */
+const useCardLabel = () => {
+  const { t } = useTranslation();
+
+  return (id: string | undefined, written: string | undefined) => {
+    if (!id) return written;
+
+    // A component with no template of its own gets one built for it, under the
+    // id `<component>_default` (see `templates/getTemplates.ts`). The name
+    // belongs to the component, so that suffix is dropped before looking up.
+    for (const candidate of [id, id.replace(/_default$/, "")]) {
+      const key = `picker.item.${candidate}`;
+      const translated = t(key);
+
+      if (translated !== key) return translated;
+    }
+
+    return written;
+  };
+};
+
 const SectionCard: React.FC<SectionCardProps> = ({
   template,
   onSelect,
@@ -132,6 +162,9 @@ const SectionCard: React.FC<SectionCardProps> = ({
 }) => {
   const imageRef = useRef(null);
   const editorContext = useEditorContext();
+  const cardLabel = useCardLabel();
+  const shownLabel = cardLabel(template.id, template.label);
+  const shownThumbnailLabel = cardLabel(template.id, template.thumbnailLabel);
 
   const previewImage = getTemplatePreviewImage(template, editorContext);
 
@@ -139,12 +172,12 @@ const SectionCard: React.FC<SectionCardProps> = ({
     <CardRoot>
       <ImageContainer ref={imageRef} onClick={onSelect} mode={mode}>
         {previewImage && <CardImg src={previewImage} />}
-        {!previewImage && template.thumbnailLabel && (
+        {!previewImage && shownThumbnailLabel && (
           <CardImgPlaceholder>
-            <span style={{ color: "#6c6c6c" }}>{template.thumbnailLabel}</span>
+            <span style={{ color: "#6c6c6c" }}>{shownThumbnailLabel}</span>
           </CardImgPlaceholder>
         )}
-        {!previewImage && !template.thumbnailLabel && (
+        {!previewImage && !shownThumbnailLabel && (
           <CardImgPlaceholder>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -179,9 +212,9 @@ const SectionCard: React.FC<SectionCardProps> = ({
       <CardFooter>
         <CardLabelContainer>
           <>
-            {template.label && (
+            {shownLabel && (
               <>
-                <CardLabelTemplateName>{template.label}</CardLabelTemplateName>
+                <CardLabelTemplateName>{shownLabel}</CardLabelTemplateName>
               </>
             )}
           </>

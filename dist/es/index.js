@@ -11672,6 +11672,34 @@ function getTemplatePreviewImage(template, editorContext) {
   //   });
   // }
 }
+
+/**
+ * The name shown on a card.
+ *
+ * A template's `label` is written in the definition, in English, and there are
+ * more than a hundred of them; turning each into a translation key would mean
+ * editing every file and would leave the frozen set with keys nobody is going
+ * to translate. So the id is the key and the written label is the fallback: a
+ * template with a translation shows it, one without reads exactly as before.
+ */
+const useCardLabel = () => {
+  const {
+    t
+  } = useTranslation();
+  return (id, written) => {
+    if (!id) return written;
+
+    // A component with no template of its own gets one built for it, under the
+    // id `<component>_default` (see `templates/getTemplates.ts`). The name
+    // belongs to the component, so that suffix is dropped before looking up.
+    for (const candidate of [id, id.replace(/_default$/, "")]) {
+      const key = `picker.item.${candidate}`;
+      const translated = t(key);
+      if (translated !== key) return translated;
+    }
+    return written;
+  };
+};
 const SectionCard = ({
   template,
   onSelect,
@@ -11679,6 +11707,9 @@ const SectionCard = ({
 }) => {
   const imageRef = useRef(null);
   const editorContext = useEditorContext();
+  const cardLabel = useCardLabel();
+  const shownLabel = cardLabel(template.id, template.label);
+  const shownThumbnailLabel = cardLabel(template.id, template.thumbnailLabel);
   const previewImage = getTemplatePreviewImage(template);
   return /*#__PURE__*/React__default.createElement(CardRoot, null, /*#__PURE__*/React__default.createElement(ImageContainer, {
     ref: imageRef,
@@ -11686,11 +11717,11 @@ const SectionCard = ({
     mode: mode
   }, previewImage && /*#__PURE__*/React__default.createElement(CardImg, {
     src: previewImage
-  }), !previewImage && template.thumbnailLabel && /*#__PURE__*/React__default.createElement(CardImgPlaceholder, null, /*#__PURE__*/React__default.createElement("span", {
+  }), !previewImage && shownThumbnailLabel && /*#__PURE__*/React__default.createElement(CardImgPlaceholder, null, /*#__PURE__*/React__default.createElement("span", {
     style: {
       color: "#6c6c6c"
     }
-  }, template.thumbnailLabel)), !previewImage && !template.thumbnailLabel && /*#__PURE__*/React__default.createElement(CardImgPlaceholder, null, /*#__PURE__*/React__default.createElement("svg", {
+  }, shownThumbnailLabel)), !previewImage && !shownThumbnailLabel && /*#__PURE__*/React__default.createElement(CardImgPlaceholder, null, /*#__PURE__*/React__default.createElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
     width: "64",
     height: "64",
@@ -11710,7 +11741,7 @@ const SectionCard = ({
     clipRule: "evenodd",
     d: "M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM3 3H13V13H3L3 3Z",
     fill: Colors.black20
-  })))), /*#__PURE__*/React__default.createElement(CardFooter, null, /*#__PURE__*/React__default.createElement(CardLabelContainer, null, /*#__PURE__*/React__default.createElement(React__default.Fragment, null, template.label && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(CardLabelTemplateName, null, template.label)))), /*#__PURE__*/React__default.createElement("div", null), template.isUserDefined && !editorContext.readOnly && /*#__PURE__*/React__default.createElement(ButtonGhostColor, {
+  })))), /*#__PURE__*/React__default.createElement(CardFooter, null, /*#__PURE__*/React__default.createElement(CardLabelContainer, null, /*#__PURE__*/React__default.createElement(React__default.Fragment, null, shownLabel && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(CardLabelTemplateName, null, shownLabel)))), /*#__PURE__*/React__default.createElement("div", null), template.isUserDefined && !editorContext.readOnly && /*#__PURE__*/React__default.createElement(ButtonGhostColor, {
     className: "editButton",
     onClick: () => {
       editorContext.actions.openTemplateModal({
