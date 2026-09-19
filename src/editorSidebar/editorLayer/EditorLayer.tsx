@@ -6,7 +6,7 @@ import {
   ILayer,
   normalizeComponentLayers,
 } from "../../utils/normalizeComponentLayers";
-import { canvasScrollTargetTop } from "./canvasScrollTarget";
+import { canvasScrollTargetTop } from "../canvasScrollTarget";
 import { EditorLayerDetail } from "./EditorLayerDetail";
 
 export const EditorLayer: React.FC = () => {

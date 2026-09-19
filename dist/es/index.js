@@ -8840,16 +8840,26 @@ const EditorSections = ({
 
   // Smoothly scroll the editor canvas to a component by its config id. The
   // canvas renders asynchronously after insert, so poll briefly for the node.
-  const scrollCanvasToComponent = useCallback(id => {
+  /**
+   * Brings a freshly inserted section into view.
+   *
+   * Found by path rather than by `_id`, because a canvas selection frame is
+   * marked with its path and not every block ends up with an element carrying
+   * its id. The retries stay: the section has to render before its frame is in
+   * the document, and that is a frame or two away.
+   */
+  const scrollCanvasToComponent = useCallback(path => {
     let attempts = 0;
     const maxAttempts = 20;
     const tryScroll = () => {
       const iframe = document.getElementById("editor-canvas");
-      const node = iframe?.contentDocument?.getElementById(id);
+      const node = iframe?.contentDocument?.querySelector(`[${CANVAS_FRAME_PATH_ATTRIBUTE}="${path}"]`);
       if (node && iframe?.contentWindow) {
-        const top = node.getBoundingClientRect().top + iframe.contentWindow.scrollY;
         iframe.contentWindow.scrollTo({
-          top,
+          top: canvasScrollTargetTop({
+            elementTop: node.getBoundingClientRect().top,
+            scrollY: iframe.contentWindow.scrollY
+          }),
           behavior: "smooth"
         });
         return;
@@ -8885,10 +8895,11 @@ const EditorSections = ({
     });
     toaster.success(t("editor.sidebar.sections.add.success"));
 
-    // Scroll the canvas to wherever the new section landed.
-    const data = editorContext.form.values?.data ?? [];
-    const newId = data[insertionIndex]?._id;
-    if (newId) scrollCanvasToComponent(newId);
+    // The insert went into the root collection at a known index, so that is
+    // the new section's path. Reading it back out of `form.values` was the
+    // roundabout way there, and the values are still the pre-insert ones at
+    // this point anyway.
+    scrollCanvasToComponent(`data.${insertionIndex}`);
   }, [editorContext, scrollCanvasToComponent]);
 
   // The category rows, discovered once per mode. Deliberately not once per
