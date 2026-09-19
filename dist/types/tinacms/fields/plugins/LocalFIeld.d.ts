@@ -4,9 +4,9 @@ import React from "react";
 import { FieldRenderProps } from "react-final-form";
 declare const LocalFieldPlugin: {
     name: string;
-    Component: (props: import("./wrapFieldWithMeta").InputFieldType<FieldRenderProps<LocalValue<any>, HTMLElement, LocalValue<any>> & {
+    Component: (props: FieldRenderProps<LocalValue<any>> & {
         field: InternalField;
-    }, Record<string, any>>) => React.JSX.Element;
+    }) => React.JSX.Element;
 };
 export { LocalFieldPlugin };
 //# sourceMappingURL=LocalFIeld.d.ts.map

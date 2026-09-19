@@ -4812,30 +4812,40 @@ function useInlineTypes() {
 }
 const LocalFieldPlugin = {
   name: "local",
-  Component: wrapFieldsWithMeta(function LocalField({
-    field,
-    input
-  }) {
+  Component: function LocalField(props) {
     const inlineTypes = useInlineTypes();
-    const inlineTypeDefinition = inlineTypes[field.schemaProp.type];
-    const WidgetComponent = inlineTypeDefinition?.widget.component;
-    if (!WidgetComponent) {
-      return /*#__PURE__*/React__default.createElement(MissingWidget, {
-        type: field.schemaProp.type
-      });
-    }
-    return /*#__PURE__*/React__default.createElement(WidgetComponent, {
-      value: input.value.value,
-      onChange: value => {
-        input.onChange({
-          value,
-          widgetId: input.value.widgetId
-        });
-      },
-      params: "params" in field.schemaProp ? field.schemaProp.params : undefined
-    });
-  })
+
+    // Read before rendering, because it decides how the field is laid out and
+    // the layout belongs to the wrapper, not to the widget inside it.
+    const wantsFullWidth = inlineTypes[props.field.schemaProp.type]?.widget.fullWidth === true;
+    return /*#__PURE__*/React__default.createElement(FieldMetaWrapper, _extends({}, props, {
+      layout: wantsFullWidth ? "column" : "row"
+    }), /*#__PURE__*/React__default.createElement(LocalFieldWidget, props));
+  }
 };
+function LocalFieldWidget({
+  field,
+  input
+}) {
+  const inlineTypes = useInlineTypes();
+  const inlineTypeDefinition = inlineTypes[field.schemaProp.type];
+  const WidgetComponent = inlineTypeDefinition?.widget.component;
+  if (!WidgetComponent) {
+    return /*#__PURE__*/React__default.createElement(MissingWidget, {
+      type: field.schemaProp.type
+    });
+  }
+  return /*#__PURE__*/React__default.createElement(WidgetComponent, {
+    value: input.value.value,
+    onChange: value => {
+      input.onChange({
+        value,
+        widgetId: input.value.widgetId
+      });
+    },
+    params: "params" in field.schemaProp ? field.schemaProp.params : undefined
+  });
+}
 
 const StyledRadioItem = styled$1(RadixRadioGroup.Item).withConfig({
   displayName: "PositionPickerInput__StyledRadioItem",

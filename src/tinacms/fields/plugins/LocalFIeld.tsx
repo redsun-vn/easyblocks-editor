@@ -4,7 +4,7 @@ import React from "react";
 import { FieldRenderProps } from "react-final-form";
 import { EditorContextType, useEditorContext } from "../../../EditorContext";
 import { MissingWidget } from "./MissingWidget";
-import { wrapFieldsWithMeta } from "./wrapFieldWithMeta";
+import { FieldMetaWrapper } from "./wrapFieldWithMeta";
 
 type InlineTypesResult = Record<
   string,
@@ -31,35 +31,52 @@ function useInlineTypes(): InlineTypesResult {
 
 const LocalFieldPlugin = {
   name: "local",
-  Component: wrapFieldsWithMeta(function LocalField({
-    field,
-    input,
-  }: FieldRenderProps<LocalValue<any>> & {
-    field: InternalField;
-  }) {
+  Component: function LocalField(
+    props: FieldRenderProps<LocalValue<any>> & { field: InternalField }
+  ) {
     const inlineTypes = useInlineTypes();
-    const inlineTypeDefinition = inlineTypes[field.schemaProp.type];
-    const WidgetComponent = inlineTypeDefinition?.widget.component;
 
-    if (!WidgetComponent) {
-      return <MissingWidget type={field.schemaProp.type} />;
-    }
+    // Read before rendering, because it decides how the field is laid out and
+    // the layout belongs to the wrapper, not to the widget inside it.
+    const wantsFullWidth =
+      inlineTypes[props.field.schemaProp.type]?.widget.fullWidth === true;
 
     return (
-      <WidgetComponent
-        value={input.value.value}
-        onChange={(value) => {
-          input.onChange({
-            value,
-            widgetId: input.value.widgetId,
-          });
-        }}
-        params={
-          "params" in field.schemaProp ? field.schemaProp.params : undefined
-        }
-      />
+      <FieldMetaWrapper {...props} layout={wantsFullWidth ? "column" : "row"}>
+        <LocalFieldWidget {...props} />
+      </FieldMetaWrapper>
     );
-  }),
+  },
 };
+
+function LocalFieldWidget({
+  field,
+  input,
+}: FieldRenderProps<LocalValue<any>> & {
+  field: InternalField;
+}) {
+  const inlineTypes = useInlineTypes();
+  const inlineTypeDefinition = inlineTypes[field.schemaProp.type];
+  const WidgetComponent = inlineTypeDefinition?.widget.component;
+
+  if (!WidgetComponent) {
+    return <MissingWidget type={field.schemaProp.type} />;
+  }
+
+  return (
+    <WidgetComponent
+      value={input.value.value}
+      onChange={(value) => {
+        input.onChange({
+          value,
+          widgetId: input.value.widgetId,
+        });
+      }}
+      params={
+        "params" in field.schemaProp ? field.schemaProp.params : undefined
+      }
+    />
+  );
+}
 
 export { LocalFieldPlugin };
