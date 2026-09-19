@@ -1,4 +1,5 @@
 import React, { useDeferredValue, useEffect, useState } from "react";
+import { CANVAS_FRAME_PATH_ATTRIBUTE } from "../../EditableComponentBuilder/canvasLayers";
 import { useEditorContext } from "../../EditorContext";
 import { getConfigSnapshot } from "../../utils/config/getConfigSnapshot";
 import {
@@ -27,8 +28,16 @@ export const EditorLayer: React.FC = () => {
     ) as HTMLIFrameElement | undefined;
 
     const canvasWindow = editorCanvasIframe?.contentWindow;
-    const targetComponent =
-      editorCanvasIframe?.contentDocument?.getElementById(id);
+
+    // Found by path, which is what a canvas selection frame is marked with.
+    // Looking it up by `_id` found almost nothing: of the layers in a typical
+    // page only a fifth had an element carrying their id, so most clicks fell
+    // through the lookup and the canvas never moved. The path is on every
+    // frame, and it is the same string this row already hands to
+    // `setFocussedField`.
+    const targetComponent = editorCanvasIframe?.contentDocument?.querySelector(
+      `[${CANVAS_FRAME_PATH_ATTRIBUTE}="${layer}"]`,
+    );
 
     // Every layer scrolls, not only one that reported an enclosing section.
     // The element measures itself; where it sits in the tree changes nothing.

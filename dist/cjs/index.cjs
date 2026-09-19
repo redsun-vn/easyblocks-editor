@@ -7842,6 +7842,29 @@ const EditorGlobalSections = ({
 };
 
 /**
+ * Attributes set on every canvas selection frame. Hover styles and the layer context
+ * menu read them straight from the DOM, without tracking component state.
+ */
+const CANVAS_FRAME_PATH_ATTRIBUTE = "data-easyblocks-path";
+const CANVAS_FRAME_LABEL_ATTRIBUTE = "data-easyblocks-label";
+/**
+ * Selection frames among hit-tested elements (e.g. `document.elementsFromPoint`), kept
+ * in the given order so the topmost layer under the pointer comes first.
+ */
+function getCanvasLayers(elements) {
+  return elements.flatMap(element => {
+    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
+    if (path === null) {
+      return [];
+    }
+    return [{
+      path,
+      label: element.getAttribute(CANVAS_FRAME_LABEL_ATTRIBUTE) ?? path
+    }];
+  });
+}
+
+/**
  * Outputs comparable config that is FULL COPY of config
  */
 function getConfigSnapshot(config) {
@@ -8064,7 +8087,14 @@ const EditorLayer = () => {
   const onClickLayer = (id, layer) => {
     const editorCanvasIframe = window.document.getElementById("editor-canvas");
     const canvasWindow = editorCanvasIframe?.contentWindow;
-    const targetComponent = editorCanvasIframe?.contentDocument?.getElementById(id);
+
+    // Found by path, which is what a canvas selection frame is marked with.
+    // Looking it up by `_id` found almost nothing: of the layers in a typical
+    // page only a fifth had an element carrying their id, so most clicks fell
+    // through the lookup and the canvas never moved. The path is on every
+    // frame, and it is the same string this row already hands to
+    // `setFocussedField`.
+    const targetComponent = editorCanvasIframe?.contentDocument?.querySelector(`[${CANVAS_FRAME_PATH_ATTRIBUTE}="${layer}"]`);
 
     // Every layer scrolls, not only one that reported an enclosing section.
     // The element measures itself; where it sits in the tree changes nothing.
@@ -11973,29 +12003,6 @@ function EasyblocksParent(props) {
       zIndex: 100100
     }
   })));
-}
-
-/**
- * Attributes set on every canvas selection frame. Hover styles and the layer context
- * menu read them straight from the DOM, without tracking component state.
- */
-const CANVAS_FRAME_PATH_ATTRIBUTE = "data-easyblocks-path";
-const CANVAS_FRAME_LABEL_ATTRIBUTE = "data-easyblocks-label";
-/**
- * Selection frames among hit-tested elements (e.g. `document.elementsFromPoint`), kept
- * in the given order so the topmost layer under the pointer comes first.
- */
-function getCanvasLayers(elements) {
-  return elements.flatMap(element => {
-    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
-    if (path === null) {
-      return [];
-    }
-    return [{
-      path,
-      label: element.getAttribute(CANVAS_FRAME_LABEL_ATTRIBUTE) ?? path
-    }];
-  });
 }
 
 // Inline styles: the menu renders inside the site page, so it must not depend on page CSS.
