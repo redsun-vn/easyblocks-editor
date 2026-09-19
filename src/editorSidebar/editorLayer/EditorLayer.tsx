@@ -5,6 +5,7 @@ import {
   ILayer,
   normalizeComponentLayers,
 } from "../../utils/normalizeComponentLayers";
+import { canvasScrollTargetTop } from "./canvasScrollTarget";
 import { EditorLayerDetail } from "./EditorLayerDetail";
 
 export const EditorLayer: React.FC = () => {
@@ -20,31 +21,27 @@ export const EditorLayer: React.FC = () => {
     setLayers(normalizeComponentLayers(localConfigSnapshot.data));
   };
 
-  const onClickLayer = (id: string, layer: string, rootParentId?: string) => {
+  const onClickLayer = (id: string, layer: string) => {
     const editorCanvasIframe = window.document.getElementById(
       "editor-canvas",
     ) as HTMLIFrameElement | undefined;
 
-    if (rootParentId) {
-      const parentTargetComponent =
-        editorCanvasIframe?.contentDocument?.getElementById(rootParentId);
-      const childTargetComponent =
-        editorCanvasIframe?.contentDocument?.getElementById(id);
+    const canvasWindow = editorCanvasIframe?.contentWindow;
+    const targetComponent =
+      editorCanvasIframe?.contentDocument?.getElementById(id);
 
-      const parentRectTop =
-        parentTargetComponent?.getBoundingClientRect()?.top ?? 0;
-      const childRectTop =
-        childTargetComponent?.getBoundingClientRect()?.top ?? 0;
-
-      const top =
-        (rootParentId === id ? parentRectTop : parentRectTop + childRectTop) +
-        (editorCanvasIframe?.contentWindow?.scrollY ?? 0);
-
-      editorCanvasIframe?.contentWindow?.scrollTo({
-        top,
+    // Every layer scrolls, not only one that reported an enclosing section.
+    // The element measures itself; where it sits in the tree changes nothing.
+    if (canvasWindow && targetComponent) {
+      canvasWindow.scrollTo({
+        top: canvasScrollTargetTop({
+          elementTop: targetComponent.getBoundingClientRect().top,
+          scrollY: canvasWindow.scrollY,
+        }),
         behavior: "smooth",
       });
     }
+
     editorContext.setFocussedField(layer);
   };
 

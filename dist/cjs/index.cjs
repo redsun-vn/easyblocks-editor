@@ -7876,6 +7876,30 @@ const normalizeComponentLayers = (components, prefix = "data", _rootParentId) =>
   return [];
 };
 
+/**
+ * Where the canvas must scroll to so a clicked layer comes into view.
+ *
+ * The element's own rect is already measured against the canvas viewport, so
+ * adding how far the canvas has scrolled turns it into a position in the
+ * document. That is the whole calculation.
+ *
+ * It is worth saying what it must not do, because the earlier version did it:
+ * add the enclosing section's rect on top of the element's. Both are measured
+ * from the same viewport, so summing them sent the canvas roughly twice as far
+ * as it should whenever a nested layer was clicked, and short of the mark
+ * whenever the section had already scrolled above the top edge. Either way the
+ * author clicked a layer and the canvas arrived somewhere else, which reads as
+ * the panel simply not working.
+ */
+function canvasScrollTargetTop({
+  elementTop,
+  scrollY
+}) {
+  // A layer above the current scroll position yields a negative sum; the
+  // document has nowhere above zero to go.
+  return Math.max(0, elementTop + scrollY);
+}
+
 const StyledEditorLayerLabel$1 = styled__default["default"](Typography.Typography).withConfig({
   displayName: "EditorLayerChildren__StyledEditorLayerLabel",
   componentId: "sc-1ntcvip-0"
@@ -8037,16 +8061,19 @@ const EditorLayer = () => {
     const localConfigSnapshot = getConfigSnapshot(localConfig);
     setLayers(normalizeComponentLayers(localConfigSnapshot.data));
   };
-  const onClickLayer = (id, layer, rootParentId) => {
+  const onClickLayer = (id, layer) => {
     const editorCanvasIframe = window.document.getElementById("editor-canvas");
-    if (rootParentId) {
-      const parentTargetComponent = editorCanvasIframe?.contentDocument?.getElementById(rootParentId);
-      const childTargetComponent = editorCanvasIframe?.contentDocument?.getElementById(id);
-      const parentRectTop = parentTargetComponent?.getBoundingClientRect()?.top ?? 0;
-      const childRectTop = childTargetComponent?.getBoundingClientRect()?.top ?? 0;
-      const top = (rootParentId === id ? parentRectTop : parentRectTop + childRectTop) + (editorCanvasIframe?.contentWindow?.scrollY ?? 0);
-      editorCanvasIframe?.contentWindow?.scrollTo({
-        top,
+    const canvasWindow = editorCanvasIframe?.contentWindow;
+    const targetComponent = editorCanvasIframe?.contentDocument?.getElementById(id);
+
+    // Every layer scrolls, not only one that reported an enclosing section.
+    // The element measures itself; where it sits in the tree changes nothing.
+    if (canvasWindow && targetComponent) {
+      canvasWindow.scrollTo({
+        top: canvasScrollTargetTop({
+          elementTop: targetComponent.getBoundingClientRect().top,
+          scrollY: canvasWindow.scrollY
+        }),
         behavior: "smooth"
       });
     }
