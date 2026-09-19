@@ -202,16 +202,30 @@ export function buildSectionEntries({
   panel,
   localGroups,
   templateCategories,
+  categoryOrder,
   t,
 }: {
   panel: TSectionPanel;
   localGroups: string[];
   /** Discovered categories; absent until the discovery read has answered. */
   templateCategories?: TTemplateCategoryEntry[] | null;
+  /** The order the app asked for; empty means sort by name, as before. */
+  categoryOrder?: string[];
   t: (key: string) => string;
 }): TSectionEntry[] {
   if (panel === "components") {
-    return [...localGroups].sort().map((group) => ({
+    // Sorting by name sorts the raw `group` strings, which are English. In an
+    // editor speaking another language that order reads as random, so an app
+    // may state the order it wants; anything it does not name follows, by name.
+    const rank = (group: string) => {
+      const index = (categoryOrder ?? []).indexOf(group);
+
+      return index === -1 ? (categoryOrder ?? []).length : index;
+    };
+
+    return [...localGroups]
+      .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
+      .map((group) => ({
       id: `builtin:${group}`,
       label: getCategoryLabel(t, group),
       group,
@@ -420,9 +434,10 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
         panel,
         localGroups,
         templateCategories,
+        categoryOrder: editorContext.categoryOrder,
         t,
       }),
-    [panel, localGroups, templateCategories, t],
+    [panel, localGroups, templateCategories, editorContext.categoryOrder, t],
   );
 
   const entriesById = useMemo(() => {

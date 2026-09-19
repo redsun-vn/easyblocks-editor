@@ -1104,6 +1104,7 @@ const EditorContent = ({
     compilationCache: compilationCache.current,
     readOnly: props.readOnly,
     disableCustomTemplates: props.config.disableCustomTemplates ?? false,
+    categoryOrder: props.config.categoryOrder ?? [],
     rootComponent: findComponentDefinitionById(
       initialEntry._component,
       compilationContext,

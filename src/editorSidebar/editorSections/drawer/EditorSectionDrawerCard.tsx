@@ -1,3 +1,4 @@
+import { usePickerItemLabel } from "../pickerItemLabel";
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import { Loader } from "@redsun-vn/easyblocks-design-system/Loader";
 import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
@@ -79,7 +80,11 @@ export const EditorSectionDrawerCard = ({
   onClick: () => void;
   isLoading?: boolean;
 }) => {
-  const label = template.label ?? template.template?.id ?? "";
+  const itemLabel = usePickerItemLabel();
+  const label =
+    itemLabel(template.template?.id, template.label) ??
+    template.template?.id ??
+    "";
   const thumbnail = template.template?.thumbnail;
 
   return (

@@ -85,11 +85,13 @@ export declare function getTemplateSources(mode: TEasyblocksEditorMode): TTempla
  * how the user looks for one, and both libraries file into the same taxonomy,
  * so a category holds whatever the caller is allowed to see under that name.
  */
-export declare function buildSectionEntries({ panel, localGroups, templateCategories, t, }: {
+export declare function buildSectionEntries({ panel, localGroups, templateCategories, categoryOrder, t, }: {
     panel: TSectionPanel;
     localGroups: string[];
     /** Discovered categories; absent until the discovery read has answered. */
     templateCategories?: TTemplateCategoryEntry[] | null;
+    /** The order the app asked for; empty means sort by name, as before. */
+    categoryOrder?: string[];
     t: (key: string) => string;
 }): TSectionEntry[];
 export declare const EditorSections: React.FC<{

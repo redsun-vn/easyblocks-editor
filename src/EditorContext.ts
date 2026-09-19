@@ -79,6 +79,8 @@ export type EditorContextType = Omit<
   mode: TEasyblocksEditorMode;
   readOnly: boolean;
   disableCustomTemplates: boolean;
+  /** The order the sidebar lists component categories in; empty means by name. */
+  categoryOrder: string[];
   types: Record<
     string,
     | EditorExternalTypeDefinition

@@ -100,5 +100,6 @@ export const testEditorContext: EditorContextType = {
   backend: {} as any, // Mock backend
   readOnly: false,
   disableCustomTemplates: false,
+  categoryOrder: [],
   components: {}, // Mock components
 };

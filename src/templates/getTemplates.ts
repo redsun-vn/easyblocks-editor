@@ -38,6 +38,12 @@ export function getDefaultTemplateForDefinition(
     entry: config,
     isUserDefined: false,
     group: def.group,
+    // A definition draws its own picture and names it. Leaving those behind
+    // here is why the picker showed a grey box with the component's name in it:
+    // the card falls back to a text placeholder when it finds no thumbnail, and
+    // the thumbnail was on the definition the template was built from.
+    thumbnail: def.thumbnail,
+    thumbnailLabel: def.thumbnailLabel,
   };
 }
 

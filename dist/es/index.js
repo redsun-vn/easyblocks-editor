@@ -8120,7 +8120,13 @@ function getDefaultTemplateForDefinition(def, editorContext) {
     label: def.label ?? def.id,
     entry: config,
     isUserDefined: false,
-    group: def.group
+    group: def.group,
+    // A definition draws its own picture and names it. Leaving those behind
+    // here is why the picker showed a grey box with the component's name in it:
+    // the card falls back to a text placeholder when it finds no thumbnail, and
+    // the thumbnail was on the definition the template was built from.
+    thumbnail: def.thumbnail,
+    thumbnailLabel: def.thumbnailLabel
   };
 }
 function getDefaultTokenId(tokens) {
@@ -8235,6 +8241,39 @@ const getCategoryLabel = (t, group) => {
   return translated === key ? group : translated;
 };
 
+/**
+ * The name shown for one item in a picker.
+ *
+ * A template's `label` is written in the definition, in English, and there are
+ * more than a hundred of them across an app. Turning each into a translation
+ * key would mean editing every definition and would leave an app's frozen set
+ * with keys nobody is going to translate. So the id is the key and the written
+ * label is the fallback: an item with a translation shows it, one without reads
+ * exactly as before.
+ *
+ * A component with no template of its own gets one built for it, under the id
+ * `<component>_default` (see `templates/getTemplates.ts`). The name belongs to
+ * the component, so that suffix comes off before the lookup.
+ */
+const usePickerItemLabel = () => {
+  const {
+    t
+  } = useTranslation();
+  return (id, written) => {
+    if (!id) {
+      return written;
+    }
+    for (const candidate of [id, id.replace(/_default$/, "")]) {
+      const key = `picker.item.${candidate}`;
+      const translated = t(key);
+      if (translated !== key) {
+        return translated;
+      }
+    }
+    return written;
+  };
+};
+
 // Single template card shown in the section drawer gallery.
 // Preview box renders the template thumbnail when available, otherwise
 // falls back to the centered label text (e.g. "Empty Banner Section").
@@ -8277,7 +8316,8 @@ const EditorSectionDrawerCard = ({
   onClick,
   isLoading
 }) => {
-  const label = template.label ?? template.template?.id ?? "";
+  const itemLabel = usePickerItemLabel();
+  const label = itemLabel(template.template?.id, template.label) ?? template.template?.id ?? "";
   const thumbnail = template.template?.thumbnail;
   return /*#__PURE__*/React__default.createElement(StyledCard$1, {
     onClick: onClick,
@@ -8598,10 +8638,18 @@ function buildSectionEntries({
   panel,
   localGroups,
   templateCategories,
+  categoryOrder,
   t
 }) {
   if (panel === "components") {
-    return [...localGroups].sort().map(group => ({
+    // Sorting by name sorts the raw `group` strings, which are English. In an
+    // editor speaking another language that order reads as random, so an app
+    // may state the order it wants; anything it does not name follows, by name.
+    const rank = group => {
+      const index = (categoryOrder ?? []).indexOf(group);
+      return index === -1 ? (categoryOrder ?? []).length : index;
+    };
+    return [...localGroups].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b)).map(group => ({
       id: `builtin:${group}`,
       label: getCategoryLabel(t, group),
       group,
@@ -8764,8 +8812,9 @@ const EditorSections = ({
     panel,
     localGroups,
     templateCategories,
+    categoryOrder: editorContext.categoryOrder,
     t
-  }), [panel, localGroups, templateCategories, t]);
+  }), [panel, localGroups, templateCategories, editorContext.categoryOrder, t]);
   const entriesById = useMemo(() => {
     const map = {};
     entries.forEach(entry => {
@@ -11137,6 +11186,7 @@ const EditorContent = ({
     compilationCache: compilationCache.current,
     readOnly: props.readOnly,
     disableCustomTemplates: props.config.disableCustomTemplates ?? false,
+    categoryOrder: props.config.categoryOrder ?? [],
     rootComponent: findComponentDefinitionById(initialEntry._component, compilationContext),
     components: props.components ?? {}
   };
@@ -11672,34 +11722,6 @@ function getTemplatePreviewImage(template, editorContext) {
   //   });
   // }
 }
-
-/**
- * The name shown on a card.
- *
- * A template's `label` is written in the definition, in English, and there are
- * more than a hundred of them; turning each into a translation key would mean
- * editing every file and would leave the frozen set with keys nobody is going
- * to translate. So the id is the key and the written label is the fallback: a
- * template with a translation shows it, one without reads exactly as before.
- */
-const useCardLabel = () => {
-  const {
-    t
-  } = useTranslation();
-  return (id, written) => {
-    if (!id) return written;
-
-    // A component with no template of its own gets one built for it, under the
-    // id `<component>_default` (see `templates/getTemplates.ts`). The name
-    // belongs to the component, so that suffix is dropped before looking up.
-    for (const candidate of [id, id.replace(/_default$/, "")]) {
-      const key = `picker.item.${candidate}`;
-      const translated = t(key);
-      if (translated !== key) return translated;
-    }
-    return written;
-  };
-};
 const SectionCard = ({
   template,
   onSelect,
@@ -11707,7 +11729,7 @@ const SectionCard = ({
 }) => {
   const imageRef = useRef(null);
   const editorContext = useEditorContext();
-  const cardLabel = useCardLabel();
+  const cardLabel = usePickerItemLabel();
   const shownLabel = cardLabel(template.id, template.label);
   const shownThumbnailLabel = cardLabel(template.id, template.thumbnailLabel);
   const previewImage = getTemplatePreviewImage(template);
