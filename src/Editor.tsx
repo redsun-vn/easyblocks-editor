@@ -151,10 +151,20 @@ const SidebarContainer = styled.div<{ width?: string }>`
     // A flex item defaults to min-width:auto, which lets a wide field push the
     // panel past its basis; different selections carry different fields, so the
     // panel would resize on every click and shove the canvas sideways.
-    // max-width clamps that automatic minimum, which pins the width without
-    // clipping: overflow here would cut off any popover a field opens.
+    // max-width clamps that automatic minimum, which pins the width.
     `flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`}
   position: relative;
+  // The app clips its own root, so a panel taller than the window was simply
+  // cut: a component with many fields hid its last groups, and no wheel or key
+  // reached them. Selects, menus and tooltips render through a portal, so a
+  // scroll container here does not clip what they open.
+  height: 100%;
+  // A flex item defaults to min-height:auto, which refuses to shrink below its
+  // content — so the panel grows past the window and `overflow-y` never has
+  // anything to scroll. This is the line that makes the scrolling real.
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: ${Colors.white};
   border-left: 1px solid ${Colors.black100};
   border-right: 1px solid ${Colors.black100};

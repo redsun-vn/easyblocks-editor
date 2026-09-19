@@ -10552,14 +10552,13 @@ const SidebarAndContentContainer = styled.styled.div.withConfig({
 const SidebarContainer = styled.styled.div.withConfig({
   displayName: "Editor__SidebarContainer",
   componentId: "sc-t95yuf-3"
-})(["", " position:relative;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
+})(["", " position:relative;height:100%;overflow-y:auto;overscroll-behavior:contain;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
   width = "240px"
 }) =>
 // A flex item defaults to min-width:auto, which lets a wide field push the
 // panel past its basis; different selections carry different fields, so the
 // panel would resize on every click and shove the canvas sideways.
-// max-width clamps that automatic minimum, which pins the width without
-// clipping: overflow here would cut off any popover a field opens.
+// max-width clamps that automatic minimum, which pins the width.
 `flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`, easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100, easyblocksDesignSystem.Colors.black100);
 const DataSaverRoot = styled.styled.div.withConfig({
   displayName: "Editor__DataSaverRoot",
