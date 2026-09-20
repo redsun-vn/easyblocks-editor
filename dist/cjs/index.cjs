@@ -8038,6 +8038,13 @@ function getCanvasLayers(elements) {
  * Outputs comparable config that is FULL COPY of config
  */
 function getConfigSnapshot(config) {
+  // A document that arrives without an entry used to reach `deepClone`, where
+  // `JSON.parse(JSON.stringify(undefined))` throws and takes the editor down
+  // with it. An empty snapshot instead reads as "different from the form", so
+  // the next tick saves rather than killing the page the author is working on.
+  if (config === null || config === undefined) {
+    return {};
+  }
   const strippedConfig = deepClone(config);
   if (!strippedConfig?.data) {
     strippedConfig.data = [];
@@ -10222,6 +10229,13 @@ function useDataSaver(initialDocument, editorContext, editorMode) {
       });
       remoteDocument.current = {
         ...newDocument,
+        // What was just stored remotely, which is what every later comparison
+        // measures the form against. The create response does not carry it
+        // back, and without it `isConfigTheSame` read `undefined` and threw
+        // inside `JSON.parse` — so the editor died on the first tick after a
+        // brand-new document was saved, taking the whole page with it. The
+        // update path already keeps this field in step further down.
+        entry: configToSaveWithLocalisedFlag,
         // @ts-ignore
         config: {
           config: configToSaveWithLocalisedFlag

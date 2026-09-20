@@ -122,6 +122,13 @@ export function useDataSaver(
 
       remoteDocument.current = {
         ...newDocument,
+        // What was just stored remotely, which is what every later comparison
+        // measures the form against. The create response does not carry it
+        // back, and without it `isConfigTheSame` read `undefined` and threw
+        // inside `JSON.parse` — so the editor died on the first tick after a
+        // brand-new document was saved, taking the whole page with it. The
+        // update path already keeps this field in step further down.
+        entry: configToSaveWithLocalisedFlag,
         // @ts-ignore
         config: {
           config: configToSaveWithLocalisedFlag,
