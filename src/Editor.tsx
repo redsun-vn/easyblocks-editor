@@ -1,7 +1,7 @@
 import { deepClone } from "@/utils/deepClone";
 import { deepCompare } from "@/utils/deepCompare";
 import { useForceRerender } from "@/utils/hooks/useForceRerender";
-import { checkLocalesCorrectness } from "@/utils/locales/checkLocalesCorrectness";
+import { repairLocales } from "@/utils/locales/repairLocales";
 import { removeLocalizedFlag } from "@/utils/locales/removeLocalizedFlag";
 import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import { sleep } from "@/utils/sleep";
@@ -347,7 +347,13 @@ const EditorWrapper = memo(
       throw new Error("Required property Config.locales is empty");
     }
 
-    checkLocalesCorrectness(props.config.locales); // very important to check locales correctness, circular references etc. Other functions
+    // Repaired rather than merely checked: the list comes from the shop's own
+    // language settings, and everything below — the fallback chains especially
+    // — has to be sound before anything else runs. Throwing here emptied the
+    // editor for a shop with, say, two languages both marked default, and left
+    // them no way back in. See `repairLocales`.
+    props.config.locales = repairLocales(props.config.locales);
+
     const locale = getDefaultLocale(props.config.locales).code ?? props.locale;
 
     const rootTemplateEntry = props.rootTemplateId

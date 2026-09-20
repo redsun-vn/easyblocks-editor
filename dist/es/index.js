@@ -1,5 +1,5 @@
 "use client";
-import { getDefaultLocale, isTrulyResponsiveValue, isNoCodeComponentOfType, globalSectionGroups, getExternalReferenceLocationKey, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, getBrightnessColor, validateColor, buildRichTextNoCodeEntry, createCompilationContext, normalize as normalize$2, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
+import { isTrulyResponsiveValue, isNoCodeComponentOfType, globalSectionGroups, getExternalReferenceLocationKey, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, getBrightnessColor, validateColor, buildRichTextNoCodeEntry, getDefaultLocale, createCompilationContext, normalize as normalize$2, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, useMemo, useEffect, createContext, forwardRef, Fragment, useLayoutEffect, useCallback, useDeferredValue, memo } from 'react';
 import isPropValid from '@emotion/is-prop-valid';
@@ -83,54 +83,76 @@ function useForceRerender() {
   };
 }
 
-function checkLocalesCorrectness(locales) {
+/**
+ * A usable locale list, built from whatever the shop actually has.
+ *
+ * `checkLocalesCorrectness` throws on every one of these problems, and it is
+ * called from inside the editor's render. That is fine for a developer wiring
+ * up a config, and wrong for a shop: the list comes from tenant data, so a
+ * language table with two defaults — or none, or a fallback pointing at a
+ * language somebody deleted — emptied the editor completely, with no way back
+ * in for the person whose shop it is.
+ *
+ * So the strict check stays where it is, for callers that want it, and this is
+ * what the editor uses instead. Every repair is announced, because each one is
+ * something the shop's language settings should be corrected for.
+ *
+ * An empty list is the one thing not repaired: there is no language to fall
+ * back to, and it means the editor was mounted with nothing configured rather
+ * than with something misconfigured.
+ */
+function repairLocales(locales) {
   if (locales.length === 0) {
-    throw new Error("Locales array can't be empty");
+    throw new Error("repairLocales: the list of locales is empty");
   }
-  const defaultLocales = locales.filter(l => l.isDefault);
-  if (defaultLocales.length === 0) {
-    throw new Error("One locale must be set as default, you didn't set any");
+  const complain = message => console.warn(`easyblocks: ${message}; the editor has corrected it`);
+  let repaired = locales.map(locale => ({
+    ...locale
+  }));
+
+  // Exactly one default, and it is the first one claiming to be.
+  const defaults = repaired.filter(locale => locale.isDefault);
+  if (defaults.length === 0) {
+    complain(`no locale is marked as default, so "${repaired[0].code}" is`);
+    repaired[0].isDefault = true;
+  } else if (defaults.length > 1) {
+    complain(`${defaults.length} locales are marked as default, so only "${defaults[0].code}" stays`);
+    defaults.slice(1).forEach(locale => {
+      locale.isDefault = false;
+    });
   }
-  if (defaultLocales.length > 1) {
-    throw new Error("Only one locale must be set as default, you set more than one");
-  }
-  const defaultLocale = defaultLocales[0];
+  const defaultLocale = repaired.find(locale => locale.isDefault);
+
+  // The default is where every chain ends, so it cannot point anywhere itself.
   if (defaultLocale.fallback) {
-    throw new Error("Default locale can't have fallback");
+    complain(`the default locale "${defaultLocale.code}" had a fallback of "${defaultLocale.fallback}"`);
+    delete defaultLocale.fallback;
   }
 
-  // Check for incorrect fallbacks
-  locales.forEach(locale => {
-    if (locale.fallback) {
-      const fallback = locales.find(x => x.code === locale.fallback);
-      if (!fallback) {
-        throw new Error(`Locale ${locale} has a fallback ${locale.fallback} which doesn't exist in the locales list.`);
-      }
+  // A fallback naming a language that is not here leads nowhere.
+  repaired.forEach(locale => {
+    if (locale.fallback && !repaired.some(x => x.code === locale.fallback)) {
+      complain(`locale "${locale.code}" falls back to "${locale.fallback}", which is not in the list`);
+      delete locale.fallback;
     }
-    // If there is no fallback, then we treat default locale as a fallback!
   });
 
-  // Let's check for circulars
-  locales.forEach(locale => {
-    const localeChain = [];
-    let currentLocale = locale;
-    do {
-      localeChain.push(currentLocale.code);
-      const fallbackId = currentLocale.fallback ?? getDefaultLocale(locales).code;
-
-      // If we got to the default locale then we're fine
-      if (fallbackId === getDefaultLocale(locales).code) {
+  // A loop would make the fallback lookup spin forever, so the link that
+  // closes it is dropped and the chain ends at the default instead.
+  repaired.forEach(locale => {
+    const seen = [];
+    let current = locale;
+    while (current?.fallback) {
+      seen.push(current.code);
+      if (seen.includes(current.fallback)) {
+        complain(`locales fall back in a circle: ${[...seen, current.fallback].join(" → ")}`);
+        delete current.fallback;
         break;
       }
-
-      // If fallbackId does already exists in localeChain then it means we have circular!
-      if (localeChain.includes(fallbackId)) {
-        throw new Error(`There is circular reference in locales: ${[...localeChain, fallbackId].join(",")}`);
-      }
-      currentLocale = locales.find(x => x.code === fallbackId);
-    } while (true);
+      current = repaired.find(x => x.code === current.fallback);
+    }
   });
-  return true;
+  return repaired;
 }
 
 /**
@@ -10615,7 +10637,13 @@ const EditorWrapper = /*#__PURE__*/memo(props => {
   if (!props.config.locales) {
     throw new Error("Required property Config.locales is empty");
   }
-  checkLocalesCorrectness(props.config.locales); // very important to check locales correctness, circular references etc. Other functions
+
+  // Repaired rather than merely checked: the list comes from the shop's own
+  // language settings, and everything below — the fallback chains especially
+  // — has to be sound before anything else runs. Throwing here emptied the
+  // editor for a shop with, say, two languages both marked default, and left
+  // them no way back in. See `repairLocales`.
+  props.config.locales = repairLocales(props.config.locales);
   const locale = getDefaultLocale(props.config.locales).code ?? props.locale;
   const rootTemplateEntry = props.rootTemplateId ? props.config.templates?.find(t => t.id === props.rootTemplateId)?.entry : null;
   const rootComponentId = props.document ? props.document.entry._component : rootTemplateEntry?._component ?? props.rootComponentId;
