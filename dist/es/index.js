@@ -3024,8 +3024,7 @@ function FieldMetaWrapper({
     layout: resolvedLayout,
     isCustom: isCustomField
   }, !isLabelHidden && /*#__PURE__*/React__default.createElement(FieldLabelWrapper, {
-    isFullWidth: resolvedLayout === "column",
-    isCustom: isCustomField
+    isFullWidth: resolvedLayout === "column"
   }, renderLabel?.({
     label
   }) ?? /*#__PURE__*/React__default.createElement(FieldLabel$1, _extends({
@@ -3148,11 +3147,7 @@ const FieldWrapper$1 = styled$1.div.withConfig({
 const FieldLabelWrapper = styled$1.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldLabelWrapper",
   componentId: "sc-1asy4oy-2"
-})(["all:unset;", ",position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], ({
-  isCustom
-}) => ({
-  position: isCustom ? "absolute" : "relative"
-}), ({
+})(["all:unset;position:relative;display:flex;flex-direction:row;align-items:center;", " min-height:28px;overflow:hidden;"], ({
   isFullWidth
 }) => isFullWidth && {
   width: "100%"
@@ -5063,9 +5058,13 @@ function createFieldController({
           const schemaPropNameToUpdate = last(normalizedFieldName[0].split("."));
           const canvasIframe = document.getElementById("editor-canvas");
           if (canvasIframe === null || canvasIframe.contentWindow === null) {
-            throw new Error("No Shopstory canvas");
-          }
-          if (extraNewValues.length > 0) {
+            // The canvas is replaced on every rebuild, so there is a moment
+            // when it is not there. Throwing from inside an onChange while
+            // someone is typing lost the keystroke and left the editor broken;
+            // falling through applies the same edit through the form instead —
+            // a slower path with the same result.
+            console.warn("easyblocks: the canvas is not available, applying the rich text change through the form instead");
+          } else if (extraNewValues.length > 0) {
             const parsedValues = newValue.map(value => parse(getValue(value), normalizedFieldName[0], field));
             canvasIframe.contentWindow.postMessage(richTextChangedEvent({
               prop: schemaPropNameToUpdate,
@@ -5080,7 +5079,9 @@ function createFieldController({
               values: [parsedValue]
             }), "*");
           }
-          return;
+          if (canvasIframe?.contentWindow) {
+            return;
+          }
         }
       }
       actions.runChange(() => {
@@ -9507,84 +9508,68 @@ function calculateAddButtonsProperties(direction, targetElementRect, viewport, c
     const beforeButtonTopOffset = Math.floor(targetElementRect.top - halfButtonSize);
     const afterButtonTopOffset = Math.floor(targetElementRect.top + targetElementRect.height - halfButtonSize);
     const buttonsLeftOffset = Math.floor(targetElementRect.left + targetElementRect.width / 2 - halfButtonSize);
-    const isBeforeButtonWithinViewport = isButtonWithinViewport({
+    const isBeforeButtonVisible = isButtonVisible({
       top: beforeButtonTopOffset + halfButtonSize,
       left: buttonsLeftOffset + halfButtonSize
-    }, viewport);
-    const isAfterButtonWithinViewport = isButtonWithinViewport({
+    }, viewport, containerElementRect);
+    const isAfterButtonVisible = isButtonVisible({
       top: afterButtonTopOffset + halfButtonSize,
       left: buttonsLeftOffset + halfButtonSize
-    }, viewport);
-    if (containerElementRect) {
-      return {
-        before: {
-          top: beforeButtonTopOffset,
-          left: buttonsLeftOffset,
-          display: isBeforeButtonWithinViewport ? "block" : "none"
-        },
-        after: {
-          top: afterButtonTopOffset,
-          left: buttonsLeftOffset,
-          display: isAfterButtonWithinViewport ? "block" : "none"
-        }
-      };
-    } else {
-      return {
-        before: {
-          top: beforeButtonTopOffset,
-          left: buttonsLeftOffset,
-          display: isBeforeButtonWithinViewport ? "block" : "none"
-        },
-        after: {
-          top: afterButtonTopOffset,
-          left: buttonsLeftOffset,
-          display: isAfterButtonWithinViewport ? "block" : "none"
-        }
-      };
-    }
+    }, viewport, containerElementRect);
+    return {
+      before: {
+        top: beforeButtonTopOffset,
+        left: buttonsLeftOffset,
+        display: isBeforeButtonVisible ? "block" : "none"
+      },
+      after: {
+        top: afterButtonTopOffset,
+        left: buttonsLeftOffset,
+        display: isAfterButtonVisible ? "block" : "none"
+      }
+    };
   } else {
     const buttonsTopOffset = Math.floor(targetElementRect.top + targetElementRect.height / 2 - halfButtonSize);
     const beforeButtonLeftOffset = Math.floor(targetElementRect.left - halfButtonSize);
     const afterButtonLeftOffset = Math.floor(targetElementRect.left + targetElementRect.width - halfButtonSize);
-    const isBeforeButtonWithinViewport = isButtonWithinViewport({
+    const isBeforeButtonVisible = isButtonVisible({
       top: buttonsTopOffset + halfButtonSize,
       left: beforeButtonLeftOffset + halfButtonSize
-    }, viewport);
-    const isAfterButtonWithinViewport = isButtonWithinViewport({
+    }, viewport, containerElementRect);
+    const isAfterButtonVisible = isButtonVisible({
       top: buttonsTopOffset + halfButtonSize,
       left: afterButtonLeftOffset + halfButtonSize
-    }, viewport);
-    if (containerElementRect) {
-      return {
-        before: {
-          top: buttonsTopOffset,
-          left: beforeButtonLeftOffset,
-          display: isBeforeButtonWithinViewport ? "block" : "none"
-        },
-        after: {
-          top: buttonsTopOffset,
-          left: afterButtonLeftOffset,
-          display: isAfterButtonWithinViewport ? "block" : "none"
-        }
-      };
-    } else {
-      return {
-        before: {
-          top: buttonsTopOffset,
-          left: beforeButtonLeftOffset,
-          display: isBeforeButtonWithinViewport ? "block" : "none"
-        },
-        after: {
-          top: buttonsTopOffset,
-          left: afterButtonLeftOffset,
-          display: isAfterButtonWithinViewport ? "block" : "none"
-        }
-      };
-    }
+    }, viewport, containerElementRect);
+    return {
+      before: {
+        top: buttonsTopOffset,
+        left: beforeButtonLeftOffset,
+        display: isBeforeButtonVisible ? "block" : "none"
+      },
+      after: {
+        top: buttonsTopOffset,
+        left: afterButtonLeftOffset,
+        display: isAfterButtonVisible ? "block" : "none"
+      }
+    };
   }
 }
-function isButtonWithinViewport(target, viewport) {
-  return target.top >= 0 && target.top <= viewport.height && target.left >= 0 && target.left <= viewport.width;
+
+/**
+ * A button shows only where it can actually be reached.
+ *
+ * The container was accepted and then ignored — both branches of the caller
+ * returned the same thing — so inside a scrollable container the add buttons
+ * stayed on screen after the block they belong to had scrolled out of it,
+ * floating over whatever was there instead. Edges count as inside: a block
+ * flush with the top of its container still gets its button.
+ */
+function isButtonVisible(target, viewport, containerElementRect) {
+  const withinViewport = target.top >= 0 && target.top <= viewport.height && target.left >= 0 && target.left <= viewport.width;
+  if (!withinViewport || !containerElementRect) {
+    return withinViewport;
+  }
+  return target.top >= containerElementRect.top && target.top <= containerElementRect.bottom && target.left >= containerElementRect.left && target.left <= containerElementRect.right;
 }
 
 function SelectionFrame({

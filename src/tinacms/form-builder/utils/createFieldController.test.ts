@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import { AnyTinaField } from "@redsun-vn/easyblocks-core";
 import {
   CompilationCache,
@@ -9,7 +12,7 @@ import {
   compileInternal,
   normalize,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { dotNotationGet } from "@/utils";
+import { dotNotationGet } from "@/utils/object/dotNotationGet";
 import { EditorContextType } from "../../../EditorContext";
 import { isFieldPortal } from "../../../buildTinaFields";
 import { Form } from "../../../form";
@@ -21,7 +24,7 @@ let iframe: HTMLIFrameElement;
 
 beforeAll(() => {
   iframe = document.createElement("iframe");
-  iframe.id = "shopstory-canvas";
+  iframe.id = "editor-canvas";
   document.body.appendChild(iframe);
 });
 
@@ -33,7 +36,7 @@ beforeEach(() => {
 });
 
 afterAll(() => {
-  iframe = document.getElementById("shopstory-canvas") as HTMLIFrameElement;
+  iframe = document.getElementById("editor-canvas") as HTMLIFrameElement;
   iframe.remove();
 });
 

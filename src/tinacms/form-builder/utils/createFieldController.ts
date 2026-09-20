@@ -86,10 +86,15 @@ function createFieldController({
           ) as HTMLIFrameElement | null;
 
           if (canvasIframe === null || canvasIframe.contentWindow === null) {
-            throw new Error("No Shopstory canvas");
-          }
-
-          if (extraNewValues.length > 0) {
+            // The canvas is replaced on every rebuild, so there is a moment
+            // when it is not there. Throwing from inside an onChange while
+            // someone is typing lost the keystroke and left the editor broken;
+            // falling through applies the same edit through the form instead —
+            // a slower path with the same result.
+            console.warn(
+              "easyblocks: the canvas is not available, applying the rich text change through the form instead",
+            );
+          } else if (extraNewValues.length > 0) {
             const parsedValues = (newValue as Array<any>).map((value) =>
               parse(getValue(value), normalizedFieldName[0], field),
             );
@@ -119,7 +124,9 @@ function createFieldController({
             );
           }
 
-          return;
+          if (canvasIframe?.contentWindow) {
+            return;
+          }
         }
       }
 

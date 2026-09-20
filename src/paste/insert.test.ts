@@ -3,7 +3,7 @@ import {
   NoCodeComponentDefinition,
 } from "@redsun-vn/easyblocks-core";
 import * as internals from "@redsun-vn/easyblocks-core/_internals";
-import { uniqueId } from "@/utils";
+import { uniqueId } from "@/utils/uniqueId";
 import { Form } from "../form";
 import { insertCommand } from "./insert";
 import * as reconcile from "./reconcile";

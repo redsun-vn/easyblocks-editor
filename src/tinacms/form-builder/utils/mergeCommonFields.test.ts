@@ -1,5 +1,5 @@
 import { AnyField } from "@redsun-vn/easyblocks-core";
-import { last } from "@/utils";
+import { last } from "@/utils/array/last";
 import type { MergeCommonFieldsParameters } from "./mergeCommonFields";
 import { mergeCommonFields } from "./mergeCommonFields";
 

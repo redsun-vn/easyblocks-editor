@@ -233,10 +233,7 @@ export function FieldMetaWrapper<
         isCustom={isCustomField}
       >
         {!isLabelHidden && (
-          <FieldLabelWrapper
-            isFullWidth={resolvedLayout === "column"}
-            isCustom={isCustomField}
-          >
+          <FieldLabelWrapper isFullWidth={resolvedLayout === "column"}>
             {renderLabel?.({ label }) ?? (
               <FieldLabel
                 htmlFor={toArray(field.name).join(",")}
@@ -470,10 +467,14 @@ const FieldWrapper = styled.div<FieldWrapperProps>`
 
 const FieldLabelWrapper = styled.div<{
   isFullWidth: boolean;
-  isCustom: boolean;
 }>`
   all: unset;
-  ${({ isCustom }) => ({ position: isCustom ? "absolute" : "relative" })},
+  /*
+   * Always in the flow. A custom value used to take the label out of it with
+   * absolute positioning, which left the control below free to move up into
+   * the same spot — the name of the field and its value printed on top of
+   * each other, unreadable.
+   */
   position: relative;
   display: flex;
   flex-direction: row;

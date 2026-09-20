@@ -1,4 +1,13 @@
+import { ADD_BUTTON_SIZE } from "./AddButton";
 import { calculateAddButtonsProperties } from "./calculateAddButtonProperties";
+
+/**
+ * A button is positioned by its top-left corner, so every coordinate below is
+ * the point it straddles minus half its size. Written out as numbers, these
+ * expectations quietly went wrong the day the design system changed the button
+ * from 22px to 18px — and the numbers gave no hint of where they came from.
+ */
+const HALF = Math.floor(ADD_BUTTON_SIZE / 2);
 
 const TEST_VIEWPORT = {
   width: 1366,
@@ -29,13 +38,13 @@ describe("vertical", () => {
       )
     ).toEqual({
       before: {
-        top: 13,
-        left: 63,
+        top: 24 - HALF,
+        left: 74 - HALF,
         display: "block",
       },
       after: {
-        top: 213,
-        left: 63,
+        top: 224 - HALF,
+        left: 74 - HALF,
         display: "block",
       },
     });
@@ -55,13 +64,13 @@ describe("vertical", () => {
       )
     ).toEqual({
       before: {
-        top: -11,
-        left: 113,
+        top: 0 - HALF,
+        left: 124 - HALF,
         display: "block",
       },
       after: {
-        top: 757,
-        left: 113,
+        top: 768 - HALF,
+        left: 124 - HALF,
         display: "block",
       },
     });
@@ -81,13 +90,13 @@ describe("vertical", () => {
       )
     ).toEqual({
       before: {
-        top: -35,
-        left: 63,
+        top: -24 - HALF,
+        left: 74 - HALF,
         display: "none",
       },
       after: {
-        top: 165,
-        left: 63,
+        top: 176 - HALF,
+        left: 74 - HALF,
         display: "block",
       },
     });
@@ -107,13 +116,13 @@ describe("vertical", () => {
       )
     ).toEqual({
       before: {
-        top: 709,
-        left: 63,
+        top: 720 - HALF,
+        left: 74 - HALF,
         display: "block",
       },
       after: {
-        top: 909,
-        left: 63,
+        top: 920 - HALF,
+        left: 74 - HALF,
         display: "none",
       },
     });
@@ -133,13 +142,13 @@ describe("vertical", () => {
       )
     ).toEqual({
       before: {
-        top: -235,
-        left: 63,
+        top: -224 - HALF,
+        left: 74 - HALF,
         display: "none",
       },
       after: {
-        top: -35,
-        left: 63,
+        top: -24 - HALF,
+        left: 74 - HALF,
         display: "none",
       },
     });
@@ -162,13 +171,13 @@ describe("vertical within container", () => {
       )
     ).toEqual({
       before: {
-        top: 37,
-        left: 87,
+        top: 48 - HALF,
+        left: 98 - HALF,
         display: "block",
       },
       after: {
-        top: 237,
-        left: 87,
+        top: 248 - HALF,
+        left: 98 - HALF,
         display: "block",
       },
     });
@@ -189,13 +198,13 @@ describe("vertical within container", () => {
       )
     ).toEqual({
       before: {
-        top: 13,
-        left: 63,
+        top: 24 - HALF,
+        left: 74 - HALF,
         display: "block",
       },
       after: {
-        top: 313,
-        left: 63,
+        top: 324 - HALF,
+        left: 74 - HALF,
         display: "block",
       },
     });
@@ -216,13 +225,13 @@ describe("vertical within container", () => {
       )
     ).toEqual({
       before: {
-        top: -151,
-        left: 63,
+        top: -140 - HALF,
+        left: 74 - HALF,
         display: "none",
       },
       after: {
-        top: 49,
-        left: 63,
+        top: 60 - HALF,
+        left: 74 - HALF,
         display: "block",
       },
     });
@@ -243,13 +252,13 @@ describe("vertical within container", () => {
       )
     ).toEqual({
       before: {
-        top: 229,
-        left: 63,
+        top: 240 - HALF,
+        left: 74 - HALF,
         display: "block",
       },
       after: {
-        top: 429,
-        left: 63,
+        top: 440 - HALF,
+        left: 74 - HALF,
         display: "none",
       },
     });
@@ -270,13 +279,13 @@ describe("vertical within container", () => {
       )
     ).toEqual({
       before: {
-        top: 329,
-        left: 63,
+        top: 340 - HALF,
+        left: 74 - HALF,
         display: "none",
       },
       after: {
-        top: 529,
-        left: 63,
+        top: 540 - HALF,
+        left: 74 - HALF,
         display: "none",
       },
     });
@@ -298,13 +307,13 @@ describe("horizontal", () => {
       )
     ).toEqual({
       before: {
-        top: 113,
-        left: 13,
+        top: 124 - HALF,
+        left: 24 - HALF,
         display: "block",
       },
       after: {
-        top: 113,
-        left: 113,
+        top: 124 - HALF,
+        left: 124 - HALF,
         display: "block",
       },
     });
@@ -324,13 +333,13 @@ describe("horizontal", () => {
       )
     ).toEqual({
       before: {
-        top: 163,
-        left: -11,
+        top: 174 - HALF,
+        left: 0 - HALF,
         display: "block",
       },
       after: {
-        top: 163,
-        left: 1355,
+        top: 174 - HALF,
+        left: 1366 - HALF,
         display: "block",
       },
     });
@@ -350,13 +359,13 @@ describe("horizontal", () => {
       )
     ).toEqual({
       before: {
-        top: 113,
-        left: -35,
+        top: 124 - HALF,
+        left: -24 - HALF,
         display: "none",
       },
       after: {
-        top: 113,
-        left: 65,
+        top: 124 - HALF,
+        left: 76 - HALF,
         display: "block",
       },
     });
@@ -376,13 +385,13 @@ describe("horizontal", () => {
       )
     ).toEqual({
       before: {
-        top: 113,
-        left: 1289,
+        top: 124 - HALF,
+        left: 1300 - HALF,
         display: "block",
       },
       after: {
-        top: 113,
-        left: 1389,
+        top: 124 - HALF,
+        left: 1400 - HALF,
         display: "none",
       },
     });
@@ -402,13 +411,13 @@ describe("horizontal", () => {
       )
     ).toEqual({
       before: {
-        top: 113,
-        left: -135,
+        top: 124 - HALF,
+        left: -124 - HALF,
         display: "none",
       },
       after: {
-        top: 113,
-        left: -35,
+        top: 124 - HALF,
+        left: -24 - HALF,
         display: "none",
       },
     });
@@ -431,13 +440,13 @@ describe("horizontal within container", () => {
       )
     ).toEqual({
       before: {
-        top: 137,
-        left: 37,
+        top: 148 - HALF,
+        left: 48 - HALF,
         display: "block",
       },
       after: {
-        top: 137,
-        left: 137,
+        top: 148 - HALF,
+        left: 148 - HALF,
         display: "block",
       },
     });
@@ -458,13 +467,13 @@ describe("horizontal within container", () => {
       )
     ).toEqual({
       before: {
-        top: 137,
-        left: 13,
+        top: 148 - HALF,
+        left: 24 - HALF,
         display: "block",
       },
       after: {
-        top: 137,
-        left: 313,
+        top: 148 - HALF,
+        left: 324 - HALF,
         display: "block",
       },
     });
@@ -485,13 +494,13 @@ describe("horizontal within container", () => {
       )
     ).toEqual({
       before: {
-        top: 137,
-        left: 5,
+        top: 148 - HALF,
+        left: 16 - HALF,
         display: "none",
       },
       after: {
-        top: 137,
-        left: 105,
+        top: 148 - HALF,
+        left: 116 - HALF,
         display: "block",
       },
     });
@@ -512,13 +521,13 @@ describe("horizontal within container", () => {
       )
     ).toEqual({
       before: {
-        top: 137,
-        left: 229,
+        top: 148 - HALF,
+        left: 240 - HALF,
         display: "block",
       },
       after: {
-        top: 137,
-        left: 329,
+        top: 148 - HALF,
+        left: 340 - HALF,
         display: "none",
       },
     });
@@ -539,13 +548,13 @@ describe("horizontal within container", () => {
       )
     ).toEqual({
       before: {
-        top: 137,
-        left: 337,
+        top: 148 - HALF,
+        left: 348 - HALF,
         display: "none",
       },
       after: {
-        top: 137,
-        left: 437,
+        top: 148 - HALF,
+        left: 448 - HALF,
         display: "none",
       },
     });

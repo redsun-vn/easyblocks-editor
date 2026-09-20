@@ -8,6 +8,7 @@ const config: Config.InitialOptions = {
     // "@/*" mirrors the tsconfig paths and the rollup alias.
     "^@/(.*)$": "<rootDir>/src/$1",
   },
+  setupFiles: ["<rootDir>/jest.setup.ts"],
 };
 
 export default config;
