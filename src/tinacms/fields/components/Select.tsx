@@ -6,6 +6,8 @@ import {
 } from "@redsun-vn/easyblocks-design-system/Select";
 import React from "react";
 import { FieldMixedValue } from "../../../types";
+import { useTranslation } from "../../../useTranslation";
+import { translatePanelLabel } from "../../../utils/panelTranslation";
 import { FieldRenderProps } from "../../form-builder";
 import { MIXED_VALUE } from "./constants";
 import { isMixedFieldValue } from "./isMixedFieldValue";
@@ -38,10 +40,13 @@ export const SelectFieldComponent: React.FC<SelectFieldComponentProps> = ({
   options,
 }) => {
   const { value, onChange } = input;
+  const { t } = useTranslation();
   const isMixedValue = isMixedFieldValue(value);
 
   const selectOptions = options || field.options;
-  const normalizedSelectOptions = selectOptions.map(toProps);
+  const normalizedSelectOptions = selectOptions.map((option) =>
+    toProps(option, t),
+  );
 
   if (isMixedValue) {
     normalizedSelectOptions.unshift(
@@ -68,9 +73,23 @@ export const SelectFieldComponent: React.FC<SelectFieldComponentProps> = ({
   );
 };
 
-function toProps(option: Option | string): Option {
-  if (typeof option === "object") return option;
-  return { value: option, label: option };
+/**
+ * An option carries its own words, and those words go on screen.
+ *
+ * A definition may write the option out (`{ value: 'left', label: 'Left' }`) or
+ * leave it as a bare string, in which case the raw value is what the shop owner
+ * reads — `stretch`, `center`, `video`. Either way it went straight to the
+ * dropdown untranslated, so a Vietnamese panel offered English choices under
+ * Vietnamese labels. They go through the same resolver as a field label.
+ */
+function toProps(option: Option | string, t: (key: string) => string): Option {
+  if (typeof option === "object") {
+    return "isDivider" in option
+      ? option
+      : { ...option, label: translatePanelLabel(option.label, t) };
+  }
+
+  return { value: option, label: translatePanelLabel(option, t) };
 }
 
 function toComponent(option: Option) {

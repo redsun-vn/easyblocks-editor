@@ -10,7 +10,10 @@ import { styled } from "styled-components";
 import { useEditorContext } from "../../EditorContext";
 import { Form } from "../../form";
 import { useTranslation } from "../../useTranslation";
-import { translatePanelGroup } from "../../utils/panelGroupLabel";
+import {
+  translatePanelGroup,
+  translatePanelLabel,
+} from "../../utils/panelTranslation";
 import {
   BlockFieldPlugin,
   ExternalFieldPlugin,
@@ -133,7 +136,7 @@ export function FieldBuilder({
     let fieldResult = field;
 
     if (typeof field.label === "string") {
-      field.label = t(field.label);
+      field.label = translatePanelLabel(field.label, t);
     }
 
     return fieldResult;
@@ -312,7 +315,9 @@ export function FieldsBuilder({
   const matchesQuery = (field: InternalField) => {
     const needle = normalize(query);
     const label =
-      typeof field.label === "string" ? normalize(t(field.label)) : "";
+      typeof field.label === "string"
+        ? normalize(translatePanelLabel(field.label, t))
+        : "";
     // Through the same resolver the heading uses. `t(field.group)` looked up the
     // English sentence as if it were a key, so searching matched words that were
     // never on screen and missed the ones that were.
