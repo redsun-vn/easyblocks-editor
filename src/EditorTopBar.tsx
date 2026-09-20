@@ -172,8 +172,6 @@ export const EditorTopBar: React.FC<{
   const [isOpenConfigs, setIsOpenConfigs] = useState(false);
 
   const isAdminTemplate = editorMode === "admin-template";
-  // Shop owners get a deliberately smaller chrome: no theme-building tools.
-  const isShopUser = editorMode === "user";
 
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
@@ -248,21 +246,27 @@ export const EditorTopBar: React.FC<{
             >
               {t("editor.sidebar.sections.templates")}
             </ButtonGhost>
-            {!isShopUser && (
-              <ButtonGhost
-                icon={Icons.GlobalSections}
-                hideLabel
-                onClick={() => onShowLeftSidebar("global-sections")}
-                style={{
-                  background:
-                    showLeftSidebar === "global-sections"
-                      ? Colors.black10
-                      : "transparent",
-                }}
-              >
-                {t("editor.sidebar.globalSections")}
-              </ButtonGhost>
-            )}
+            {/*
+             * Shown to a shop owner too. The header, the footer and the
+             * announcement bar are theirs to change, and hiding the panel did
+             * not stop them wanting to — it only left them with no way in.
+             * Both of these reach across every page of the site, which is why
+             * they were hidden; that is a thing to say in the panel, not a
+             * reason to withhold it.
+             */}
+            <ButtonGhost
+              icon={Icons.GlobalSections}
+              hideLabel
+              onClick={() => onShowLeftSidebar("global-sections")}
+              style={{
+                background:
+                  showLeftSidebar === "global-sections"
+                    ? Colors.black10
+                    : "transparent",
+              }}
+            >
+              {t("editor.sidebar.globalSections")}
+            </ButtonGhost>
           </>
         )}
 
@@ -278,7 +282,7 @@ export const EditorTopBar: React.FC<{
           {t("editor.sidebar.layers")}
         </ButtonGhost>
 
-        {!isAdminTemplate && !isShopUser && (
+        {!isAdminTemplate && (
           <ButtonGhost
             icon={Icons.ColorAndFonts}
             hideLabel

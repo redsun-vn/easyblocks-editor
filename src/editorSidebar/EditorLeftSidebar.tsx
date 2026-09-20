@@ -78,10 +78,9 @@ export const EditorLeftSidebar = ({
   const sidebarConfig = useMemo(() => {
     switch (showLeftSidebar) {
       case "global-sections": {
-        if (editorMode === "user") {
-          return EMPTY_SIDEBAR_CONFIG;
-        }
-
+        // A shop owner reaches this panel too now. The rail button that opens
+        // it is no longer hidden from them, so returning an empty panel here
+        // would be a button that opens nothing.
         return {
           id: "editor-global-sections",
           title: t("editor.sidebar.globalSections"),

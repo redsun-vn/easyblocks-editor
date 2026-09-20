@@ -6415,8 +6415,6 @@ const EditorTopBar = ({
   } = useTranslation();
   const [isOpenConfigs, setIsOpenConfigs] = React.useState(false);
   const isAdminTemplate = editorMode === "admin-template";
-  // Shop owners get a deliberately smaller chrome: no theme-building tools.
-  const isShopUser = editorMode === "user";
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
       debouncedSave(_onSaveDocument);
@@ -6462,7 +6460,7 @@ const EditorTopBar = ({
     style: {
       background: showLeftSidebar === "templates" ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.sections.templates")), !isShopUser && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, t("editor.sidebar.sections.templates")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     icon: icons.Icons.GlobalSections,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("global-sections"),
@@ -6476,7 +6474,7 @@ const EditorTopBar = ({
     style: {
       background: showLeftSidebar === "layers" ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.layers")), !isAdminTemplate && !isShopUser && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, t("editor.sidebar.layers")), !isAdminTemplate && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     icon: icons.Icons.ColorAndFonts,
     hideLabel: true,
     onClick: () => setIsOpenConfigs(prev => !prev)
@@ -9325,9 +9323,9 @@ const EditorLeftSidebar = ({
     switch (showLeftSidebar) {
       case "global-sections":
         {
-          if (editorMode === "user") {
-            return EMPTY_SIDEBAR_CONFIG;
-          }
+          // A shop owner reaches this panel too now. The rail button that opens
+          // it is no longer hidden from them, so returning an empty panel here
+          // would be a button that opens nothing.
           return {
             id: "editor-global-sections",
             title: t("editor.sidebar.globalSections"),
