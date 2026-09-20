@@ -10,6 +10,7 @@ import { styled } from "styled-components";
 import { useEditorContext } from "../../EditorContext";
 import { Form } from "../../form";
 import { useTranslation } from "../../useTranslation";
+import { translatePanelGroup } from "../../utils/panelGroupLabel";
 import {
   BlockFieldPlugin,
   ExternalFieldPlugin,
@@ -312,7 +313,12 @@ export function FieldsBuilder({
     const needle = normalize(query);
     const label =
       typeof field.label === "string" ? normalize(t(field.label)) : "";
-    const group = field.group ? normalize(t(field.group)) : "";
+    // Through the same resolver the heading uses. `t(field.group)` looked up the
+    // English sentence as if it were a key, so searching matched words that were
+    // never on screen and missed the ones that were.
+    const group = field.group
+      ? normalize(translatePanelGroup(field.group, t))
+      : "";
 
     return label.includes(needle) || group.includes(needle);
   };
@@ -414,7 +420,9 @@ export function FieldsBuilder({
 
       {Object.keys(grouped).map((groupName) => (
         <div key={groupName}>
-          <FieldsGroupLabel>{groupName}</FieldsGroupLabel>
+          <FieldsGroupLabel>
+            {translatePanelGroup(groupName, t)}
+          </FieldsGroupLabel>
           {grouped[groupName].map((field, index, fields) => (
             <FieldWrapper
               key={generateFieldKey(field, breakpointIndex)}
