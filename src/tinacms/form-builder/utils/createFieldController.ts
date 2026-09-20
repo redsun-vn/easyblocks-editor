@@ -226,7 +226,18 @@ function createFieldController({
             componentPath,
           );
 
-          if (parentDefinition && parentDefinition.change) {
+          // A field declared by a collection's `itemFields` is stored under
+          // `_itemProps`, so `componentPath` above points inside that bag rather
+          // than at a component, and the prop belongs to the collection — never
+          // to the parent's own schema. The branch below only writes props it
+          // finds in that schema, so an item field fell through it and nothing
+          // was written at all: the box in the panel kept its old number and the
+          // page did not move. It only showed up when the parent happened to
+          // have a `change` function, which is why the section margins were dead
+          // while a column's width, whose parent has none, worked.
+          const isItemField = path.includes("._itemProps.");
+
+          if (parentDefinition && parentDefinition.change && !isItemField) {
             const values: Record<string, any> = {};
             const closestDefinedValues: Record<string, any> = {};
 

@@ -160,7 +160,7 @@ const SidebarContainer = styled.div<{ width?: string }>`
   // scroll container here does not clip what they open.
   height: 100%;
   // A flex item defaults to min-height:auto, which refuses to shrink below its
-  // content — so the panel grows past the window and `overflow-y` never has
+  // content, so the panel grows past the window and overflow-y never has
   // anything to scroll. This is the line that makes the scrolling real.
   min-height: 0;
   overflow-y: auto;

@@ -5118,7 +5118,18 @@ function createFieldController({
           } = _internals.parsePath(componentPath, editorContext.form);
           const parentDefinition = _internals.findComponentDefinitionById(templateId, editorContext);
           const config = dotNotationGet(editorContext.form.values, componentPath);
-          if (parentDefinition && parentDefinition.change) {
+
+          // A field declared by a collection's `itemFields` is stored under
+          // `_itemProps`, so `componentPath` above points inside that bag rather
+          // than at a component, and the prop belongs to the collection — never
+          // to the parent's own schema. The branch below only writes props it
+          // finds in that schema, so an item field fell through it and nothing
+          // was written at all: the box in the panel kept its old number and the
+          // page did not move. It only showed up when the parent happened to
+          // have a `change` function, which is why the section margins were dead
+          // while a column's width, whose parent has none, worked.
+          const isItemField = path.includes("._itemProps.");
+          if (parentDefinition && parentDefinition.change && !isItemField) {
             const values = {};
             const closestDefinedValues = {};
             parentDefinition.schema.forEach(schemaProp => {
@@ -10552,7 +10563,7 @@ const SidebarAndContentContainer = styled.styled.div.withConfig({
 const SidebarContainer = styled.styled.div.withConfig({
   displayName: "Editor__SidebarContainer",
   componentId: "sc-t95yuf-3"
-})(["", " position:relative;height:100%;overflow-y:auto;overscroll-behavior:contain;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
+})(["", " position:relative;height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain;background:", ";border-left:1px solid ", ";border-right:1px solid ", ";box-sizing:border-box;> *{box-sizing:border-box;}"], ({
   width = "240px"
 }) =>
 // A flex item defaults to min-width:auto, which lets a wide field push the
