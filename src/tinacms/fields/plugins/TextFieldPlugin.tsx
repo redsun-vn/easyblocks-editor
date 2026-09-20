@@ -35,21 +35,28 @@ function TextField({ input, field, noWrap }: TextFieldProps) {
     field.normalize,
   );
 
-  const isTextSchemaProp = field.schemaProp.type === "text";
-
   return (
+    // A `string` prop used to be laid out beside its label, right-aligned and
+    // without a border, while a `text` prop got its own line, the left edge and
+    // a box. To the shop owner filling them in they are the same thing — a
+    // place to type — so they now look and sit the same.
+    //
+    // The old row layout is what truncated the labels: "Chữ đứng trước" and
+    // "Chữ đứng sau" both became "Chữ đứng..." in a 250px panel, which is two
+    // different fields reading identically. The borderless input was the other
+    // half of it — an empty one was hard to recognise as an input at all.
     <FieldMetaWrapper
       input={input}
       field={field}
-      layout={isTextSchemaProp ? "column" : "row"}
+      layout="column"
       noWrap={noWrap}
     >
       <Input
         {...restInputProperties}
         {...inputProps}
         controlSize="full-width"
-        align={!isTextSchemaProp ? "right" : "left"}
-        withBorder={isTextSchemaProp}
+        align="left"
+        withBorder
       />
     </FieldMetaWrapper>
   );

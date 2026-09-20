@@ -76,7 +76,18 @@ export function FieldMetaWrapper<
   field,
   input,
   noWrap,
-  layout = "row",
+  // The label on its own line, the control on the next one, both full width.
+  //
+  // Side by side, the two shared a 250px panel, and the label lost: "Chữ đứng
+  // trước" became "Chữ đứng t..." and "Chữ đứng sau" became "Chữ đứng..." —
+  // two different fields reading the same. A shop owner cannot tell which one
+  // they are filling in, and Vietnamese labels are long enough that this is
+  // the normal case rather than an edge one.
+  //
+  // Nothing here is new: `column` is the layout the text fields already used,
+  // and everything below already handles it. A field that wants the old
+  // behaviour still asks for it through `schemaProp.layout`.
+  layout = "column",
   renderLabel,
   isLabelHidden,
 }: InputFieldType<ExtraFieldProps, InputProps>) {
@@ -514,17 +525,24 @@ interface FieldInputWrapper {
 
 const FieldInputWrapper = styled.div<FieldInputWrapper>`
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  text-align: end;
+  min-height: 28px;
 
+  /*
+   * Pushed to the right only when it shares a line with its label. Under the
+   * label it starts where the label starts, so the control and the words
+   * naming it line up instead of sitting at opposite edges of the panel.
+   */
   ${({ layout, isCustom }) =>
     layout === "row" && !isCustom
       ? css`
+          justify-content: flex-end;
+          text-align: end;
           flex-grow: 1;
         `
       : css`
+          justify-content: flex-start;
+          text-align: start;
           width: 100%;
         `};
-  min-height: 28px;
 `;

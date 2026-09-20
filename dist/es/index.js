@@ -2927,7 +2927,18 @@ function FieldMetaWrapper({
   field,
   input,
   noWrap,
-  layout = "row",
+  // The label on its own line, the control on the next one, both full width.
+  //
+  // Side by side, the two shared a 250px panel, and the label lost: "Chữ đứng
+  // trước" became "Chữ đứng t..." and "Chữ đứng sau" became "Chữ đứng..." —
+  // two different fields reading the same. A shop owner cannot tell which one
+  // they are filling in, and Vietnamese labels are long enough that this is
+  // the normal case rather than an edge one.
+  //
+  // Nothing here is new: `column` is the layout the text fields already used,
+  // and everything below already handles it. A field that wants the old
+  // behaviour still asks for it through `schemaProp.layout`.
+  layout = "column",
   renderLabel,
   isLabelHidden
 }) {
@@ -3163,12 +3174,16 @@ const FieldError = styled$1.span.withConfig({
 const FieldInputWrapper = styled$1.div.withConfig({
   displayName: "wrapFieldWithMeta__FieldInputWrapper",
   componentId: "sc-1asy4oy-6"
-})(["display:flex;justify-content:flex-end;align-items:center;text-align:end;", ";min-height:28px;"], ({
+})(["display:flex;align-items:center;min-height:28px;", ";"], ({
   layout,
   isCustom
 }) => layout === "row" && !isCustom ? css`
+          justify-content: flex-end;
+          text-align: end;
           flex-grow: 1;
         ` : css`
+          justify-content: flex-start;
+          text-align: start;
           width: 100%;
         `);
 
@@ -3218,17 +3233,28 @@ function TextField({
     ...restInputProperties
   } = input;
   const inputProps = useTextValue(value, onChange, editorContext.contextParams.locale, editorContext.locales, field.placeholder, field.normalize);
-  const isTextSchemaProp = field.schemaProp.type === "text";
-  return /*#__PURE__*/React__default.createElement(FieldMetaWrapper, {
-    input: input,
-    field: field,
-    layout: isTextSchemaProp ? "column" : "row",
-    noWrap: noWrap
-  }, /*#__PURE__*/React__default.createElement(Input, _extends({}, restInputProperties, inputProps, {
-    controlSize: "full-width",
-    align: !isTextSchemaProp ? "right" : "left",
-    withBorder: isTextSchemaProp
-  })));
+  return (
+    /*#__PURE__*/
+    // A `string` prop used to be laid out beside its label, right-aligned and
+    // without a border, while a `text` prop got its own line, the left edge and
+    // a box. To the shop owner filling them in they are the same thing — a
+    // place to type — so they now look and sit the same.
+    //
+    // The old row layout is what truncated the labels: "Chữ đứng trước" and
+    // "Chữ đứng sau" both became "Chữ đứng..." in a 250px panel, which is two
+    // different fields reading identically. The borderless input was the other
+    // half of it — an empty one was hard to recognise as an input at all.
+    React__default.createElement(FieldMetaWrapper, {
+      input: input,
+      field: field,
+      layout: "column",
+      noWrap: noWrap
+    }, /*#__PURE__*/React__default.createElement(Input, _extends({}, restInputProperties, inputProps, {
+      controlSize: "full-width",
+      align: "left",
+      withBorder: true
+    })))
+  );
 }
 const TextFieldPlugin = {
   name: "text",
