@@ -1,6 +1,5 @@
 import { ComponentDefinitionShared, Template } from "@redsun-vn/easyblocks-core";
 import React from "react";
-import { TSectionItemKind } from "./EditorSectionItem";
 import { TEasyblocksEditorMode } from "../../types";
 export interface IComponentGroups {
     [key: string]: {
@@ -45,7 +44,6 @@ export type TSectionEntry = {
      */
     categoryUuid?: string;
     source: TSectionSource;
-    kind: TSectionItemKind;
 };
 /**
  * Which of the two panels this instance is. Built-in components and saved
@@ -54,12 +52,12 @@ export type TSectionEntry = {
  */
 export type TSectionPanel = "components" | "templates";
 /**
- * Where a section picked from the drawer lands in the root collection: directly after the
+ * Where a section picked from the panel lands in the root collection: directly after the
  * selected section, which is where the user is looking. With nothing selected there is no
  * such position, so it goes to the end.
  *
  * `focussedField` can point deep inside a section (`data.2.Cards.0`); only the top level
- * index matters, because the drawer always inserts into the root `data` collection.
+ * index matters, because the panel always inserts into the root `data` collection.
  */
 export declare function getSectionInsertionIndex(focussedField: Array<string>, sectionCount: number): number;
 /**

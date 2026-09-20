@@ -21,6 +21,7 @@ const EMPTY_SIDEBAR_CONFIG = {
   title: "",
   enableScroll: true,
   width: "280px",
+  padded: true,
   Component: null,
 };
 
@@ -31,8 +32,7 @@ const StyledEditorLeftSidebarRoot = styled.div<{
   ${({ width = "240px" }) =>
     // max-width is what actually pins the size: it clamps a flex item's
     // automatic minimum, so a wide child can no longer stretch the panel and
-    // move the canvas. No overflow clipping here — the section drawer is
-    // absolutely positioned outside this box and would be cut off.
+    // move the canvas.
     `flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`}
   position: relative;
   background: ${Colors.white};
@@ -58,9 +58,17 @@ const HorizontalLine = styled.div`
   background-color: ${Colors.black10};
 `;
 
-const StyledEditorLeftSidebarGroup = styled.div`
-  padding-top: 20px;
-  padding-bottom: 20px;
+/**
+ * The body under a panel's title.
+ *
+ * Padded for the panels whose content starts with text. The section panels ask
+ * for none: their search field is the first thing under the title and has to
+ * sit against it, and the list below it owns its own scrolling.
+ */
+const StyledEditorLeftSidebarGroup = styled.div<{ padded?: boolean }>`
+  ${({ padded = true }) =>
+    padded ? "padding-top: 20px; padding-bottom: 20px;" : ""}
+  min-height: 0;
 
   > div {
     min-height: 0;
@@ -86,6 +94,7 @@ export const EditorLeftSidebar = ({
           title: t("editor.sidebar.globalSections"),
           width: "280px",
           enableScroll: true,
+          padded: true,
           Component: <EditorGlobalSections globalSections={globalSections} />,
         };
       }
@@ -96,16 +105,20 @@ export const EditorLeftSidebar = ({
           title: t("editor.sidebar.layers"),
           width: "280px",
           enableScroll: true,
+          padded: true,
           Component: <EditorLayer />,
         };
       }
 
+      // 280px rather than 200: a row now carries a thumbnail beside its name,
+      // and at 200 the name it is there to identify was cut after two words.
       case "components": {
         return {
           id: "editor-components",
           title: t("editor.sidebar.sections.components"),
-          width: "200px",
+          width: "280px",
           enableScroll: false,
+          padded: false,
           Component: <EditorSections panel="components" />,
         };
       }
@@ -114,8 +127,9 @@ export const EditorLeftSidebar = ({
         return {
           id: "editor-templates",
           title: t("editor.sidebar.sections.templates"),
-          width: "200px",
+          width: "280px",
           enableScroll: false,
+          padded: false,
           Component: <EditorSections panel="templates" />,
         };
       }
@@ -139,7 +153,7 @@ export const EditorLeftSidebar = ({
 
       <HorizontalLine />
 
-      <StyledEditorLeftSidebarGroup>
+      <StyledEditorLeftSidebarGroup padded={sidebarConfig.padded}>
         {sidebarConfig.Component}
       </StyledEditorLeftSidebarGroup>
     </StyledEditorLeftSidebarRoot>

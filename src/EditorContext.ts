@@ -5,6 +5,7 @@ import {
   ExternalTypeDefinition,
   InlineTypeDefinition,
   InlineTypeWidgetComponentProps,
+  InternalTemplate,
   NoCodeComponentEntry,
   Template,
   TemplateQueryType,
@@ -79,6 +80,14 @@ export type EditorContextType = Omit<
   mode: TEasyblocksEditorMode;
   readOnly: boolean;
   disableCustomTemplates: boolean;
+  /**
+   * The built-in library as the host declared it, before anything is fetched.
+   *
+   * `templates` above is the union of this and the shop's saved templates, and
+   * it arrives only once something asks for it. The sidebar needs the built-in
+   * half straight away and must not show the other half beside it.
+   */
+  configTemplates: InternalTemplate[];
   /** The order the sidebar lists component categories in; empty means by name. */
   categoryOrder: string[];
   types: Record<

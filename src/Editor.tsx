@@ -16,6 +16,7 @@ import {
   ExternalData,
   FetchOutputResources,
   InlineTypeWidgetComponentProps,
+  InternalTemplate,
   NoCodeComponentEntry,
   NonEmptyRenderableContent,
   TGlobalSectionChange,
@@ -1120,6 +1121,11 @@ const EditorContent = ({
     compilationCache: compilationCache.current,
     readOnly: props.readOnly,
     disableCustomTemplates: props.config.disableCustomTemplates ?? false,
+    // The built-in library, straight off the config. `templates` above is the
+    // lazily loaded union of this and whatever the shop has saved, which the
+    // sidebar cannot wait for: it has to draw the built-in list the moment the
+    // panel opens, and it must not mix a shop's own templates into it.
+    configTemplates: (props.config.templates as InternalTemplate[]) ?? [],
     categoryOrder: props.config.categoryOrder ?? [],
     rootComponent: findComponentDefinitionById(
       initialEntry._component,

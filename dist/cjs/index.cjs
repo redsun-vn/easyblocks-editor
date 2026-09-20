@@ -8402,23 +8402,10 @@ function getTemplatesInternal(editorContext, configTemplates, remoteUserDefinedT
   return result;
 }
 
-// Shared local-group derivation, used by both the EditorSections sidebar and the
-// TemplateModal group field so they show the same set of local component groups.
-
 // Components the root "data" field accepts (the local section components).
 const getLocalComponents = editorContext => {
   const schemaProp = _internals.findComponentDefinition(editorContext.form.values, editorContext)?.schema.find(x => x.prop === "data");
   return unrollAcceptsFieldIntoComponents(schemaProp?.accepts, editorContext);
-};
-
-// Distinct `.group` values of the visible local components ("others" when unset).
-const getLocalGroups = localComponents => {
-  const groups = new Set();
-  localComponents.forEach(component => {
-    if (component.visible === false) return;
-    groups.add(component.group || "others");
-  });
-  return [...groups];
 };
 
 /**
@@ -8442,6 +8429,294 @@ const getCategoryLabel = (t, group) => {
   const translated = t(key);
   return translated === key ? group : translated;
 };
+
+const StyledRow = styled__default["default"].button.withConfig({
+  displayName: "EditorSectionRow__StyledRow",
+  componentId: "sc-1wckczo-0"
+})(["display:flex;align-items:center;gap:10px;width:100%;padding:5px 6px;border:1px solid transparent;border-radius:6px;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer;&:hover{background:", ";border-color:", ";}&:focus-visible{outline:2px solid ", ";outline-offset:-1px;}&:disabled{cursor:default;}"], easyblocksDesignSystem.Colors.black5, easyblocksDesignSystem.Colors.black10, easyblocksDesignSystem.Colors.blue50);
+
+/**
+ * The picture of what the row will add.
+ *
+ * Fixed size rather than a ratio, so every row is the same height however tall
+ * the thumbnail behind it is and the list stays a column of even rows to scan
+ * down. A thumbnail that is missing leaves the box empty rather than absent —
+ * the labels would otherwise start at two different left edges in the same
+ * group.
+ */
+const StyledPreview = styled__default["default"].span.withConfig({
+  displayName: "EditorSectionRow__StyledPreview",
+  componentId: "sc-1wckczo-1"
+})(["position:relative;flex:0 0 auto;width:48px;height:34px;border-radius:4px;background:", ";border:1px solid ", ";overflow:hidden;display:flex;align-items:center;justify-content:center;"], easyblocksDesignSystem.Colors.black5, easyblocksDesignSystem.Colors.black10);
+const StyledThumbnail = styled__default["default"].img.withConfig({
+  displayName: "EditorSectionRow__StyledThumbnail",
+  componentId: "sc-1wckczo-2"
+})(["width:100%;height:100%;object-fit:cover;display:block;"]);
+
+/**
+ * What an item without a thumbnail shows: its own initials.
+ *
+ * Two letters of the name it already carries beats a generic glyph repeated
+ * down the column, because the whole point of the picture is telling one row
+ * from the next at a glance.
+ */
+const StyledInitials = styled__default["default"].span.withConfig({
+  displayName: "EditorSectionRow__StyledInitials",
+  componentId: "sc-1wckczo-3"
+})(["font-size:11px;font-weight:600;letter-spacing:0.04em;color:", ";text-transform:uppercase;"], easyblocksDesignSystem.Colors.black500);
+const StyledLabel = styled__default["default"].span.withConfig({
+  displayName: "EditorSectionRow__StyledLabel",
+  componentId: "sc-1wckczo-4"
+})(["flex:1;min-width:0;font-size:12px;line-height:1.35;color:", ";display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"], easyblocksDesignSystem.Colors.black900);
+
+/** `"Mở đầu — canh giữa"` → `"MC"`. */
+function initialsOf(label) {
+  const words = label.split(/\s+/).filter(word => /[\p{L}\p{N}]/u.test(word));
+  return words.slice(0, 2).map(word => word[0]).join("");
+}
+
+/**
+ * One insertable item in a sidebar panel.
+ *
+ * Clicking it adds the thing to the page. There is no intermediate step: the
+ * row already shows the picture and the name that a gallery would have shown,
+ * so opening one to click the same item again was a click that bought nothing.
+ */
+const EditorSectionRow = ({
+  label,
+  thumbnail,
+  onPick
+}) => /*#__PURE__*/React__default["default"].createElement(StyledRow, {
+  type: "button",
+  title: label,
+  onClick: onPick
+}, /*#__PURE__*/React__default["default"].createElement(StyledPreview, null, thumbnail ? /*#__PURE__*/React__default["default"].createElement(StyledThumbnail, {
+  src: thumbnail,
+  alt: "",
+  loading: "lazy"
+}) : /*#__PURE__*/React__default["default"].createElement(StyledInitials, null, initialsOf(label))), /*#__PURE__*/React__default["default"].createElement(StyledLabel, null, label));
+
+/** One insertable item, already reduced to what a row needs to draw itself. */
+
+const StyledGroup = styled__default["default"].section.withConfig({
+  displayName: "EditorSectionGroup__StyledGroup",
+  componentId: "sc-1ycdt4p-0"
+})(["& + &{margin-top:14px;}"]);
+
+/**
+ * The group name, pinned while its own rows scroll past.
+ *
+ * Every row in a group looks alike by design, so the name is the only thing
+ * saying which part of the library is on screen. Pinning it means that answer
+ * is still there twenty rows down.
+ */
+const StyledHeading = styled__default["default"].h3.withConfig({
+  displayName: "EditorSectionGroup__StyledHeading",
+  componentId: "sc-1ycdt4p-1"
+})(["position:sticky;top:0;z-index:1;display:flex;align-items:baseline;gap:6px;margin:0 0 4px;padding:6px 6px 5px;background:", ";font-size:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:", ";"], easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black500);
+const StyledCount = styled__default["default"].span.withConfig({
+  displayName: "EditorSectionGroup__StyledCount",
+  componentId: "sc-1ycdt4p-2"
+})(["font-weight:500;letter-spacing:0;color:", ";"], easyblocksDesignSystem.Colors.black40);
+const StyledRows = styled__default["default"].div.withConfig({
+  displayName: "EditorSectionGroup__StyledRows",
+  componentId: "sc-1ycdt4p-3"
+})(["display:flex;flex-direction:column;gap:2px;"]);
+const StyledPlaceholderRow = styled__default["default"].div.withConfig({
+  displayName: "EditorSectionGroup__StyledPlaceholderRow",
+  componentId: "sc-1ycdt4p-4"
+})(["display:flex;align-items:center;gap:10px;padding:5px 6px;&::before{content:\"\";width:48px;height:34px;border-radius:4px;background:", ";}&::after{content:\"\";flex:1;height:10px;border-radius:3px;background:", ";}"], easyblocksDesignSystem.Colors.black5, easyblocksDesignSystem.Colors.black5);
+const StyledMore = styled__default["default"].button.withConfig({
+  displayName: "EditorSectionGroup__StyledMore",
+  componentId: "sc-1ycdt4p-5"
+})(["margin:4px 0 0 6px;padding:0;border:none;background:none;font:inherit;font-size:11.5px;color:", ";cursor:pointer;&:disabled{color:", ";cursor:default;}"], easyblocksDesignSystem.Colors.blue60, easyblocksDesignSystem.Colors.black40);
+const StyledEmpty = styled__default["default"].p.withConfig({
+  displayName: "EditorSectionGroup__StyledEmpty",
+  componentId: "sc-1ycdt4p-6"
+})(["margin:0 0 0 6px;font-size:11.5px;color:", ";"], easyblocksDesignSystem.Colors.black500);
+
+/**
+ * One named group of a sidebar panel.
+ *
+ * `onEnterView` fires the first time the group is close to the viewport, which
+ * is what lets the Templates panel show every group at once without asking the
+ * backend for all of them up front: a group two screens down costs nothing
+ * until it is nearly on screen. The components panel passes nothing, because
+ * its items are already in memory.
+ */
+const EditorSectionGroup = ({
+  label,
+  count,
+  rows,
+  isLoading,
+  hasMore,
+  emptyLabel,
+  moreLabel,
+  onLoadMore,
+  onEnterView
+}) => {
+  const rootRef = React.useRef(null);
+  // Held in a ref so the observer is created once: the callback is rebuilt on
+  // every render of the panel above, and depending on it would tear the
+  // observer down and set it up again each time, which fires it again too.
+  const enterRef = React.useRef(onEnterView);
+  enterRef.current = onEnterView;
+  React.useEffect(() => {
+    const node = rootRef.current;
+    if (!node || !enterRef.current) {
+      return;
+    }
+
+    // Without IntersectionObserver — jsdom, an old embedded webview — the
+    // group asks straight away. Asking too early is a wasted request; never
+    // asking is a group that is permanently empty, which is far worse.
+    if (typeof IntersectionObserver === "undefined") {
+      enterRef.current();
+      return;
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) {
+        return;
+      }
+
+      // Once only: the group is filled from here on, and a second call while
+      // the first page is still in flight would fetch it twice.
+      observer.disconnect();
+      enterRef.current?.();
+    },
+    // A screenful of margin, so the rows are there by the time the group is
+    // scrolled to rather than appearing under the reader's eyes.
+    {
+      rootMargin: "400px 0px"
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return /*#__PURE__*/React__default["default"].createElement(StyledGroup, {
+    ref: rootRef
+  }, /*#__PURE__*/React__default["default"].createElement(StyledHeading, null, label, typeof count === "number" && count > 0 ? /*#__PURE__*/React__default["default"].createElement(StyledCount, null, count) : null), /*#__PURE__*/React__default["default"].createElement(StyledRows, null, rows.map(row => /*#__PURE__*/React__default["default"].createElement(EditorSectionRow, {
+    key: row.key,
+    label: row.label,
+    thumbnail: row.thumbnail,
+    onPick: row.onPick
+  })), isLoading ? /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default["default"].createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default["default"].createElement(StyledPlaceholderRow, null)) : null), !isLoading && rows.length === 0 && emptyLabel ? /*#__PURE__*/React__default["default"].createElement(StyledEmpty, null, emptyLabel) : null, hasMore && !isLoading ? /*#__PURE__*/React__default["default"].createElement(StyledMore, {
+    type: "button",
+    onClick: onLoadMore
+  }, moreLabel) : null);
+};
+
+const StyledField = styled__default["default"].div.withConfig({
+  displayName: "EditorSectionSearch__StyledField",
+  componentId: "sc-vrb0yz-0"
+})(["position:relative;display:flex;align-items:center;padding:10px 12px 8px;background:", ";"], easyblocksDesignSystem.Colors.white);
+const StyledInput = styled__default["default"].input.withConfig({
+  displayName: "EditorSectionSearch__StyledInput",
+  componentId: "sc-vrb0yz-1"
+})(["width:100%;height:30px;padding:0 26px 0 28px;border:1px solid ", ";border-radius:6px;background:", ";font:inherit;font-size:12px;color:", ";box-sizing:border-box;&::placeholder{color:", ";}&:focus{outline:none;border-color:", ";background:", ";}"], easyblocksDesignSystem.Colors.black10, easyblocksDesignSystem.Colors.black5, easyblocksDesignSystem.Colors.black900, easyblocksDesignSystem.Colors.black40, easyblocksDesignSystem.Colors.blue50, easyblocksDesignSystem.Colors.white);
+const StyledIcon = styled__default["default"].span.withConfig({
+  displayName: "EditorSectionSearch__StyledIcon",
+  componentId: "sc-vrb0yz-2"
+})(["position:absolute;left:21px;display:flex;color:", ";pointer-events:none;"], easyblocksDesignSystem.Colors.black40);
+const StyledClear = styled__default["default"].button.withConfig({
+  displayName: "EditorSectionSearch__StyledClear",
+  componentId: "sc-vrb0yz-3"
+})(["position:absolute;right:20px;width:16px;height:16px;display:grid;place-items:center;padding:0;border:none;border-radius:50%;background:", ";color:", ";font-size:11px;line-height:1;cursor:pointer;"], easyblocksDesignSystem.Colors.black20, easyblocksDesignSystem.Colors.white);
+
+/**
+ * The search box under a panel's title.
+ *
+ * It filters what is already on screen rather than replacing the panel with a
+ * result page, so an empty box and a cleared box are the same thing and the
+ * way back is always one click on the cross.
+ */
+const EditorSectionSearch = ({
+  value,
+  placeholder,
+  clearLabel,
+  onChange
+}) => /*#__PURE__*/React__default["default"].createElement(StyledField, null, /*#__PURE__*/React__default["default"].createElement(StyledIcon, {
+  "aria-hidden": "true"
+}, /*#__PURE__*/React__default["default"].createElement("svg", {
+  width: "13",
+  height: "13",
+  viewBox: "0 0 16 16",
+  fill: "none"
+}, /*#__PURE__*/React__default["default"].createElement("circle", {
+  cx: "7",
+  cy: "7",
+  r: "4.6",
+  stroke: "currentColor",
+  strokeWidth: "1.5"
+}), /*#__PURE__*/React__default["default"].createElement("path", {
+  d: "M10.6 10.6 14 14",
+  stroke: "currentColor",
+  strokeWidth: "1.5",
+  strokeLinecap: "round"
+}))), /*#__PURE__*/React__default["default"].createElement(StyledInput
+// `text`, not `search`: a search input draws a clear button of its own in
+// Chrome, and the panel already has one that the keyboard can reach.
+, {
+  type: "text",
+  value: value,
+  placeholder: placeholder,
+  onChange: event => onChange(event.target.value)
+}), value ? /*#__PURE__*/React__default["default"].createElement(StyledClear, {
+  type: "button",
+  "aria-label": clearLabel,
+  onClick: () => onChange("")
+}, "\xD7") : null);
+
+const SKELETON_ROWS = 20;
+const pulse = styled.keyframes(["0%,100%{opacity:1;}50%{opacity:0.4;}"]);
+const SkeletonBar = styled__default["default"].div.withConfig({
+  displayName: "EditorSectionsSkeleton__SkeletonBar",
+  componentId: "sc-1kea448-0"
+})(["padding-top:4px;padding-left:4px;height:26px;border-radius:2px;background-color:", ";animation:", " 1.2s ease-in-out infinite;"], easyblocksDesignSystem.Colors.black10, pulse);
+
+// Shared loading placeholder for the editor section lists.
+// Single source of truth — imported by EditorSectionGroup and EditorSectionCard.
+const EditorSectionsSkeleton = () => /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, Array.from({
+  length: SKELETON_ROWS
+}).map((_, index) => /*#__PURE__*/React__default["default"].createElement(SkeletonBar, {
+  key: index
+})));
+
+/**
+ * Matching a typed query against a panel label.
+ *
+ * Vietnamese is the language these labels are read and typed in, and a shop
+ * owner reaching for "Mở đầu" types `mo dau` — no tone marks, because typing
+ * them means switching input mode for a search box they are about to empty
+ * again. Folding both sides to plain letters is what makes that find anything.
+ */
+
+/** `"Mở đầu — canh giữa"` → `"mo dau — canh giua"`. */
+function foldForSearch(text) {
+  return text.normalize("NFD")
+  // The combining marks NFD just split off. Without this step the folded
+  // string still carries them and matches nothing a plain keyboard types.
+  .replace(/[̀-ͯ]/g, "")
+  // `đ` has no combining form, so decomposition leaves it untouched and it
+  // has to be named.
+  .replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+}
+
+/**
+ * Whether `label` answers `query`.
+ *
+ * Every word of the query has to appear somewhere in the label, in any order,
+ * so `dau mo` finds "Mở đầu" as readily as `mo dau` does. An empty query
+ * matches everything, which is what leaves the list whole until something is
+ * typed.
+ */
+function matchesQuery(label, query) {
+  const words = foldForSearch(query).split(/\s+/).filter(Boolean);
+  if (words.length === 0) {
+    return true;
+  }
+  const haystack = foldForSearch(label);
+  return words.every(word => haystack.includes(word));
+}
 
 /**
  * The name shown for one item in a picker.
@@ -8476,267 +8751,11 @@ const usePickerItemLabel = () => {
   };
 };
 
-// Single template card shown in the section drawer gallery.
-// Preview box renders the template thumbnail when available, otherwise
-// falls back to the centered label text (e.g. "Empty Banner Section").
-const StyledCard$1 = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawerCard__StyledCard",
-  componentId: "sc-1g9htdu-0"
-})(["display:flex;flex-direction:column;gap:8px;cursor:", ";"], ({
-  isLoading
-}) => isLoading ? "default" : "pointer");
-const StyledPreview$1 = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawerCard__StyledPreview",
-  componentId: "sc-1g9htdu-1"
-})(["position:relative;width:100%;aspect-ratio:16 / 10;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;border-radius:2px;background:", ";color:", ";overflow:hidden;box-sizing:border-box;", ":hover &{outline:2px solid ", ";}"], easyblocksDesignSystem.Colors.black10, easyblocksDesignSystem.Colors.black500, StyledCard$1, easyblocksDesignSystem.Colors.blue50);
-
-// Centered spinner shown over the preview box while the section is being added.
-const StyledLoadingOverlay = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawerCard__StyledLoadingOverlay",
-  componentId: "sc-1g9htdu-2"
-})(["position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.6);"]);
-const StyledThumbnail = styled__default["default"].img.withConfig({
-  displayName: "EditorSectionDrawerCard__StyledThumbnail",
-  componentId: "sc-1g9htdu-3"
-})(["width:100%;height:100%;object-fit:cover;"]);
-
-// Fallback label shown inside the preview box when there's no thumbnail.
-// Clamps to 2 lines then ellipsis (the box has vertical room from its
-// aspect-ratio). Full text is available via the card's title tooltip.
-const StyledPlaceholderLabel = styled__default["default"](Typography.Typography).withConfig({
-  displayName: "EditorSectionDrawerCard__StyledPlaceholderLabel",
-  componentId: "sc-1g9htdu-4"
-})(["max-width:90px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;"]);
-
-// Bottom label: single line then ellipsis. Full text via the card's title.
-const StyledLabel = styled__default["default"](Typography.Typography).withConfig({
-  displayName: "EditorSectionDrawerCard__StyledLabel",
-  componentId: "sc-1g9htdu-5"
-})(["max-width:180px;text-align:center !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
-const EditorSectionDrawerCard = ({
-  template,
-  onClick,
-  isLoading
-}) => {
-  const itemLabel = usePickerItemLabel();
-  const label = itemLabel(template.template?.id, template.label) ?? template.template?.id ?? "";
-  const thumbnail = template.template?.thumbnail;
-  return /*#__PURE__*/React__default["default"].createElement(StyledCard$1, {
-    onClick: onClick,
-    title: label,
-    isLoading: isLoading
-  }, /*#__PURE__*/React__default["default"].createElement(StyledPreview$1, null, thumbnail ? /*#__PURE__*/React__default["default"].createElement(StyledThumbnail, {
-    src: thumbnail,
-    alt: label
-  }) : /*#__PURE__*/React__default["default"].createElement(StyledPlaceholderLabel, {
-    variant: "body"
-  }, label), isLoading ? /*#__PURE__*/React__default["default"].createElement(StyledLoadingOverlay, null, /*#__PURE__*/React__default["default"].createElement(Loader.Loader, null)) : null), /*#__PURE__*/React__default["default"].createElement(StyledLabel, {
-    variant: "body"
-  }, label));
-};
-
-// Loading placeholder for the section drawer gallery body: a 3-column grid of
-// card skeletons (preview rect + label pill below). The drawer renders the
-// title + close header persistently, so it is not part of this skeleton.
-const SKELETON_CARDS = 6;
-const pulse$1 = styled.keyframes(["0%,100%{opacity:1;}50%{opacity:0.4;}"]);
-const StyledRoot = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawerSkeleton__StyledRoot",
-  componentId: "sc-1lbe0dn-0"
-})(["display:flex;flex-direction:column;gap:16px;animation:", " 1.2s ease-in-out infinite;"], pulse$1);
-const StyledGrid$1 = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawerSkeleton__StyledGrid",
-  componentId: "sc-1lbe0dn-1"
-})(["display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px;"]);
-const StyledCard = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawerSkeleton__StyledCard",
-  componentId: "sc-1lbe0dn-2"
-})(["display:flex;flex-direction:column;gap:8px;align-items:center;"]);
-const StyledPreview = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawerSkeleton__StyledPreview",
-  componentId: "sc-1lbe0dn-3"
-})(["width:100%;aspect-ratio:16 / 10;border-radius:2px;background:", ";"], easyblocksDesignSystem.Colors.black10);
-const StyledPill = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawerSkeleton__StyledPill",
-  componentId: "sc-1lbe0dn-4"
-})(["width:70%;height:12px;border-radius:2px;background:", ";"], easyblocksDesignSystem.Colors.black10);
-const EditorSectionDrawerSkeleton = () => /*#__PURE__*/React__default["default"].createElement(StyledRoot, null, /*#__PURE__*/React__default["default"].createElement(StyledGrid$1, null, Array.from({
-  length: SKELETON_CARDS
-}).map((_, index) => /*#__PURE__*/React__default["default"].createElement(StyledCard, {
-  key: index
-}, /*#__PURE__*/React__default["default"].createElement(StyledPreview, null), /*#__PURE__*/React__default["default"].createElement(StyledPill, null)))));
-
-// Trigger load-more when scrolled within this many px of the bottom.
-const SCROLL_THRESHOLD = 80;
-const DRAWER_WIDTH = 600;
-const StyledEditorSectionDrawer = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawer__StyledEditorSectionDrawer",
-  componentId: "sc-bycoqx-0"
-})(["position:absolute;top:47px;left:198px;width:", "px;max-height:calc(100vh - 120px);display:flex;flex-direction:column;overflow:hidden;background:", ";border:1px solid ", ";box-shadow:var(--tina-shadow-big);z-index:var(--tina-z-index-5);border-top-right-radius:2px;border-bottom-right-radius:2px;"], DRAWER_WIDTH, easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100);
-
-// Scrollable body region. The drawer header lives outside this element so it
-// stays pinned while only the section grid scrolls. min-height: 0 lets this
-// flex child shrink below its content size so overflow-y can actually scroll.
-const StyledBody = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawer__StyledBody",
-  componentId: "sc-bycoqx-1"
-})(["flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;padding:16px;padding-top:8px;"]);
-const StyledGrid = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawer__StyledGrid",
-  componentId: "sc-bycoqx-2"
-})(["display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px;"]);
-
-// Persistent drawer header: section group title on the left, close button on the
-// right. Rendered in every state (loading/empty/loaded) so the close control is
-// always available and content never jumps.
-const StyledHeader = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawer__StyledHeader",
-  componentId: "sc-bycoqx-3"
-})(["display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px;padding-bottom:8px;"]);
-
-// Truncate long group names with an ellipsis so the close button stays put and
-// the header never wraps to a second line in the fixed-width drawer.
-const StyledTitle = styled__default["default"](Typography.Typography).withConfig({
-  displayName: "EditorSectionDrawer__StyledTitle",
-  componentId: "sc-bycoqx-4"
-})(["flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"]);
-const StyledLoadMore = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionDrawer__StyledLoadMore",
-  componentId: "sc-bycoqx-5"
-})(["display:flex;justify-content:center;padding:16px 0 4px;"]);
-const EditorSectionDrawer = ({
-  templates,
-  isFetching,
-  isLoadingMore,
-  hasMore,
-  onLoadMore,
-  onAddTemplate,
-  containerRef,
-  title,
-  onClose
-}) => {
-  const {
-    t
-  } = useTranslation();
-  const [loadingId, setLoadingId] = React.useState(null);
-  const handleAdd = (template, id) => {
-    if (loadingId) return; // ignore re-clicks during the brief add operation
-    setLoadingId(id);
-    requestAnimationFrame(() => {
-      onAddTemplate(template);
-      setLoadingId(null);
-    });
-  };
-
-  // Infinite scroll: load the next page when scrolled near the bottom.
-  const handleScroll = event => {
-    if (!hasMore || isLoadingMore || !onLoadMore) return;
-    const el = event.currentTarget;
-    if (el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD) {
-      onLoadMore();
-    }
-  };
-
-  // Persistent header (title + close) shown in every state. The close button is
-  // always real and functional so the user can dismiss the drawer mid-load.
-  const header = /*#__PURE__*/React__default["default"].createElement(StyledHeader, null, /*#__PURE__*/React__default["default"].createElement(StyledTitle, {
-    variant: "label",
-    title: title
-  }, title), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.Close,
-    hideLabel: true,
-    showTooltip: false,
-    onClick: onClose
-  }, "Close"));
-  let body;
-  if (isFetching) {
-    body = /*#__PURE__*/React__default["default"].createElement(EditorSectionDrawerSkeleton, null);
-  } else if (!templates.length) {
-    body = /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
-      variant: "body"
-    }, t("noData"), "!");
-  } else {
-    body = /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledGrid, null, templates.map(template => {
-      const id = template.template?.id ?? template.id;
-      return /*#__PURE__*/React__default["default"].createElement(EditorSectionDrawerCard, {
-        key: id,
-        template: template,
-        isLoading: loadingId === id,
-        onClick: () => handleAdd(template, id)
-      });
-    })), isLoadingMore ? /*#__PURE__*/React__default["default"].createElement(StyledLoadMore, null, /*#__PURE__*/React__default["default"].createElement(Loader.Loader, null)) : null);
-  }
-  return /*#__PURE__*/React__default["default"].createElement(StyledEditorSectionDrawer, null, header, /*#__PURE__*/React__default["default"].createElement(StyledBody, {
-    ref: containerRef,
-    onScroll: handleScroll
-  }, body));
-};
-
-/** What an entry in the section list stands for. */
-
-const StyledRow = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionItem__StyledRow",
-  componentId: "sc-1li16rj-0"
-})(["display:flex;align-items:center;max-width:174px;cursor:pointer;border-radius:2px;padding:4px;", ""], ({
-  selected
-}) => `${selected ? `background: ${easyblocksDesignSystem.Colors.black10};` : ""}`);
-const StyledEditorSectionName = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionItem__StyledEditorSectionName",
-  componentId: "sc-1li16rj-1"
-})(["font-size:var(--tina-font-size-0);flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;"]);
-
-/**
- * One category row of a sidebar panel.
- *
- * Rows carry no icon: which of the two lists this is — components or templates
- * — is already said by the rail button that opened the panel and by the panel
- * title above, so a glyph on every row would repeat it once per line and eat
- * width the category names need.
- */
-const EditorSectionItem = ({
-  id,
-  name,
-  selected,
-  onSelectSection
-}) => {
-  // The click goes through the tooltip hook rather than onto the row: the hook's
-  // own `triggerProps` carries an `onClick`, and spreading those over the row
-  // silently replaced any handler put there directly.
-  const {
-    isOpen,
-    tooltipProps,
-    triggerProps,
-    arrowProps
-  } = useTooltip({
-    onClick: () => onSelectSection(id)
-  });
-  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledRow, _extends__default["default"]({
-    id: id,
-    selected: selected
-  }, triggerProps), /*#__PURE__*/React__default["default"].createElement(StyledEditorSectionName, null, name)), isOpen && /*#__PURE__*/React__default["default"].createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default["default"].createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default["default"].createElement(TooltipBody, null, name)));
-};
-
-const SKELETON_ROWS = 20;
-const pulse = styled.keyframes(["0%,100%{opacity:1;}50%{opacity:0.4;}"]);
-const SkeletonBar = styled__default["default"].div.withConfig({
-  displayName: "EditorSectionsSkeleton__SkeletonBar",
-  componentId: "sc-1kea448-0"
-})(["padding-top:4px;padding-left:4px;height:26px;border-radius:2px;background-color:", ";animation:", " 1.2s ease-in-out infinite;"], easyblocksDesignSystem.Colors.black10, pulse);
-
-// Shared loading placeholder for the editor section lists.
-// Single source of truth — imported by EditorSectionGroup and EditorSectionCard.
-const EditorSectionsSkeleton = () => /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, Array.from({
-  length: SKELETON_ROWS
-}).map((_, index) => /*#__PURE__*/React__default["default"].createElement(SkeletonBar, {
-  key: index
-})));
-
 // A single section template (flattened, group layer removed). Shared by the
-// left list, the drawer gallery and the drawer card.
+// panel groups and the rows they draw.
 
 const TITLE_HEIGHT = 50;
-const PADDING_TOP_HEIGHT = 20;
-// Page size for the per-entry remote template fetch (infinite scroll).
+// Page size for the per-category remote template fetch.
 const TEMPLATES_LIMIT = 30;
 // Discovery only asks whether a category holds anything at all, never what, so
 // it requests the smallest page the endpoint will answer with.
@@ -8786,12 +8805,12 @@ const UNCATEGORIZED_LABEL_KEY = "others";
 // Accumulated remote templates for one entry plus its paging cursor.
 
 /**
- * Where a section picked from the drawer lands in the root collection: directly after the
+ * Where a section picked from the panel lands in the root collection: directly after the
  * selected section, which is where the user is looking. With nothing selected there is no
  * such position, so it goes to the end.
  *
  * `focussedField` can point deep inside a section (`data.2.Cards.0`); only the top level
- * index matters, because the drawer always inserts into the root `data` collection.
+ * index matters, because the panel always inserts into the root `data` collection.
  */
 function getSectionInsertionIndex(focussedField, sectionCount) {
   const rootSectionIndex = focussedField[focussedField.length - 1]?.match(/^data\.(\d+)/)?.[1];
@@ -8855,8 +8874,7 @@ function buildSectionEntries({
       id: `builtin:${group}`,
       label: getCategoryLabel(t, group),
       group,
-      source: "builtin",
-      kind: "builtin"
+      source: "builtin"
     }));
   }
   return sortTemplateCategories(templateCategories ?? []).map(category => ({
@@ -8865,8 +8883,7 @@ function buildSectionEntries({
     // remainder row is this editor's own construct, so it is localized.
     label: category.uuid === null ? getCategoryLabel(t, UNCATEGORIZED_LABEL_KEY) : category.name ?? "",
     categoryUuid: category.uuid ?? undefined,
-    source: "template",
-    kind: "template"
+    source: "template"
   }));
 }
 
@@ -8962,10 +8979,25 @@ async function discoverTemplateCategories(fetchPage, listCategories, sources) {
     failed: failed || probed.some(result => result.failed)
   };
 }
-const StyledEditorSectionGroup = styled__default["default"].div.withConfig({
-  displayName: "EditorSections__StyledEditorSectionGroup",
+
+/**
+ * The panel: a search field that stays put, over a list that scrolls.
+ *
+ * The height is pinned rather than left to the content because the field has
+ * to remain reachable however long the list below it grows.
+ */
+const StyledPanel = styled__default["default"].div.withConfig({
+  displayName: "EditorSections__StyledPanel",
   componentId: "sc-1nr6ndr-0"
-})(["padding-left:12px;padding-right:12px;overflow-y:auto;max-height:calc( 100vh - ", "px );"], TOP_BAR_HEIGHT + TITLE_HEIGHT + PADDING_TOP_HEIGHT);
+})(["display:flex;flex-direction:column;min-height:0;max-height:calc(100vh - ", "px);"], TOP_BAR_HEIGHT + TITLE_HEIGHT);
+const StyledList = styled__default["default"].div.withConfig({
+  displayName: "EditorSections__StyledList",
+  componentId: "sc-1nr6ndr-1"
+})(["flex:1;min-height:0;overflow-y:auto;padding:0 12px 16px;"]);
+const StyledMessage = styled__default["default"].div.withConfig({
+  displayName: "EditorSections__StyledMessage",
+  componentId: "sc-1nr6ndr-2"
+})(["padding:6px;font-size:12px;color:", ";"], easyblocksDesignSystem.Colors.black500);
 const EditorSections = ({
   panel
 }) => {
@@ -8974,19 +9006,23 @@ const EditorSections = ({
   const {
     t
   } = useTranslation();
-  const [selectedSection, setSelectedSection] = React.useState("");
-  // Drawer is closed until a row is clicked.
-  const [isOpen, setIsOpen] = React.useState(false);
-  const sectionListRef = React.useRef(null);
-  const drawerRef = React.useRef(null);
-  // Remote templates fetched per entry (paged), cached so a re-hover doesn't
-  // refetch. `isFetching` = first page; `isLoadingMore` = subsequent pages.
+  const itemLabel = usePickerItemLabel();
+
+  // What is typed, and what the backend has been asked for. They differ by a
+  // keystroke or two on purpose — see the debounce below.
+  const [query, setQuery] = React.useState("");
+  const [searchTerm, setSearchTerm] = React.useState("");
+
+  // Remote templates fetched per category row (paged), kept so scrolling back
+  // up to a group does not fetch it again.
   const [remoteByEntry, setRemoteByEntry] = React.useState({});
-  const [isFetching, setIsFetching] = React.useState(false);
-  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+  const [loadingEntries, setLoadingEntries] = React.useState({});
   // The category rows. `null` while the discovery read is still in flight,
   // which is what tells the Templates panel to show its skeleton.
   const [templateCategories, setTemplateCategories] = React.useState(null);
+  // What the backend answered for the current search term, across libraries.
+  const [searchResult, setSearchResult] = React.useState(null);
+  const [isSearching, setIsSearching] = React.useState(false);
 
   // The host backend, widened with the optional template readers. An
   // intersection rather than a cast: every added member is optional, so the
@@ -8994,7 +9030,7 @@ const EditorSections = ({
   // runtime-checkable `undefined` instead of a lie to the type checker.
   const templatesApi = editorContext.backend.templates;
 
-  // Map raw API templates to the shape the drawer/card consume.
+  // Map raw API templates to the shape the rows consume.
   const mapRemoteItems = React.useCallback(items => items.map(tpl => {
     const definition = _internals.findComponentDefinitionById(tpl.entry._component, editorContext);
     return {
@@ -9008,8 +9044,50 @@ const EditorSections = ({
   // Local components: the components the root "data" field accepts. Sync.
   const localComponents = React.useMemo(() => getLocalComponents(editorContext), [editorContext.form.values, editorContext.definitions]);
 
-  // Local groups: the .group values of the accepted components.
-  const localGroups = React.useMemo(() => getLocalGroups(localComponents), [localComponents]);
+  /**
+   * Everything the panel can insert at the root, grouped and ready to draw.
+   *
+   * A component that ships presets contributes the presets — seven opener
+   * layouts rather than one row called Opener — and a component with none
+   * contributes the empty default built for it. That is the same arrangement
+   * the add-section dialog shows, and the sidebar was listing only the
+   * defaults, so an entire library of ready-made sections never appeared in it.
+   */
+  const localItemsByGroup = React.useMemo(() => {
+    const accepted = new Map();
+    localComponents.forEach(component => {
+      if (component.visible === false) return;
+      accepted.set(component.id, component);
+    });
+    const presets = (editorContext.configTemplates ?? []).filter(preset => accepted.has(preset.entry?._component));
+    const covered = new Set(presets.map(preset => preset.entry._component));
+    const items = [...presets.map(preset => {
+      const definition = accepted.get(preset.entry._component);
+      return {
+        ...definition,
+        ...preset,
+        // The preset's own bucket when it names one, the component's
+        // otherwise — a preset filed nowhere belongs with its component
+        // rather than in the remainder.
+        group: preset.group ?? definition?.group,
+        template: preset
+      };
+    }), ...[...accepted.values()].filter(component => !covered.has(component.id)).map(component => ({
+      ...component,
+      group: component.group,
+      template: getDefaultTemplateForDefinition(component, editorContext)
+    }))];
+    const byGroup = {};
+    items.forEach(item => {
+      const group = item.group || "others";
+      byGroup[group] = byGroup[group] ?? [];
+      byGroup[group].push(item);
+    });
+    return byGroup;
+  }, [localComponents, editorContext.configTemplates]);
+
+  // The groups that actually hold something, which is what the rows are.
+  const localGroups = React.useMemo(() => Object.keys(localItemsByGroup), [localItemsByGroup]);
   const entries = React.useMemo(() => buildSectionEntries({
     panel,
     localGroups,
@@ -9017,28 +9095,6 @@ const EditorSections = ({
     categoryOrder: editorContext.categoryOrder,
     t
   }), [panel, localGroups, templateCategories, editorContext.categoryOrder, t]);
-  const entriesById = React.useMemo(() => {
-    const map = {};
-    entries.forEach(entry => {
-      map[entry.id] = entry;
-    });
-    return map;
-  }, [entries]);
-  const selectedEntry = entriesById[selectedSection];
-
-  // Local-definition templates for the hovered built-in category (the default
-  // "Empty X" templates built from the accepted components). Synchronous.
-  const localTemplates = React.useMemo(() => {
-    if (!selectedEntry || selectedEntry.source !== "builtin") return [];
-    return localComponents.filter(component => component.visible !== false && (component.group || "others") === selectedEntry.group).map(component => {
-      const template = getDefaultTemplateForDefinition(component, editorContext);
-      return {
-        ...component,
-        group: component.group,
-        template
-      };
-    });
-  }, [selectedEntry, localComponents]);
 
   /**
    * One page of one remote library. Returns null when the library is not
@@ -9054,6 +9110,9 @@ const EditorSections = ({
       page,
       limit: options?.limit ?? TEMPLATES_LIMIT
     };
+    if (options?.search) {
+      query.search = options.search;
+    }
     if (options?.categoryUuid) {
       query.filters = `category_uuid:eq:${options.categoryUuid}`;
     } else if (options?.categoryUuid === null) {
@@ -9066,7 +9125,7 @@ const EditorSections = ({
   }, [templatesApi]);
 
   /**
-   * One page of a category row, across every library the mode may read.
+   * One page across every library the mode may read.
    *
    * The libraries are paged in lockstep rather than one after the other: they
    * file into the same taxonomy, so a category row is their union, and asking
@@ -9074,10 +9133,8 @@ const EditorSections = ({
    * is exhausted — at which point the accumulated item count reaches the summed
    * total and paging stops on its own.
    */
-  const fetchCategoryPage = React.useCallback((entry, page) => {
-    const requests = getTemplateSources(editorContext.mode).map(source => fetchRemotePage(source, page, {
-      categoryUuid: entry.categoryUuid ?? null
-    })).filter(request => !!request);
+  const fetchPage = React.useCallback((page, options) => {
+    const requests = getTemplateSources(editorContext.mode).map(source => fetchRemotePage(source, page, options)).filter(request => !!request);
     if (requests.length === 0) return null;
     return Promise.all(requests).then(results => ({
       items: results.flatMap(result => result.items ?? []),
@@ -9099,8 +9156,6 @@ const EditorSections = ({
   // two panels does not discover them again.
   const discoveredForModeRef = React.useRef(null);
 
-  // Smoothly scroll the editor canvas to a component by its config id. The
-  // canvas renders asynchronously after insert, so poll briefly for the node.
   /**
    * Brings a freshly inserted section into view.
    *
@@ -9134,8 +9189,8 @@ const EditorSections = ({
   }, []);
 
   // Insert the picked template into the root "data" collection, right after the
-  // selected section. No keepId, so fresh ids are generated and a template can be
-  // added multiple times. Used by the drawer cards only.
+  // selected section. No keepId, so fresh ids are generated and a template can
+  // be added multiple times.
   const onAddTemplate = React.useCallback(template => {
     const entry = template.template?.entry;
     if (!entry) {
@@ -9199,68 +9254,23 @@ const EditorSections = ({
     };
   }, [panel, editorContext.mode]);
 
-  // Preselect this panel's first entry so the drawer has something to show.
-  // Re-runs when the entries arrive, and also when a panel switch leaves the
-  // selection pointing at a row this panel does not have.
-  React.useEffect(() => {
-    if (entries.some(entry => entry.id === selectedSection)) return;
-    const first = entries[0]?.id;
-    if (first) setSelectedSection(first);
-  }, [entries, selectedSection]);
-
   /**
-   * Clicking a row opens its drawer; clicking the open row closes it again.
+   * One page of one category row.
    *
-   * Opening on hover made the drawer appear whenever the pointer crossed the
-   * list on its way somewhere else, and each of those opened a category the
-   * user had not asked for and fetched its first page. It also had no matching
-   * way out — the drawer stayed until something was clicked — and closing on
-   * mouse-leave instead would have pulled it away mid-drag, exactly when the
-   * pointer must travel from a card to the canvas.
+   * Page 1 is asked for by the group itself as it comes into view, so a panel
+   * of twenty categories costs one request per category the user actually
+   * scrolls to rather than twenty on open.
    */
-  const handleSelectSection = React.useCallback(id => {
-    setIsOpen(wasOpen => !(wasOpen && id === selectedSection));
-    setSelectedSection(id);
-  }, [selectedSection]);
-
-  // Close the drawer when clicking outside both the section list and the drawer.
-  React.useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = event => {
-      const target = event.target;
-      const insideList = sectionListRef.current?.contains(target);
-      const insideDrawer = drawerRef.current?.contains(target);
-      if (!insideList && !insideDrawer) {
-        setIsOpen(false);
-      }
-    };
-
-    // Clicks inside the editor canvas (an iframe) don't bubble to the parent
-    // document, so listen inside it too. Any canvas click closes the drawer.
-    const closeOnIframeClick = () => setIsOpen(false);
-    const canvasIframe = document.getElementById("editor-canvas");
-    const canvasDoc = canvasIframe?.contentDocument;
-    document.addEventListener("mousedown", handleClickOutside);
-    canvasDoc?.addEventListener("mousedown", closeOnIframeClick, true);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      canvasDoc?.removeEventListener("mousedown", closeOnIframeClick, true);
-    };
-  }, [isOpen]);
-
-  // First page for the hovered template entry. Cached per entry so re-hovering
-  // is instant; built-in entries never reach here.
-  React.useEffect(() => {
-    if (!selectedEntry || selectedEntry.source === "builtin") return;
-    if (remoteByEntry[selectedEntry.id]) return;
-    const entryId = selectedEntry.id;
-    const request = fetchCategoryPage(selectedEntry, 1);
+  const loadEntryPage = React.useCallback((entry, page) => {
+    const request = fetchPage(page, {
+      categoryUuid: entry.categoryUuid ?? null
+    });
     if (!request) {
       // No reader for this source: record an empty, complete page so the
-      // drawer settles on "no data" instead of retrying on every hover.
+      // group settles on "nothing here" instead of asking again.
       setRemoteByEntry(prev => ({
         ...prev,
-        [entryId]: {
+        [entry.id]: {
           items: [],
           page: 1,
           total: 0
@@ -9268,25 +9278,30 @@ const EditorSections = ({
       }));
       return;
     }
-    let cancelled = false;
-    setIsFetching(true);
+    setLoadingEntries(prev => ({
+      ...prev,
+      [entry.id]: true
+    }));
     request.then(res => {
-      if (cancelled) return;
       const items = mapRemoteItems(res.items);
-      setRemoteByEntry(prev => ({
-        ...prev,
-        [entryId]: {
-          items,
-          page: 1,
-          total: res.total || items.length
-        }
-      }));
+      setRemoteByEntry(prev => {
+        const existing = page === 1 ? [] : prev[entry.id]?.items ?? [];
+        const merged = [...existing, ...items];
+        return {
+          ...prev,
+          [entry.id]: {
+            items: merged,
+            page,
+            total: res.total || merged.length
+          }
+        };
+      });
     }).catch(() => {
-      if (cancelled) return;
-      // A failed listing must not leave the drawer spinning forever.
+      // A failed read must not leave the group loading forever; an empty
+      // page settles it, and the toast says why it is empty.
       setRemoteByEntry(prev => ({
         ...prev,
-        [entryId]: {
+        [entry.id]: prev[entry.id] ?? {
           items: [],
           page: 1,
           total: 0
@@ -9294,98 +9309,163 @@ const EditorSections = ({
       }));
       toaster.error(t("editor.sidebar.sections.load.error"));
     }).finally(() => {
-      if (!cancelled) setIsFetching(false);
+      setLoadingEntries(prev => ({
+        ...prev,
+        [entry.id]: false
+      }));
+    });
+  }, [fetchPage, mapRemoteItems, toaster, t]);
+
+  // What is typed leads what is asked for, so a five-letter word is one
+  // request rather than five.
+  React.useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(query.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Switching panels keeps the typed query out of the other list, where it
+  // would silently hide most of what is there.
+  React.useEffect(() => {
+    setQuery("");
+    setSearchTerm("");
+  }, [panel]);
+
+  /**
+   * Searching the template library is a question for the backend.
+   *
+   * A shop can hold far more templates than its groups have loaded, so
+   * filtering what happens to be in memory would answer "nothing found" for a
+   * template that is sitting there — the quiet kind of wrong. The components
+   * panel needs none of this: its items are all in memory already.
+   */
+  React.useEffect(() => {
+    if (panel !== "templates" || !searchTerm) {
+      setSearchResult(null);
+      setIsSearching(false);
+      return;
+    }
+    const request = fetchPage(1, {
+      search: searchTerm
+    });
+    if (!request) {
+      setSearchResult({
+        items: [],
+        page: 1,
+        total: 0
+      });
+      return;
+    }
+    let cancelled = false;
+    setIsSearching(true);
+    request.then(res => {
+      if (cancelled) return;
+      const items = mapRemoteItems(res.items);
+      setSearchResult({
+        items,
+        page: 1,
+        total: res.total || items.length
+      });
+    }).catch(() => {
+      if (cancelled) return;
+      setSearchResult({
+        items: [],
+        page: 1,
+        total: 0
+      });
+      toaster.error(t("editor.sidebar.sections.load.error"));
+    }).finally(() => {
+      if (!cancelled) setIsSearching(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [selectedEntry, fetchCategoryPage]);
+  }, [panel, searchTerm, fetchPage, mapRemoteItems]);
+  const labelOf = template => itemLabel(template.template?.id, template.label) ?? template.template?.id ?? "";
 
-  // Whether the hovered entry has more remote templates to load (remote only;
-  // local templates aren't paginated).
-  const hasMore = React.useMemo(() => {
-    const state = remoteByEntry[selectedSection];
-    return !!state && state.items.length < state.total;
-  }, [remoteByEntry, selectedSection]);
-
-  // Load the next page of remote templates for the hovered entry (infinite
-  // scroll). Appends to the existing items.
-  const onLoadMore = React.useCallback(() => {
-    const entry = selectedEntry;
-    const state = entry ? remoteByEntry[entry.id] : undefined;
-    if (!entry || !state || isFetching || isLoadingMore) return;
-    if (entry.source === "builtin") return;
-    if (state.items.length >= state.total) return;
-    const nextPage = state.page + 1;
-    const request = fetchCategoryPage(entry, nextPage);
-    if (!request) return;
-    setIsLoadingMore(true);
-    request.then(res => {
-      const more = mapRemoteItems(res.items);
-      setRemoteByEntry(prev => {
-        const existing = prev[entry.id]?.items ?? [];
-        return {
-          ...prev,
-          [entry.id]: {
-            items: [...existing, ...more],
-            page: nextPage,
-            total: res.total || prev[entry.id]?.total || 0
-          }
-        };
-      });
-    }).catch(() => {
-      toaster.error(t("editor.sidebar.sections.load.error"));
-    }).finally(() => setIsLoadingMore(false));
-  }, [selectedEntry, remoteByEntry, isFetching, isLoadingMore, mapRemoteItems, fetchCategoryPage]);
-
-  // Drawer content for the hovered entry: built-in entries show the local
-  // "Empty X" templates, template entries show what their source returned.
-  // The two are never combined — that is the separation this phase is about.
-  const drawerTemplates = React.useMemo(() => {
-    if (!selectedEntry) return [];
-    const source = selectedEntry.source === "builtin" ? localTemplates : remoteByEntry[selectedEntry.id]?.items ?? [];
+  /** Templates to rows, dropping the ones already listed under this group. */
+  const toRows = templates => {
     const seen = new Set();
-    const result = [];
-    source.forEach(template => {
-      const id = template.template?.id ?? template.id;
-      if (id && !seen.has(id)) {
-        seen.add(id);
-        result.push(template);
-      }
+    const rows = [];
+    templates.forEach((template, index) => {
+      const key = template.template?.id ?? `${template.id}-${index}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      rows.push({
+        key,
+        label: labelOf(template),
+        thumbnail: template.template?.thumbnail,
+        onPick: () => onAddTemplate(template)
+      });
     });
-    return result;
-  }, [selectedEntry, localTemplates, remoteByEntry]);
-  const drawerTitle = selectedEntry?.label;
+    return rows;
+  };
 
   // Built-in categories are derived from the form, which is still empty on the
   // first paint, so an empty components list means "not ready yet". Template
   // categories come from the discovery read, so there the skeleton runs until
   // that read answers — an empty list afterwards is genuinely "nothing here".
   const isLoadingList = panel === "components" ? entries.length === 0 : templateCategories === null;
-  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledEditorSectionGroup, {
-    ref: sectionListRef
-  }, isLoadingList && /*#__PURE__*/React__default["default"].createElement(EditorSectionsSkeleton, null), !isLoadingList && entries.length === 0 && /*#__PURE__*/React__default["default"].createElement(Typography.Typography, {
-    variant: "body",
-    style: {
-      paddingLeft: 4
+  const isSearchingTemplates = panel === "templates" && searchTerm.length > 0;
+
+  // One flat group of results replaces the taxonomy while a search is running:
+  // the categories a result belongs to are not what the reader is looking for
+  // at that moment, and most of them would be empty.
+  const searchRows = isSearchingTemplates ? toRows(searchResult?.items ?? []) : [];
+  const groups = entries.map(entry => {
+    const templates = entry.source === "builtin" ? localItemsByGroup[entry.group ?? "others"] ?? [] : remoteByEntry[entry.id]?.items ?? [];
+    const rows = toRows(templates).filter(row => matchesQuery(row.label, panel === "components" ? query : ""));
+    const state = remoteByEntry[entry.id];
+    return {
+      entry,
+      rows,
+      isLoading: entry.source === "template" && !!loadingEntries[entry.id],
+      hasMore: entry.source === "template" && !!state && state.items.length < state.total
+    };
+  });
+
+  // A query that matches nothing in any group is worth saying out loud, rather
+  // than leaving a column of headings with nothing under them.
+  const hasAnyRow = groups.some(group => group.rows.length > 0);
+  return /*#__PURE__*/React__default["default"].createElement(StyledPanel, null, /*#__PURE__*/React__default["default"].createElement(EditorSectionSearch, {
+    value: query,
+    placeholder: t(panel === "components" ? "editor.sidebar.sections.search.components" : "editor.sidebar.sections.search.templates"),
+    clearLabel: t("editor.sidebar.sections.search.clear"),
+    onChange: setQuery
+  }), /*#__PURE__*/React__default["default"].createElement(StyledList, null, isLoadingList && /*#__PURE__*/React__default["default"].createElement(EditorSectionsSkeleton, null), !isLoadingList && entries.length === 0 && /*#__PURE__*/React__default["default"].createElement(StyledMessage, null, t("noData"), "!"), !isLoadingList && isSearchingTemplates && /*#__PURE__*/React__default["default"].createElement(EditorSectionGroup, {
+    label: t("editor.sidebar.sections.search.results"),
+    rows: searchRows,
+    isLoading: isSearching,
+    emptyLabel: t("editor.sidebar.sections.search.empty")
+  }), !isLoadingList && !isSearchingTemplates && groups.map(({
+    entry,
+    rows,
+    isLoading,
+    hasMore
+  }) => {
+    // A group filtered down to nothing by a query is not a group the
+    // reader asked to see; with no query it is a category that really
+    // is empty, and saying so beats a heading over a blank.
+    if (query && rows.length === 0 && entry.source === "builtin") {
+      return null;
     }
-  }, t("noData"), "!"), !isLoadingList && entries.map(entry => /*#__PURE__*/React__default["default"].createElement(EditorSectionItem, {
-    key: entry.id,
-    id: entry.id,
-    name: entry.label,
-    selected: selectedSection === entry.id,
-    onSelectSection: handleSelectSection
-  }))), isOpen && selectedEntry ? /*#__PURE__*/React__default["default"].createElement(EditorSectionDrawer, {
-    templates: drawerTemplates,
-    isFetching: isFetching && drawerTemplates.length === 0,
-    isLoadingMore: isLoadingMore,
-    hasMore: hasMore,
-    onLoadMore: onLoadMore,
-    onAddTemplate: onAddTemplate,
-    containerRef: drawerRef,
-    title: drawerTitle,
-    onClose: () => setIsOpen(false)
-  }) : null);
+    return /*#__PURE__*/React__default["default"].createElement(EditorSectionGroup, {
+      key: entry.id,
+      label: entry.label,
+      count: rows.length,
+      rows: rows,
+      isLoading: isLoading,
+      hasMore: hasMore,
+      emptyLabel: t("noData"),
+      moreLabel: t("editor.sidebar.sections.more"),
+      onLoadMore: () => loadEntryPage(entry, (remoteByEntry[entry.id]?.page ?? 1) + 1),
+      onEnterView: entry.source === "template" ? () => {
+        if (remoteByEntry[entry.id] || loadingEntries[entry.id]) {
+          return;
+        }
+        loadEntryPage(entry, 1);
+      } : undefined
+    });
+  }), !isLoadingList && !isSearchingTemplates && query && !hasAnyRow && /*#__PURE__*/React__default["default"].createElement(StyledMessage, null, t("editor.sidebar.sections.search.empty"))));
 };
 
 const EMPTY_SIDEBAR_CONFIG = {
@@ -9393,6 +9473,7 @@ const EMPTY_SIDEBAR_CONFIG = {
   title: "",
   enableScroll: true,
   width: "280px",
+  padded: true,
   Component: null
 };
 const StyledEditorLeftSidebarRoot = styled__default["default"].div.withConfig({
@@ -9403,8 +9484,7 @@ const StyledEditorLeftSidebarRoot = styled__default["default"].div.withConfig({
 }) =>
 // max-width is what actually pins the size: it clamps a flex item's
 // automatic minimum, so a wide child can no longer stretch the panel and
-// move the canvas. No overflow clipping here — the section drawer is
-// absolutely positioned outside this box and would be cut off.
+// move the canvas.
 `flex: 0 0 ${width}; width: ${width}; min-width: 0; max-width: ${width};`, easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black100, easyblocksDesignSystem.Colors.black100, ({
   enableScroll = true
 }) => enableScroll ? `overflow-y: auto;` : "");
@@ -9416,10 +9496,20 @@ const HorizontalLine = styled__default["default"].div.withConfig({
   displayName: "EditorLeftSidebar__HorizontalLine",
   componentId: "sc-16mpetx-2"
 })(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
+
+/**
+ * The body under a panel's title.
+ *
+ * Padded for the panels whose content starts with text. The section panels ask
+ * for none: their search field is the first thing under the title and has to
+ * sit against it, and the list below it owns its own scrolling.
+ */
 const StyledEditorLeftSidebarGroup = styled__default["default"].div.withConfig({
   displayName: "EditorLeftSidebar__StyledEditorLeftSidebarGroup",
   componentId: "sc-16mpetx-3"
-})(["padding-top:20px;padding-bottom:20px;> div{min-height:0;}"]);
+})(["", " min-height:0;> div{min-height:0;}"], ({
+  padded = true
+}) => padded ? "padding-top: 20px; padding-bottom: 20px;" : "");
 const EditorLeftSidebar = ({
   showLeftSidebar,
   globalSections,
@@ -9441,6 +9531,7 @@ const EditorLeftSidebar = ({
             title: t("editor.sidebar.globalSections"),
             width: "280px",
             enableScroll: true,
+            padded: true,
             Component: /*#__PURE__*/React__default["default"].createElement(EditorGlobalSections, {
               globalSections: globalSections
             })
@@ -9453,16 +9544,21 @@ const EditorLeftSidebar = ({
             title: t("editor.sidebar.layers"),
             width: "280px",
             enableScroll: true,
+            padded: true,
             Component: /*#__PURE__*/React__default["default"].createElement(EditorLayer, null)
           };
         }
+
+      // 280px rather than 200: a row now carries a thumbnail beside its name,
+      // and at 200 the name it is there to identify was cut after two words.
       case "components":
         {
           return {
             id: "editor-components",
             title: t("editor.sidebar.sections.components"),
-            width: "200px",
+            width: "280px",
             enableScroll: false,
+            padded: false,
             Component: /*#__PURE__*/React__default["default"].createElement(EditorSections, {
               panel: "components"
             })
@@ -9473,8 +9569,9 @@ const EditorLeftSidebar = ({
           return {
             id: "editor-templates",
             title: t("editor.sidebar.sections.templates"),
-            width: "200px",
+            width: "280px",
             enableScroll: false,
+            padded: false,
             Component: /*#__PURE__*/React__default["default"].createElement(EditorSections, {
               panel: "templates"
             })
@@ -9491,7 +9588,9 @@ const EditorLeftSidebar = ({
     width: sidebarConfig.width,
     enableScroll: sidebarConfig.enableScroll,
     ref: sidebarNodeRef
-  }, /*#__PURE__*/React__default["default"].createElement(StyledEditorLeftSidebarTitle, null, sidebarConfig.title), /*#__PURE__*/React__default["default"].createElement(HorizontalLine, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorLeftSidebarGroup, null, sidebarConfig.Component));
+  }, /*#__PURE__*/React__default["default"].createElement(StyledEditorLeftSidebarTitle, null, sidebarConfig.title), /*#__PURE__*/React__default["default"].createElement(HorizontalLine, null), /*#__PURE__*/React__default["default"].createElement(StyledEditorLeftSidebarGroup, {
+    padded: sidebarConfig.padded
+  }, sidebarConfig.Component));
 };
 
 // Fixed height, rendered even without a selection, so selecting never resizes the canvas.
@@ -11384,6 +11483,11 @@ const EditorContent = ({
     compilationCache: compilationCache.current,
     readOnly: props.readOnly,
     disableCustomTemplates: props.config.disableCustomTemplates ?? false,
+    // The built-in library, straight off the config. `templates` above is the
+    // lazily loaded union of this and whatever the shop has saved, which the
+    // sidebar cannot wait for: it has to draw the built-in list the moment the
+    // panel opens, and it must not mix a shop's own templates into it.
+    configTemplates: props.config.templates ?? [],
     categoryOrder: props.config.categoryOrder ?? [],
     rootComponent: _internals.findComponentDefinitionById(initialEntry._component, compilationContext),
     components: props.components ?? {}

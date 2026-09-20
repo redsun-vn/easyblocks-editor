@@ -8,7 +8,7 @@ import {
   findComponentDefinitionById,
   normalize,
 } from "@redsun-vn/easyblocks-core/_internals";
-import { Typography } from "@redsun-vn/easyblocks-design-system/Typography";
+import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React, {
   useCallback,
   useEffect,
@@ -21,14 +21,12 @@ import { CANVAS_FRAME_PATH_ATTRIBUTE } from "../../EditableComponentBuilder/canv
 import { useEditorContext } from "../../EditorContext";
 import { getDefaultTemplateForDefinition } from "../../templates/getTemplates";
 import { canvasScrollTargetTop } from "../canvasScrollTarget";
-import {
-  getCategoryLabel,
-  getLocalComponents,
-  getLocalGroups,
-} from "./getLocalGroups";
-import { EditorSectionDrawer } from "./drawer/EditorSectionDrawer";
-import { EditorSectionItem, TSectionItemKind } from "./EditorSectionItem";
+import { getCategoryLabel, getLocalComponents } from "./getLocalGroups";
+import { EditorSectionGroup, TSectionRow } from "./EditorSectionGroup";
+import { EditorSectionSearch } from "./EditorSectionSearch";
 import { EditorSectionsSkeleton } from "./EditorSectionsSkeleton";
+import { matchesQuery } from "./panelSearch";
+import { usePickerItemLabel } from "./pickerItemLabel";
 import { TOP_BAR_HEIGHT } from "../../EditorTopBar";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
 import { useTranslation } from "../../useTranslation";
@@ -45,12 +43,11 @@ export interface IComponentGroups {
 }
 
 // A single section template (flattened, group layer removed). Shared by the
-// left list, the drawer gallery and the drawer card.
+// panel groups and the rows they draw.
 export type TSectionTemplate = IComponentGroups[string]["templates"][number];
 
 const TITLE_HEIGHT = 50;
-const PADDING_TOP_HEIGHT = 20;
-// Page size for the per-entry remote template fetch (infinite scroll).
+// Page size for the per-category remote template fetch.
 const TEMPLATES_LIMIT = 30;
 // Discovery only asks whether a category holds anything at all, never what, so
 // it requests the smallest page the endpoint will answer with.
@@ -119,7 +116,6 @@ export type TSectionEntry = {
    */
   categoryUuid?: string;
   source: TSectionSource;
-  kind: TSectionItemKind;
 };
 
 /**
@@ -137,12 +133,12 @@ type TEntryRemoteState = {
 };
 
 /**
- * Where a section picked from the drawer lands in the root collection: directly after the
+ * Where a section picked from the panel lands in the root collection: directly after the
  * selected section, which is where the user is looking. With nothing selected there is no
  * such position, so it goes to the end.
  *
  * `focussedField` can point deep inside a section (`data.2.Cards.0`); only the top level
- * index matters, because the drawer always inserts into the root `data` collection.
+ * index matters, because the panel always inserts into the root `data` collection.
  */
 export function getSectionInsertionIndex(
   focussedField: Array<string>,
@@ -230,7 +226,6 @@ export function buildSectionEntries({
       label: getCategoryLabel(t, group),
       group,
       source: "builtin",
-      kind: "builtin",
     }));
   }
 
@@ -245,7 +240,6 @@ export function buildSectionEntries({
           : (category.name ?? ""),
       categoryUuid: category.uuid ?? undefined,
       source: "template",
-      kind: "template",
     }),
   );
 }
@@ -267,7 +261,7 @@ type TFetchRemotePage = (
   source: TTemplateSource,
   page: number,
   /** `categoryUuid: null` asks for the templates filed under no category. */
-  options?: { categoryUuid?: string | null; limit?: number },
+  options?: { categoryUuid?: string | null; limit?: number; search?: string },
 ) => Promise<TTemplateListResult> | null;
 
 /**
@@ -357,13 +351,30 @@ async function discoverTemplateCategories(
   };
 }
 
-const StyledEditorSectionGroup = styled.div`
-  padding-left: 12px;
-  padding-right: 12px;
+/**
+ * The panel: a search field that stays put, over a list that scrolls.
+ *
+ * The height is pinned rather than left to the content because the field has
+ * to remain reachable however long the list below it grows.
+ */
+const StyledPanel = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: calc(100vh - ${TOP_BAR_HEIGHT + TITLE_HEIGHT}px);
+`;
+
+const StyledList = styled.div`
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  max-height: calc(
-    100vh - ${TOP_BAR_HEIGHT + TITLE_HEIGHT + PADDING_TOP_HEIGHT}px
-  );
+  padding: 0 12px 16px;
+`;
+
+const StyledMessage = styled.div`
+  padding: 6px;
+  font-size: 12px;
+  color: ${Colors.black500};
 `;
 
 export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
@@ -372,23 +383,31 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   const editorContext = useEditorContext();
   const toaster = useToaster();
   const { t } = useTranslation();
-  const [selectedSection, setSelectedSection] = useState<string>("");
-  // Drawer is closed until a row is clicked.
-  const [isOpen, setIsOpen] = useState(false);
-  const sectionListRef = useRef<HTMLDivElement | null>(null);
-  const drawerRef = useRef<HTMLDivElement | null>(null);
-  // Remote templates fetched per entry (paged), cached so a re-hover doesn't
-  // refetch. `isFetching` = first page; `isLoadingMore` = subsequent pages.
+  const itemLabel = usePickerItemLabel();
+
+  // What is typed, and what the backend has been asked for. They differ by a
+  // keystroke or two on purpose — see the debounce below.
+  const [query, setQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Remote templates fetched per category row (paged), kept so scrolling back
+  // up to a group does not fetch it again.
   const [remoteByEntry, setRemoteByEntry] = useState<
     Record<string, TEntryRemoteState>
   >({});
-  const [isFetching, setIsFetching] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadingEntries, setLoadingEntries] = useState<Record<string, boolean>>(
+    {},
+  );
   // The category rows. `null` while the discovery read is still in flight,
   // which is what tells the Templates panel to show its skeleton.
   const [templateCategories, setTemplateCategories] = useState<
     TTemplateCategoryEntry[] | null
   >(null);
+  // What the backend answered for the current search term, across libraries.
+  const [searchResult, setSearchResult] = useState<TEntryRemoteState | null>(
+    null,
+  );
+  const [isSearching, setIsSearching] = useState(false);
 
   // The host backend, widened with the optional template readers. An
   // intersection rather than a cast: every added member is optional, so the
@@ -397,7 +416,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   const templatesApi: Backend["templates"] & THostTemplateApi =
     editorContext.backend.templates;
 
-  // Map raw API templates to the shape the drawer/card consume.
+  // Map raw API templates to the shape the rows consume.
   const mapRemoteItems = useCallback(
     (items: Template[]) =>
       items.map((tpl) => {
@@ -422,10 +441,73 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     [editorContext.form.values, editorContext.definitions],
   );
 
-  // Local groups: the .group values of the accepted components.
+  /**
+   * Everything the panel can insert at the root, grouped and ready to draw.
+   *
+   * A component that ships presets contributes the presets — seven opener
+   * layouts rather than one row called Opener — and a component with none
+   * contributes the empty default built for it. That is the same arrangement
+   * the add-section dialog shows, and the sidebar was listing only the
+   * defaults, so an entire library of ready-made sections never appeared in it.
+   */
+  const localItemsByGroup = useMemo(() => {
+    const accepted = new Map<string, any>();
+
+    localComponents.forEach((component: any) => {
+      if (component.visible === false) return;
+      accepted.set(component.id, component);
+    });
+
+    const presets = (editorContext.configTemplates ?? []).filter((preset) =>
+      accepted.has(preset.entry?._component),
+    );
+    const covered = new Set(presets.map((preset) => preset.entry._component));
+
+    const items: TSectionTemplate[] = [
+      ...presets.map((preset) => {
+        const definition = accepted.get(preset.entry._component);
+
+        return {
+          ...(definition as object),
+          ...preset,
+          // The preset's own bucket when it names one, the component's
+          // otherwise — a preset filed nowhere belongs with its component
+          // rather than in the remainder.
+          group: preset.group ?? definition?.group,
+          template: preset,
+        } as unknown as TSectionTemplate;
+      }),
+      ...[...accepted.values()]
+        .filter((component) => !covered.has(component.id))
+        .map(
+          (component) =>
+            ({
+              ...component,
+              group: component.group,
+              template: getDefaultTemplateForDefinition(
+                component,
+                editorContext,
+              ),
+            }) as unknown as TSectionTemplate,
+        ),
+    ];
+
+    const byGroup: Record<string, TSectionTemplate[]> = {};
+
+    items.forEach((item) => {
+      const group = item.group || "others";
+
+      byGroup[group] = byGroup[group] ?? [];
+      byGroup[group].push(item);
+    });
+
+    return byGroup;
+  }, [localComponents, editorContext.configTemplates]);
+
+  // The groups that actually hold something, which is what the rows are.
   const localGroups = useMemo(
-    () => getLocalGroups(localComponents),
-    [localComponents],
+    () => Object.keys(localItemsByGroup),
+    [localItemsByGroup],
   );
 
   const entries = useMemo<TSectionEntry[]>(
@@ -439,41 +521,6 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
       }),
     [panel, localGroups, templateCategories, editorContext.categoryOrder, t],
   );
-
-  const entriesById = useMemo(() => {
-    const map: Record<string, TSectionEntry> = {};
-    entries.forEach((entry) => {
-      map[entry.id] = entry;
-    });
-    return map;
-  }, [entries]);
-
-  const selectedEntry = entriesById[selectedSection];
-
-  // Local-definition templates for the hovered built-in category (the default
-  // "Empty X" templates built from the accepted components). Synchronous.
-  const localTemplates = useMemo<TSectionTemplate[]>(() => {
-    if (!selectedEntry || selectedEntry.source !== "builtin") return [];
-
-    return localComponents
-      .filter(
-        (component: any) =>
-          component.visible !== false &&
-          (component.group || "others") === selectedEntry.group,
-      )
-      .map((component: any) => {
-        const template = getDefaultTemplateForDefinition(
-          component,
-          editorContext,
-        );
-
-        return {
-          ...component,
-          group: component.group,
-          template,
-        } as unknown as TSectionTemplate;
-      });
-  }, [selectedEntry, localComponents]);
 
   /**
    * One page of one remote library. Returns null when the library is not
@@ -491,6 +538,10 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
         limit: options?.limit ?? TEMPLATES_LIMIT,
       };
 
+      if (options?.search) {
+        query.search = options.search;
+      }
+
       if (options?.categoryUuid) {
         query.filters = `category_uuid:eq:${options.categoryUuid}`;
       } else if (options?.categoryUuid === null) {
@@ -507,7 +558,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   );
 
   /**
-   * One page of a category row, across every library the mode may read.
+   * One page across every library the mode may read.
    *
    * The libraries are paged in lockstep rather than one after the other: they
    * file into the same taxonomy, so a category row is their union, and asking
@@ -515,17 +566,13 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
    * is exhausted — at which point the accumulated item count reaches the summed
    * total and paging stops on its own.
    */
-  const fetchCategoryPage = useCallback(
+  const fetchPage = useCallback(
     (
-      entry: TSectionEntry,
       page: number,
+      options: { categoryUuid?: string | null; search?: string },
     ): Promise<{ items: Template[]; total: number }> | null => {
       const requests = getTemplateSources(editorContext.mode)
-        .map((source) =>
-          fetchRemotePage(source, page, {
-            categoryUuid: entry.categoryUuid ?? null,
-          }),
-        )
+        .map((source) => fetchRemotePage(source, page, options))
         .filter((request): request is Promise<TTemplateListResult> => !!request);
 
       if (requests.length === 0) return null;
@@ -555,8 +602,6 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   // two panels does not discover them again.
   const discoveredForModeRef = useRef<TEasyblocksEditorMode | null>(null);
 
-  // Smoothly scroll the editor canvas to a component by its config id. The
-  // canvas renders asynchronously after insert, so poll briefly for the node.
   /**
    * Brings a freshly inserted section into view.
    *
@@ -598,8 +643,8 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   }, []);
 
   // Insert the picked template into the root "data" collection, right after the
-  // selected section. No keepId, so fresh ids are generated and a template can be
-  // added multiple times. Used by the drawer cards only.
+  // selected section. No keepId, so fresh ids are generated and a template can
+  // be added multiple times.
   const onAddTemplate = useCallback(
     (template: TSectionTemplate) => {
       const entry = template.template?.entry;
@@ -676,235 +721,267 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     };
   }, [panel, editorContext.mode]);
 
-  // Preselect this panel's first entry so the drawer has something to show.
-  // Re-runs when the entries arrive, and also when a panel switch leaves the
-  // selection pointing at a row this panel does not have.
-  useEffect(() => {
-    if (entries.some((entry) => entry.id === selectedSection)) return;
-
-    const first = entries[0]?.id;
-    if (first) setSelectedSection(first);
-  }, [entries, selectedSection]);
-
   /**
-   * Clicking a row opens its drawer; clicking the open row closes it again.
+   * One page of one category row.
    *
-   * Opening on hover made the drawer appear whenever the pointer crossed the
-   * list on its way somewhere else, and each of those opened a category the
-   * user had not asked for and fetched its first page. It also had no matching
-   * way out — the drawer stayed until something was clicked — and closing on
-   * mouse-leave instead would have pulled it away mid-drag, exactly when the
-   * pointer must travel from a card to the canvas.
+   * Page 1 is asked for by the group itself as it comes into view, so a panel
+   * of twenty categories costs one request per category the user actually
+   * scrolls to rather than twenty on open.
    */
-  const handleSelectSection = useCallback(
-    (id: string) => {
-      setIsOpen((wasOpen) => !(wasOpen && id === selectedSection));
-      setSelectedSection(id);
+  const loadEntryPage = useCallback(
+    (entry: TSectionEntry, page: number) => {
+      const request = fetchPage(page, { categoryUuid: entry.categoryUuid ?? null });
+
+      if (!request) {
+        // No reader for this source: record an empty, complete page so the
+        // group settles on "nothing here" instead of asking again.
+        setRemoteByEntry((prev) => ({
+          ...prev,
+          [entry.id]: { items: [], page: 1, total: 0 },
+        }));
+        return;
+      }
+
+      setLoadingEntries((prev) => ({ ...prev, [entry.id]: true }));
+
+      request
+        .then((res) => {
+          const items = mapRemoteItems(res.items);
+
+          setRemoteByEntry((prev) => {
+            const existing = page === 1 ? [] : (prev[entry.id]?.items ?? []);
+            const merged = [...existing, ...items];
+
+            return {
+              ...prev,
+              [entry.id]: {
+                items: merged,
+                page,
+                total: res.total || merged.length,
+              },
+            };
+          });
+        })
+        .catch(() => {
+          // A failed read must not leave the group loading forever; an empty
+          // page settles it, and the toast says why it is empty.
+          setRemoteByEntry((prev) => ({
+            ...prev,
+            [entry.id]: prev[entry.id] ?? { items: [], page: 1, total: 0 },
+          }));
+          toaster.error(t("editor.sidebar.sections.load.error"));
+        })
+        .finally(() => {
+          setLoadingEntries((prev) => ({ ...prev, [entry.id]: false }));
+        });
     },
-    [selectedSection],
+    [fetchPage, mapRemoteItems, toaster, t],
   );
 
-  // Close the drawer when clicking outside both the section list and the drawer.
+  // What is typed leads what is asked for, so a five-letter word is one
+  // request rather than five.
   useEffect(() => {
-    if (!isOpen) return;
+    const timer = setTimeout(() => setSearchTerm(query.trim()), 250);
 
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      const insideList = sectionListRef.current?.contains(target);
-      const insideDrawer = drawerRef.current?.contains(target);
-      if (!insideList && !insideDrawer) {
-        setIsOpen(false);
-      }
-    };
+    return () => clearTimeout(timer);
+  }, [query]);
 
-    // Clicks inside the editor canvas (an iframe) don't bubble to the parent
-    // document, so listen inside it too. Any canvas click closes the drawer.
-    const closeOnIframeClick = () => setIsOpen(false);
-    const canvasIframe = document.getElementById(
-      "editor-canvas",
-    ) as HTMLIFrameElement | null;
-    const canvasDoc = canvasIframe?.contentDocument;
-
-    document.addEventListener("mousedown", handleClickOutside);
-    canvasDoc?.addEventListener("mousedown", closeOnIframeClick, true);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      canvasDoc?.removeEventListener("mousedown", closeOnIframeClick, true);
-    };
-  }, [isOpen]);
-
-  // First page for the hovered template entry. Cached per entry so re-hovering
-  // is instant; built-in entries never reach here.
+  // Switching panels keeps the typed query out of the other list, where it
+  // would silently hide most of what is there.
   useEffect(() => {
-    if (!selectedEntry || selectedEntry.source === "builtin") return;
-    if (remoteByEntry[selectedEntry.id]) return;
+    setQuery("");
+    setSearchTerm("");
+  }, [panel]);
 
-    const entryId = selectedEntry.id;
-    const request = fetchCategoryPage(selectedEntry, 1);
+  /**
+   * Searching the template library is a question for the backend.
+   *
+   * A shop can hold far more templates than its groups have loaded, so
+   * filtering what happens to be in memory would answer "nothing found" for a
+   * template that is sitting there — the quiet kind of wrong. The components
+   * panel needs none of this: its items are all in memory already.
+   */
+  useEffect(() => {
+    if (panel !== "templates" || !searchTerm) {
+      setSearchResult(null);
+      setIsSearching(false);
+      return;
+    }
+
+    const request = fetchPage(1, { search: searchTerm });
 
     if (!request) {
-      // No reader for this source: record an empty, complete page so the
-      // drawer settles on "no data" instead of retrying on every hover.
-      setRemoteByEntry((prev) => ({
-        ...prev,
-        [entryId]: { items: [], page: 1, total: 0 },
-      }));
+      setSearchResult({ items: [], page: 1, total: 0 });
       return;
     }
 
     let cancelled = false;
-    setIsFetching(true);
+    setIsSearching(true);
 
     request
       .then((res) => {
         if (cancelled) return;
 
         const items = mapRemoteItems(res.items);
-        setRemoteByEntry((prev) => ({
-          ...prev,
-          [entryId]: { items, page: 1, total: res.total || items.length },
-        }));
+        setSearchResult({ items, page: 1, total: res.total || items.length });
       })
       .catch(() => {
         if (cancelled) return;
-        // A failed listing must not leave the drawer spinning forever.
-        setRemoteByEntry((prev) => ({
-          ...prev,
-          [entryId]: { items: [], page: 1, total: 0 },
-        }));
+        setSearchResult({ items: [], page: 1, total: 0 });
         toaster.error(t("editor.sidebar.sections.load.error"));
       })
       .finally(() => {
-        if (!cancelled) setIsFetching(false);
+        if (!cancelled) setIsSearching(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [selectedEntry, fetchCategoryPage]);
+  }, [panel, searchTerm, fetchPage, mapRemoteItems]);
 
-  // Whether the hovered entry has more remote templates to load (remote only;
-  // local templates aren't paginated).
-  const hasMore = useMemo(() => {
-    const state = remoteByEntry[selectedSection];
-    return !!state && state.items.length < state.total;
-  }, [remoteByEntry, selectedSection]);
+  const labelOf = (template: TSectionTemplate) =>
+    itemLabel(template.template?.id, template.label) ??
+    template.template?.id ??
+    "";
 
-  // Load the next page of remote templates for the hovered entry (infinite
-  // scroll). Appends to the existing items.
-  const onLoadMore = useCallback(() => {
-    const entry = selectedEntry;
-    const state = entry ? remoteByEntry[entry.id] : undefined;
-    if (!entry || !state || isFetching || isLoadingMore) return;
-    if (entry.source === "builtin") return;
-    if (state.items.length >= state.total) return;
-
-    const nextPage = state.page + 1;
-    const request = fetchCategoryPage(entry, nextPage);
-    if (!request) return;
-
-    setIsLoadingMore(true);
-
-    request
-      .then((res) => {
-        const more = mapRemoteItems(res.items);
-        setRemoteByEntry((prev) => {
-          const existing = prev[entry.id]?.items ?? [];
-          return {
-            ...prev,
-            [entry.id]: {
-              items: [...existing, ...more],
-              page: nextPage,
-              total: res.total || prev[entry.id]?.total || 0,
-            },
-          };
-        });
-      })
-      .catch(() => {
-        toaster.error(t("editor.sidebar.sections.load.error"));
-      })
-      .finally(() => setIsLoadingMore(false));
-  }, [
-    selectedEntry,
-    remoteByEntry,
-    isFetching,
-    isLoadingMore,
-    mapRemoteItems,
-    fetchCategoryPage,
-  ]);
-
-  // Drawer content for the hovered entry: built-in entries show the local
-  // "Empty X" templates, template entries show what their source returned.
-  // The two are never combined — that is the separation this phase is about.
-  const drawerTemplates = useMemo(() => {
-    if (!selectedEntry) return [];
-
-    const source =
-      selectedEntry.source === "builtin"
-        ? localTemplates
-        : (remoteByEntry[selectedEntry.id]?.items ?? []);
-
+  /** Templates to rows, dropping the ones already listed under this group. */
+  const toRows = (templates: TSectionTemplate[]): TSectionRow[] => {
     const seen = new Set<string>();
-    const result: TSectionTemplate[] = [];
+    const rows: TSectionRow[] = [];
 
-    source.forEach((template) => {
-      const id = template.template?.id ?? template.id;
-      if (id && !seen.has(id)) {
-        seen.add(id);
-        result.push(template);
-      }
+    templates.forEach((template, index) => {
+      const key = template.template?.id ?? `${template.id}-${index}`;
+
+      if (seen.has(key)) return;
+      seen.add(key);
+
+      rows.push({
+        key,
+        label: labelOf(template),
+        thumbnail: template.template?.thumbnail,
+        onPick: () => onAddTemplate(template),
+      });
     });
 
-    return result;
-  }, [selectedEntry, localTemplates, remoteByEntry]);
-
-  const drawerTitle = selectedEntry?.label;
+    return rows;
+  };
 
   // Built-in categories are derived from the form, which is still empty on the
   // first paint, so an empty components list means "not ready yet". Template
   // categories come from the discovery read, so there the skeleton runs until
   // that read answers — an empty list afterwards is genuinely "nothing here".
   const isLoadingList =
-    panel === "components"
-      ? entries.length === 0
-      : templateCategories === null;
+    panel === "components" ? entries.length === 0 : templateCategories === null;
+
+  const isSearchingTemplates = panel === "templates" && searchTerm.length > 0;
+
+  // One flat group of results replaces the taxonomy while a search is running:
+  // the categories a result belongs to are not what the reader is looking for
+  // at that moment, and most of them would be empty.
+  const searchRows = isSearchingTemplates
+    ? toRows(searchResult?.items ?? [])
+    : [];
+
+  const groups = entries.map((entry) => {
+    const templates =
+      entry.source === "builtin"
+        ? (localItemsByGroup[entry.group ?? "others"] ?? [])
+        : (remoteByEntry[entry.id]?.items ?? []);
+
+    const rows = toRows(templates).filter((row) =>
+      matchesQuery(row.label, panel === "components" ? query : ""),
+    );
+
+    const state = remoteByEntry[entry.id];
+
+    return {
+      entry,
+      rows,
+      isLoading: entry.source === "template" && !!loadingEntries[entry.id],
+      hasMore: entry.source === "template" && !!state && state.items.length < state.total,
+    };
+  });
+
+  // A query that matches nothing in any group is worth saying out loud, rather
+  // than leaving a column of headings with nothing under them.
+  const hasAnyRow = groups.some((group) => group.rows.length > 0);
 
   return (
-    <>
-      <StyledEditorSectionGroup ref={sectionListRef}>
+    <StyledPanel>
+      <EditorSectionSearch
+        value={query}
+        placeholder={t(
+          panel === "components"
+            ? "editor.sidebar.sections.search.components"
+            : "editor.sidebar.sections.search.templates",
+        )}
+        clearLabel={t("editor.sidebar.sections.search.clear")}
+        onChange={setQuery}
+      />
+
+      <StyledList>
         {isLoadingList && <EditorSectionsSkeleton />}
 
         {!isLoadingList && entries.length === 0 && (
-          <Typography variant="body" style={{ paddingLeft: 4 }}>
-            {t("noData")}!
-          </Typography>
+          <StyledMessage>{t("noData")}!</StyledMessage>
+        )}
+
+        {!isLoadingList && isSearchingTemplates && (
+          <EditorSectionGroup
+            label={t("editor.sidebar.sections.search.results")}
+            rows={searchRows}
+            isLoading={isSearching}
+            emptyLabel={t("editor.sidebar.sections.search.empty")}
+          />
         )}
 
         {!isLoadingList &&
-          entries.map((entry) => (
-            <EditorSectionItem
-              key={entry.id}
-              id={entry.id}
-              name={entry.label}
-              selected={selectedSection === entry.id}
-              onSelectSection={handleSelectSection}
-            />
-          ))}
-      </StyledEditorSectionGroup>
-      {isOpen && selectedEntry ? (
-        <EditorSectionDrawer
-          templates={drawerTemplates}
-          isFetching={isFetching && drawerTemplates.length === 0}
-          isLoadingMore={isLoadingMore}
-          hasMore={hasMore}
-          onLoadMore={onLoadMore}
-          onAddTemplate={onAddTemplate}
-          containerRef={drawerRef}
-          title={drawerTitle}
-          onClose={() => setIsOpen(false)}
-        />
-      ) : null}
-    </>
+          !isSearchingTemplates &&
+          groups.map(({ entry, rows, isLoading, hasMore }) => {
+            // A group filtered down to nothing by a query is not a group the
+            // reader asked to see; with no query it is a category that really
+            // is empty, and saying so beats a heading over a blank.
+            if (query && rows.length === 0 && entry.source === "builtin") {
+              return null;
+            }
+
+            return (
+              <EditorSectionGroup
+                key={entry.id}
+                label={entry.label}
+                count={rows.length}
+                rows={rows}
+                isLoading={isLoading}
+                hasMore={hasMore}
+                emptyLabel={t("noData")}
+                moreLabel={t("editor.sidebar.sections.more")}
+                onLoadMore={() =>
+                  loadEntryPage(entry, (remoteByEntry[entry.id]?.page ?? 1) + 1)
+                }
+                onEnterView={
+                  entry.source === "template"
+                    ? () => {
+                        if (remoteByEntry[entry.id] || loadingEntries[entry.id]) {
+                          return;
+                        }
+
+                        loadEntryPage(entry, 1);
+                      }
+                    : undefined
+                }
+              />
+            );
+          })}
+
+        {!isLoadingList &&
+          !isSearchingTemplates &&
+          query &&
+          !hasAnyRow && (
+            <StyledMessage>
+              {t("editor.sidebar.sections.search.empty")}
+            </StyledMessage>
+          )}
+      </StyledList>
+    </StyledPanel>
   );
 };

@@ -47,7 +47,6 @@ describe("entries shown in the components panel", () => {
         label: "Bố cục",
         group: "layout",
         source: "builtin",
-        kind: "builtin",
       },
     ]);
   });
@@ -99,7 +98,6 @@ describe("entries shown in the templates panel", () => {
         label: "Banner",
         categoryUuid: "c1",
         source: "template",
-        kind: "template",
       },
     ]);
   });
@@ -198,7 +196,7 @@ describe("entries shown in the templates panel", () => {
       t,
     });
 
-    expect(entries.every((entry) => entry.kind === "template")).toBe(true);
+    expect(entries.every((entry) => entry.source === "template")).toBe(true);
     expect(entries.some((entry) => entry.id.startsWith("builtin:"))).toBe(
       false,
     );
