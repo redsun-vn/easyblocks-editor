@@ -46,6 +46,34 @@ function readSectionRects(doc: Document) {
     .sort((a, b) => a.index - b.index);
 }
 
+const ACCENT = "#7B70F5";
+
+/**
+ * What the canvas looks like while it is willing to take the item.
+ *
+ * The insertion line alone says where, but it does not say *whether*: with only
+ * a line, a drag that the canvas never saw looks exactly like one it is about
+ * to accept, because both show nothing until the line appears. The frame is the
+ * answer to "will this work at all", and the line is the answer to "where".
+ * Anywhere without the frame — the sidebar, the top bar, the properties panel —
+ * is somewhere the item cannot go, and the pointer keeps the browser's own
+ * refusal cursor there because nothing cancels the drag over it.
+ */
+function AcceptFrame() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        border: `2px solid ${ACCENT}`,
+        backgroundColor: "rgba(123, 112, 245, 0.04)",
+        pointerEvents: "none",
+        zIndex: 2147482999,
+      }}
+    />
+  );
+}
+
 /**
  * The line that says where the item would land.
  *
@@ -62,7 +90,7 @@ function InsertionLine({ y }: { y: number }) {
         right: 0,
         top: y,
         height: 0,
-        borderTop: "2px solid #7B70F5",
+        borderTop: `2px solid ${ACCENT}`,
         boxShadow: "0 0 0 1px rgba(123, 112, 245, 0.35)",
         pointerEvents: "none",
         zIndex: 2147483000,
@@ -73,10 +101,40 @@ function InsertionLine({ y }: { y: number }) {
 
 export function usePanelDropTarget() {
   const [target, setTarget] = useState<PanelDropTarget | null>(null);
+  // Separate from `target` because the frame and the line answer different
+  // questions, and the frame has to be up from the first `dragenter` — before
+  // any section has been measured.
+  const [isOver, setIsOver] = useState(false);
 
-  const clear = useCallback(() => setTarget(null), []);
+  const clear = useCallback(() => {
+    setTarget(null);
+    setIsOver(false);
+  }, []);
 
   useEffect(() => {
+    /**
+     * Both `dragenter` and `dragover` have to be cancelled for an element to
+     * count as a drop target; cancelling only the second leaves the first frame
+     * of every new element the pointer crosses deciding for itself, and a page
+     * of nested blocks crosses a great many.
+     */
+    const accept = (event: DragEvent) => {
+      event.preventDefault();
+
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+      }
+    };
+
+    const onDragEnter = (event: DragEvent) => {
+      if (!isPanelDrag(event.dataTransfer?.types)) {
+        return;
+      }
+
+      accept(event);
+      setIsOver(true);
+    };
+
     const onDragOver = (event: DragEvent) => {
       if (!isPanelDrag(event.dataTransfer?.types)) {
         return;
@@ -84,11 +142,8 @@ export function usePanelDropTarget() {
 
       // Without this the browser refuses the drop and the gesture ends with the
       // item snapping back to the panel, which reads as "this does not work".
-      event.preventDefault();
-
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = "copy";
-      }
+      accept(event);
+      setIsOver(true);
 
       setTarget(resolvePanelDropTarget(event.clientY, readSectionRects(document)));
     };
@@ -99,7 +154,7 @@ export function usePanelDropTarget() {
       }
 
       event.preventDefault();
-      setTarget(null);
+      clear();
 
       const dropped = resolvePanelDropTarget(
         event.clientY,
@@ -119,10 +174,11 @@ export function usePanelDropTarget() {
     // the document itself.
     const onDragLeave = (event: DragEvent) => {
       if (!event.relatedTarget) {
-        setTarget(null);
+        clear();
       }
     };
 
+    document.addEventListener("dragenter", onDragEnter);
     document.addEventListener("dragover", onDragOver);
     document.addEventListener("drop", onDrop);
     document.addEventListener("dragleave", onDragLeave);
@@ -131,6 +187,7 @@ export function usePanelDropTarget() {
     document.addEventListener("dragend", clear);
 
     return () => {
+      document.removeEventListener("dragenter", onDragEnter);
       document.removeEventListener("dragover", onDragOver);
       document.removeEventListener("drop", onDrop);
       document.removeEventListener("dragleave", onDragLeave);
@@ -138,5 +195,14 @@ export function usePanelDropTarget() {
     };
   }, [clear]);
 
-  return target ? <InsertionLine y={target.y} /> : null;
+  if (!isOver) {
+    return null;
+  }
+
+  return (
+    <>
+      <AcceptFrame />
+      {target ? <InsertionLine y={target.y} /> : null}
+    </>
+  );
 }

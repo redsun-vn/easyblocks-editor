@@ -15,6 +15,13 @@ const StyledRow = styled.button`
   font: inherit;
   color: inherit;
   cursor: pointer;
+  /* A press that lands on the name would otherwise be able to start a drag of
+     the text rather than of the row. That drag carries text/plain, the canvas
+     rightly refuses it, and the gesture does nothing — which looked like the
+     drag working only some of the time, depending on where inside the row the
+     press landed. */
+  user-select: none;
+  -webkit-user-drag: element;
 
   &:hover {
     background: ${Colors.black5};
@@ -120,13 +127,11 @@ export const EditorSectionRow = ({
   thumbnail,
   onPick,
   onDragStart,
-  onDragEnd,
 }: {
   label: string;
   thumbnail?: string;
   onPick: () => void;
   onDragStart?: (event: React.DragEvent) => void;
-  onDragEnd?: () => void;
 }) => (
   <StyledRow
     type="button"
@@ -134,7 +139,6 @@ export const EditorSectionRow = ({
     onClick={onPick}
     draggable={Boolean(onDragStart)}
     onDragStart={onDragStart}
-    onDragEnd={onDragEnd}
   >
     <StyledPreview>
       {thumbnail ? (

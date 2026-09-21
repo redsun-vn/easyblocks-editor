@@ -702,6 +702,15 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
    * `dragover`, which is the moment it has to decide whether to accept one.
    * The canvas only reports where the pointer let go; which item that was is
    * the panel's own business and never leaves this frame.
+   *
+   * Nothing clears this when the drag ends, and that is deliberate. `dragend`
+   * fires on the row the moment the drop completes, while the drop itself
+   * reaches this frame as a posted message — a queued task that runs later. A
+   * `dragend` that cleared the item won the race often enough that roughly
+   * every other drop landed on nothing and was dropped in silence. The item is
+   * cleared when a drop consumes it, and overwritten by the next drag; a value
+   * left behind by an abandoned drag is read by nobody, because only a real
+   * drop on the canvas sends the message that reads it.
    */
   const draggedTemplate = useRef<TSectionTemplate | null>(null);
 
@@ -912,9 +921,6 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
           // what the canvas checks for at `dragover`.
           event.dataTransfer.setData(PANEL_DRAG_MIME, key);
           event.dataTransfer.effectAllowed = "copy";
-        },
-        onDragEnd: () => {
-          draggedTemplate.current = null;
         },
       });
     });

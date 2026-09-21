@@ -12,7 +12,6 @@ export type TSectionRow = {
   onPick: () => void;
   /** Absent on a row that cannot be dragged; the row then only clicks. */
   onDragStart?: (event: React.DragEvent) => void;
-  onDragEnd?: () => void;
 };
 
 const StyledGroup = styled.section`
@@ -292,7 +291,6 @@ export const EditorSectionGroup = ({
                 thumbnail={row.thumbnail}
                 onPick={row.onPick}
                 onDragStart={row.onDragStart}
-                onDragEnd={row.onDragEnd}
               />
             ))}
 

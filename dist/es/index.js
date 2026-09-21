@@ -8419,7 +8419,7 @@ const getCategoryLabel = (t, group) => {
 const StyledRow = styled.button.withConfig({
   displayName: "EditorSectionRow__StyledRow",
   componentId: "sc-1wckczo-0"
-})(["display:flex;align-items:center;gap:10px;width:100%;padding:5px 6px;border:1px solid transparent;border-radius:6px;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer;&:hover{background:", ";border-color:", ";}&:focus-visible{outline:2px solid ", ";outline-offset:-1px;}&:disabled{cursor:default;}"], Colors.black5, Colors.black10, Colors.blue50);
+})(["display:flex;align-items:center;gap:10px;width:100%;padding:5px 6px;border:1px solid transparent;border-radius:6px;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer;user-select:none;-webkit-user-drag:element;&:hover{background:", ";border-color:", ";}&:focus-visible{outline:2px solid ", ";outline-offset:-1px;}&:disabled{cursor:default;}"], Colors.black5, Colors.black10, Colors.blue50);
 
 /**
  * The picture of what the row will add.
@@ -8479,15 +8479,13 @@ const EditorSectionRow = ({
   label,
   thumbnail,
   onPick,
-  onDragStart,
-  onDragEnd
+  onDragStart
 }) => /*#__PURE__*/React__default.createElement(StyledRow, {
   type: "button",
   title: label,
   onClick: onPick,
   draggable: Boolean(onDragStart),
-  onDragStart: onDragStart,
-  onDragEnd: onDragEnd
+  onDragStart: onDragStart
 }, /*#__PURE__*/React__default.createElement(StyledPreview, null, thumbnail ?
 /*#__PURE__*/
 // Without this the browser drags the picture on its own and the row
@@ -8728,8 +8726,7 @@ const EditorSectionGroup = ({
     label: row.label,
     thumbnail: row.thumbnail,
     onPick: row.onPick,
-    onDragStart: row.onDragStart,
-    onDragEnd: row.onDragEnd
+    onDragStart: row.onDragStart
   })), isLoading ? /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default.createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default.createElement(StyledPlaceholderRow, null)) : null), !isLoading && rows.length === 0 && emptyLabel ? /*#__PURE__*/React__default.createElement(StyledEmpty, null, emptyLabel) : null, hasMore && !isLoading ? /*#__PURE__*/React__default.createElement(StyledMore, {
     type: "button",
     onClick: onLoadMore
@@ -9429,6 +9426,15 @@ const EditorSections = ({
    * `dragover`, which is the moment it has to decide whether to accept one.
    * The canvas only reports where the pointer let go; which item that was is
    * the panel's own business and never leaves this frame.
+   *
+   * Nothing clears this when the drag ends, and that is deliberate. `dragend`
+   * fires on the row the moment the drop completes, while the drop itself
+   * reaches this frame as a posted message — a queued task that runs later. A
+   * `dragend` that cleared the item won the race often enough that roughly
+   * every other drop landed on nothing and was dropped in silence. The item is
+   * cleared when a drop consumes it, and overwritten by the next drag; a value
+   * left behind by an abandoned drag is read by nobody, because only a real
+   * drop on the canvas sends the message that reads it.
    */
   const draggedTemplate = useRef(null);
   useEffect(() => {
@@ -9633,9 +9639,6 @@ const EditorSections = ({
           // what the canvas checks for at `dragover`.
           event.dataTransfer.setData(PANEL_DRAG_MIME, key);
           event.dataTransfer.effectAllowed = "copy";
-        },
-        onDragEnd: () => {
-          draggedTemplate.current = null;
         }
       });
     });
@@ -12954,6 +12957,31 @@ function readSectionRects(doc) {
     }];
   }).sort((a, b) => a.index - b.index);
 }
+const ACCENT = "#7B70F5";
+
+/**
+ * What the canvas looks like while it is willing to take the item.
+ *
+ * The insertion line alone says where, but it does not say *whether*: with only
+ * a line, a drag that the canvas never saw looks exactly like one it is about
+ * to accept, because both show nothing until the line appears. The frame is the
+ * answer to "will this work at all", and the line is the answer to "where".
+ * Anywhere without the frame — the sidebar, the top bar, the properties panel —
+ * is somewhere the item cannot go, and the pointer keeps the browser's own
+ * refusal cursor there because nothing cancels the drag over it.
+ */
+function AcceptFrame() {
+  return /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      border: `2px solid ${ACCENT}`,
+      backgroundColor: "rgba(123, 112, 245, 0.04)",
+      pointerEvents: "none",
+      zIndex: 2147482999
+    }
+  });
+}
 
 /**
  * The line that says where the item would land.
@@ -12972,7 +13000,7 @@ function InsertionLine({
       right: 0,
       top: y,
       height: 0,
-      borderTop: "2px solid #7B70F5",
+      borderTop: `2px solid ${ACCENT}`,
       boxShadow: "0 0 0 1px rgba(123, 112, 245, 0.35)",
       pointerEvents: "none",
       zIndex: 2147483000
@@ -12981,8 +13009,34 @@ function InsertionLine({
 }
 function usePanelDropTarget() {
   const [target, setTarget] = useState(null);
-  const clear = useCallback(() => setTarget(null), []);
+  // Separate from `target` because the frame and the line answer different
+  // questions, and the frame has to be up from the first `dragenter` — before
+  // any section has been measured.
+  const [isOver, setIsOver] = useState(false);
+  const clear = useCallback(() => {
+    setTarget(null);
+    setIsOver(false);
+  }, []);
   useEffect(() => {
+    /**
+     * Both `dragenter` and `dragover` have to be cancelled for an element to
+     * count as a drop target; cancelling only the second leaves the first frame
+     * of every new element the pointer crosses deciding for itself, and a page
+     * of nested blocks crosses a great many.
+     */
+    const accept = event => {
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+      }
+    };
+    const onDragEnter = event => {
+      if (!isPanelDrag(event.dataTransfer?.types)) {
+        return;
+      }
+      accept(event);
+      setIsOver(true);
+    };
     const onDragOver = event => {
       if (!isPanelDrag(event.dataTransfer?.types)) {
         return;
@@ -12990,10 +13044,8 @@ function usePanelDropTarget() {
 
       // Without this the browser refuses the drop and the gesture ends with the
       // item snapping back to the panel, which reads as "this does not work".
-      event.preventDefault();
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = "copy";
-      }
+      accept(event);
+      setIsOver(true);
       setTarget(resolvePanelDropTarget(event.clientY, readSectionRects(document)));
     };
     const onDrop = event => {
@@ -13001,7 +13053,7 @@ function usePanelDropTarget() {
         return;
       }
       event.preventDefault();
-      setTarget(null);
+      clear();
       const dropped = resolvePanelDropTarget(event.clientY, readSectionRects(document));
       const message = {
         type: PANEL_DROP_MESSAGE,
@@ -13015,9 +13067,10 @@ function usePanelDropTarget() {
     // the document itself.
     const onDragLeave = event => {
       if (!event.relatedTarget) {
-        setTarget(null);
+        clear();
       }
     };
+    document.addEventListener("dragenter", onDragEnter);
     document.addEventListener("dragover", onDragOver);
     document.addEventListener("drop", onDrop);
     document.addEventListener("dragleave", onDragLeave);
@@ -13025,15 +13078,19 @@ function usePanelDropTarget() {
     // go either way.
     document.addEventListener("dragend", clear);
     return () => {
+      document.removeEventListener("dragenter", onDragEnter);
       document.removeEventListener("dragover", onDragOver);
       document.removeEventListener("drop", onDrop);
       document.removeEventListener("dragleave", onDragLeave);
       document.removeEventListener("dragend", clear);
     };
   }, [clear]);
-  return target ? /*#__PURE__*/React__default.createElement(InsertionLine, {
+  if (!isOver) {
+    return null;
+  }
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(AcceptFrame, null), target ? /*#__PURE__*/React__default.createElement(InsertionLine, {
     y: target.y
-  }) : null;
+  }) : null);
 }
 
 /**

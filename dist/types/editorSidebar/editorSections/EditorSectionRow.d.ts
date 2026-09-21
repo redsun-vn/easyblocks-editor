@@ -13,11 +13,10 @@ import React from "react";
  * Both gestures stay: a click is the shorter path when the position does not
  * matter, and it is the only path for anyone who cannot drag.
  */
-export declare const EditorSectionRow: ({ label, thumbnail, onPick, onDragStart, onDragEnd, }: {
+export declare const EditorSectionRow: ({ label, thumbnail, onPick, onDragStart, }: {
     label: string;
     thumbnail?: string;
     onPick: () => void;
     onDragStart?: (event: React.DragEvent) => void;
-    onDragEnd?: () => void;
 }) => React.JSX.Element;
 //# sourceMappingURL=EditorSectionRow.d.ts.map
