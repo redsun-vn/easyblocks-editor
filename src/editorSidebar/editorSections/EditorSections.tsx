@@ -955,6 +955,11 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
                 hasMore={hasMore}
                 emptyLabel={t("noData")}
                 moreLabel={t("editor.sidebar.sections.more")}
+                // Namespaced by panel: the two lists are read at different
+                // moments and a group folded away in one is no statement about
+                // a group of the same name in the other.
+                storageKey={`${panel}:${entry.id}`}
+                forceOpen={query.length > 0}
                 onLoadMore={() =>
                   loadEntryPage(entry, (remoteByEntry[entry.id]?.page ?? 1) + 1)
                 }

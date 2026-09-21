@@ -8461,6 +8461,64 @@ const EditorSectionRow = ({
   loading: "lazy"
 }) : /*#__PURE__*/React__default.createElement(StyledInitials, null, initialsOf(label))), /*#__PURE__*/React__default.createElement(StyledLabel, null, label));
 
+/**
+ * Which sidebar groups this viewer has folded away.
+ *
+ * Groups open by default, so only the closed ones are worth storing: a first
+ * visit, a cleared browser, a blocked storage — all of them fall through to
+ * the whole library on show, which is the state somebody who has never used
+ * the panel needs. What is stored is the exception the reader chose.
+ *
+ * It lives in `localStorage` because it is a convenience for one person at one
+ * browser: nothing here belongs to the shop, and a teammate opening the same
+ * theme should not inherit somebody else's folded panel.
+ */
+
+const STORAGE_KEY = "easyblocks.editor.sidebar.collapsedGroups";
+
+/**
+ * The stored keys, or none.
+ *
+ * Every access is guarded. `localStorage` is absent while rendering on a
+ * server, throws outright in a private window or when site data is blocked,
+ * and can hold anything at all once a hand has been in it — none of which is
+ * a reason for the panel to stop working.
+ */
+const read = () => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed.filter(key => typeof key === "string") : [];
+  } catch {
+    return [];
+  }
+};
+
+/** Whether the viewer has folded this group away. */
+const isGroupCollapsed = key => read().includes(key);
+
+/** Folds a group away, or opens it again, for this browser. */
+const setGroupCollapsed = (key, collapsed) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const next = new Set(read());
+  if (collapsed) {
+    next.add(key);
+  } else {
+    next.delete(key);
+  }
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
+  } catch {
+    // Storage is full or blocked. The panel still folds for this session; it
+    // just will not remember, which is better than refusing the click.
+  }
+};
+
 /** One insertable item, already reduced to what a row needs to draw itself. */
 
 const StyledGroup = styled.section.withConfig({
@@ -8478,26 +8536,54 @@ const StyledGroup = styled.section.withConfig({
 const StyledHeading = styled.h3.withConfig({
   displayName: "EditorSectionGroup__StyledHeading",
   componentId: "sc-1ycdt4p-1"
-})(["position:sticky;top:0;z-index:1;display:flex;align-items:baseline;gap:6px;margin:0 0 4px;padding:6px 6px 5px;background:", ";font-size:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:", ";"], Colors.white, Colors.black500);
+})(["position:sticky;top:0;z-index:1;margin:0 0 4px;background:", ";font-size:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:", ";"], Colors.white, Colors.black500);
+
+/**
+ * The whole heading is the hit area, not a chevron the size of a full stop.
+ *
+ * It stays a `button` even in the two places that cannot fold — a search
+ * result list, a group with nothing under it — so the row does not shift by a
+ * pixel as the reader types.
+ */
+const StyledHeadingButton = styled.button.withConfig({
+  displayName: "EditorSectionGroup__StyledHeadingButton",
+  componentId: "sc-1ycdt4p-2"
+})(["display:flex;align-items:baseline;gap:6px;width:100%;margin:0;padding:6px 6px 5px;border:none;background:none;font:inherit;color:inherit;text-align:left;cursor:", ";&:focus-visible{outline:2px solid ", ";outline-offset:-2px;border-radius:3px;}"], ({
+  $canToggle
+}) => $canToggle ? "pointer" : "default", Colors.blue60);
+
+/**
+ * Points down over an open group and right over a closed one.
+ *
+ * Drawn rather than lettered so it turns with the group instead of being
+ * swapped for a different glyph, and hidden entirely where folding is not on
+ * offer — an arrow that does nothing is worse than no arrow.
+ */
+const StyledChevron = styled.svg.withConfig({
+  displayName: "EditorSectionGroup__StyledChevron",
+  componentId: "sc-1ycdt4p-3"
+})(["flex:none;align-self:center;width:8px;height:8px;color:", ";transform:rotate(", ");transition:transform 120ms ease;@media (prefers-reduced-motion:reduce){transition:none;}"], Colors.black40, ({
+  $open
+}) => $open ? "90deg" : "0deg");
 const StyledCount = styled.span.withConfig({
   displayName: "EditorSectionGroup__StyledCount",
-  componentId: "sc-1ycdt4p-2"
+  componentId: "sc-1ycdt4p-4"
 })(["font-weight:500;letter-spacing:0;color:", ";"], Colors.black40);
 const StyledRows = styled.div.withConfig({
   displayName: "EditorSectionGroup__StyledRows",
-  componentId: "sc-1ycdt4p-3"
+  componentId: "sc-1ycdt4p-5"
 })(["display:flex;flex-direction:column;gap:2px;"]);
 const StyledPlaceholderRow = styled.div.withConfig({
   displayName: "EditorSectionGroup__StyledPlaceholderRow",
-  componentId: "sc-1ycdt4p-4"
+  componentId: "sc-1ycdt4p-6"
 })(["display:flex;align-items:center;gap:10px;padding:5px 6px;&::before{content:\"\";width:48px;height:34px;border-radius:4px;background:", ";}&::after{content:\"\";flex:1;height:10px;border-radius:3px;background:", ";}"], Colors.black5, Colors.black5);
 const StyledMore = styled.button.withConfig({
   displayName: "EditorSectionGroup__StyledMore",
-  componentId: "sc-1ycdt4p-5"
+  componentId: "sc-1ycdt4p-7"
 })(["margin:4px 0 0 6px;padding:0;border:none;background:none;font:inherit;font-size:11.5px;color:", ";cursor:pointer;&:disabled{color:", ";cursor:default;}"], Colors.blue60, Colors.black40);
 const StyledEmpty = styled.p.withConfig({
   displayName: "EditorSectionGroup__StyledEmpty",
-  componentId: "sc-1ycdt4p-6"
+  componentId: "sc-1ycdt4p-8"
 })(["margin:0 0 0 6px;font-size:11.5px;color:", ";"], Colors.black500);
 
 /**
@@ -8508,6 +8594,15 @@ const StyledEmpty = styled.p.withConfig({
  * backend for all of them up front: a group two screens down costs nothing
  * until it is nearly on screen. The components panel passes nothing, because
  * its items are already in memory.
+ *
+ * `storageKey` makes the group foldable and is what its folded state is
+ * remembered under. Without one the group is simply open, which is right for
+ * the single list a search collapses the taxonomy into.
+ *
+ * `forceOpen` unfolds the group for as long as it is set, and takes the
+ * chevron away while it is. A reader who types a query wants the matches, and
+ * a heading with a count over a fold they have to remember to open is the kind
+ * of quiet failure that reads as a broken search.
  */
 const EditorSectionGroup = ({
   label,
@@ -8517,10 +8612,27 @@ const EditorSectionGroup = ({
   hasMore,
   emptyLabel,
   moreLabel,
+  storageKey,
+  forceOpen,
   onLoadMore,
   onEnterView
 }) => {
   const rootRef = useRef(null);
+
+  // Read on the first render rather than in an effect, so a group the reader
+  // folded last time never flashes open before folding itself. The editor is
+  // mounted client-side only, so there is no server render to disagree with.
+  const [isFolded, setIsFolded] = useState(() => storageKey ? isGroupCollapsed(storageKey) : false);
+  const canToggle = Boolean(storageKey) && !forceOpen;
+  const isOpen = !isFolded || Boolean(forceOpen);
+  const toggle = () => {
+    if (!storageKey || !canToggle) {
+      return;
+    }
+    const next = !isFolded;
+    setIsFolded(next);
+    setGroupCollapsed(storageKey, next);
+  };
   // Held in a ref so the observer is created once: the callback is rebuilt on
   // every render of the panel above, and depending on it would tear the
   // observer down and set it up again each time, which fires it again too.
@@ -8559,7 +8671,20 @@ const EditorSectionGroup = ({
   }, []);
   return /*#__PURE__*/React__default.createElement(StyledGroup, {
     ref: rootRef
-  }, /*#__PURE__*/React__default.createElement(StyledHeading, null, label, typeof count === "number" && count > 0 ? /*#__PURE__*/React__default.createElement(StyledCount, null, count) : null), /*#__PURE__*/React__default.createElement(StyledRows, null, rows.map(row => /*#__PURE__*/React__default.createElement(EditorSectionRow, {
+  }, /*#__PURE__*/React__default.createElement(StyledHeading, null, /*#__PURE__*/React__default.createElement(StyledHeadingButton, {
+    type: "button",
+    $canToggle: canToggle,
+    "aria-expanded": canToggle ? isOpen : undefined,
+    onClick: toggle
+  }, canToggle ? /*#__PURE__*/React__default.createElement(StyledChevron, {
+    $open: isOpen,
+    viewBox: "0 0 8 8",
+    "aria-hidden": "true",
+    focusable: "false"
+  }, /*#__PURE__*/React__default.createElement("path", {
+    d: "M2 0 L7 4 L2 8 Z",
+    fill: "currentColor"
+  })) : null, label, typeof count === "number" && count > 0 ? /*#__PURE__*/React__default.createElement(StyledCount, null, count) : null)), isOpen ? /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledRows, null, rows.map(row => /*#__PURE__*/React__default.createElement(EditorSectionRow, {
     key: row.key,
     label: row.label,
     thumbnail: row.thumbnail,
@@ -8567,7 +8692,7 @@ const EditorSectionGroup = ({
   })), isLoading ? /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default.createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default.createElement(StyledPlaceholderRow, null)) : null), !isLoading && rows.length === 0 && emptyLabel ? /*#__PURE__*/React__default.createElement(StyledEmpty, null, emptyLabel) : null, hasMore && !isLoading ? /*#__PURE__*/React__default.createElement(StyledMore, {
     type: "button",
     onClick: onLoadMore
-  }, moreLabel) : null);
+  }, moreLabel) : null) : null);
 };
 
 const StyledField = styled.div.withConfig({
@@ -9421,7 +9546,13 @@ const EditorSections = ({
       isLoading: isLoading,
       hasMore: hasMore,
       emptyLabel: t("noData"),
-      moreLabel: t("editor.sidebar.sections.more"),
+      moreLabel: t("editor.sidebar.sections.more")
+      // Namespaced by panel: the two lists are read at different
+      // moments and a group folded away in one is no statement about
+      // a group of the same name in the other.
+      ,
+      storageKey: `${panel}:${entry.id}`,
+      forceOpen: query.length > 0,
       onLoadMore: () => loadEntryPage(entry, (remoteByEntry[entry.id]?.page ?? 1) + 1),
       onEnterView: entry.source === "template" ? () => {
         if (remoteByEntry[entry.id] || loadingEntries[entry.id]) {
