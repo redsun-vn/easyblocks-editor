@@ -23,6 +23,7 @@ import { TooltipProvider } from "@redsun-vn/easyblocks-design-system/Tooltip";
 import React, { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { CanvasRoot } from "./CanvasRoot/CanvasRoot";
+import { usePanelDropTarget } from "./CanvasRoot/usePanelDropTarget";
 import EditableComponentBuilder from "./EditableComponentBuilder/EditableComponentBuilder.editor";
 import TypePlaceholder from "./Placeholder";
 import SkeletonEditorCanvasArea from "./SkeletonEditorCanvasArea";
@@ -238,6 +239,9 @@ export function EasyblocksCanvas({
   // Name of the block currently being carried; null when no drag is in flight.
   const [draggedLabel, setDraggedLabel] = useState<string | null>(null);
   const { forceRerender } = useForceRerender();
+  // An item dragged out of a sidebar panel. A separate gesture from the one
+  // below on purpose — see the note in `usePanelDropTarget`.
+  const panelDropIndicator = usePanelDropTarget();
   // Ten pixels was the price of the whole block being the handle: any press that
   // drifted had to be assumed accidental. Now that a drag starts from a grip, the
   // press is already deliberate, and a shorter threshold is what makes the block
@@ -355,6 +359,7 @@ export function EasyblocksCanvas({
               ) : null}
             </DragOverlay>
           </DndContext>
+          {panelDropIndicator}
         </CanvasRoot>
       </TooltipProvider>
     </EasyblocksMetadataProvider>

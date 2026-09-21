@@ -5,6 +5,9 @@ export type TSectionRow = {
     label: string;
     thumbnail?: string;
     onPick: () => void;
+    /** Absent on a row that cannot be dragged; the row then only clicks. */
+    onDragStart?: (event: React.DragEvent) => void;
+    onDragEnd?: () => void;
 };
 /**
  * One named group of a sidebar panel.

@@ -26,6 +26,11 @@ import { EditorSectionGroup, TSectionRow } from "./EditorSectionGroup";
 import { EditorSectionSearch } from "./EditorSectionSearch";
 import { EditorSectionsSkeleton } from "./EditorSectionsSkeleton";
 import { matchesQuery } from "./panelSearch";
+import {
+  PANEL_DRAG_MIME,
+  PANEL_DROP_MESSAGE,
+  type PanelDropMessage,
+} from "./panelDrag";
 import { usePickerItemLabel } from "./pickerItemLabel";
 import { TOP_BAR_HEIGHT } from "../../EditorTopBar";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
@@ -645,8 +650,11 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   // Insert the picked template into the root "data" collection, right after the
   // selected section. No keepId, so fresh ids are generated and a template can
   // be added multiple times.
+  //
+  // `indexOverride` is where a drag let go. A click carries no position of its
+  // own, so it still lands after whatever is selected.
   const onAddTemplate = useCallback(
-    (template: TSectionTemplate) => {
+    (template: TSectionTemplate, indexOverride?: number) => {
       const entry = template.template?.entry;
       if (!entry) {
         toaster.error(t("editor.sidebar.sections.add.error"));
@@ -659,10 +667,15 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
         editorContext,
       );
 
-      const insertionIndex = getSectionInsertionIndex(
-        editorContext.focussedField,
-        editorContext.compiledComponentConfig?.components.data.length ?? 0,
-      );
+      const sectionCount =
+        editorContext.compiledComponentConfig?.components.data.length ?? 0;
+
+      const insertionIndex =
+        indexOverride === undefined
+          ? getSectionInsertionIndex(editorContext.focussedField, sectionCount)
+          : // The canvas measured the page it was drawing; clamped because that
+            // measurement and this insert are two different moments.
+            Math.min(Math.max(indexOverride, 0), sectionCount);
 
       editorContext.actions.insertItem({
         name: "data",
@@ -680,6 +693,38 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
     },
     [editorContext, scrollCanvasToComponent],
   );
+
+  /**
+   * The row being dragged, and the drop that ends the gesture.
+   *
+   * Held here rather than sent through the drag itself: a browser hides a
+   * drag's contents until the drop, so the canvas could not read an item at
+   * `dragover`, which is the moment it has to decide whether to accept one.
+   * The canvas only reports where the pointer let go; which item that was is
+   * the panel's own business and never leaves this frame.
+   */
+  const draggedTemplate = useRef<TSectionTemplate | null>(null);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type !== PANEL_DROP_MESSAGE) {
+        return;
+      }
+
+      const template = draggedTemplate.current;
+      draggedTemplate.current = null;
+
+      // A drop can arrive after the panel has moved on — switched list, or the
+      // drag was abandoned and something else posted. Nothing to insert then.
+      if (template) {
+        onAddTemplate(template, (event.data as PanelDropMessage).index);
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+
+    return () => window.removeEventListener("message", onMessage);
+  }, [onAddTemplate]);
 
   // The category rows, discovered once per mode. Deliberately not once per
   // panel: both panels are the same mounted component, so re-running this when
@@ -860,6 +905,17 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
         label: labelOf(template),
         thumbnail: template.template?.thumbnail,
         onPick: () => onAddTemplate(template),
+        onDragStart: (event) => {
+          draggedTemplate.current = template;
+          // The value is a formality — nothing reads it. Firefox refuses to
+          // start a drag at all unless `setData` is called, and the type is
+          // what the canvas checks for at `dragover`.
+          event.dataTransfer.setData(PANEL_DRAG_MIME, key);
+          event.dataTransfer.effectAllowed = "copy";
+        },
+        onDragEnd: () => {
+          draggedTemplate.current = null;
+        },
       });
     });
 

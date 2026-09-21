@@ -8467,19 +8467,37 @@ function initialsOf(label) {
  * Clicking it adds the thing to the page. There is no intermediate step: the
  * row already shows the picture and the name that a gallery would have shown,
  * so opening one to click the same item again was a click that bought nothing.
+ *
+ * Dragging it adds the thing *where you let go*. Clicking can only ever put a
+ * section after the selected one or at the end, so choosing a position meant
+ * adding the section and then moving it — two gestures for one intent.
+ *
+ * Both gestures stay: a click is the shorter path when the position does not
+ * matter, and it is the only path for anyone who cannot drag.
  */
 const EditorSectionRow = ({
   label,
   thumbnail,
-  onPick
+  onPick,
+  onDragStart,
+  onDragEnd
 }) => /*#__PURE__*/React__default.createElement(StyledRow, {
   type: "button",
   title: label,
-  onClick: onPick
-}, /*#__PURE__*/React__default.createElement(StyledPreview, null, thumbnail ? /*#__PURE__*/React__default.createElement(StyledThumbnail, {
+  onClick: onPick,
+  draggable: Boolean(onDragStart),
+  onDragStart: onDragStart,
+  onDragEnd: onDragEnd
+}, /*#__PURE__*/React__default.createElement(StyledPreview, null, thumbnail ?
+/*#__PURE__*/
+// Without this the browser drags the picture on its own and the row
+// never gets a `dragstart`, so the gesture carries an image file
+// instead of the section.
+React__default.createElement(StyledThumbnail, {
   src: thumbnail,
   alt: "",
-  loading: "lazy"
+  loading: "lazy",
+  draggable: false
 }) : /*#__PURE__*/React__default.createElement(StyledInitials, null, initialsOf(label))), /*#__PURE__*/React__default.createElement(StyledLabel, null, label));
 
 /**
@@ -8709,7 +8727,9 @@ const EditorSectionGroup = ({
     key: row.key,
     label: row.label,
     thumbnail: row.thumbnail,
-    onPick: row.onPick
+    onPick: row.onPick,
+    onDragStart: row.onDragStart,
+    onDragEnd: row.onDragEnd
   })), isLoading ? /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default.createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default.createElement(StyledPlaceholderRow, null)) : null), !isLoading && rows.length === 0 && emptyLabel ? /*#__PURE__*/React__default.createElement(StyledEmpty, null, emptyLabel) : null, hasMore && !isLoading ? /*#__PURE__*/React__default.createElement(StyledMore, {
     type: "button",
     onClick: onLoadMore
@@ -8827,6 +8847,71 @@ function matchesQuery(label, query) {
   }
   const haystack = foldForSearch(label);
   return words.every(word => haystack.includes(word));
+}
+
+/**
+ * Dragging an item out of a sidebar panel and onto the canvas.
+ *
+ * The canvas already drags blocks around, but that gesture is `@dnd-kit` and it
+ * lives entirely inside the canvas iframe: its sensors read pointer events from
+ * the iframe's own document, so a drag begun in the sidebar — a different
+ * document — is invisible to it. Native HTML5 drag events are the one gesture
+ * that does cross a frame boundary, which is why the panel uses them instead of
+ * joining the existing context.
+ *
+ * What travels is only a marker. During `dragover` a browser will tell a page
+ * which *types* the drag carries but not their contents, so the canvas could
+ * never read a payload at the moment it has to decide whether to accept the
+ * drop. The item itself is left on the shared `editorWindowAPI` object the two
+ * frames already talk through, and this mime type is what says a drag belongs
+ * to us.
+ */
+
+/** Says a drag came from a sidebar panel. Lowercase: browsers normalise it. */
+const PANEL_DRAG_MIME = "application/x-easyblocks-panel-item";
+
+/** Posted to the parent window when an item is dropped on the canvas. */
+const PANEL_DROP_MESSAGE = "@easyblocks-editor/panel-drop";
+
+/** Where the item would land, and where to draw the line that says so. */
+
+/**
+ * Which gap the pointer is aiming at.
+ *
+ * A section's midpoint is the boundary: above it the item goes before that
+ * section, below it after. Midpoint rather than the nearest edge because a
+ * section is often taller than the screen — with edges, the whole middle of a
+ * tall section would aim at nothing, and the drop would have no answer for most
+ * of the page.
+ *
+ * An empty page still has an answer, index 0, rather than no target at all. The
+ * first thing a shop owner drags is dropped onto nothing.
+ */
+function resolvePanelDropTarget(pointerY, rects) {
+  if (rects.length === 0) {
+    return {
+      index: 0,
+      y: 0
+    };
+  }
+  for (let index = 0; index < rects.length; index += 1) {
+    const rect = rects[index];
+    if (pointerY < rect.top + (rect.bottom - rect.top) / 2) {
+      return {
+        index,
+        y: rect.top
+      };
+    }
+  }
+  return {
+    index: rects.length,
+    y: rects[rects.length - 1].bottom
+  };
+}
+
+/** Whether a drag event is one of ours, asked at a moment when only types are readable. */
+function isPanelDrag(types) {
+  return Boolean(types?.includes(PANEL_DRAG_MIME));
 }
 
 /**
@@ -9302,7 +9387,10 @@ const EditorSections = ({
   // Insert the picked template into the root "data" collection, right after the
   // selected section. No keepId, so fresh ids are generated and a template can
   // be added multiple times.
-  const onAddTemplate = useCallback(template => {
+  //
+  // `indexOverride` is where a drag let go. A click carries no position of its
+  // own, so it still lands after whatever is selected.
+  const onAddTemplate = useCallback((template, indexOverride) => {
     const entry = template.template?.entry;
     if (!entry) {
       toaster.error(t("editor.sidebar.sections.add.error"));
@@ -9314,7 +9402,11 @@ const EditorSections = ({
       ...entry,
       _itemProps: {}
     }, editorContext);
-    const insertionIndex = getSectionInsertionIndex(editorContext.focussedField, editorContext.compiledComponentConfig?.components.data.length ?? 0);
+    const sectionCount = editorContext.compiledComponentConfig?.components.data.length ?? 0;
+    const insertionIndex = indexOverride === undefined ? getSectionInsertionIndex(editorContext.focussedField, sectionCount) :
+    // The canvas measured the page it was drawing; clamped because that
+    // measurement and this insert are two different moments.
+    Math.min(Math.max(indexOverride, 0), sectionCount);
     editorContext.actions.insertItem({
       name: "data",
       index: insertionIndex,
@@ -9328,6 +9420,34 @@ const EditorSections = ({
     // this point anyway.
     scrollCanvasToComponent(`data.${insertionIndex}`);
   }, [editorContext, scrollCanvasToComponent]);
+
+  /**
+   * The row being dragged, and the drop that ends the gesture.
+   *
+   * Held here rather than sent through the drag itself: a browser hides a
+   * drag's contents until the drop, so the canvas could not read an item at
+   * `dragover`, which is the moment it has to decide whether to accept one.
+   * The canvas only reports where the pointer let go; which item that was is
+   * the panel's own business and never leaves this frame.
+   */
+  const draggedTemplate = useRef(null);
+  useEffect(() => {
+    const onMessage = event => {
+      if (event.data?.type !== PANEL_DROP_MESSAGE) {
+        return;
+      }
+      const template = draggedTemplate.current;
+      draggedTemplate.current = null;
+
+      // A drop can arrive after the panel has moved on — switched list, or the
+      // drag was abandoned and something else posted. Nothing to insert then.
+      if (template) {
+        onAddTemplate(template, event.data.index);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [onAddTemplate]);
 
   // The category rows, discovered once per mode. Deliberately not once per
   // panel: both panels are the same mounted component, so re-running this when
@@ -9505,7 +9625,18 @@ const EditorSections = ({
         key,
         label: labelOf(template),
         thumbnail: template.template?.thumbnail,
-        onPick: () => onAddTemplate(template)
+        onPick: () => onAddTemplate(template),
+        onDragStart: event => {
+          draggedTemplate.current = template;
+          // The value is a formality — nothing reads it. Firefox refuses to
+          // start a drag at all unless `setData` is called, and the type is
+          // what the canvas checks for at `dragover`.
+          event.dataTransfer.setData(PANEL_DRAG_MIME, key);
+          event.dataTransfer.effectAllowed = "copy";
+        },
+        onDragEnd: () => {
+          draggedTemplate.current = null;
+        }
       });
     });
     return rows;
@@ -12789,6 +12920,123 @@ const globalEditorRendererStyles = `
 `;
 
 /**
+ * Receiving an item dragged out of a sidebar panel.
+ *
+ * The panel lives in the parent window and the canvas in an iframe, so the
+ * `@dnd-kit` context that moves blocks around inside the canvas cannot see this
+ * gesture at all — its sensors read pointer events, and a pointer event belongs
+ * to one document. Native drag events are the exception that crosses the
+ * boundary, so this listens for those.
+ *
+ * It only ever answers with a position. Which item is being dragged stays in
+ * the panel: a browser withholds a drag's contents until the drop, so there is
+ * nothing here to read at the moment the canvas has to decide whether to accept
+ * one anyway.
+ */
+
+/** Every top-level section, in document order, with the rectangle it occupies. */
+function readSectionRects(doc) {
+  return Array.from(doc.querySelectorAll(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`)).flatMap(element => {
+    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
+    const index = path?.match(/^data\.(\d+)$/)?.[1];
+
+    // Only the root collection. A frame deeper in the tree carries a longer
+    // path, and dropping a section inside another block is not a thing the
+    // root collection can express.
+    if (index === undefined) {
+      return [];
+    }
+    const rect = element.getBoundingClientRect();
+    return [{
+      index: Number(index),
+      top: rect.top,
+      bottom: rect.bottom
+    }];
+  }).sort((a, b) => a.index - b.index);
+}
+
+/**
+ * The line that says where the item would land.
+ *
+ * Drawn in the canvas rather than as a cursor decoration because the answer is
+ * about the page, not the pointer: the same pointer position means a different
+ * gap depending on which section it is over.
+ */
+function InsertionLine({
+  y
+}) {
+  return /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      position: "fixed",
+      left: 0,
+      right: 0,
+      top: y,
+      height: 0,
+      borderTop: "2px solid #7B70F5",
+      boxShadow: "0 0 0 1px rgba(123, 112, 245, 0.35)",
+      pointerEvents: "none",
+      zIndex: 2147483000
+    }
+  });
+}
+function usePanelDropTarget() {
+  const [target, setTarget] = useState(null);
+  const clear = useCallback(() => setTarget(null), []);
+  useEffect(() => {
+    const onDragOver = event => {
+      if (!isPanelDrag(event.dataTransfer?.types)) {
+        return;
+      }
+
+      // Without this the browser refuses the drop and the gesture ends with the
+      // item snapping back to the panel, which reads as "this does not work".
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+      }
+      setTarget(resolvePanelDropTarget(event.clientY, readSectionRects(document)));
+    };
+    const onDrop = event => {
+      if (!isPanelDrag(event.dataTransfer?.types)) {
+        return;
+      }
+      event.preventDefault();
+      setTarget(null);
+      const dropped = resolvePanelDropTarget(event.clientY, readSectionRects(document));
+      const message = {
+        type: PANEL_DROP_MESSAGE,
+        index: dropped.index
+      };
+      window.parent.postMessage(message);
+    };
+
+    // Fires whenever the pointer crosses any element boundary, including ones
+    // inside the canvas, so the line is only dropped when the pointer has left
+    // the document itself.
+    const onDragLeave = event => {
+      if (!event.relatedTarget) {
+        setTarget(null);
+      }
+    };
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("drop", onDrop);
+    document.addEventListener("dragleave", onDragLeave);
+    // The drag can end anywhere, including back over the panel; the line has to
+    // go either way.
+    document.addEventListener("dragend", clear);
+    return () => {
+      document.removeEventListener("dragover", onDragOver);
+      document.removeEventListener("drop", onDrop);
+      document.removeEventListener("dragleave", onDragLeave);
+      document.removeEventListener("dragend", clear);
+    };
+  }, [clear]);
+  return target ? /*#__PURE__*/React__default.createElement(InsertionLine, {
+    y: target.y
+  }) : null;
+}
+
+/**
  * Which edge of a block the insertion line is drawn on while a drag is in progress.
  *
  * `before` is the leading edge of the block — its top in a collection that stacks
@@ -13999,6 +14247,9 @@ function EasyblocksCanvas({
   const {
     forceRerender
   } = useForceRerender();
+  // An item dragged out of a sidebar panel. A separate gesture from the one
+  // below on purpose — see the note in `usePanelDropTarget`.
+  const panelDropIndicator = usePanelDropTarget();
   // Ten pixels was the price of the whole block being the handle: any press that
   // drifted had to be assumed accidental. Now that a drag starts from a grip, the
   // press is already deliberate, and a shorter threshold is what makes the block
@@ -14088,7 +14339,7 @@ function EasyblocksCanvas({
     }
   }, draggedLabel !== null ? /*#__PURE__*/React__default.createElement(DragPreview, {
     label: draggedLabel
-  }) : null)))));
+  }) : null)), panelDropIndicator)));
 }
 
 /**
