@@ -9,7 +9,7 @@ import {
   parsePath,
   SelectionFramePositionChangedEvent,
 } from "@redsun-vn/easyblocks-core/_internals";
-import React, { useLayoutEffect } from "react";
+import React, { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { SelectionFrameActions } from "../EditableComponentBuilder/SelectionFrameActions";
 import { EditorContextType, useEditorContext } from "../EditorContext";
 import { pathToCompiledPath } from "../pathToCompiledPath";
@@ -33,6 +33,17 @@ import {
   SELECTION_ACTIONS_LEFT,
   SELECTION_ACTIONS_TOP,
 } from "./cssVariables";
+import { isSelectionPointerChanged } from "./selectionPointer";
+
+/**
+ * How long the bar waits after the pointer leaves before it fades.
+ *
+ * The bar sits a few pixels above the block, so reaching it means crossing a
+ * gap where the pointer is over neither. Without a grace period that crossing
+ * reads as "gone" and takes the bar away mid-travel, which is the whole reason
+ * a timer was the wrong mechanism in the first place.
+ */
+const REVEAL_GRACE_MS = 260;
 
 type SelectionFrameProps = {
   width: number;
@@ -76,38 +87,71 @@ function SelectionFrame({
     editorContext,
   );
 
+  /**
+   * Whether the bar is on show.
+   *
+   * It follows the pointer rather than a clock: on while the pointer is over
+   * the selected block or over the bar itself, off shortly after it leaves
+   * both. Always-on cost the canvas a bar's worth of chrome for the whole time
+   * somebody was working in the properties panel, which is most of the time.
+   */
+  const [isRevealed, setIsRevealed] = useState(false);
+  const fadeTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const revealActions = useCallback((isPointerNear: boolean) => {
+    clearTimeout(fadeTimer.current);
+
+    if (isPointerNear) {
+      setIsRevealed(true);
+      return;
+    }
+
+    fadeTimer.current = setTimeout(
+      () => setIsRevealed(false),
+      REVEAL_GRACE_MS,
+    );
+  }, []);
+
   useLayoutEffect(() => {
     if (focussedField.length === 0) {
       hideAddButtons();
+      setIsRevealed(false);
     }
   }, [focussedField]);
 
+  useLayoutEffect(() => () => clearTimeout(fadeTimer.current), []);
+
   useLayoutEffect(() => {
-    function handleSelectionFrameMessages(
-      event: SelectionFramePositionChangedEvent,
-    ) {
+    // Two kinds of message arrive on this channel now, so the parameter is the
+    // wide one and each branch narrows it for itself. Typed as one of them, the
+    // other narrows to `never`.
+    function handleSelectionFrameMessages(event: MessageEvent) {
+      if (isSelectionPointerChanged(event.data)) {
+        revealActions(event.data.payload.isPointerOver);
+        return;
+      }
+
       if (!isAddingEnabled) {
         hideAddButtons();
         return;
       }
 
-      if (
-        event.data.type ===
-        "@easyblocks-editor/selection-frame-position-changed"
-      ) {
+      const data = event.data as SelectionFramePositionChangedEvent["data"];
+
+      if (data.type === "@easyblocks-editor/selection-frame-position-changed") {
         const viewport = { width, height };
 
         updateAddButtons(
           direction,
-          event.data.payload.target,
+          data.payload.target,
           viewport,
-          event.data.payload.container,
+          data.payload.container,
         );
 
         updateSelectionActions(
-          event.data.payload.target,
+          data.payload.target,
           viewport,
-          event.data.payload.container,
+          data.payload.container,
         );
       }
     }
@@ -117,7 +161,7 @@ function SelectionFrame({
     return () => {
       window.removeEventListener("message", handleSelectionFrameMessages);
     };
-  }, [direction, height, isAddingEnabled, width]);
+  }, [direction, height, isAddingEnabled, revealActions, width]);
 
   async function handleAddButtonClick(which: "before" | "after") {
     let path = focussedField.length === 1 ? focussedField[0] : undefined;
@@ -184,6 +228,8 @@ function SelectionFrame({
             translationFiles={translationFiles}
             contextParams={contextParams}
             editorMode={editorMode}
+            isRevealed={isRevealed}
+            onPointerNear={revealActions}
           />
         ) : null}
       </FrameWrapper>

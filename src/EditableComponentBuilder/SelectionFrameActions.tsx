@@ -68,6 +68,10 @@ interface ISelectionFrameActionsProps {
   translationFiles: { [key: string]: any };
   contextParams: ContextParams;
   editorMode: TEasyblocksEditorMode;
+  /** On while the pointer is on the selected block or on the bar itself. */
+  isRevealed: boolean;
+  /** The bar answering for its own half of "is the pointer near". */
+  onPointerNear: (isPointerNear: boolean) => void;
 }
 
 /**
@@ -80,7 +84,7 @@ interface ISelectionFrameActionsProps {
  * where a bar like this belongs, and `calculateActionsPosition` keeps it inside
  * the canvas and flips it when there is no room above.
  */
-const SelectionFrameActionsContainer = styled.div`
+const SelectionFrameActionsContainer = styled.div<{ $isRevealed: boolean }>`
   position: absolute;
   top: var(${SELECTION_ACTIONS_TOP});
   left: var(${SELECTION_ACTIONS_LEFT});
@@ -90,7 +94,16 @@ const SelectionFrameActionsContainer = styled.div`
   padding: 5px 10px;
   width: max-content;
   background: ${Colors.white};
-  pointer-events: all;
+
+  /*
+    Faded rather than unmounted, so the bar can be pointed at on its way in and
+    cannot move under the pointer on its way out. Pointer events follow the
+    opacity, because a bar nobody can see must not be a bar that swallows a
+    click meant for the page beneath it.
+  */
+  opacity: ${({ $isRevealed }) => ($isRevealed ? 1 : 0)};
+  pointer-events: ${({ $isRevealed }) => ($isRevealed ? "all" : "none")};
+  transition: opacity 120ms ease-out;
 `;
 
 const SelectionFrameActionsGroupButtons = styled.div`
@@ -296,6 +309,8 @@ export const SelectionFrameActions = ({
   translationFiles,
   contextParams,
   editorMode,
+  isRevealed,
+  onPointerNear,
 }: ISelectionFrameActionsProps) => {
   const { t } = getTranslation({
     translationFiles,
@@ -391,7 +406,12 @@ export const SelectionFrameActions = ({
   }, [sourcePath, editorContext.form.values, t]);
 
   return (
-    <SelectionFrameActionsContainer onClick={(e) => e.stopPropagation()}>
+    <SelectionFrameActionsContainer
+      $isRevealed={isRevealed}
+      onClick={(e) => e.stopPropagation()}
+      onPointerEnter={() => onPointerNear(true)}
+      onPointerLeave={() => onPointerNear(false)}
+    >
       <SelectionFrameActionsGroupButtons>
         {/*
           No "select parent" here. The breadcrumb under the canvas does the same

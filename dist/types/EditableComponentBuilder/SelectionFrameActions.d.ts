@@ -24,7 +24,11 @@ interface ISelectionFrameActionsProps {
     };
     contextParams: ContextParams;
     editorMode: TEasyblocksEditorMode;
+    /** On while the pointer is on the selected block or on the bar itself. */
+    isRevealed: boolean;
+    /** The bar answering for its own half of "is the pointer near". */
+    onPointerNear: (isPointerNear: boolean) => void;
 }
-export declare const SelectionFrameActions: ({ focussedField, actions, translationFiles, contextParams, editorMode, }: ISelectionFrameActionsProps) => React.JSX.Element;
+export declare const SelectionFrameActions: ({ focussedField, actions, translationFiles, contextParams, editorMode, isRevealed, onPointerNear, }: ISelectionFrameActionsProps) => React.JSX.Element;
 export {};
 //# sourceMappingURL=SelectionFrameActions.d.ts.map

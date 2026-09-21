@@ -1088,7 +1088,11 @@ function planMoveAfterInsert(sourcePath, insertedPath) {
 const SelectionFrameActionsContainer = styled.div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
   componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:var(", ");left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], SELECTION_ACTIONS_TOP, SELECTION_ACTIONS_LEFT, SELECTION_ACTIONS_DISPLAY, Colors.white);
+})(["position:absolute;top:var(", ");left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";opacity:", ";pointer-events:", ";transition:opacity 120ms ease-out;"], SELECTION_ACTIONS_TOP, SELECTION_ACTIONS_LEFT, SELECTION_ACTIONS_DISPLAY, Colors.white, ({
+  $isRevealed
+}) => $isRevealed ? 1 : 0, ({
+  $isRevealed
+}) => $isRevealed ? "all" : "none");
 const SelectionFrameActionsGroupButtons = styled.div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
   componentId: "sc-1fta8jo-1"
@@ -1234,7 +1238,9 @@ const SelectionFrameActions = ({
   actions,
   translationFiles,
   contextParams,
-  editorMode
+  editorMode,
+  isRevealed,
+  onPointerNear
 }) => {
   const {
     t
@@ -1299,7 +1305,10 @@ const SelectionFrameActions = ({
     }));
   }, [sourcePath, editorContext.form.values, t]);
   return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, {
-    onClick: e => e.stopPropagation()
+    $isRevealed: isRevealed,
+    onClick: e => e.stopPropagation(),
+    onPointerEnter: () => onPointerNear(true),
+    onPointerLeave: () => onPointerNear(false)
   }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Duplicate,
     hideLabel: true,
@@ -10177,6 +10186,43 @@ function isButtonVisible(target, viewport, containerElementRect) {
   return target.top >= containerElementRect.top && target.top <= containerElementRect.bottom && target.left >= containerElementRect.left && target.left <= containerElementRect.right;
 }
 
+/**
+ * Whether the pointer is on the selected block.
+ *
+ * The block lives in the canvas iframe and the action bar lives in the window
+ * around it, so the two cannot see each other's pointer: an element only ever
+ * hears about the pointer inside its own document. This is the canvas telling
+ * the window what it knows, over the same channel the selection's position
+ * already travels on.
+ *
+ * Declared here rather than in `easyblocks-core` beside the other editor
+ * events, because both ends of it are in this package — putting it in core
+ * would make a second package to build and publish for a message neither the
+ * core nor anything else ever reads.
+ */
+
+const SELECTION_POINTER_CHANGED = "@easyblocks-editor/selection-pointer-changed";
+function selectionPointerChanged(isPointerOver) {
+  return {
+    type: SELECTION_POINTER_CHANGED,
+    payload: {
+      isPointerOver
+    }
+  };
+}
+function isSelectionPointerChanged(data) {
+  return typeof data === "object" && data !== null && data.type === SELECTION_POINTER_CHANGED;
+}
+
+/**
+ * How long the bar waits after the pointer leaves before it fades.
+ *
+ * The bar sits a few pixels above the block, so reaching it means crossing a
+ * gap where the pointer is over neither. Without a grace period that crossing
+ * reads as "gone" and takes the bar away mid-travel, which is the whole reason
+ * a timer was the wrong mechanism in the first place.
+ */
+const REVEAL_GRACE_MS = 260;
 function SelectionFrame({
   width,
   height,
@@ -10197,31 +10243,60 @@ function SelectionFrame({
     direction = "vertical"
   } = compiledComponentConfig?.__editing ?? {};
   const isAddingEnabled = isAddingEnabledForSelectedFields(focussedField, editorContext);
+
+  /**
+   * Whether the bar is on show.
+   *
+   * It follows the pointer rather than a clock: on while the pointer is over
+   * the selected block or over the bar itself, off shortly after it leaves
+   * both. Always-on cost the canvas a bar's worth of chrome for the whole time
+   * somebody was working in the properties panel, which is most of the time.
+   */
+  const [isRevealed, setIsRevealed] = useState(false);
+  const fadeTimer = useRef();
+  const revealActions = useCallback(isPointerNear => {
+    clearTimeout(fadeTimer.current);
+    if (isPointerNear) {
+      setIsRevealed(true);
+      return;
+    }
+    fadeTimer.current = setTimeout(() => setIsRevealed(false), REVEAL_GRACE_MS);
+  }, []);
   useLayoutEffect(() => {
     if (focussedField.length === 0) {
       hideAddButtons();
+      setIsRevealed(false);
     }
   }, [focussedField]);
+  useLayoutEffect(() => () => clearTimeout(fadeTimer.current), []);
   useLayoutEffect(() => {
+    // Two kinds of message arrive on this channel now, so the parameter is the
+    // wide one and each branch narrows it for itself. Typed as one of them, the
+    // other narrows to `never`.
     function handleSelectionFrameMessages(event) {
+      if (isSelectionPointerChanged(event.data)) {
+        revealActions(event.data.payload.isPointerOver);
+        return;
+      }
       if (!isAddingEnabled) {
         hideAddButtons();
         return;
       }
-      if (event.data.type === "@easyblocks-editor/selection-frame-position-changed") {
+      const data = event.data;
+      if (data.type === "@easyblocks-editor/selection-frame-position-changed") {
         const viewport = {
           width,
           height
         };
-        updateAddButtons(direction, event.data.payload.target, viewport, event.data.payload.container);
-        updateSelectionActions(event.data.payload.target, viewport, event.data.payload.container);
+        updateAddButtons(direction, data.payload.target, viewport, data.payload.container);
+        updateSelectionActions(data.payload.target, viewport, data.payload.container);
       }
     }
     window.addEventListener("message", handleSelectionFrameMessages);
     return () => {
       window.removeEventListener("message", handleSelectionFrameMessages);
     };
-  }, [direction, height, isAddingEnabled, width]);
+  }, [direction, height, isAddingEnabled, revealActions, width]);
   async function handleAddButtonClick(which) {
     let path = focussedField.length === 1 ? focussedField[0] : undefined;
     if (!path) {
@@ -10269,7 +10344,9 @@ function SelectionFrame({
     focussedField: focussedField,
     translationFiles: translationFiles,
     contextParams: contextParams,
-    editorMode: editorMode
+    editorMode: editorMode,
+    isRevealed: isRevealed,
+    onPointerNear: revealActions
   }) : null));
 }
 function updateAddButtons(direction, targetElementRect, viewport, containerElementRect) {
@@ -13669,11 +13746,31 @@ function useUpdateFramePosition({
     closestScrollableElement?.addEventListener("scroll", updateSelectionFramePositionInScrollableContainer, {
       passive: true
     });
+    const reportPointerOver = () => dispatch(selectionPointerChanged(true));
+    const reportPointerOut = () => dispatch(selectionPointerChanged(false));
+    node.addEventListener("pointerenter", reportPointerOver);
+    node.addEventListener("pointerleave", reportPointerOut);
     dispatch(selectionFramePositionChanged(node.getBoundingClientRect(), closestScrollableElement?.getBoundingClientRect()));
+
+    /**
+     * The state the pointer is already in, said out loud once.
+     *
+     * A block becomes the selection because somebody clicked it, which means
+     * the pointer was inside it before these listeners existed — and
+     * `pointerenter` does not fire for a pointer that never crossed the edge.
+     * Without this the bar stayed hidden until the pointer left the block and
+     * came back, which is the opposite of what clicking a block asks for.
+     *
+     * `:hover` is the browser's own answer to "is the pointer in here", and it
+     * is already correct at this moment.
+     */
+    dispatch(selectionPointerChanged(node.matches(":hover")));
     return () => {
       window.removeEventListener("scroll", updateSelectionFramePosition);
       window.removeEventListener("resize", handleResize);
       closestScrollableElement?.removeEventListener("scroll", updateSelectionFramePositionInScrollableContainer);
+      node.removeEventListener("pointerenter", reportPointerOver);
+      node.removeEventListener("pointerleave", reportPointerOut);
     };
   });
 }

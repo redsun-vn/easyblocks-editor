@@ -1,6 +1,7 @@
 import { CSS } from "@dnd-kit/utilities";
 import type { useSortable } from "@dnd-kit/sortable";
 import { selectionFramePositionChanged } from "@redsun-vn/easyblocks-core/_internals";
+import { selectionPointerChanged } from "@/selectionFrame/selectionPointer";
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React, { MouseEvent, ReactNode, useEffect, useState } from "react";
 import {
@@ -458,12 +459,32 @@ function useUpdateFramePosition({
       },
     );
 
+    const reportPointerOver = () => dispatch(selectionPointerChanged(true));
+    const reportPointerOut = () => dispatch(selectionPointerChanged(false));
+
+    node.addEventListener("pointerenter", reportPointerOver);
+    node.addEventListener("pointerleave", reportPointerOut);
+
     dispatch(
       selectionFramePositionChanged(
         node.getBoundingClientRect(),
         closestScrollableElement?.getBoundingClientRect(),
       ),
     );
+
+    /**
+     * The state the pointer is already in, said out loud once.
+     *
+     * A block becomes the selection because somebody clicked it, which means
+     * the pointer was inside it before these listeners existed — and
+     * `pointerenter` does not fire for a pointer that never crossed the edge.
+     * Without this the bar stayed hidden until the pointer left the block and
+     * came back, which is the opposite of what clicking a block asks for.
+     *
+     * `:hover` is the browser's own answer to "is the pointer in here", and it
+     * is already correct at this moment.
+     */
+    dispatch(selectionPointerChanged(node.matches(":hover")));
 
     return () => {
       window.removeEventListener("scroll", updateSelectionFramePosition);
@@ -472,6 +493,8 @@ function useUpdateFramePosition({
         "scroll",
         updateSelectionFramePositionInScrollableContainer,
       );
+      node.removeEventListener("pointerenter", reportPointerOver);
+      node.removeEventListener("pointerleave", reportPointerOut);
     };
   });
 }
