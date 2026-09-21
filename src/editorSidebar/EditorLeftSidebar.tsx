@@ -8,6 +8,7 @@ import { useTranslation } from "../useTranslation";
 import { EditorGlobalSections } from "./editorGlobalSections/EditorGlobalSections";
 import { EditorLayer } from "./editorLayer/EditorLayer";
 import { EditorSections } from "./editorSections/EditorSections";
+import { isLeftSidebarPanelAllowed } from "./leftSidebarPanels";
 
 interface TEditorLeftSidebar {
   showLeftSidebar: TLeftSidebar | null;
@@ -84,6 +85,14 @@ export const EditorLeftSidebar = ({
   const { t } = useTranslation();
 
   const sidebarConfig = useMemo(() => {
+    // The rule is enforced here as well as on the rail buttons because this is
+    // the panel itself. A shortcut, a deep link or restored state that sets the
+    // sidebar directly would otherwise open a list the mode is forbidden to
+    // show, with nothing anywhere saying it had happened.
+    if (showLeftSidebar && !isLeftSidebarPanelAllowed(editorMode, showLeftSidebar)) {
+      return EMPTY_SIDEBAR_CONFIG;
+    }
+
     switch (showLeftSidebar) {
       case "global-sections": {
         // A shop owner reaches this panel too now. The rail button that opens

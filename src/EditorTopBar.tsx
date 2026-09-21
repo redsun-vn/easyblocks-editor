@@ -21,6 +21,7 @@ import { EditorHistory } from "./EditorHistory";
 import type { Zoom } from "./Editor";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
 import { TemplateIcon } from "./icons/TemplateIcon";
+import { isLeftSidebarPanelAllowed } from "./editorSidebar/leftSidebarPanels";
 import { TEasyblocksEditorMode, TLeftSidebar } from "./types";
 import { useTranslation } from "./useTranslation";
 import { getFlagUrl } from "./utils/getFlagSvgUrl";
@@ -172,6 +173,8 @@ export const EditorTopBar: React.FC<{
   const [isOpenConfigs, setIsOpenConfigs] = useState(false);
 
   const isAdminTemplate = editorMode === "admin-template";
+  const isPanelAllowed = (panel: TLeftSidebar) =>
+    isLeftSidebarPanelAllowed(editorMode, panel);
 
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
@@ -218,56 +221,65 @@ export const EditorTopBar: React.FC<{
 
         {readOnly && <Label>(Read-Only)</Label>}
 
-        {!isAdminTemplate && (
-          <>
-            <ButtonGhost
-              icon={Icons.Add}
-              hideLabel
-              onClick={() => onShowLeftSidebar("components")}
-              style={{
-                background:
-                  showLeftSidebar === "components"
-                    ? Colors.black10
-                    : "transparent",
-              }}
-            >
-              {t("editor.sidebar.sections.components")}
-            </ButtonGhost>
-            <ButtonGhost
-              icon={TemplateIcon}
-              hideLabel
-              onClick={() => onShowLeftSidebar("templates")}
-              style={{
-                background:
-                  showLeftSidebar === "templates"
-                    ? Colors.black10
-                    : "transparent",
-              }}
-            >
-              {t("editor.sidebar.sections.templates")}
-            </ButtonGhost>
-            {/*
-             * Shown to a shop owner too. The header, the footer and the
-             * announcement bar are theirs to change, and hiding the panel did
-             * not stop them wanting to — it only left them with no way in.
-             * Both of these reach across every page of the site, which is why
-             * they were hidden; that is a thing to say in the panel, not a
-             * reason to withhold it.
-             */}
-            <ButtonGhost
-              icon={Icons.GlobalSections}
-              hideLabel
-              onClick={() => onShowLeftSidebar("global-sections")}
-              style={{
-                background:
-                  showLeftSidebar === "global-sections"
-                    ? Colors.black10
-                    : "transparent",
-              }}
-            >
-              {t("editor.sidebar.globalSections")}
-            </ButtonGhost>
-          </>
+        {/*
+         * The template editor keeps this one. Building a template to sell is
+         * assembling it out of components, so withholding the components panel
+         * left that editor with nothing to build from. Which panels a mode may
+         * open is `isLeftSidebarPanelAllowed`, asked once per button here and
+         * again by the panel itself.
+         */}
+        {isPanelAllowed("components") && (
+          <ButtonGhost
+            icon={Icons.Add}
+            hideLabel
+            onClick={() => onShowLeftSidebar("components")}
+            style={{
+              background:
+                showLeftSidebar === "components"
+                  ? Colors.black10
+                  : "transparent",
+            }}
+          >
+            {t("editor.sidebar.sections.components")}
+          </ButtonGhost>
+        )}
+
+        {isPanelAllowed("templates") && (
+          <ButtonGhost
+            icon={TemplateIcon}
+            hideLabel
+            onClick={() => onShowLeftSidebar("templates")}
+            style={{
+              background:
+                showLeftSidebar === "templates" ? Colors.black10 : "transparent",
+            }}
+          >
+            {t("editor.sidebar.sections.templates")}
+          </ButtonGhost>
+        )}
+
+        {/*
+         * Shown to a shop owner too. The header, the footer and the
+         * announcement bar are theirs to change, and hiding the panel did
+         * not stop them wanting to — it only left them with no way in.
+         * Both of these reach across every page of the site, which is why
+         * they were hidden; that is a thing to say in the panel, not a
+         * reason to withhold it.
+         */}
+        {isPanelAllowed("global-sections") && (
+          <ButtonGhost
+            icon={Icons.GlobalSections}
+            hideLabel
+            onClick={() => onShowLeftSidebar("global-sections")}
+            style={{
+              background:
+                showLeftSidebar === "global-sections"
+                  ? Colors.black10
+                  : "transparent",
+            }}
+          >
+            {t("editor.sidebar.globalSections")}
+          </ButtonGhost>
         )}
 
         <ButtonGhost

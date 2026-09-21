@@ -6430,6 +6430,26 @@ const TemplateIcon = ({
   stroke: "currentColor"
 }));
 
+/**
+ * Whether a mode may open one of the left-hand panels.
+ *
+ * Only the template editor is restricted, and the restriction is a rule about
+ * the product rather than about the screen. Somebody working there is building
+ * a template to sell, so they get the components it is assembled from — and not
+ * the template library, which is the shelf their finished work will be listed
+ * on rather than a supply of parts. Global sections are withheld for the same
+ * reason: a template is not a site, so it has no site-wide header or footer.
+ *
+ * Read by the rail buttons and again by the panel they open. Two call sites for
+ * one rule, which is why the rule is here and not written out at either of them.
+ */
+function isLeftSidebarPanelAllowed(mode, panel) {
+  if (mode !== "admin-template") {
+    return true;
+  }
+  return panel === "components" || panel === "layers";
+}
+
 const SUBDIVISION_OVERRIDES = {
   "gd-GB": "gb-sct",
   // Scotland flag
@@ -6518,6 +6538,7 @@ const EditorTopBar = ({
   } = useTranslation();
   const [isOpenConfigs, setIsOpenConfigs] = React.useState(false);
   const isAdminTemplate = editorMode === "admin-template";
+  const isPanelAllowed = panel => isLeftSidebarPanelAllowed(editorMode, panel);
   const onSaveDocument = () => {
     if (_onSaveDocument && !isSaving) {
       debouncedSave(_onSaveDocument);
@@ -6549,28 +6570,28 @@ const EditorTopBar = ({
     onClick: () => {
       onRedo();
     }
-  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "(Read-Only)"), !isAdminTemplate && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, t("editor.sidebar.redo")), /*#__PURE__*/React__default["default"].createElement(VerticalLine, null), readOnly && /*#__PURE__*/React__default["default"].createElement(Label, null, "(Read-Only)"), isPanelAllowed("components") && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     icon: icons.Icons.Add,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("components"),
     style: {
       background: showLeftSidebar === "components" ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.sections.components")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, t("editor.sidebar.sections.components")), isPanelAllowed("templates") && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     icon: TemplateIcon,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("templates"),
     style: {
       background: showLeftSidebar === "templates" ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.sections.templates")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, t("editor.sidebar.sections.templates")), isPanelAllowed("global-sections") && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     icon: icons.Icons.GlobalSections,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("global-sections"),
     style: {
       background: showLeftSidebar === "global-sections" ? easyblocksDesignSystem.Colors.black10 : "transparent"
     }
-  }, t("editor.sidebar.globalSections"))), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, t("editor.sidebar.globalSections")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     icon: icons.Icons.Layers,
     hideLabel: true,
     onClick: () => onShowLeftSidebar("layers"),
@@ -9651,6 +9672,13 @@ const EditorLeftSidebar = ({
     t
   } = useTranslation();
   const sidebarConfig = React.useMemo(() => {
+    // The rule is enforced here as well as on the rail buttons because this is
+    // the panel itself. A shortcut, a deep link or restored state that sets the
+    // sidebar directly would otherwise open a list the mode is forbidden to
+    // show, with nothing anywhere saying it had happened.
+    if (showLeftSidebar && !isLeftSidebarPanelAllowed(editorMode, showLeftSidebar)) {
+      return EMPTY_SIDEBAR_CONFIG;
+    }
     switch (showLeftSidebar) {
       case "global-sections":
         {
