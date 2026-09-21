@@ -20,6 +20,7 @@ import {
 } from "../utils/isConfigPathRichTextPart";
 import { AddButton } from "./AddButton";
 import { FrameWrapper, Wrapper } from "./SelectionFrame.styles";
+import { calculateActionsPosition } from "./calculateActionsPosition";
 import { calculateAddButtonsProperties } from "./calculateAddButtonProperties";
 import {
   AFTER_ADD_BUTTON_DISPLAY,
@@ -28,6 +29,9 @@ import {
   BEFORE_ADD_BUTTON_DISPLAY,
   BEFORE_ADD_BUTTON_LEFT,
   BEFORE_ADD_BUTTON_TOP,
+  SELECTION_ACTIONS_DISPLAY,
+  SELECTION_ACTIONS_LEFT,
+  SELECTION_ACTIONS_TOP,
 } from "./cssVariables";
 
 type SelectionFrameProps = {
@@ -91,13 +95,18 @@ function SelectionFrame({
         event.data.type ===
         "@easyblocks-editor/selection-frame-position-changed"
       ) {
+        const viewport = { width, height };
+
         updateAddButtons(
           direction,
           event.data.payload.target,
-          {
-            width,
-            height,
-          },
+          viewport,
+          event.data.payload.container,
+        );
+
+        updateSelectionActions(
+          event.data.payload.target,
+          viewport,
           event.data.payload.container,
         );
       }
@@ -208,9 +217,31 @@ function updateAddButtons(
   setCssVariable(AFTER_ADD_BUTTON_DISPLAY, after.display);
 }
 
+function updateSelectionActions(
+  targetElementRect: DOMRect,
+  viewport: {
+    width: number;
+    height: number;
+  },
+  containerElementRect?: DOMRect,
+) {
+  const { top, left, display } = calculateActionsPosition(
+    targetElementRect,
+    viewport,
+    containerElementRect,
+  );
+
+  setCssVariable(SELECTION_ACTIONS_TOP, top + "px");
+  setCssVariable(SELECTION_ACTIONS_LEFT, left + "px");
+  setCssVariable(SELECTION_ACTIONS_DISPLAY, display);
+}
+
 function hideAddButtons() {
   setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, "none");
   setCssVariable(AFTER_ADD_BUTTON_DISPLAY, "none");
+  // The bar has its own switch now, so hiding the add buttons no longer hides
+  // it by accident — it has to be told.
+  setCssVariable(SELECTION_ACTIONS_DISPLAY, "none");
 }
 
 function setCssVariable(name: string, value: number | string) {

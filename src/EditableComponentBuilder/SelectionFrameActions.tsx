@@ -4,17 +4,14 @@ import { IMenu, Menu } from "@/menu/Menu";
 import { destinationResolver } from "@/paste/destinationResolver";
 import { pasteManager } from "@/paste/manager";
 import {
-  BEFORE_ADD_BUTTON_DISPLAY,
-  BEFORE_ADD_BUTTON_LEFT,
-  BEFORE_ADD_BUTTON_TOP,
+  SELECTION_ACTIONS_DISPLAY,
+  SELECTION_ACTIONS_LEFT,
+  SELECTION_ACTIONS_TOP,
 } from "@/selectionFrame/cssVariables";
 import { ActionsType, TEasyblocksEditorMode } from "@/types";
 import { getTranslation } from "@/useTranslation";
 import { dotNotationGet } from "@/utils/object/dotNotationGet";
-import {
-  getComponentLabel,
-  getParentFocusedFields,
-} from "@/utils/selection/canvasSelectionPaths";
+import { getComponentLabel } from "@/utils/selection/canvasSelectionPaths";
 import { uniqueId } from "@/utils/uniqueId";
 import {
   ContextParams,
@@ -73,13 +70,23 @@ interface ISelectionFrameActionsProps {
   editorMode: TEasyblocksEditorMode;
 }
 
+/**
+ * Hangs off the block's top-left corner, from its own position.
+ *
+ * It used to read the add button's, which is the middle of the block's top
+ * edge. That is right for a 24px circle and wrong for a bar six buttons wide:
+ * the bar hung from the middle and covered the content above the middle, which
+ * is the part of the page the author was most likely reading. The corner is
+ * where a bar like this belongs, and `calculateActionsPosition` keeps it inside
+ * the canvas and flips it when there is no room above.
+ */
 const SelectionFrameActionsContainer = styled.div`
   position: absolute;
-  top: calc(var(${BEFORE_ADD_BUTTON_TOP}) - 42px);
-  left: var(${BEFORE_ADD_BUTTON_LEFT});
+  top: var(${SELECTION_ACTIONS_TOP});
+  left: var(${SELECTION_ACTIONS_LEFT});
   border-radius: 4px;
   box-shadow: var(--tina-shadow-big);
-  display: var(${BEFORE_ADD_BUTTON_DISPLAY}, none);
+  display: var(${SELECTION_ACTIONS_DISPLAY}, none);
   padding: 5px 10px;
   width: max-content;
   background: ${Colors.white};
@@ -100,7 +107,7 @@ const StyledButtonGroup = styled.div`
 `;
 
 const StyledMenu = styled.div`
-  display: var(${BEFORE_ADD_BUTTON_DISPLAY}, none);
+  display: var(${SELECTION_ACTIONS_DISPLAY}, none);
 `;
 
 const SelectionMoreActions = ({ t }: { t: (key: string) => any }) => {
@@ -298,10 +305,6 @@ export const SelectionFrameActions = ({
   const [showMoveTo, setShowMoveTo] = useState(false);
   const editorContext = useEditorContext();
   const toaster = useToaster();
-  const parentFocusedFields = getParentFocusedFields(
-    focussedField,
-    editorContext,
-  );
 
   // Moving carries one block: the block is inserted into the chosen section and removed from
   // where it was, and a multi-selection has no single source path to remove. Several blocks
@@ -390,15 +393,13 @@ export const SelectionFrameActions = ({
   return (
     <SelectionFrameActionsContainer onClick={(e) => e.stopPropagation()}>
       <SelectionFrameActionsGroupButtons>
-        {parentFocusedFields.length > 0 && (
-          <ButtonGhost
-            icon={Icons.LayerGroup}
-            hideLabel
-            onClick={() => editorContext.setFocussedField(parentFocusedFields)}
-          >
-            {t("selectParent")}
-          </ButtonGhost>
-        )}
+        {/*
+          No "select parent" here. The breadcrumb under the canvas does the same
+          job and does it better: it is a button per ancestor rather than one
+          step at a time, it says where each step lands, it is always on screen,
+          and it covers nothing. Two controls for one job, one of them worse,
+          is a button's worth of bar for nothing.
+        */}
         <ButtonGhost
           icon={Icons.Duplicate}
           hideLabel

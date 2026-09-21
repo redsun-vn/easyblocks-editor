@@ -924,6 +924,17 @@ const AFTER_ADD_BUTTON_DISPLAY = editorVariable("after-add-button-display");
 const AFTER_ADD_BUTTON_TOP = editorVariable("after-add-button-top");
 const AFTER_ADD_BUTTON_LEFT = editorVariable("after-add-button-left");
 
+/**
+ * The action bar's own position.
+ *
+ * Its own, and that is the point: it used to read the add button's, which is
+ * the middle of the block's top edge — right for a small circle, and the reason
+ * a bar six buttons wide sat across the content above the block.
+ */
+const SELECTION_ACTIONS_DISPLAY = editorVariable("selection-actions-display");
+const SELECTION_ACTIONS_TOP = editorVariable("selection-actions-top");
+const SELECTION_ACTIONS_LEFT = editorVariable("selection-actions-left");
+
 const fallbackTranslation = "en-US";
 const getTranslation = editorContext => {
   const {
@@ -1099,10 +1110,20 @@ function planMoveAfterInsert(sourcePath, insertedPath) {
     pathToFocus: shiftPath(insertedPath, sourceToRemove, "upward")
   };
 }
+/**
+ * Hangs off the block's top-left corner, from its own position.
+ *
+ * It used to read the add button's, which is the middle of the block's top
+ * edge. That is right for a 24px circle and wrong for a bar six buttons wide:
+ * the bar hung from the middle and covered the content above the middle, which
+ * is the part of the page the author was most likely reading. The corner is
+ * where a bar like this belongs, and `calculateActionsPosition` keeps it inside
+ * the canvas and flips it when there is no room above.
+ */
 const SelectionFrameActionsContainer = styled__default["default"].div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
   componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:calc(var(", ") - 42px);left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], BEFORE_ADD_BUTTON_TOP, BEFORE_ADD_BUTTON_LEFT, BEFORE_ADD_BUTTON_DISPLAY, easyblocksDesignSystem.Colors.white);
+})(["position:absolute;top:var(", ");left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";pointer-events:all;"], SELECTION_ACTIONS_TOP, SELECTION_ACTIONS_LEFT, SELECTION_ACTIONS_DISPLAY, easyblocksDesignSystem.Colors.white);
 const SelectionFrameActionsGroupButtons = styled__default["default"].div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
   componentId: "sc-1fta8jo-1"
@@ -1114,7 +1135,7 @@ const StyledButtonGroup$3 = styled__default["default"].div.withConfig({
 const StyledMenu = styled__default["default"].div.withConfig({
   displayName: "SelectionFrameActions__StyledMenu",
   componentId: "sc-1fta8jo-3"
-})(["display:var(", ",none);"], BEFORE_ADD_BUTTON_DISPLAY);
+})(["display:var(", ",none);"], SELECTION_ACTIONS_DISPLAY);
 const SelectionMoreActions = ({
   t
 }) => {
@@ -1260,7 +1281,6 @@ const SelectionFrameActions = ({
   const [showMoveTo, setShowMoveTo] = React.useState(false);
   const editorContext = useEditorContext();
   const toaster = Toaster.useToaster();
-  const parentFocusedFields = getParentFocusedFields(focussedField, editorContext);
 
   // Moving carries one block: the block is inserted into the chosen section and removed from
   // where it was, and a multi-selection has no single source path to remove. Several blocks
@@ -1315,11 +1335,7 @@ const SelectionFrameActions = ({
   }, [sourcePath, editorContext.form.values, t]);
   return /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsContainer, {
     onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, parentFocusedFields.length > 0 && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.LayerGroup,
-    hideLabel: true,
-    onClick: () => editorContext.setFocussedField(parentFocusedFields)
-  }, t("selectParent")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     icon: icons.Icons.Duplicate,
     hideLabel: true,
     onClick: () => actions.duplicateItems(focussedField)
@@ -10045,6 +10061,87 @@ const FrameWrapper = styled.styled.div.attrs(({
   componentId: "sc-xqih8j-1"
 })(["position:relative;z-index:1;display:grid;place-items:center;transform-origin:left;"]);
 
+/**
+ * Where the selection's action bar sits.
+ *
+ * It used to borrow the add button's position, and that was the whole problem:
+ * that position is the *middle* of the block's top edge, which is right for a
+ * 24px circle and wrong for a bar six buttons wide. The bar hung from the
+ * middle of the block and covered whatever was above the middle — most often
+ * the words of the section above, which is the one thing the author did not
+ * select and did want to read.
+ *
+ * It hangs off the top-left corner now, outside the block.
+ */
+
+/** The bar's own size, from the buttons it is made of. */
+const BUTTON_SIZE = 28;
+const BUTTON_GAP = 2;
+const BAR_PADDING_X = 10;
+const BAR_PADDING_Y = 5;
+
+/** Six buttons at most: duplicate, delete, up, down, move to, and the menu. */
+const MOST_BUTTONS = 6;
+const ACTIONS_HEIGHT = BUTTON_SIZE + BAR_PADDING_Y * 2;
+
+/**
+ * The widest the bar can be, used only to keep it inside the canvas.
+ *
+ * A ceiling rather than a measurement, and that is safe in one direction only:
+ * being generous parks the bar a little further from the right edge than it
+ * needed to be, while being mean would let it hang over the edge. Two of the
+ * six buttons appear conditionally, so the real width is often smaller.
+ */
+const ACTIONS_MAX_WIDTH = MOST_BUTTONS * BUTTON_SIZE + (MOST_BUTTONS - 1) * BUTTON_GAP + BAR_PADDING_X * 2;
+
+/** Breathing room between the bar and the block it belongs to. */
+const GAP = 8;
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+/**
+ * What the bar is allowed to occupy: the canvas, narrowed to the scrollable
+ * container when the block is inside one.
+ */
+function resolveBounds(viewport, container) {
+  return {
+    top: Math.max(0, container?.top ?? 0),
+    left: Math.max(0, container?.left ?? 0),
+    right: Math.min(viewport.width, container?.right ?? viewport.width),
+    bottom: Math.min(viewport.height, container?.bottom ?? viewport.height)
+  };
+}
+function calculateActionsPosition(target, viewport, container) {
+  const bounds = resolveBounds(viewport, container);
+
+  // A block scrolled out of its container takes its bar with it. Without this
+  // the bar stayed put over whatever had scrolled into its place — the same
+  // fault the add buttons had.
+  const isBlockInView = target.top <= bounds.bottom && target.top + target.height >= bounds.top;
+  const above = target.top - ACTIONS_HEIGHT - GAP;
+  return {
+    /**
+     * Above the block when there is room for it, and just inside the block's
+     * own top edge when there is not.
+     *
+     * Overlapping the block being edited costs its top-left corner. Overlapping
+     * the block above it hides something nobody selected, which is what this
+     * replaced — so when only one of the two is possible, the bar covers its
+     * own block.
+     */
+    top: above >= bounds.top ? above : clamp(target.top + GAP, bounds.top, bounds.bottom - ACTIONS_HEIGHT),
+    /**
+     * The block's left edge, pulled back only as far as staying inside needs.
+     *
+     * A narrow block against the right edge — the basket column of a header is
+     * exactly that — would otherwise push the bar off the canvas.
+     */
+    left: clamp(target.left, bounds.left, Math.max(bounds.left, bounds.right - ACTIONS_MAX_WIDTH)),
+    display: isBlockInView ? "block" : "none"
+  };
+}
+
 function calculateAddButtonsProperties(direction, targetElementRect, viewport, containerElementRect) {
   const halfButtonSize = Math.floor(ICON_BUTTON_SIZE / 2);
   if (direction === "vertical") {
@@ -10147,10 +10244,12 @@ function SelectionFrame({
         return;
       }
       if (event.data.type === "@easyblocks-editor/selection-frame-position-changed") {
-        updateAddButtons(direction, event.data.payload.target, {
+        const viewport = {
           width,
           height
-        }, event.data.payload.container);
+        };
+        updateAddButtons(direction, event.data.payload.target, viewport, event.data.payload.container);
+        updateSelectionActions(event.data.payload.target, viewport, event.data.payload.container);
       }
     }
     window.addEventListener("message", handleSelectionFrameMessages);
@@ -10220,9 +10319,22 @@ function updateAddButtons(direction, targetElementRect, viewport, containerEleme
   setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, before.display);
   setCssVariable(AFTER_ADD_BUTTON_DISPLAY, after.display);
 }
+function updateSelectionActions(targetElementRect, viewport, containerElementRect) {
+  const {
+    top,
+    left,
+    display
+  } = calculateActionsPosition(targetElementRect, viewport, containerElementRect);
+  setCssVariable(SELECTION_ACTIONS_TOP, top + "px");
+  setCssVariable(SELECTION_ACTIONS_LEFT, left + "px");
+  setCssVariable(SELECTION_ACTIONS_DISPLAY, display);
+}
 function hideAddButtons() {
   setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, "none");
   setCssVariable(AFTER_ADD_BUTTON_DISPLAY, "none");
+  // The bar has its own switch now, so hiding the add buttons no longer hides
+  // it by accident — it has to be told.
+  setCssVariable(SELECTION_ACTIONS_DISPLAY, "none");
 }
 function setCssVariable(name, value) {
   document.documentElement.style.setProperty(name, value.toString());
