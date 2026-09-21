@@ -3673,10 +3673,17 @@ const CustomField = ({
   }
 };
 
+/**
+ * The colour swatch that opens the palette.
+ *
+ * Borrows the select trigger's looks rather than restating them. It used to
+ * carry its own copy, and the copy was missing the resting outline the rest of
+ * the panel has — a white swatch on a white panel with nothing around it.
+ */
 const Trigger = styled__default["default"](ReactSelect.RadixSelectTrigger).withConfig({
   displayName: "ColorFieldPlugin__Trigger",
   componentId: "sc-19dwflf-0"
-})(["all:unset;display:flex;align-items:center;", ";display:flex;gap:4px;max-width:100%;box-sizing:border-box;height:28px;padding:0 2px 0 6px;border-radius:2px;@media (hover:hover){&:hover{box-shadow:0 0 0 1px ", ";}}"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black10);
+})(["", ""], Select.selectTriggerStyles);
 const Content$2 = styled__default["default"](ReactSelect.RadixSelectContent).withConfig({
   displayName: "ColorFieldPlugin__Content",
   componentId: "sc-19dwflf-1"

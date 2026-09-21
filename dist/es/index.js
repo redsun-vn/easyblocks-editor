@@ -23,7 +23,7 @@ import { ThumbnailButton } from '@redsun-vn/easyblocks-design-system/ThumbnailBu
 import ReactDOM, { createPortal } from 'react-dom';
 import { useTooltipTrigger } from '@react-aria/tooltip';
 import { usePopper } from 'react-popper';
-import { Select, SelectSeparator, SelectItem } from '@redsun-vn/easyblocks-design-system/Select';
+import { Select, SelectSeparator, SelectItem, selectTriggerStyles } from '@redsun-vn/easyblocks-design-system/Select';
 import * as RadixRadioGroup from '@radix-ui/react-radio-group';
 import { Toggle as Toggle$1 } from '@redsun-vn/easyblocks-design-system/Toggle';
 import { SelectInline, ToggleButton } from '@redsun-vn/easyblocks-design-system/ToggleButton';
@@ -3638,10 +3638,17 @@ const CustomField = ({
   }
 };
 
+/**
+ * The colour swatch that opens the palette.
+ *
+ * Borrows the select trigger's looks rather than restating them. It used to
+ * carry its own copy, and the copy was missing the resting outline the rest of
+ * the panel has — a white swatch on a white panel with nothing around it.
+ */
 const Trigger = styled(RadixSelectTrigger).withConfig({
   displayName: "ColorFieldPlugin__Trigger",
   componentId: "sc-19dwflf-0"
-})(["all:unset;display:flex;align-items:center;", ";display:flex;gap:4px;max-width:100%;box-sizing:border-box;height:28px;padding:0 2px 0 6px;border-radius:2px;@media (hover:hover){&:hover{box-shadow:0 0 0 1px ", ";}}"], Fonts.body, Colors.black10);
+})(["", ""], selectTriggerStyles);
 const Content$2 = styled(RadixSelectContent).withConfig({
   displayName: "ColorFieldPlugin__Content",
   componentId: "sc-19dwflf-1"

@@ -17,6 +17,7 @@ import {
 } from "@redsun-vn/easyblocks-design-system/radix-ui/ReactSelect";
 import {
   Select,
+  selectTriggerStyles,
   SelectSeparator,
 } from "@redsun-vn/easyblocks-design-system/Select";
 import {
@@ -60,27 +61,15 @@ interface IColorFieldPluginProps {
   }[];
 }
 
+/**
+ * The colour swatch that opens the palette.
+ *
+ * Borrows the select trigger's looks rather than restating them. It used to
+ * carry its own copy, and the copy was missing the resting outline the rest of
+ * the panel has — a white swatch on a white panel with nothing around it.
+ */
 const Trigger = styled(RadixSelectTrigger)`
-  all: unset;
-
-  display: flex;
-  align-items: center;
-
-  ${Fonts.body};
-  display: flex;
-  gap: 4px;
-  max-width: 100%;
-
-  box-sizing: border-box;
-  height: 28px;
-  padding: 0 2px 0 6px;
-  border-radius: 2px;
-
-  @media (hover: hover) {
-    &:hover {
-      box-shadow: 0 0 0 1px ${Colors.black10};
-    }
-  }
+  ${selectTriggerStyles}
 `;
 
 const Content = styled(RadixSelectContent)`
