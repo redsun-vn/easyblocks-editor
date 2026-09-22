@@ -87,7 +87,13 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
   const extraValues = field.extraValues ?? [];
 
   const [inputValue, setInputValue] = useState(
-    isMixedFieldValue(input.value) ? "" : (input.value?.value.toString() ?? ""),
+    // Both `?.`s are load-bearing. The field can be handed no value at all, and
+    // it can be handed one that names a token without carrying the token's
+    // resolved value — a config written by hand rather than by the engine. The
+    // select reads the token id and is right either way; only this text box,
+    // which is for a custom value, has nothing to show. It used to throw here
+    // instead, taking the whole properties panel down.
+    isMixedFieldValue(input.value) ? "" : (input.value?.value?.toString() ?? ""),
   );
 
   const customValueTextFieldRef = useRef<HTMLInputElement | null>(null);
@@ -179,7 +185,10 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
         return;
       }
 
-      let value = input.value.value;
+      // `?.` for the same reason the reads above carry it: a prop a config
+      // never wrote arrives here as `null`, and a field with no value is the
+      // case "Custom" is most likely to be picked for.
+      let value = input.value?.value;
 
       // responsive token values are transformed into value from current breakpoint
       if (isTrulyResponsiveValue(value)) {
@@ -196,7 +205,7 @@ function TokenFieldComponent<TokenValue extends NonNullish>({
 
       input.onChange({
         value,
-        widgetId: input.value.widgetId,
+        widgetId: input.value?.widgetId,
       });
 
       queueMicrotask(() => {

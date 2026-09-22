@@ -213,6 +213,28 @@ export const ColorOptions = ({
   });
 };
 
+/**
+ * The custom colour a field is holding, or nothing.
+ *
+ * The field's value is not always an object. A config written by hand rather
+ * than by the engine — the column a row appends when its count goes up is the
+ * measured case — has no entry for the prop at all, and the field is handed
+ * `null`. Reading `.value` straight off it threw during render, which is not a
+ * blank swatch but the whole properties panel gone, from clicking a block.
+ *
+ * A value that is mixed across a multiple selection is not a colour either, and
+ * is the same answer here.
+ */
+function readCustomColor(
+  value: CoreTokenValue | FieldMixedValue | null | undefined,
+): string | undefined {
+  if (!value || isMixedFieldValue(value)) {
+    return undefined;
+  }
+
+  return value.value as string | undefined;
+}
+
 export const ColorFieldPlugin = ({
   type = "list",
   tokenTypeDefinition,
@@ -234,8 +256,7 @@ export const ColorFieldPlugin = ({
 
   const previewColor =
     selectValue === CUSTOM_OPTION_VALUE
-      ? ((input.value as Exclude<(typeof input)["value"], FieldMixedValue>)
-          .value as string)
+      ? readCustomColor(input.value)
       : undefined;
 
   const customInputElement = shouldShowCustomValueInput ? (
@@ -264,9 +285,7 @@ export const ColorFieldPlugin = ({
   const myColorOptions = options.filter((o) => !o.id.startsWith("theme_"));
 
   useEffect(() => {
-    const value = (
-      input.value as Exclude<(typeof input)["value"], FieldMixedValue>
-    ).value;
+    const value = readCustomColor(input.value);
     if (value) {
       setInputValue(value);
     }
@@ -350,12 +369,7 @@ export const ColorFieldPlugin = ({
                   value={CUSTOM_OPTION_VALUE}
                   previewColor={
                     selectValue === CUSTOM_OPTION_VALUE
-                      ? ((
-                          input.value as Exclude<
-                            (typeof input)["value"],
-                            FieldMixedValue
-                          >
-                        ).value as string)
+                      ? readCustomColor(input.value)
                       : undefined
                   }
                 >

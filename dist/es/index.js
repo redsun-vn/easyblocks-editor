@@ -3762,6 +3762,25 @@ const ColorOptions = ({
     }, color)))));
   });
 };
+
+/**
+ * The custom colour a field is holding, or nothing.
+ *
+ * The field's value is not always an object. A config written by hand rather
+ * than by the engine — the column a row appends when its count goes up is the
+ * measured case — has no entry for the prop at all, and the field is handed
+ * `null`. Reading `.value` straight off it threw during render, which is not a
+ * blank swatch but the whole properties panel gone, from clicking a block.
+ *
+ * A value that is mixed across a multiple selection is not a colour either, and
+ * is the same answer here.
+ */
+function readCustomColor(value) {
+  if (!value || isMixedFieldValue(value)) {
+    return undefined;
+  }
+  return value.value;
+}
 const ColorFieldPlugin = ({
   type = "list",
   tokenTypeDefinition,
@@ -3779,7 +3798,7 @@ const ColorFieldPlugin = ({
     t
   } = useTranslation();
   const CustomInputWidgetComponent = tokenTypeDefinition?.widget?.component;
-  const previewColor = selectValue === CUSTOM_OPTION_VALUE ? input.value.value : undefined;
+  const previewColor = selectValue === CUSTOM_OPTION_VALUE ? readCustomColor(input.value) : undefined;
   const customInputElement = shouldShowCustomValueInput ? /*#__PURE__*/React__default.createElement("div", {
     style: {
       width: "100%",
@@ -3805,7 +3824,7 @@ const ColorFieldPlugin = ({
   const themeOptions = options.filter(o => o.id.startsWith("theme_"));
   const myColorOptions = options.filter(o => !o.id.startsWith("theme_"));
   useEffect(() => {
-    const value = input.value.value;
+    const value = readCustomColor(input.value);
     if (value) {
       setInputValue(value);
     }
@@ -3850,7 +3869,7 @@ const ColorFieldPlugin = ({
     }, o.label);
   }), field?.allowCustom && /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(SelectSeparator, null), /*#__PURE__*/React__default.createElement(SelectColorTokenItem, {
     value: CUSTOM_OPTION_VALUE,
-    previewColor: selectValue === CUSTOM_OPTION_VALUE ? input.value.value : undefined
+    previewColor: selectValue === CUSTOM_OPTION_VALUE ? readCustomColor(input.value) : undefined
   }, "Custom")))), customInputElement);
 };
 
@@ -3879,7 +3898,14 @@ function TokenFieldComponent({
   const normalizeCustomValue = field.normalizeCustomValue || (x => x);
   const allowCustom = field.allowCustom ?? false;
   const extraValues = field.extraValues ?? [];
-  const [inputValue, setInputValue] = useState(isMixedFieldValue(input.value) ? "" : input.value?.value.toString() ?? "");
+  const [inputValue, setInputValue] = useState(
+  // Both `?.`s are load-bearing. The field can be handed no value at all, and
+  // it can be handed one that names a token without carrying the token's
+  // resolved value — a config written by hand rather than by the engine. The
+  // select reads the token id and is right either way; only this text box,
+  // which is for a custom value, has nothing to show. It used to throw here
+  // instead, taking the whole properties panel down.
+  isMixedFieldValue(input.value) ? "" : input.value?.value?.toString() ?? "");
   const customValueTextFieldRef = useRef(null);
   const options = Object.entries(field.tokens).map(([tokenId, tokenValue]) => {
     if (tokenTypeDefinition.token === "fonts") {
@@ -3932,7 +3958,11 @@ function TokenFieldComponent({
         setInputValue("");
         return;
       }
-      let value = input.value.value;
+
+      // `?.` for the same reason the reads above carry it: a prop a config
+      // never wrote arrives here as `null`, and a field with no value is the
+      // case "Custom" is most likely to be picked for.
+      let value = input.value?.value;
 
       // responsive token values are transformed into value from current breakpoint
       if (isTrulyResponsiveValue(value)) {
@@ -3942,7 +3972,7 @@ function TokenFieldComponent({
       }
       input.onChange({
         value,
-        widgetId: input.value.widgetId
+        widgetId: input.value?.widgetId
       });
       queueMicrotask(() => {
         customValueTextFieldRef.current?.focus();
