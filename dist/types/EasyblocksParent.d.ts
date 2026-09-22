@@ -14,6 +14,8 @@ type EasyblocksParentProps = {
     pickers?: Record<string, TemplatePicker>;
     mode: TEasyblocksEditorMode;
     defaultLocale?: string;
+    uiLocale?: string;
+    onUiLocaleChange?: (uiLocale: string) => void;
     SaveAsPicker?: SaveAsTemplatePicker;
 };
 export declare function EasyblocksParent(props: EasyblocksParentProps): React.JSX.Element;

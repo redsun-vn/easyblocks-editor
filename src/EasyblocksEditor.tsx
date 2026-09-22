@@ -77,6 +77,8 @@ export function EasyblocksEditor(props: EasyblocksEditorProps) {
           pickers={props.pickers}
           mode={props.mode}
           defaultLocale={props.defaultLocale}
+          uiLocale={props.uiLocale}
+          onUiLocaleChange={props.onUiLocaleChange}
           SaveAsPicker={props.SaveAsPicker}
         />
       )}

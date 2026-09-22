@@ -22,9 +22,9 @@ import type { Zoom } from "./Editor";
 import { FontColorConfigsModal } from "./fontColorConfigs/FontColorConfigsModal";
 import { TemplateIcon } from "./icons/TemplateIcon";
 import { isLeftSidebarPanelAllowed } from "./editorSidebar/leftSidebarPanels";
+import { LanguageSelect } from "./LanguageSelect";
 import { TEasyblocksEditorMode, TLeftSidebar } from "./types";
 import { useTranslation } from "./useTranslation";
-import { getFlagUrl } from "./utils/getFlagSvgUrl";
 import { DEVICE_LABELS } from "./DeviceFrame";
 
 export const TOP_BAR_HEIGHT = 40;
@@ -89,18 +89,6 @@ const TopBarCenter = styled.div`
   white-space: nowrap;
 `;
 
-const ImageContainer = styled.div`
-  position: relative;
-  width: 20px;
-  height: 20px;
-`;
-
-const Image = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-`;
-
 const VerticalLine = styled.div`
   width: 1px;
   height: 20px;
@@ -126,6 +114,9 @@ export const EditorTopBar: React.FC<{
   locales: Locale[];
   locale: string;
   onLocaleChange: (locale: string) => void;
+  uiLocale: string;
+  uiLocales: string[];
+  onUiLocaleChange: (uiLocale: string) => void;
   hideCloseButton: boolean;
   readOnly: boolean;
   showLeftSidebar: TLeftSidebar | null;
@@ -153,6 +144,9 @@ export const EditorTopBar: React.FC<{
   locales,
   locale,
   onLocaleChange,
+  uiLocale,
+  uiLocales,
+  onUiLocaleChange,
   hideCloseButton,
   readOnly,
   showLeftSidebar,
@@ -359,31 +353,14 @@ export const EditorTopBar: React.FC<{
         >
           {!isAdminTemplate && (
             <>
-              <Select
-                value={locale}
-                onChange={(locale) => onLocaleChange(locale)}
-              >
-                {locales.map((l) => (
-                  <SelectItem key={l.code} value={l.code}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        gap: 4,
-                      }}
-                    >
-                      {l.code ? (
-                        <ImageContainer>
-                          <Image src={getFlagUrl(l.code)} alt={l.name} />
-                        </ImageContainer>
-                      ) : null}
-                      {l.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </Select>
+              <LanguageSelect
+                contentLocales={locales}
+                contentLocale={locale}
+                onContentLocaleChange={onLocaleChange}
+                uiLocales={uiLocales}
+                uiLocale={uiLocale}
+                onUiLocaleChange={onUiLocaleChange}
+              />
               <ButtonGhost
                 hideLabel
                 icon={Icons.Save}

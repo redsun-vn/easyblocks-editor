@@ -56,6 +56,7 @@ export const testEditorContext: EditorContextType = {
   contextParams: {
     locale: "en",
   },
+  uiLocale: "en-US",
   theme: {
     colors: {},
     fonts: {},

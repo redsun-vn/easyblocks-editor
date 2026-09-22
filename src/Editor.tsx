@@ -72,6 +72,7 @@ import { EditorExternalDataProvider } from "./EditorExternalDataProvider";
 import { EditorIframe } from "./EditorIframe";
 import { EditorSidebar } from "./EditorSidebar";
 import { EditorTopBar, TOP_BAR_HEIGHT } from "./EditorTopBar";
+import { DEFAULT_UI_LOCALE } from "./useTranslation";
 import { ModalPicker } from "./ModalPicker";
 import { SkeletonEditor } from "./SkeletonEditor";
 import { TemplateModal } from "./TemplateModal";
@@ -225,6 +226,9 @@ type EditorProps = {
   readOnly: boolean;
   mode: TEasyblocksEditorMode;
   defaultLocale?: string;
+  /** The language the editor's own chrome speaks; see `EasyblocksEditorProps`. */
+  uiLocale?: string;
+  onUiLocaleChange?: (uiLocale: string) => void;
   documentId: string | null;
   rootComponentId: string | null;
   rootTemplateId: string | null;
@@ -754,6 +758,33 @@ const EditorContent = ({
     compilationContext.contextParams.locale,
   );
   const prevLocale = useRef<string>("");
+
+  /**
+   * The language the editor's chrome speaks, kept apart from the content locale.
+   *
+   * A host that passes `uiLocale` owns the value outright — it is the same
+   * setting the host persists between sessions, so letting a copy live here
+   * too would let the two drift apart. A host that passes nothing gets local
+   * state, so the control still works on its own.
+   *
+   * It starts at English rather than at the content locale. A page defaults to
+   * the shop's own language and the editor defaults to English, because they
+   * answer different questions and tying the second to the first is the bug
+   * this separation exists to fix.
+   */
+  const [localUiLocale, setLocalUiLocale] = useState<string | undefined>(
+    undefined,
+  );
+  const uiLocale = props.uiLocale ?? localUiLocale ?? DEFAULT_UI_LOCALE;
+
+  const onUiLocaleChange = (newUiLocale: string) => {
+    if (props.onUiLocaleChange) {
+      props.onUiLocaleChange(newUiLocale);
+      return;
+    }
+
+    setLocalUiLocale(newUiLocale);
+  };
   const [componentPickerData, setComponentPickerData] = useState<
     | {
         promiseResolve: (config: NoCodeComponentEntry | undefined) => void;
@@ -1108,6 +1139,7 @@ const EditorContent = ({
     form,
     setFocussedField: handleSetFocussedField,
     translationFiles: props.config?.translationFiles ?? {},
+    uiLocale,
     isEditing,
     globalSections: props.config?.globalSections ?? null,
     onGlobalSectionChange: props.onGlobalSectionChange,
@@ -1422,6 +1454,9 @@ const EditorContent = ({
               locale={currentLocale}
               locales={editorContext.locales}
               onLocaleChange={onLocaleChange}
+              uiLocale={uiLocale}
+              uiLocales={Object.keys(editorContext.translationFiles ?? {})}
+              onUiLocaleChange={onUiLocaleChange}
               hideCloseButton={props.config.hideCloseButton ?? false}
               readOnly={editorContext.readOnly}
               showLeftSidebar={showLeftSidebar}

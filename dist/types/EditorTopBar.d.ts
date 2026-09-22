@@ -21,6 +21,9 @@ export declare const EditorTopBar: React.FC<{
     locales: Locale[];
     locale: string;
     onLocaleChange: (locale: string) => void;
+    uiLocale: string;
+    uiLocales: string[];
+    onUiLocaleChange: (uiLocale: string) => void;
     hideCloseButton: boolean;
     readOnly: boolean;
     showLeftSidebar: TLeftSidebar | null;

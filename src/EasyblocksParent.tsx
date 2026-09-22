@@ -41,6 +41,8 @@ type EasyblocksParentProps = {
   pickers?: Record<string, TemplatePicker>;
   mode: TEasyblocksEditorMode;
   defaultLocale?: string;
+  uiLocale?: string;
+  onUiLocaleChange?: (uiLocale: string) => void;
   SaveAsPicker?: SaveAsTemplatePicker;
 };
 
@@ -107,6 +109,8 @@ export function EasyblocksParent(props: EasyblocksParentProps) {
             }}
             mode={props.mode}
             defaultLocale={props.defaultLocale}
+            uiLocale={props.uiLocale}
+            onUiLocaleChange={props.onUiLocaleChange}
             SaveAsPicker={props.SaveAsPicker}
           />
         </TooltipProvider>

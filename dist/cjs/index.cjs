@@ -935,17 +935,39 @@ const SELECTION_ACTIONS_DISPLAY = editorVariable("selection-actions-display");
 const SELECTION_ACTIONS_TOP = editorVariable("selection-actions-top");
 const SELECTION_ACTIONS_LEFT = editorVariable("selection-actions-left");
 
-const fallbackTranslation = "en-US";
-const getTranslation = editorContext => {
+/**
+ * The language the editor speaks when nothing else decides.
+ *
+ * Also the fallback when the chosen one has no file: a shop picks its content
+ * languages from a table of 163, and the editor is translated into a handful,
+ * so most shops name a language the panel has never heard of.
+ */
+const DEFAULT_UI_LOCALE = "en-US";
+const fallbackTranslation = DEFAULT_UI_LOCALE;
+
+/**
+ * Which translation file the editor's chrome reads.
+ *
+ * `uiLocale`, not `contextParams.locale`. The content locale answers "which
+ * language version of this page am I editing", and reading the panel's words
+ * out of it meant one control did two unrelated jobs: switching to the English
+ * version of a page to work on it also turned every field label, group heading
+ * and block name English, with no way back short of switching the content
+ * again.
+ *
+ * `uiLocale` falls back to the content locale in `Editor`, so an editor whose
+ * host never sets it reads exactly as it did before.
+ */
+function pickTranslationFile(editorContext) {
   const {
     translationFiles = {},
-    contextParams
+    uiLocale
   } = editorContext;
-  const {
-    locale
-  } = contextParams;
+  return uiLocale && translationFiles[uiLocale] ? translationFiles[uiLocale] : translationFiles[fallbackTranslation];
+}
+const getTranslation = editorContext => {
   const t = key => {
-    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
+    const files = pickTranslationFile(editorContext);
     return files?.[key] ?? key;
   };
   return {
@@ -953,15 +975,9 @@ const getTranslation = editorContext => {
   };
 };
 const useTranslation = () => {
-  const {
-    translationFiles = {},
-    contextParams
-  } = useEditorContext();
-  const {
-    locale
-  } = contextParams;
+  const editorContext = useEditorContext();
   const t = key => {
-    const files = translationFiles[locale] ? translationFiles[locale] : translationFiles[fallbackTranslation];
+    const files = pickTranslationFile(editorContext);
     return files?.[key] ?? key;
   };
   return {
@@ -3705,7 +3721,7 @@ const CustomField = ({
  * carry its own copy, and the copy was missing the resting outline the rest of
  * the panel has — a white swatch on a white panel with nothing around it.
  */
-const Trigger = styled__default["default"](ReactSelect.RadixSelectTrigger).withConfig({
+const Trigger$1 = styled__default["default"](ReactSelect.RadixSelectTrigger).withConfig({
   displayName: "ColorFieldPlugin__Trigger",
   componentId: "sc-19dwflf-0"
 })(["", ""], Select.selectTriggerStyles);
@@ -3833,7 +3849,7 @@ const ColorFieldPlugin = ({
     return /*#__PURE__*/React__default["default"].createElement(React.Fragment, null, /*#__PURE__*/React__default["default"].createElement(ReactSelect.RadixSelectRoot, {
       value: selectValue,
       onValueChange: onSelectChange
-    }, /*#__PURE__*/React__default["default"].createElement(Trigger, null, /*#__PURE__*/React__default["default"].createElement(ReactSelect.RadixSelectValue, {
+    }, /*#__PURE__*/React__default["default"].createElement(Trigger$1, null, /*#__PURE__*/React__default["default"].createElement(ReactSelect.RadixSelectValue, {
       placeholder: "Select item"
     }), /*#__PURE__*/React__default["default"].createElement(ReactIcons.ChevronDownIcon, {
       color: easyblocksDesignSystem.Colors.black40
@@ -6499,6 +6515,137 @@ function getFlagUrl(locale, size) {
   return `https://flagcdn.com/w${size}/${code}.png`;
 }
 
+/**
+ * The two languages of the editor, in one control.
+ *
+ * They were one value: the flag in the top bar set `contextParams.locale`, and
+ * the panel read its own words out of that same value. So opening the English
+ * version of a page to work on it turned every field label English too, and
+ * there was no way to say "English page, Vietnamese panel" — which is what a
+ * Vietnamese shop owner editing an English page actually wants.
+ *
+ * Two separate controls would have said that clearly, but the top bar is
+ * already crowded and two flags side by side invite the same confusion from
+ * the other end. One trigger that opens onto two named rows says the thing
+ * once: these are different questions, here is the answer to each.
+ */
+
+const Trigger = styled.styled.button.withConfig({
+  displayName: "LanguageSelect__Trigger",
+  componentId: "sc-18nvvwp-0"
+})(["all:unset;box-sizing:border-box;display:flex;align-items:center;gap:4px;height:28px;padding:0 6px;border-radius:2px;", ";box-shadow:0 0 0 1px ", ";transition:box-shadow 0.1s;@media (hover:hover){cursor:pointer;&:hover{box-shadow:0 0 0 1px ", ";}}&:focus-visible{box-shadow:0 0 0 2px ", ";}"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black10, easyblocksDesignSystem.Colors.black20, easyblocksDesignSystem.Colors.focus);
+const Anchor = styled.styled.div.withConfig({
+  displayName: "LanguageSelect__Anchor",
+  componentId: "sc-18nvvwp-1"
+})(["position:relative;"]);
+const Popover = styled.styled.div.withConfig({
+  displayName: "LanguageSelect__Popover",
+  componentId: "sc-18nvvwp-2"
+})(["position:absolute;top:calc(100% + 4px);right:0;z-index:100200;min-width:220px;max-height:420px;overflow-y:auto;padding:4px 0;background:#fff;border:1px solid ", ";border-radius:2px;box-shadow:0px 2px 14px 0px rgba(0,0,0,0.15);"], easyblocksDesignSystem.Colors.black10);
+const GroupLabel = styled.styled.div.withConfig({
+  displayName: "LanguageSelect__GroupLabel",
+  componentId: "sc-18nvvwp-3"
+})(["", ";color:", ";padding:6px 10px 4px;"], easyblocksDesignSystem.Fonts.label, easyblocksDesignSystem.Colors.black40);
+const Separator = styled.styled.div.withConfig({
+  displayName: "LanguageSelect__Separator",
+  componentId: "sc-18nvvwp-4"
+})(["height:1px;margin:4px 0;background:", ";"], easyblocksDesignSystem.Colors.black10);
+const Option = styled.styled.button.withConfig({
+  displayName: "LanguageSelect__Option",
+  componentId: "sc-18nvvwp-5"
+})(["all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;min-height:28px;padding:0 10px;", ";color:#000;font-weight:", ";@media (hover:hover){cursor:pointer;&:hover{background:#daeafd;}}&:focus-visible{background:#daeafd;}"], easyblocksDesignSystem.Fonts.body, ({
+  $isSelected
+}) => $isSelected ? 600 : 400);
+const Flag = styled.styled.img.withConfig({
+  displayName: "LanguageSelect__Flag",
+  componentId: "sc-18nvvwp-6"
+})(["width:20px;height:20px;object-fit:contain;flex-shrink:0;"]);
+const Check = styled.styled.span.withConfig({
+  displayName: "LanguageSelect__Check",
+  componentId: "sc-18nvvwp-7"
+})(["margin-left:auto;color:", ";"], easyblocksDesignSystem.Colors.black40);
+const Name = styled.styled.span.withConfig({
+  displayName: "LanguageSelect__Name",
+  componentId: "sc-18nvvwp-8"
+})(["overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"]);
+function LanguageSelect({
+  contentLocales,
+  contentLocale,
+  onContentLocaleChange,
+  uiLocales,
+  uiLocale,
+  onUiLocaleChange
+}) {
+  const {
+    t
+  } = useTranslation();
+  const [isOpen, setIsOpen] = React.useState(false);
+  const anchorRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    function closeOnOutsideClick(event) {
+      if (!anchorRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    function closeOnEscape(event) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    // `mousedown` rather than `click`: a click that starts inside the popover
+    // and ends outside it — dragging across a long language name — is not
+    // somebody asking to close it.
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isOpen]);
+
+  /**
+   * What to call a language.
+   *
+   * A translated name first, so the editor's own row reads in the reader's
+   * language. Shop languages come from a table of 163 English names, which is
+   * the right answer for a language nobody has translated a name for, and the
+   * bare code is better than an empty row for one that is not in the table.
+   */
+  const localeName = code => {
+    const translated = t(`editor.language.${code}`);
+    if (translated !== `editor.language.${code}`) {
+      return translated;
+    }
+    return contentLocales.find(l => l.code === code)?.name ?? code;
+  };
+  const renderOption = (code, isSelected, onSelect) => /*#__PURE__*/React__default["default"].createElement(Option, {
+    key: code,
+    type: "button",
+    $isSelected: isSelected,
+    onClick: () => {
+      onSelect();
+      setIsOpen(false);
+    }
+  }, getFlagUrl(code) ? /*#__PURE__*/React__default["default"].createElement(Flag, {
+    src: getFlagUrl(code),
+    alt: ""
+  }) : null, /*#__PURE__*/React__default["default"].createElement(Name, null, localeName(code)), isSelected ? /*#__PURE__*/React__default["default"].createElement(Check, null, "\u2713") : null);
+  return /*#__PURE__*/React__default["default"].createElement(Anchor, {
+    ref: anchorRef
+  }, /*#__PURE__*/React__default["default"].createElement(Trigger, {
+    type: "button",
+    onClick: () => setIsOpen(wasOpen => !wasOpen),
+    title: t("editor.language.tooltip")
+  }, getFlagUrl(contentLocale) ? /*#__PURE__*/React__default["default"].createElement(Flag, {
+    src: getFlagUrl(contentLocale),
+    alt: ""
+  }) : null, /*#__PURE__*/React__default["default"].createElement(Name, null, localeName(contentLocale))), isOpen && /*#__PURE__*/React__default["default"].createElement(Popover, null, /*#__PURE__*/React__default["default"].createElement(GroupLabel, null, t("editor.language.content")), contentLocales.map(locale => renderOption(locale.code, locale.code === contentLocale, () => onContentLocaleChange(locale.code))), /*#__PURE__*/React__default["default"].createElement(Separator, null), /*#__PURE__*/React__default["default"].createElement(GroupLabel, null, t("editor.language.ui")), uiLocales.map(code => renderOption(code, code === uiLocale, () => onUiLocaleChange(code)))));
+}
+
 const TOP_BAR_HEIGHT = 40;
 const TopBar = styled.styled.div.withConfig({
   displayName: "EditorTopBar__TopBar",
@@ -6520,17 +6667,9 @@ const TopBarCenter = styled.styled.div.withConfig({
   displayName: "EditorTopBar__TopBarCenter",
   componentId: "sc-726nw9-4"
 })(["position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:row;align-items:center;gap:8px;white-space:nowrap;"]);
-const ImageContainer$1 = styled.styled.div.withConfig({
-  displayName: "EditorTopBar__ImageContainer",
-  componentId: "sc-726nw9-5"
-})(["position:relative;width:20px;height:20px;"]);
-const Image = styled.styled.img.withConfig({
-  displayName: "EditorTopBar__Image",
-  componentId: "sc-726nw9-6"
-})(["width:100%;height:100%;object-fit:contain;"]);
 const VerticalLine = styled.styled.div.withConfig({
   displayName: "EditorTopBar__VerticalLine",
-  componentId: "sc-726nw9-7"
+  componentId: "sc-726nw9-5"
 })(["width:1px;height:20px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
 const debouncedSave = debounce__default["default"](fn => fn(), 200);
 const EditorTopBar = ({
@@ -6549,6 +6688,9 @@ const EditorTopBar = ({
   locales,
   locale,
   onLocaleChange,
+  uiLocale,
+  uiLocales,
+  onUiLocaleChange,
   hideCloseButton,
   readOnly,
   showLeftSidebar,
@@ -6668,24 +6810,14 @@ const EditorTopBar = ({
       gap: "6px",
       alignItems: "center"
     }
-  }, !isAdminTemplate && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(Select.Select, {
-    value: locale,
-    onChange: locale => onLocaleChange(locale)
-  }, locales.map(l => /*#__PURE__*/React__default["default"].createElement(Select.SelectItem, {
-    key: l.code,
-    value: l.code
-  }, /*#__PURE__*/React__default["default"].createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      gap: 4
-    }
-  }, l.code ? /*#__PURE__*/React__default["default"].createElement(ImageContainer$1, null, /*#__PURE__*/React__default["default"].createElement(Image, {
-    src: getFlagUrl(l.code),
-    alt: l.name
-  })) : null, l.name)))), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+  }, !isAdminTemplate && /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(LanguageSelect, {
+    contentLocales: locales,
+    contentLocale: locale,
+    onContentLocaleChange: onLocaleChange,
+    uiLocales: uiLocales,
+    uiLocale: uiLocale,
+    onUiLocaleChange: onUiLocaleChange
+  }), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
     hideLabel: true,
     icon: icons.Icons.Save,
     onClick: onSaveDocument,
@@ -11646,6 +11778,29 @@ const EditorContent = ({
   const [isRightSidebarOpen, setRightSidebarOpen] = React.useState(false);
   const [currentLocale, setCurrentLocale] = React.useState(compilationContext.contextParams.locale);
   const prevLocale = React.useRef("");
+
+  /**
+   * The language the editor's chrome speaks, kept apart from the content locale.
+   *
+   * A host that passes `uiLocale` owns the value outright — it is the same
+   * setting the host persists between sessions, so letting a copy live here
+   * too would let the two drift apart. A host that passes nothing gets local
+   * state, so the control still works on its own.
+   *
+   * It starts at English rather than at the content locale. A page defaults to
+   * the shop's own language and the editor defaults to English, because they
+   * answer different questions and tying the second to the first is the bug
+   * this separation exists to fix.
+   */
+  const [localUiLocale, setLocalUiLocale] = React.useState(undefined);
+  const uiLocale = props.uiLocale ?? localUiLocale ?? DEFAULT_UI_LOCALE;
+  const onUiLocaleChange = newUiLocale => {
+    if (props.onUiLocaleChange) {
+      props.onUiLocaleChange(newUiLocale);
+      return;
+    }
+    setLocalUiLocale(newUiLocale);
+  };
   const [componentPickerData, setComponentPickerData] = React.useState(undefined);
   const [focussedField, setFocussedField] = React.useState([]);
   const handleSetFocussedField = React__default["default"].useRef(field => {
@@ -11959,6 +12114,7 @@ const EditorContent = ({
     form,
     setFocussedField: handleSetFocussedField,
     translationFiles: props.config?.translationFiles ?? {},
+    uiLocale,
     isEditing,
     globalSections: props.config?.globalSections ?? null,
     onGlobalSectionChange: props.onGlobalSectionChange,
@@ -12182,6 +12338,9 @@ const EditorContent = ({
     locale: currentLocale,
     locales: editorContext.locales,
     onLocaleChange: onLocaleChange,
+    uiLocale: uiLocale,
+    uiLocales: Object.keys(editorContext.translationFiles ?? {}),
+    onUiLocaleChange: onUiLocaleChange,
     hideCloseButton: props.config.hideCloseButton ?? false,
     readOnly: editorContext.readOnly,
     showLeftSidebar: showLeftSidebar,
@@ -12826,6 +12985,8 @@ function EasyblocksParent(props) {
     },
     mode: props.mode,
     defaultLocale: props.defaultLocale,
+    uiLocale: props.uiLocale,
+    onUiLocaleChange: props.onUiLocaleChange,
     SaveAsPicker: props.SaveAsPicker
   })), /*#__PURE__*/React__default["default"].createElement(Toaster.Toaster, {
     position: "bottom-left",
@@ -15099,6 +15260,8 @@ function EasyblocksEditor(props) {
     pickers: props.pickers,
     mode: props.mode,
     defaultLocale: props.defaultLocale,
+    uiLocale: props.uiLocale,
+    onUiLocaleChange: props.onUiLocaleChange,
     SaveAsPicker: props.SaveAsPicker
   }), selectedWindow === "child" && /*#__PURE__*/React__default["default"].createElement(EasyblocksCanvas, {
     components: props.components

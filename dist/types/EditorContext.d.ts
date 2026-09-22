@@ -58,6 +58,14 @@ export type EditorContextType = Omit<BaseEditorContextType, "types" | "templates
     configTemplates: InternalTemplate[];
     /** The order the sidebar lists component categories in; empty means by name. */
     categoryOrder: string[];
+    /**
+     * The language the editor's own chrome speaks.
+     *
+     * `contextParams.locale` says which language version of the page is being
+     * edited, which is a different question and used to be the same value — so
+     * opening the English version of a page turned the whole panel English.
+     */
+    uiLocale: string;
     types: Record<string, EditorExternalTypeDefinition | EditorInlineTypeDefinition | EditorTokenTypeDefinition>;
     components: Record<string, ComponentType<any>>;
 };

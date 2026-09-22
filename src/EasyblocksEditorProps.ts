@@ -32,5 +32,20 @@ export type EasyblocksEditorProps = {
   __debug?: boolean;
   mode: TEasyblocksEditorMode;
   defaultLocale?: string;
+  /**
+   * The language the editor itself speaks — panel labels, buttons, dialogs.
+   *
+   * Separate from `contextParams.locale`, which says which language version of
+   * the page is being edited. The two were one value, so picking the English
+   * version of a page to work on also turned every field label English, and a
+   * shop whose default language is one of the other 160-odd we offer got an
+   * English panel with nothing said about it.
+   *
+   * Leave it out and the editor speaks `contextParams.locale` exactly as it
+   * always has, so a host that has not been told about this reads the same.
+   */
+  uiLocale?: string;
+  /** Called when the person picks a different editor language, so the host can remember it. */
+  onUiLocaleChange?: (uiLocale: string) => void;
   SaveAsPicker?: SaveAsTemplatePicker;
 };

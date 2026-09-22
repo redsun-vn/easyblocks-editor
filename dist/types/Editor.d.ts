@@ -26,6 +26,9 @@ type EditorProps = {
     readOnly: boolean;
     mode: TEasyblocksEditorMode;
     defaultLocale?: string;
+    /** The language the editor's own chrome speaks; see `EasyblocksEditorProps`. */
+    uiLocale?: string;
+    onUiLocaleChange?: (uiLocale: string) => void;
     documentId: string | null;
     rootComponentId: string | null;
     rootTemplateId: string | null;
