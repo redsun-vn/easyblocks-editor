@@ -15300,4 +15300,5 @@ function EasyblocksEditor(props) {
 
 exports.EasyblocksEditor = EasyblocksEditor;
 exports.EditorContext = EditorContext;
+exports.TemplateIcon = TemplateIcon;
 exports.useEditorContext = useEditorContext;

@@ -15263,4 +15263,4 @@ function EasyblocksEditor(props) {
   }), selectedWindow === "preview" && /*#__PURE__*/React__default.createElement(PreviewRenderer, props));
 }
 
-export { EasyblocksEditor, EditorContext, useEditorContext };
+export { EasyblocksEditor, EditorContext, TemplateIcon, useEditorContext };
