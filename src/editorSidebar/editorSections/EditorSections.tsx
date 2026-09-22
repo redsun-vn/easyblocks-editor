@@ -20,6 +20,10 @@ import styled from "styled-components";
 import { CANVAS_FRAME_PATH_ATTRIBUTE } from "../../EditableComponentBuilder/canvasLayers";
 import { useEditorContext } from "../../EditorContext";
 import { getDefaultTemplateForDefinition } from "../../templates/getTemplates";
+import {
+  getTemplateSources,
+  type TTemplateSource,
+} from "../../templates/templateSources";
 import { canvasScrollTargetTop } from "../canvasScrollTarget";
 import { getCategoryLabel, getLocalComponents } from "./getLocalGroups";
 import { EditorSectionGroup, TSectionRow } from "./EditorSectionGroup";
@@ -94,8 +98,13 @@ type TSectionSource = "builtin" | "template";
 /**
  * A remote template library. Both feed the same category rows; which of them a
  * mode may read is `getTemplateSources`.
+ *
+ * Re-exported rather than declared: the picker dialog's list reads the same
+ * libraries, and the two disagreeing about what a shop has is the bug this
+ * shared module exists to prevent.
  */
-export type TTemplateSource = "shop" | "public";
+export type { TTemplateSource } from "../../templates/templateSources";
+export { getTemplateSources };
 
 /**
  * A category row of the Templates panel.
@@ -158,18 +167,6 @@ export function getSectionInsertionIndex(
   }
 
   return Math.min(Number(rootSectionIndex) + 1, sectionCount);
-}
-
-/**
- * The template libraries a mode may read.
- *
- * Admin edits the system library directly, so its own shop path already holds
- * exactly those templates and a second public read would be a duplicate.
- */
-export function getTemplateSources(
-  mode: TEasyblocksEditorMode,
-): TTemplateSource[] {
-  return mode === "user" ? ["public", "shop"] : ["shop"];
 }
 
 /** Categories A→Z, uncategorized last because it is the remainder, not a name. */

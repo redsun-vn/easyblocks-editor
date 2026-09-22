@@ -15,6 +15,67 @@ import {
 } from "@redsun-vn/easyblocks-core/_internals";
 import { EditorContextType } from "../EditorContext";
 import { configMap } from "../utils/config/configMap";
+import { getTemplateSources } from "./templateSources";
+
+/** What a remote template read answers with; both endpoints share the shape. */
+type TRemoteTemplates = {
+  items?: UserDefinedTemplate[];
+  count?: Record<string, { matchedCount: number; total: number }>;
+};
+
+/**
+ * Every remote library this mode may read, as one list.
+ *
+ * The shop read alone is what the picker dialog used to have, and it is not
+ * everything a shop can see: a system template carries no `shop_id`, so the
+ * shop query cannot return it at all. A shop whose only visible template came
+ * from the system library therefore found the dialog's template library empty
+ * while the left panel — which has always read both — showed its category.
+ *
+ * Deduplicated by id because an admin's shop read already returns the system
+ * rows, and a template listed twice is a template somebody has to look at twice.
+ */
+async function readRemoteTemplates(
+  editorContext: EditorContextType,
+  query?: TemplateQueryType,
+): Promise<Required<TRemoteTemplates>> {
+  const api = editorContext.backend.templates as typeof editorContext.backend.templates & {
+    getAllPublic?: (query?: TemplateQueryType) => Promise<TRemoteTemplates>;
+  };
+
+  const reads = await Promise.all(
+    getTemplateSources(editorContext.mode).map<Promise<TRemoteTemplates>>(
+      (source) =>
+        source === "shop"
+          ? api.getAll(query)
+          : // A host that implements no public reader has no system library,
+            // which is an empty one rather than an error.
+            (api.getAllPublic?.(query) ?? Promise.resolve({})),
+    ),
+  );
+
+  const byId = new Map<string, UserDefinedTemplate>();
+  const count: Required<TRemoteTemplates>["count"] = {};
+
+  reads.forEach((read) => {
+    (read.items ?? []).forEach((item) => {
+      if (!byId.has(item.id)) {
+        byId.set(item.id, item);
+      }
+    });
+
+    Object.entries(read.count ?? {}).forEach(([bucket, bucketCount]) => {
+      const running = count[bucket] ?? { matchedCount: 0, total: 0 };
+
+      count[bucket] = {
+        matchedCount: running.matchedCount + (bucketCount?.matchedCount ?? 0),
+        total: running.total + (bucketCount?.total ?? 0),
+      };
+    });
+  });
+
+  return { items: [...byId.values()], count };
+}
 
 export function getDefaultTemplateForDefinition(
   def: InternalComponentDefinition,
@@ -60,7 +121,7 @@ export async function getTemplates(
   count: NonNullable<EditorContextType["templates"]>["count"];
 }> {
   const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates
-    ? await editorContext.backend.templates.getAll(query)
+    ? await readRemoteTemplates(editorContext, query)
     : { items: [], count: {} };
 
   const templates = getTemplatesInternal(

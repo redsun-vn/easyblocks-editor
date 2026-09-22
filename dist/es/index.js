@@ -8488,6 +8488,77 @@ const EditorLayer = () => {
   }) : null;
 };
 
+/**
+ * A remote template library.
+ *
+ * `shop` is the store's own templates. `public` is the system library: its rows
+ * carry no `shop_id`, and every shop-side query is pinned to a shop id down in
+ * Elasticsearch, so they can never come back through the shop read however it
+ * is filtered. Showing them needs a genuinely different endpoint rather than a
+ * filter applied to the shop result.
+ */
+
+/**
+ * The template libraries a mode may read.
+ *
+ * Admin edits the system library directly, so its own shop path already holds
+ * exactly those templates and a second public read would be a duplicate.
+ *
+ * It lives in its own module because the two surfaces that offer templates —
+ * the left panel and the picker dialog's list — have to read the same libraries
+ * or they disagree about what the shop has. They did: the panel read both and
+ * the dialog read only the shop, so a shop whose only visible template came
+ * from the system library saw a category in one place and an empty library in
+ * the other.
+ */
+function getTemplateSources(mode) {
+  return mode === "user" ? ["public", "shop"] : ["shop"];
+}
+
+/** What a remote template read answers with; both endpoints share the shape. */
+
+/**
+ * Every remote library this mode may read, as one list.
+ *
+ * The shop read alone is what the picker dialog used to have, and it is not
+ * everything a shop can see: a system template carries no `shop_id`, so the
+ * shop query cannot return it at all. A shop whose only visible template came
+ * from the system library therefore found the dialog's template library empty
+ * while the left panel — which has always read both — showed its category.
+ *
+ * Deduplicated by id because an admin's shop read already returns the system
+ * rows, and a template listed twice is a template somebody has to look at twice.
+ */
+async function readRemoteTemplates(editorContext, query) {
+  const api = editorContext.backend.templates;
+  const reads = await Promise.all(getTemplateSources(editorContext.mode).map(source => source === "shop" ? api.getAll(query) :
+  // A host that implements no public reader has no system library,
+  // which is an empty one rather than an error.
+  api.getAllPublic?.(query) ?? Promise.resolve({})));
+  const byId = new Map();
+  const count = {};
+  reads.forEach(read => {
+    (read.items ?? []).forEach(item => {
+      if (!byId.has(item.id)) {
+        byId.set(item.id, item);
+      }
+    });
+    Object.entries(read.count ?? {}).forEach(([bucket, bucketCount]) => {
+      const running = count[bucket] ?? {
+        matchedCount: 0,
+        total: 0
+      };
+      count[bucket] = {
+        matchedCount: running.matchedCount + (bucketCount?.matchedCount ?? 0),
+        total: running.total + (bucketCount?.total ?? 0)
+      };
+    });
+  });
+  return {
+    items: [...byId.values()],
+    count
+  };
+}
 function getDefaultTemplateForDefinition(def, editorContext) {
   // Text has different way of building a default config
   const config = def.id === "@easyblocks/rich-text" ? buildRichTextNoCodeEntry({
@@ -8515,7 +8586,7 @@ function getDefaultTokenId(tokens) {
   return Object.entries(tokens).find(([, value]) => value.isDefault)?.[0];
 }
 async function getTemplates(editorContext, configTemplates = [], query) {
-  const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates ? await editorContext.backend.templates.getAll(query) : {
+  const remoteUserDefinedTemplates = !editorContext.disableCustomTemplates ? await readRemoteTemplates(editorContext, query) : {
     items: [],
     count: {}
   };
@@ -9150,32 +9221,6 @@ const CATEGORY_PROBE_LIMIT = 1;
 // Translation key for the row collecting templates filed under no category.
 const UNCATEGORIZED_LABEL_KEY = "others";
 
-/** Shape both remote template endpoints answer with. */
-
-/** One entry of the template taxonomy, as the host's backend returns it. */
-
-/**
- * The two template readers the host app's backend adds on top of the `Backend`
- * contract. Both optional, because `easyblocks-core` does not declare them: a
- * host that implements neither shows an empty Templates panel instead of
- * breaking.
- *
- * `getAllPublic` reads the system library. System templates have no `shop_id`,
- * and every shop-side query is pinned to a shop id down in Elasticsearch, so
- * they can never come back through `templates.getAll`; showing them needs a
- * genuinely different endpoint, not a filter applied to the shop result.
- *
- * `getCategories` reads the template taxonomy — the same list the save dialog
- * files a template under, which is what the panel's rows are built from.
- */
-
-/** Which list a section row draws from: local definitions, or the store. */
-
-/**
- * A remote template library. Both feed the same category rows; which of them a
- * mode may read is `getTemplateSources`.
- */
-
 /**
  * A category row of the Templates panel.
  *
@@ -9205,16 +9250,6 @@ function getSectionInsertionIndex(focussedField, sectionCount) {
     return sectionCount;
   }
   return Math.min(Number(rootSectionIndex) + 1, sectionCount);
-}
-
-/**
- * The template libraries a mode may read.
- *
- * Admin edits the system library directly, so its own shop path already holds
- * exactly those templates and a second public read would be a duplicate.
- */
-function getTemplateSources(mode) {
-  return mode === "user" ? ["public", "shop"] : ["shop"];
 }
 
 /** Categories A→Z, uncategorized last because it is the remainder, not a name. */

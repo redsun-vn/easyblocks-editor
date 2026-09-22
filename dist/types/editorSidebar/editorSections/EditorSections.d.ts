@@ -1,6 +1,6 @@
 import { ComponentDefinitionShared, Template } from "@redsun-vn/easyblocks-core";
 import React from "react";
-import { TEasyblocksEditorMode } from "../../types";
+import { getTemplateSources } from "../../templates/templateSources";
 export interface IComponentGroups {
     [key: string]: {
         templates: (ComponentDefinitionShared & {
@@ -19,8 +19,13 @@ type TSectionSource = "builtin" | "template";
 /**
  * A remote template library. Both feed the same category rows; which of them a
  * mode may read is `getTemplateSources`.
+ *
+ * Re-exported rather than declared: the picker dialog's list reads the same
+ * libraries, and the two disagreeing about what a shop has is the bug this
+ * shared module exists to prevent.
  */
-export type TTemplateSource = "shop" | "public";
+export type { TTemplateSource } from "../../templates/templateSources";
+export { getTemplateSources };
 /**
  * A category row of the Templates panel.
  *
@@ -61,13 +66,6 @@ export type TSectionPanel = "components" | "templates";
  */
 export declare function getSectionInsertionIndex(focussedField: Array<string>, sectionCount: number): number;
 /**
- * The template libraries a mode may read.
- *
- * Admin edits the system library directly, so its own shop path already holds
- * exactly those templates and a second public read would be a duplicate.
- */
-export declare function getTemplateSources(mode: TEasyblocksEditorMode): TTemplateSource[];
-/**
  * The entries of one panel, and only that panel.
  *
  * The two kinds are built from separate sources and never merged, which is the
@@ -95,5 +93,4 @@ export declare function buildSectionEntries({ panel, localGroups, templateCatego
 export declare const EditorSections: React.FC<{
     panel: TSectionPanel;
 }>;
-export {};
 //# sourceMappingURL=EditorSections.d.ts.map
