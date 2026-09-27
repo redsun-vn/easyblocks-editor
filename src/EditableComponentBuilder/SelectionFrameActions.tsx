@@ -1,6 +1,7 @@
 import { EditorContextType, useEditorContext } from "@/EditorContext";
 import { shiftPath } from "@/editorActions";
 import { IMenu, Menu } from "@/menu/Menu";
+import { resolveWrapperLevels } from "@/dropShape/editorShapeAdapters";
 import { destinationResolver } from "@/paste/destinationResolver";
 import { pasteManager } from "@/paste/manager";
 import {
@@ -351,6 +352,11 @@ export const SelectionFrameActions = ({
         destinationResolver({
           form: editorContext.form,
           context: editorContext,
+          wrapperLevels: resolveWrapperLevels({
+            templates: editorContext.configTemplates,
+            dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
+            context: editorContext,
+          }),
         })(destinationPath),
       )(block);
 

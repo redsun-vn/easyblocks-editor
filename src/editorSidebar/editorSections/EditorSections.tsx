@@ -18,6 +18,10 @@ import React, {
 } from "react";
 import styled from "styled-components";
 import { CANVAS_FRAME_PATH_ATTRIBUTE } from "../../EditableComponentBuilder/canvasLayers";
+import {
+  resolvePanelInsertion,
+  type PanelDropTargetSlot,
+} from "./resolvePanelInsertion";
 import { useEditorContext } from "../../EditorContext";
 import { getDefaultTemplateForDefinition } from "../../templates/getTemplates";
 import {
@@ -651,7 +655,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
   // `indexOverride` is where a drag let go. A click carries no position of its
   // own, so it still lands after whatever is selected.
   const onAddTemplate = useCallback(
-    (template: TSectionTemplate, indexOverride?: number) => {
+    (template: TSectionTemplate, dropTarget?: PanelDropTargetSlot) => {
       const entry = template.template?.entry;
       if (!entry) {
         toaster.error(t("editor.sidebar.sections.add.error"));
@@ -667,26 +671,45 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
       const sectionCount =
         editorContext.compiledComponentConfig?.components.data.length ?? 0;
 
-      const insertionIndex =
-        indexOverride === undefined
-          ? getSectionInsertionIndex(editorContext.focussedField, sectionCount)
-          : // The canvas measured the page it was drawing; clamped because that
-            // measurement and this insert are two different moments.
-            Math.min(Math.max(indexOverride, 0), sectionCount);
+      /*
+       * A click carries no position of its own, so it still lands in the root
+       * collection after whatever is selected. A drop carries the collection it
+       * landed in, which is how the same template becomes a bare component inside
+       * a column and a full row at the page root.
+       */
+      const target: PanelDropTargetSlot = dropTarget ?? {
+        parentPath: "",
+        prop: "data",
+        index: getSectionInsertionIndex(
+          editorContext.focussedField,
+          sectionCount,
+        ),
+      };
+
+      const insertion = resolvePanelInsertion({
+        entry: normalizedEntry,
+        target,
+        editorContext,
+      });
+
+      if (!insertion) {
+        toaster.error(t("editor.sidebar.sections.add.error"));
+        return;
+      }
 
       editorContext.actions.insertItem({
-        name: "data",
-        index: insertionIndex,
-        block: normalizedEntry,
+        name: insertion.name,
+        index: insertion.index,
+        block: insertion.block,
       });
 
       toaster.success(t("editor.sidebar.sections.add.success"));
 
-      // The insert went into the root collection at a known index, so that is
-      // the new section's path. Reading it back out of `form.values` was the
-      // roundabout way there, and the values are still the pre-insert ones at
-      // this point anyway.
-      scrollCanvasToComponent(`data.${insertionIndex}`);
+      // The insert went into a known collection at a known index, so that is the
+      // new block's path. Reading it back out of `form.values` was the roundabout
+      // way there, and the values are still the pre-insert ones at this point
+      // anyway.
+      scrollCanvasToComponent(`${insertion.name}.${insertion.index}`);
     },
     [editorContext, scrollCanvasToComponent],
   );
@@ -723,7 +746,15 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
       // A drop can arrive after the panel has moved on — switched list, or the
       // drag was abandoned and something else posted. Nothing to insert then.
       if (template) {
-        onAddTemplate(template, (event.data as PanelDropMessage).index);
+        const drop = event.data as PanelDropMessage;
+
+        onAddTemplate(template, {
+          // A canvas that predates slot targeting sends no path, and the root is
+          // what it meant.
+          parentPath: drop.parentPath ?? "",
+          prop: drop.prop ?? "data",
+          index: Math.max(drop.index, 0),
+        });
       }
     };
 

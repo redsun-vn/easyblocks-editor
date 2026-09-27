@@ -8,6 +8,7 @@ import {
   parsePath,
 } from "@redsun-vn/easyblocks-core/_internals";
 import { Form } from "../form";
+import { WrapperLevel } from "../dropShape/resolveWrapperChain";
 import { insertCommand } from "./insert";
 
 export interface Destination {
@@ -46,9 +47,12 @@ const fixIndexInCollection = (index = 0, schema?: SchemaProp) => {
 function destinationResolver({
   form,
   context,
+  wrapperLevels = [],
 }: {
   context: CompilationContextType;
   form: Form;
+  /** Passed through to every insert; see `insertCommand`. */
+  wrapperLevels?: Array<WrapperLevel>;
 }) {
   return function (initialDestinationPath: string) {
     const resolvedDestinations: Destination[] = [];
@@ -89,6 +93,7 @@ function destinationResolver({
         insert: insertCommand({
           context,
           form,
+          wrapperLevels,
           schema,
           templateId: parsed.parent?.templateId,
         }),
@@ -113,6 +118,7 @@ function destinationResolver({
             insert: insertCommand({
               context,
               form,
+              wrapperLevels,
               schema: slotSchema,
               templateId: definition.id,
             }),

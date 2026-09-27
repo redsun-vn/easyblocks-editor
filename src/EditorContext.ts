@@ -91,6 +91,12 @@ export type EditorContextType = Omit<
   /** The order the sidebar lists component categories in; empty means by name. */
   categoryOrder: string[];
   /**
+   * The template whose nesting is reused to wrap a dropped component that would
+   * not otherwise be allowed where it landed. Straight off the config; unset
+   * means nothing is ever wrapped.
+   */
+  dropWrapperTemplateId?: string;
+  /**
    * The language the editor's own chrome speaks.
    *
    * `contextParams.locale` says which language version of the page is being

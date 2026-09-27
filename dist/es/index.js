@@ -712,12 +712,295 @@ const Menu = ({
   })));
 };
 
-function includesAny(a, b) {
-  return a.some(i => b.includes(i));
+/**
+ * The parts of a component definition the shape rule reads.
+ *
+ * Narrower than `InternalComponentDefinition` on purpose: a real definition
+ * satisfies this structurally, and a test can write one in four lines instead of
+ * building a compilation context.
+ */
+
+/** Looks a definition up by the id an entry carries in `_component`. */
+
+function isEntry(value) {
+  return typeof value === "object" && value !== null && typeof value._component === "string";
+}
+
+/** Every `component-collection` prop a definition declares. */
+function getCollectionSlots(definition) {
+  return definition.schema.filter(prop => prop.type === "component-collection").map(prop => ({
+    prop: prop.prop,
+    accepts: prop.accepts ?? [],
+    panelDropTarget: prop.panelDropTarget === true
+  }));
+}
+
+/**
+ * The single collection slot of a component, when it has exactly one.
+ *
+ * "Exactly one" is what makes the caller's reasoning safe. A component with two
+ * collections has no unambiguous "inside", so neither peeling nor wrapping can
+ * say which one it meant, and both refuse rather than guess.
+ */
+function getSoleCollectionSlot(entry, getDefinition) {
+  const definition = getDefinition(entry._component);
+  if (!definition) {
+    return null;
+  }
+  const slots = getCollectionSlots(definition);
+  return slots.length === 1 ? slots[0] : null;
+}
+
+/**
+ * The one child sitting in a component's one collection slot.
+ *
+ * `null` when the component has no single slot, when the slot is empty, or when
+ * it holds more than one child — each of those means the component is not a
+ * wrapper around a single thing.
+ */
+function getSoleCollectionChild(entry, getDefinition) {
+  const slot = getSoleCollectionSlot(entry, getDefinition);
+  if (!slot) {
+    return null;
+  }
+  const children = entry[slot.prop];
+  if (!Array.isArray(children) || children.length !== 1 || !isEntry(children[0])) {
+    return null;
+  }
+  return {
+    slot,
+    child: children[0]
+  };
+}
+
+/**
+ * The payload inside an entry, with packaging rows and columns taken off.
+ *
+ * A row-and-column pair is packaging when the row holds exactly one column and
+ * that column holds exactly one item. Anything else — two columns, or one column
+ * with two items — is the arrangement the author drew, and taking it apart would
+ * destroy the thing rather than unwrap it.
+ *
+ * The test counts children and nothing else. It deliberately does not compare
+ * the wrapper's own values against their defaults, which was the first idea and
+ * is wrong: the single-item section templates carry real padding on the row
+ * (48px, against a default of 0) precisely because they sit at page root as a
+ * band. That padding belongs to the band, not to the component, so when the
+ * component moves inside a column that already manages its own spacing, the
+ * padding is supposed to go. Measured over the host app's 126 row-rooted
+ * templates: 21 are packaging, and in all 21 the row carries nothing but spacing
+ * while the column carries nothing at all, so peeling loses only the band.
+ *
+ * Two levels come off at a time, never one. Peeling a single level would reduce
+ * a column template to its only item, and a column is not packaging — it is
+ * something an author places on purpose.
+ */
+function peelPackagingWrapper(entry, getDefinition) {
+  let current = entry;
+
+  // Packaging can nest, so this keeps going until a level refuses to come off.
+  for (;;) {
+    const outer = getSoleCollectionChild(current, getDefinition);
+    if (!outer) {
+      return current;
+    }
+    const inner = getSoleCollectionChild(outer.child, getDefinition);
+    if (!inner) {
+      return current;
+    }
+    current = inner.child;
+  }
 }
 
 function normalizeToStringArray(arg) {
   return typeof arg === "string" ? [arg] : Array.isArray(arg) ? arg : [];
+}
+
+/**
+ * The nesting a host app uses to put a loose component on a page, read off one of
+ * its own templates.
+ *
+ * The chain is not hard-coded here because `BlockRow` and `BlockColumn` are the
+ * host app's components, not the editor's: an editor that named them would only
+ * work for one app. Instead the app points at a template it already ships — the
+ * one-column row — and this walks it.
+ *
+ * Reading it from a real template rather than from a separate list is what keeps
+ * the two from drifting: change the template and the wrapper changes with it,
+ * because there is only ever one description of it.
+ *
+ * Returned innermost first, so `levels[0]` is the column and `levels[1]` the row.
+ * A caller wanting one layer takes `levels[0]`; wanting two takes both.
+ */
+function resolveWrapperChain(wrapperEntry, getDefinition) {
+  const levels = [];
+  let current = wrapperEntry;
+  while (current) {
+    const slot = getSoleCollectionSlot(current, getDefinition);
+    if (!slot) {
+      break;
+    }
+    levels.push({
+      entry: current,
+      prop: slot.prop
+    });
+
+    // Annotated rather than inferred: `current` is assigned from this value, so
+    // leaving it to inference makes the two depend on each other and TypeScript
+    // falls back to `any` (TS7022).
+    const children = current[slot.prop];
+    const onlyChild = Array.isArray(children) && children.length === 1 ? children[0] : undefined;
+
+    // An empty slot is the bottom of the chain: that is where content goes. A
+    // template's deepest column ships empty, so this is the ordinary ending, not
+    // an error.
+    current = isEntry(onlyChild) ? onlyChild : undefined;
+  }
+  return levels.reverse();
+}
+
+/**
+ * `core` placed inside the innermost `depth` levels of a wrapper chain.
+ *
+ * The wrapper keeps every value it was authored with — the row's column count,
+ * the column's span — and only its collection prop is replaced. Ids are left
+ * alone because every insertion path duplicates the config on the way in, which
+ * is where fresh ids come from.
+ */
+function wrapWithChain(core, levels, depth) {
+  let wrapped = core;
+  for (let index = 0; index < depth; index++) {
+    const level = levels[index];
+    wrapped = {
+      ...level.entry,
+      [level.prop]: [wrapped]
+    };
+  }
+  return wrapped;
+}
+
+/**
+ * Whether a slot takes this entry.
+ *
+ * The same test `paste/insert.ts` applies at insertion: a slot's `accepts` names
+ * either a component id or a component type, and an entry qualifies on either.
+ */
+function fitsSlot(entry, accepts, getDefinition) {
+  const definition = getDefinition(entry._component);
+  if (!definition) {
+    return false;
+  }
+  const entryTypes = [definition.id, ...normalizeToStringArray(definition.type)];
+  return accepts.some(accepted => entryTypes.includes(accepted));
+}
+/**
+ * The shape an entry should take to land in a particular slot.
+ *
+ * One question decides it, and it is asked of the target rather than of the
+ * component: what does this slot accept? A component dropped into a column that
+ * already accepts it needs no row and no column around it, while the same
+ * component dropped on the page root needs both, because a root takes sections
+ * and a loose component is not one. Nothing here is configured per component.
+ *
+ * Candidates are tried shortest first:
+ *
+ *   1. `core` — the payload, with packaging peeled off.
+ *   2. `entry` — exactly what the author wrote, wrapper and all.
+ *   3. `core` inside one authored wrapper level.
+ *   4. `core` inside two.
+ *
+ * The order is where the work happens. A column accepts both a mini cart and a
+ * row — the row so that sub-grids are possible — so both `core` and `entry` fit
+ * and only preferring the shorter one removes the pointless nesting that made a
+ * dropped block awkward to move.
+ *
+ * Rung 2 sits above the rebuilt wrappers for a reason worth keeping: the authored
+ * wrapper carries the author's band padding, and a rebuilt one carries none. At
+ * page root, where that padding is the whole point of the band, rung 2 is what
+ * preserves it. The rebuilt rungs only run when nothing authored can fit, which
+ * is how a bare component reaches a root at all.
+ *
+ * `null` means no shape fits, and the caller must not insert. That matters more
+ * than it looks: `insertItem` performs no `accepts` check of its own — the form
+ * mutators splice into the array as given — so this function is the only thing
+ * standing between a drop and a tree that cannot hold it.
+ */
+function resolveDropShape({
+  entry,
+  accepts,
+  wrapperLevels,
+  getDefinition
+}) {
+  if (accepts.length === 0) {
+    return null;
+  }
+  const core = peelPackagingWrapper(entry, getDefinition);
+  const candidates = [core, entry];
+  for (let depth = 1; depth <= wrapperLevels.length; depth++) {
+    candidates.push(wrapWithChain(core, wrapperLevels, depth));
+  }
+  return candidates.find(candidate => fitsSlot(candidate, accepts, getDefinition)) ?? null;
+}
+
+/**
+ * What connects the shape rule to the editor it runs inside.
+ *
+ * The rule itself takes a plain "look this component up" function so it can be
+ * tested without building a compilation context. These are the three places the
+ * editor supplies that function, kept together so the three insertion paths —
+ * a drop from the panel, a pick from the add dialog, and a paste — cannot drift
+ * into disagreeing about what a dropped block should look like.
+ */
+
+/** Both an editor context and a compilation context can answer this. */
+function getShapeDefinition(context) {
+  return componentId => findComponentDefinitionById(componentId, context);
+}
+
+/**
+ * The nesting the host app wraps a loose component in, read off the template it
+ * named in its config. Empty when the app named none, which turns wrapping off
+ * and leaves a drop that does not fit to be refused.
+ */
+function resolveWrapperLevels({
+  templates,
+  dropWrapperTemplateId,
+  context
+}) {
+  if (!dropWrapperTemplateId) {
+    return [];
+  }
+  const template = (templates ?? []).find(candidate => candidate.id === dropWrapperTemplateId);
+  return template?.entry ? resolveWrapperChain(template.entry, getShapeDefinition(context)) : [];
+}
+
+/** The payload inside a template, with packaging rows and columns taken off. */
+function coreOf(entry, context) {
+  return peelPackagingWrapper(entry, getShapeDefinition(context));
+}
+
+/**
+ * The shape an entry should take to land in a slot, or `null` when none fits.
+ */
+function resolveShapeForSlot({
+  entry,
+  accepts,
+  wrapperLevels,
+  context
+}) {
+  if (!accepts) {
+    return null;
+  }
+  return resolveDropShape({
+    entry,
+    accepts,
+    wrapperLevels,
+    getDefinition: getShapeDefinition(context)
+  });
+}
+
+function includesAny(a, b) {
+  return a.some(i => b.includes(i));
 }
 
 function reconcile({
@@ -754,7 +1037,8 @@ const insertCommand = ({
   context,
   form,
   schema,
-  templateId
+  templateId,
+  wrapperLevels = []
 }) => {
   const types = getTypes(schema);
   const reconcileItem = reconcile({
@@ -768,10 +1052,35 @@ const insertCommand = ({
       return null;
     }
     const itemTypes = [itemDefinition.id, ...normalizeToStringArray(itemDefinition.type)];
-    if (!includesAny(types, itemTypes)) {
+
+    /*
+     * A paste is reshaped for where it lands, the same way a drop is: pasting a
+     * section into a column that accepts its contents directly leaves the row
+     * and column behind rather than nesting them pointlessly.
+     *
+     * Only for a slot that asked for it. Reshaping every paste would change what
+     * lands in containers that predate this rule, and those are the ones with
+     * documents already built on today's behaviour — so a slot that never opted
+     * in runs the original expression and nothing else. The gate is the same one
+     * the canvas uses, read off the slot rather than guessed from the content.
+     */
+    const isShapedSlot = schema?.panelDropTarget === true;
+    let shaped = item;
+    if (isShapedSlot) {
+      const alternative = resolveShapeForSlot({
+        entry: item,
+        accepts: types,
+        wrapperLevels,
+        context
+      });
+      if (!alternative) {
+        return null;
+      }
+      shaped = alternative;
+    } else if (!includesAny(types, itemTypes)) {
       return null;
     }
-    const reconciledItem = reconcileItem(item);
+    const reconciledItem = reconcileItem(shaped);
     const duplicatedItem = duplicateConfig(reconciledItem, context);
     form.mutators.insert(path, index, duplicatedItem);
     return `${path}.${index}`;
@@ -792,7 +1101,8 @@ const fixIndexInCollection = (index = 0, schema) => {
 };
 function destinationResolver({
   form,
-  context
+  context,
+  wrapperLevels = []
 }) {
   return function (initialDestinationPath) {
     const resolvedDestinations = [];
@@ -821,6 +1131,7 @@ function destinationResolver({
         insert: insertCommand({
           context,
           form,
+          wrapperLevels,
           schema,
           templateId: parsed.parent?.templateId
         })
@@ -841,6 +1152,7 @@ function destinationResolver({
             insert: insertCommand({
               context,
               form,
+              wrapperLevels,
               schema: slotSchema,
               templateId: definition.id
             })
@@ -1287,7 +1599,12 @@ const SelectionFrameActions = ({
     editorContext.actions.runChange(() => {
       const insertedPath = pasteManager()(destinationResolver({
         form: editorContext.form,
-        context: editorContext
+        context: editorContext,
+        wrapperLevels: resolveWrapperLevels({
+          templates: editorContext.configTemplates,
+          dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
+          context: editorContext
+        })
       })(destinationPath))(block);
       if (!insertedPath) {
         // Nothing in the chosen section accepts this block, so the document is untouched.
@@ -7107,13 +7424,42 @@ const ModalPicker = ({
   let templatesDictionaryCount = editorContext.templates?.count;
   if (editorContext.templates) {
     templatesDictionary = {};
+
+    /*
+     * Each template's payload, worked out once.
+     *
+     * The grouping below is a component-by-template loop, so computing this
+     * inside it would peel the same template once per component on the list —
+     * tens of thousands of walks for a shop with a full library, every time the
+     * dialog renders. The answer does not depend on which component is being
+     * asked about, so it is hoisted out.
+     */
+    const coreComponentOf = new Map();
+    const coreComponentId = template => {
+      const cached = coreComponentOf.get(template.id);
+      if (cached !== undefined) {
+        return cached;
+      }
+      const resolved = coreOf(template.entry, editorContext)._component;
+      coreComponentOf.set(template.id, resolved);
+      return resolved;
+    };
     localComponents.forEach(localComponent => {
       templatesDictionary[localComponent.id] = {
         component: localComponent,
         templates: []
       };
       editorContext.templates.items.forEach(remoteTemplate => {
-        if (localComponent.id === remoteTemplate.entry._component) {
+        /*
+         * Filed under what the template actually offers, not under the wrapper
+         * it happens to be stored in. A mini cart shipped as a row around a
+         * column around a mini cart belonged to the row's group, so a column
+         * offering mini carts did not list it and the author had to recognise it
+         * among the rows. Measured before changing it: of 210 templates 21 are
+         * packaging like this, and only 2 of those become visible to containers
+         * that predate the rule.
+         */
+        if (localComponent.id === coreComponentId(remoteTemplate)) {
           // For local components are visible & remote templates
           if (!remoteTemplate.isUserDefined && localComponent.visible !== false || remoteTemplate.isUserDefined) {
             templatesDictionary[localComponent.id].templates.push(remoteTemplate);
@@ -7155,11 +7501,35 @@ const ModalPicker = ({
     onClose(newComponent);
   };
   const onModalClose = template => {
-    if (template) {
-      close(normalize$1(template.entry, editorContext));
-    } else {
+    if (!template) {
       onClose();
+      return;
     }
+
+    /*
+     * The same rule the canvas applies to a drop: the slot decides the shape.
+     * Picking a mini cart inside a column that already accepts one puts the mini
+     * cart there, with no row and column around it, while picking it at the page
+     * root keeps the band the template was authored as.
+     */
+    const shaped = resolveShapeForSlot({
+      entry: normalize$1(template.entry, editorContext),
+      accepts: componentTypes,
+      wrapperLevels: resolveWrapperLevels({
+        templates: editorContext.configTemplates,
+        dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
+        context: editorContext
+      }),
+      context: editorContext
+    });
+
+    // Nothing fits: leave the slot alone rather than write a child it cannot
+    // hold, because the insert that follows performs no check of its own.
+    if (!shaped) {
+      onClose();
+      return;
+    }
+    close(shaped);
   };
   const queryLimit = 50;
   const onSearchGroup = search => {
@@ -8488,6 +8858,56 @@ const EditorLayer = () => {
   }) : null;
 };
 
+/** Where a drop landed, as the canvas reported it. */
+
+/**
+ * Turning a drop into an insertion: where the array is, and what shape goes in it.
+ *
+ * Both halves are needed together because they answer each other. A column that
+ * accepts a mini cart directly wants the mini cart, while the page root wants the
+ * row and column around it, and the only thing that decides between them is what
+ * the collection accepts — never the component, and never a setting on the
+ * template.
+ *
+ * `null` means nothing should be inserted. That is the only guard there is:
+ * `insertItem` splices the block into the array as given, without consulting
+ * `accepts`, so a caller that ignores a `null` here writes a child into a slot
+ * that cannot hold it.
+ */
+function resolvePanelInsertion({
+  entry,
+  target,
+  editorContext
+}) {
+  const parentEntry = target.parentPath === "" ? editorContext.form.values : dotNotationGet(editorContext.form.values, target.parentPath);
+  if (!isEntry(parentEntry)) {
+    return null;
+  }
+  const parentDefinition = findComponentDefinition(parentEntry, editorContext);
+  const slot = parentDefinition?.schema.find(schemaProp => schemaProp.prop === target.prop && schemaProp.type === "component-collection");
+  if (!slot?.accepts) {
+    return null;
+  }
+  const block = resolveShapeForSlot({
+    entry,
+    accepts: slot.accepts,
+    wrapperLevels: resolveWrapperLevels({
+      templates: editorContext.configTemplates,
+      dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
+      context: editorContext
+    }),
+    context: editorContext
+  });
+  if (!block) {
+    return null;
+  }
+  return {
+    name: target.parentPath === "" ? target.prop : `${target.parentPath}.${target.prop}`,
+    index: target.index,
+    block
+  };
+}
+
 /**
  * A remote template library.
  *
@@ -9135,42 +9555,6 @@ const PANEL_DRAG_MIME = "application/x-easyblocks-panel-item";
 /** Posted to the parent window when an item is dropped on the canvas. */
 const PANEL_DROP_MESSAGE = "@easyblocks-editor/panel-drop";
 
-/** Where the item would land, and where to draw the line that says so. */
-
-/**
- * Which gap the pointer is aiming at.
- *
- * A section's midpoint is the boundary: above it the item goes before that
- * section, below it after. Midpoint rather than the nearest edge because a
- * section is often taller than the screen — with edges, the whole middle of a
- * tall section would aim at nothing, and the drop would have no answer for most
- * of the page.
- *
- * An empty page still has an answer, index 0, rather than no target at all. The
- * first thing a shop owner drags is dropped onto nothing.
- */
-function resolvePanelDropTarget(pointerY, rects) {
-  if (rects.length === 0) {
-    return {
-      index: 0,
-      y: 0
-    };
-  }
-  for (let index = 0; index < rects.length; index += 1) {
-    const rect = rects[index];
-    if (pointerY < rect.top + (rect.bottom - rect.top) / 2) {
-      return {
-        index,
-        y: rect.top
-      };
-    }
-  }
-  return {
-    index: rects.length,
-    y: rects[rects.length - 1].bottom
-  };
-}
-
 /** Whether a drag event is one of ours, asked at a moment when only types are readable. */
 function isPanelDrag(types) {
   return Boolean(types?.includes(PANEL_DRAG_MIME));
@@ -9616,7 +10000,7 @@ const EditorSections = ({
   //
   // `indexOverride` is where a drag let go. A click carries no position of its
   // own, so it still lands after whatever is selected.
-  const onAddTemplate = useCallback((template, indexOverride) => {
+  const onAddTemplate = useCallback((template, dropTarget) => {
     const entry = template.template?.entry;
     if (!entry) {
       toaster.error(t("editor.sidebar.sections.add.error"));
@@ -9629,22 +10013,39 @@ const EditorSections = ({
       _itemProps: {}
     }, editorContext);
     const sectionCount = editorContext.compiledComponentConfig?.components.data.length ?? 0;
-    const insertionIndex = indexOverride === undefined ? getSectionInsertionIndex(editorContext.focussedField, sectionCount) :
-    // The canvas measured the page it was drawing; clamped because that
-    // measurement and this insert are two different moments.
-    Math.min(Math.max(indexOverride, 0), sectionCount);
+
+    /*
+     * A click carries no position of its own, so it still lands in the root
+     * collection after whatever is selected. A drop carries the collection it
+     * landed in, which is how the same template becomes a bare component inside
+     * a column and a full row at the page root.
+     */
+    const target = dropTarget ?? {
+      parentPath: "",
+      prop: "data",
+      index: getSectionInsertionIndex(editorContext.focussedField, sectionCount)
+    };
+    const insertion = resolvePanelInsertion({
+      entry: normalizedEntry,
+      target,
+      editorContext
+    });
+    if (!insertion) {
+      toaster.error(t("editor.sidebar.sections.add.error"));
+      return;
+    }
     editorContext.actions.insertItem({
-      name: "data",
-      index: insertionIndex,
-      block: normalizedEntry
+      name: insertion.name,
+      index: insertion.index,
+      block: insertion.block
     });
     toaster.success(t("editor.sidebar.sections.add.success"));
 
-    // The insert went into the root collection at a known index, so that is
-    // the new section's path. Reading it back out of `form.values` was the
-    // roundabout way there, and the values are still the pre-insert ones at
-    // this point anyway.
-    scrollCanvasToComponent(`data.${insertionIndex}`);
+    // The insert went into a known collection at a known index, so that is the
+    // new block's path. Reading it back out of `form.values` was the roundabout
+    // way there, and the values are still the pre-insert ones at this point
+    // anyway.
+    scrollCanvasToComponent(`${insertion.name}.${insertion.index}`);
   }, [editorContext, scrollCanvasToComponent]);
 
   /**
@@ -9677,7 +10078,14 @@ const EditorSections = ({
       // A drop can arrive after the panel has moved on — switched list, or the
       // drag was abandoned and something else posted. Nothing to insert then.
       if (template) {
-        onAddTemplate(template, event.data.index);
+        const drop = event.data;
+        onAddTemplate(template, {
+          // A canvas that predates slot targeting sends no path, and the root is
+          // what it meant.
+          parentPath: drop.parentPath ?? "",
+          prop: drop.prop ?? "data",
+          index: Math.max(drop.index, 0)
+        });
       }
     };
     window.addEventListener("message", onMessage);
@@ -11934,7 +12342,12 @@ const EditorContent = ({
         where: focussedField,
         resolveDestination: destinationResolver({
           form,
-          context: compilationContext
+          context: compilationContext,
+          wrapperLevels: resolveWrapperLevels({
+            templates: props.config.templates,
+            dropWrapperTemplateId: props.config.dropWrapperTemplateId,
+            context: compilationContext
+          })
         }),
         pasteCommand: pasteManager()
       }));
@@ -12164,6 +12577,7 @@ const EditorContent = ({
     // panel opens, and it must not mix a shop's own templates into it.
     configTemplates: props.config.templates ?? [],
     categoryOrder: props.config.categoryOrder ?? [],
+    dropWrapperTemplateId: props.config.dropWrapperTemplateId,
     rootComponent: findComponentDefinitionById(initialEntry._component, compilationContext),
     components: props.components ?? {}
   };
@@ -13345,6 +13759,307 @@ const globalEditorRendererStyles = `
 `;
 
 /**
+ * Choosing which collection a panel drop is aimed at.
+ *
+ * The gesture used to have one possible answer — a gap between two top-level
+ * sections — because the canvas only ever measured frames whose path looked like
+ * `data.<n>`. Everything deeper was filtered out, so releasing the pointer over a
+ * column did not land in that column; it fell back to an index at the page root
+ * and the item arrived somewhere else entirely, with no sign that anything had
+ * been redirected.
+ *
+ * These functions are geometry and string work only. They take rectangles the
+ * canvas measured and answer where the item goes, which keeps the part that is
+ * easy to get wrong testable without a browser.
+ */
+
+/** A collection the pointer could be aiming at. */
+
+/**
+ * Splits a frame's path into the collection holding it and its position.
+ *
+ * Every editable frame's path ends in `<prop>.<index>`, at the root (`data.2`)
+ * just as much as deeper in (`data.0.Cells.1.Items.3`), so one rule reads both
+ * and the root stops being a special case.
+ */
+function parseSlotPath(path) {
+  const segments = path.split(".");
+  if (segments.length < 2) {
+    return null;
+  }
+  const index = Number(segments[segments.length - 1]);
+  if (!Number.isInteger(index) || index < 0) {
+    return null;
+  }
+  return {
+    parentPath: segments.slice(0, -2).join("."),
+    prop: segments[segments.length - 2],
+    index
+  };
+}
+function midX(rect) {
+  return rect.left + (rect.right - rect.left) / 2;
+}
+function midY(rect) {
+  return rect.top + (rect.bottom - rect.top) / 2;
+}
+
+/**
+ * Whether a collection lays its children out across or down the page.
+ *
+ * Read from where the children actually are rather than from the component's
+ * settings: a row of columns turns into a stack at a narrow breakpoint, and the
+ * insertion line has to follow what is on screen, not what the desktop layout
+ * says. Comparing how far apart the first two children are on each axis needs no
+ * tolerance value to tune.
+ */
+function inferSlotAxis(children) {
+  if (children.length < 2) {
+    return "vertical";
+  }
+  const [first, second] = children;
+  return Math.abs(midX(second) - midX(first)) > Math.abs(midY(second) - midY(first)) ? "horizontal" : "vertical";
+}
+
+/**
+ * Which gap inside one collection the pointer is aiming at.
+ *
+ * A child's midpoint is the boundary, not its nearest edge: a section is often
+ * taller than the screen, and with edges the whole middle of a tall one would aim
+ * at nothing. An empty collection still answers — index 0 — because dropping onto
+ * an empty column is the gesture this whole change exists to allow.
+ */
+function resolveSlotAim(pointer, slot) {
+  const children = [...slot.children].sort((a, b) => a.index - b.index);
+  const axis = inferSlotAxis(children);
+  if (children.length === 0) {
+    return {
+      parentPath: slot.parentPath,
+      prop: slot.prop,
+      index: 0,
+      line: {
+        x: slot.bounds.left,
+        y: slot.bounds.top,
+        length: slot.bounds.right - slot.bounds.left,
+        axis: "vertical"
+      }
+    };
+  }
+  const aimAt = (index, rect, edge) => ({
+    parentPath: slot.parentPath,
+    prop: slot.prop,
+    index,
+    line: axis === "horizontal" ? {
+      x: edge === "before" ? rect.left : rect.right,
+      y: rect.top,
+      length: rect.bottom - rect.top,
+      axis
+    } : {
+      x: rect.left,
+      y: edge === "before" ? rect.top : rect.bottom,
+      length: rect.right - rect.left,
+      axis
+    }
+  });
+  for (const child of children) {
+    const boundary = axis === "horizontal" ? midX(child) : midY(child);
+    const position = axis === "horizontal" ? pointer.x : pointer.y;
+    if (position < boundary) {
+      return aimAt(child.index, child, "before");
+    }
+  }
+  const last = children[children.length - 1];
+  return aimAt(last.index + 1, last, "after");
+}
+
+/**
+ * The collection a frame under the pointer belongs to.
+ *
+ * Which frame is under the pointer is a paint-order question, answered by
+ * `elementsFromPoint` before this is called. What the frame *means* is a tree
+ * question, answered here, and keeping the two apart is the whole point: a
+ * geometric search for the deepest rectangle containing the pointer picks the
+ * wrong one as soon as anything overlaps. A sticky header is the case that
+ * proves it — it stays at the top of the canvas while the page scrolls beneath,
+ * so a pointer over the header sits inside the header *and* inside whatever row
+ * has scrolled under it, and the row is the deeper of the two. The item then
+ * lands in a block the person cannot even see.
+ *
+ * From the frame, three questions in order:
+ *
+ *   1. Does this block own a collection that takes drops? Reaching a block as
+ *      the topmost frame means the pointer is in its own space rather than in
+ *      any child, so its own collection is what is being aimed at — this is how
+ *      an empty column, and the gutter between two columns, are reachable.
+ *   2. Otherwise, does the collection holding it take drops? This is the common
+ *      case: the pointer is over an item, and the item's own collection is where
+ *      a sibling would go.
+ *   3. Otherwise ask the same of its parent, and so on outwards.
+ *
+ * The root collection ends every walk, so a frame belonging to a collection that
+ * never opted in — an older container — sends the drop to the page root, exactly
+ * where it would have gone before any of this existed. It does not fall through
+ * to whatever happens to be painted behind it.
+ */
+function pickSlotForPath(slots, path) {
+  const root = slots.find(slot => slot.parentPath === "") ?? null;
+  if (path === null) {
+    return root;
+  }
+  let current = path;
+  for (;;) {
+    const owned = slots.find(slot => slot.parentPath === current);
+    if (owned) {
+      return owned;
+    }
+    const parsed = parseSlotPath(current);
+    if (!parsed) {
+      return root;
+    }
+    const holder = slots.find(slot => slot.parentPath === parsed.parentPath && slot.prop === parsed.prop);
+    if (holder) {
+      return holder;
+    }
+    if (parsed.parentPath === "") {
+      return root;
+    }
+    current = parsed.parentPath;
+  }
+}
+
+/**
+ * Reading the collections a panel drop could land in off the canvas.
+ *
+ * Every editable frame already carries its own dot path, at every depth — the
+ * gesture was ignoring all but the root ones, not working from a canvas that
+ * lacked the information. So this measures what is drawn and groups the frames by
+ * the collection holding them.
+ *
+ * A collection only appears here if its schema prop asked to, with
+ * `panelDropTarget`. That gate is the whole reason nothing changes for a document
+ * built out of components that predate this: their slots do not set the flag, so
+ * the only collection ever offered is the root one, which is all the gesture
+ * could reach before.
+ */
+
+function toBounds(rect) {
+  return {
+    top: rect.top,
+    bottom: rect.bottom,
+    left: rect.left,
+    right: rect.right
+  };
+}
+function union(a, b) {
+  return {
+    top: Math.min(a.top, b.top),
+    bottom: Math.max(a.bottom, b.bottom),
+    left: Math.min(a.left, b.left),
+    right: Math.max(a.right, b.right)
+  };
+}
+const slotKey = (parentPath, prop) => `${parentPath}|${prop}`;
+function collectPanelDropSlots(doc, editorContext) {
+  const slots = new Map();
+
+  /*
+   * The root collection is seeded rather than discovered, because a page with no
+   * sections draws no frames at all and still has to accept the first thing
+   * anybody drags onto it. Its bounds cover the canvas so that a drop over open
+   * space below the last section still finds it.
+   */
+  slots.set(slotKey("", "data"), {
+    parentPath: "",
+    prop: "data",
+    children: [],
+    bounds: {
+      top: 0,
+      left: 0,
+      right: Math.max(doc.documentElement.clientWidth, 0),
+      bottom: Math.max(doc.documentElement.scrollHeight, doc.documentElement.clientHeight)
+    }
+  });
+  const frames = Array.from(doc.querySelectorAll(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`));
+  const entryAt = path => path === "" ? editorContext.form.values : dotNotationGet(editorContext.form.values, path);
+  const slotsOf = path => {
+    const entry = entryAt(path);
+    if (!isEntry(entry)) {
+      return [];
+    }
+    const definition = findComponentDefinition(entry, editorContext);
+    return definition ? getCollectionSlots(definition) : [];
+  };
+  const isOptedIn = (parentPath, prop) => slotsOf(parentPath).some(slot => slot.prop === prop && slot.panelDropTarget);
+
+  // Collections that already hold something: each child contributes its own
+  // rectangle, and the collection's area is everything its children cover.
+  for (const element of frames) {
+    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
+    if (!path) {
+      continue;
+    }
+    const parsed = parseSlotPath(path);
+    if (!parsed) {
+      continue;
+    }
+
+    // The root stays available without opting in, since that is where every panel
+    // drop went before this existed.
+    if (parsed.parentPath !== "" && !isOptedIn(parsed.parentPath, parsed.prop)) {
+      continue;
+    }
+    const bounds = toBounds(element.getBoundingClientRect());
+    const key = slotKey(parsed.parentPath, parsed.prop);
+    const existing = slots.get(key);
+    const childRect = {
+      index: parsed.index,
+      ...bounds
+    };
+    if (existing) {
+      existing.children.push(childRect);
+      // The seeded root keeps its canvas-wide area; every other collection is only
+      // as big as what it holds.
+      if (parsed.parentPath !== "") {
+        existing.bounds = existing.children.length === 1 ? bounds : union(existing.bounds, bounds);
+      }
+      continue;
+    }
+    slots.set(key, {
+      parentPath: parsed.parentPath,
+      prop: parsed.prop,
+      children: [childRect],
+      bounds
+    });
+  }
+
+  // Empty collections have no children to measure, so their own component's frame
+  // stands in. Without this an empty column could not be aimed at, and an empty
+  // column is exactly what somebody building a page drops the first thing into.
+  for (const element of frames) {
+    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
+    if (!path) {
+      continue;
+    }
+    for (const slot of slotsOf(path)) {
+      if (!slot.panelDropTarget) {
+        continue;
+      }
+      const key = slotKey(path, slot.prop);
+      if (slots.has(key)) {
+        continue;
+      }
+      slots.set(key, {
+        parentPath: path,
+        prop: slot.prop,
+        children: [],
+        bounds: toBounds(element.getBoundingClientRect())
+      });
+    }
+  }
+  return [...slots.values()];
+}
+
+/**
  * Receiving an item dragged out of a sidebar panel.
  *
  * The panel lives in the parent window and the canvas in an iframe, so the
@@ -13357,28 +14072,15 @@ const globalEditorRendererStyles = `
  * the panel: a browser withholds a drag's contents until the drop, so there is
  * nothing here to read at the moment the canvas has to decide whether to accept
  * one anyway.
+ *
+ * The position is now a collection and an index within it, not an index into the
+ * page. Aiming only at the root meant a pointer released inside a column was
+ * answered with a gap between two sections instead — the item did arrive, just
+ * not where it was aimed, and nothing said so. Which collections can be aimed at
+ * is decided by `collectPanelDropSlots`, and a collection has to opt in, so a
+ * document of older components still has exactly one answer available.
  */
 
-/** Every top-level section, in document order, with the rectangle it occupies. */
-function readSectionRects(doc) {
-  return Array.from(doc.querySelectorAll(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`)).flatMap(element => {
-    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
-    const index = path?.match(/^data\.(\d+)$/)?.[1];
-
-    // Only the root collection. A frame deeper in the tree carries a longer
-    // path, and dropping a section inside another block is not a thing the
-    // root collection can express.
-    if (index === undefined) {
-      return [];
-    }
-    const rect = element.getBoundingClientRect();
-    return [{
-      index: Number(index),
-      top: rect.top,
-      bottom: rect.bottom
-    }];
-  }).sort((a, b) => a.index - b.index);
-}
 const ACCENT = "#7B70F5";
 
 /**
@@ -13410,35 +14112,68 @@ function AcceptFrame() {
  *
  * Drawn in the canvas rather than as a cursor decoration because the answer is
  * about the page, not the pointer: the same pointer position means a different
- * gap depending on which section it is over.
+ * gap depending on which block it is over.
+ *
+ * It follows the collection rather than always lying flat. A row of columns is
+ * filled across, so a horizontal line in it would sit along a column instead of
+ * between two, pointing at the wrong gap — and it is only as long as the
+ * collection it belongs to, because a line spanning the window says "between two
+ * sections" no matter which column it was actually drawn for.
  */
 function InsertionLine({
-  y
+  line
 }) {
+  const isAcross = line.axis === "horizontal";
   return /*#__PURE__*/React__default.createElement("div", {
     style: {
       position: "fixed",
-      left: 0,
-      right: 0,
-      top: y,
-      height: 0,
-      borderTop: `2px solid ${ACCENT}`,
+      top: line.y,
+      left: line.x,
+      width: isAcross ? 0 : line.length,
+      height: isAcross ? line.length : 0,
+      [isAcross ? "borderLeft" : "borderTop"]: `2px solid ${ACCENT}`,
       boxShadow: "0 0 0 1px rgba(123, 112, 245, 0.35)",
       pointerEvents: "none",
       zIndex: 2147483000
     }
   });
 }
-function usePanelDropTarget() {
-  const [target, setTarget] = useState(null);
-  // Separate from `target` because the frame and the line answer different
+function usePanelDropTarget(editorContext) {
+  const [aim, setAim] = useState(null);
+  // Separate from `aim` because the frame and the line answer different
   // questions, and the frame has to be up from the first `dragenter` — before
-  // any section has been measured.
+  // anything has been measured.
   const [isOver, setIsOver] = useState(false);
   const clear = useCallback(() => {
-    setTarget(null);
+    setAim(null);
     setIsOver(false);
   }, []);
+
+  /**
+   * Which collection the pointer is in, and where in it the item would go.
+   *
+   * Measured fresh on every `dragover` rather than once at `dragenter`, because
+   * the page moves under the pointer: an accordion opens, an image finishes
+   * loading, the canvas scrolls. A stale rectangle would answer with a gap that
+   * is no longer there.
+   */
+  const aimAt = useCallback(event => {
+    const pointer = {
+      x: event.clientX,
+      y: event.clientY
+    };
+
+    /*
+     * Paint order, not geometry, decides which block the pointer is on. A
+     * sticky header keeps its place while the page scrolls underneath it, so
+     * more than one block can contain the same point and the deeper of the two
+     * is the one nobody can see. `elementsFromPoint` answers with what is
+     * actually on top, which is what the person is pointing at.
+     */
+    const topmost = document.elementsFromPoint(pointer.x, pointer.y).map(element => element.closest(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`)).find(frame => frame !== null);
+    const slot = pickSlotForPath(collectPanelDropSlots(document, editorContext), topmost?.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE) ?? null);
+    return slot ? resolveSlotAim(pointer, slot) : null;
+  }, [editorContext]);
   useEffect(() => {
     /**
      * Both `dragenter` and `dragover` have to be cancelled for an element to
@@ -13468,7 +14203,7 @@ function usePanelDropTarget() {
       // item snapping back to the panel, which reads as "this does not work".
       accept(event);
       setIsOver(true);
-      setTarget(resolvePanelDropTarget(event.clientY, readSectionRects(document)));
+      setAim(aimAt(event));
     };
     const onDrop = event => {
       if (!isPanelDrag(event.dataTransfer?.types)) {
@@ -13476,10 +14211,15 @@ function usePanelDropTarget() {
       }
       event.preventDefault();
       clear();
-      const dropped = resolvePanelDropTarget(event.clientY, readSectionRects(document));
+      const dropped = aimAt(event);
+      if (!dropped) {
+        return;
+      }
       const message = {
         type: PANEL_DROP_MESSAGE,
-        index: dropped.index
+        index: dropped.index,
+        parentPath: dropped.parentPath,
+        prop: dropped.prop
       };
       window.parent.postMessage(message);
     };
@@ -13506,12 +14246,12 @@ function usePanelDropTarget() {
       document.removeEventListener("dragleave", onDragLeave);
       document.removeEventListener("dragend", clear);
     };
-  }, [clear]);
+  }, [aimAt, clear]);
   if (!isOver) {
     return null;
   }
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(AcceptFrame, null), target ? /*#__PURE__*/React__default.createElement(InsertionLine, {
-    y: target.y
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(AcceptFrame, null), aim ? /*#__PURE__*/React__default.createElement(InsertionLine, {
+    line: aim.line
   }) : null);
 }
 
@@ -14748,7 +15488,7 @@ function EasyblocksCanvas({
   } = useForceRerender();
   // An item dragged out of a sidebar panel. A separate gesture from the one
   // below on purpose — see the note in `usePanelDropTarget`.
-  const panelDropIndicator = usePanelDropTarget();
+  const panelDropIndicator = usePanelDropTarget(editorContext);
   // Ten pixels was the price of the whole block being the handle: any press that
   // drifted had to be assumed accidental. Now that a drag starts from a grip, the
   // press is already deliberate, and a shorter threshold is what makes the block

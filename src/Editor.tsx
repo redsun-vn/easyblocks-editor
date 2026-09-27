@@ -87,6 +87,7 @@ import {
 } from "./editorActions";
 import { EditorLeftSidebar } from "./editorSidebar/EditorLeftSidebar";
 import { Form } from "./form";
+import { resolveWrapperLevels } from "./dropShape/editorShapeAdapters";
 import { destinationResolver } from "./paste/destinationResolver";
 import { pasteManager } from "./paste/manager";
 import { SelectionBreadcrumb } from "./selectionFrame/SelectionBreadcrumb";
@@ -905,6 +906,11 @@ const EditorContent = ({
           resolveDestination: destinationResolver({
             form,
             context: compilationContext,
+            wrapperLevels: resolveWrapperLevels({
+              templates: props.config.templates,
+              dropWrapperTemplateId: props.config.dropWrapperTemplateId,
+              context: compilationContext,
+            }),
           }),
           pasteCommand: pasteManager(),
         }),
@@ -1159,6 +1165,7 @@ const EditorContent = ({
     // panel opens, and it must not mix a shop's own templates into it.
     configTemplates: (props.config.templates as InternalTemplate[]) ?? [],
     categoryOrder: props.config.categoryOrder ?? [],
+    dropWrapperTemplateId: props.config.dropWrapperTemplateId,
     rootComponent: findComponentDefinitionById(
       initialEntry._component,
       compilationContext,

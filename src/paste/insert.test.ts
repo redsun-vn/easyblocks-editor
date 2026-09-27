@@ -165,3 +165,76 @@ describe("insert", () => {
     expect(mockReconcile).not.toHaveBeenCalled();
   });
 });
+
+describe("insert into a slot that opted into shaping", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  const ROW = { id: "Row", type: ["section"], schema: [{ prop: "Cells", type: "component-collection", accepts: ["Col"] }] };
+  const COL = { id: "Col", type: "Col", schema: [{ prop: "Items", type: "component-collection", accepts: ["Leaf"] }] };
+  const LEAF = { id: "Leaf", type: "Leaf", schema: [] };
+  const DEFS: Record<string, any> = { Row: ROW, Col: COL, Leaf: LEAF };
+
+  /** A row around a column around one leaf: packaging, not an arrangement. */
+  const packaged = {
+    _id: "row",
+    _component: "Row",
+    Cells: [{ _id: "col", _component: "Col", Items: [{ _id: "leaf", _component: "Leaf" }] }],
+  } as any;
+
+  const mockDefinitions = () => {
+    jest
+      .spyOn(internals, "findComponentDefinition")
+      .mockImplementation(((config: any) => DEFS[config?._component]) as any);
+    jest
+      .spyOn(internals, "findComponentDefinitionById")
+      .mockImplementation(((id: any) => DEFS[id]) as any);
+    jest
+      .spyOn(internals, "duplicateConfig")
+      .mockImplementation(((config: any) => config) as any);
+    jest.spyOn(reconcile, "reconcile").mockReturnValue(((c: any) => c) as any);
+  };
+
+  it("drops the packaging when the slot takes the payload directly", () => {
+    mockDefinitions();
+    const form = createForm({ items: [] });
+
+    const insert = insertCommand({
+      context: {} as any,
+      form,
+      schema: {
+        prop: "Items",
+        type: "component-collection",
+        accepts: ["Leaf"],
+        panelDropTarget: true,
+      } as any,
+      templateId: "",
+    });
+
+    expect(insert("items", 0, packaged)).toBe("items.0");
+    expect(form.mutators.insert).toHaveBeenCalledWith(
+      "items",
+      0,
+      expect.objectContaining({ _component: "Leaf" }),
+    );
+  });
+
+  it("refuses, rather than reshaping, when the slot never opted in", () => {
+    mockDefinitions();
+    const form = createForm({ items: [] });
+
+    const insert = insertCommand({
+      context: {} as any,
+      form,
+      schema: {
+        prop: "Items",
+        type: "component-collection",
+        accepts: ["Leaf"],
+      } as any,
+      templateId: "",
+    });
+
+    // The old expression, unchanged: a Row is not a Leaf, so nothing lands.
+    expect(insert("items", 0, packaged)).toBeNull();
+    expect(form.mutators.insert).not.toHaveBeenCalled();
+  });
+});

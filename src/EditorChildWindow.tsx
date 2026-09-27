@@ -241,7 +241,7 @@ export function EasyblocksCanvas({
   const { forceRerender } = useForceRerender();
   // An item dragged out of a sidebar panel. A separate gesture from the one
   // below on purpose — see the note in `usePanelDropTarget`.
-  const panelDropIndicator = usePanelDropTarget();
+  const panelDropIndicator = usePanelDropTarget(editorContext);
   // Ten pixels was the price of the whole block being the handle: any press that
   // drifted had to be assumed accidental. Now that a drag starts from a grip, the
   // press is already deliberate, and a shorter threshold is what makes the block

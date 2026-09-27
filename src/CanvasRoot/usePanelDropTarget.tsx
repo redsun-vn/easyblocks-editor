@@ -1,12 +1,16 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { CANVAS_FRAME_PATH_ATTRIBUTE } from "../EditableComponentBuilder/canvasLayers";
 import {
   isPanelDrag,
   PANEL_DROP_MESSAGE,
-  resolvePanelDropTarget,
   type PanelDropMessage,
-  type PanelDropTarget,
 } from "../editorSidebar/editorSections/panelDrag";
+import {
+  pickSlotForPath,
+  resolveSlotAim,
+  type PanelDropAim,
+} from "../editorSidebar/editorSections/panelDropSlots";
+import { CANVAS_FRAME_PATH_ATTRIBUTE } from "../EditableComponentBuilder/canvasLayers";
+import { collectPanelDropSlots } from "./collectPanelDropSlots";
 
 /**
  * Receiving an item dragged out of a sidebar panel.
@@ -21,30 +25,14 @@ import {
  * the panel: a browser withholds a drag's contents until the drop, so there is
  * nothing here to read at the moment the canvas has to decide whether to accept
  * one anyway.
+ *
+ * The position is now a collection and an index within it, not an index into the
+ * page. Aiming only at the root meant a pointer released inside a column was
+ * answered with a gap between two sections instead — the item did arrive, just
+ * not where it was aimed, and nothing said so. Which collections can be aimed at
+ * is decided by `collectPanelDropSlots`, and a collection has to opt in, so a
+ * document of older components still has exactly one answer available.
  */
-
-/** Every top-level section, in document order, with the rectangle it occupies. */
-function readSectionRects(doc: Document) {
-  return Array.from(
-    doc.querySelectorAll(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`),
-  )
-    .flatMap((element) => {
-      const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
-      const index = path?.match(/^data\.(\d+)$/)?.[1];
-
-      // Only the root collection. A frame deeper in the tree carries a longer
-      // path, and dropping a section inside another block is not a thing the
-      // root collection can express.
-      if (index === undefined) {
-        return [];
-      }
-
-      const rect = element.getBoundingClientRect();
-
-      return [{ index: Number(index), top: rect.top, bottom: rect.bottom }];
-    })
-    .sort((a, b) => a.index - b.index);
-}
 
 const ACCENT = "#7B70F5";
 
@@ -79,18 +67,26 @@ function AcceptFrame() {
  *
  * Drawn in the canvas rather than as a cursor decoration because the answer is
  * about the page, not the pointer: the same pointer position means a different
- * gap depending on which section it is over.
+ * gap depending on which block it is over.
+ *
+ * It follows the collection rather than always lying flat. A row of columns is
+ * filled across, so a horizontal line in it would sit along a column instead of
+ * between two, pointing at the wrong gap — and it is only as long as the
+ * collection it belongs to, because a line spanning the window says "between two
+ * sections" no matter which column it was actually drawn for.
  */
-function InsertionLine({ y }: { y: number }) {
+function InsertionLine({ line }: { line: PanelDropAim["line"] }) {
+  const isAcross = line.axis === "horizontal";
+
   return (
     <div
       style={{
         position: "fixed",
-        left: 0,
-        right: 0,
-        top: y,
-        height: 0,
-        borderTop: `2px solid ${ACCENT}`,
+        top: line.y,
+        left: line.x,
+        width: isAcross ? 0 : line.length,
+        height: isAcross ? line.length : 0,
+        [isAcross ? "borderLeft" : "borderTop"]: `2px solid ${ACCENT}`,
         boxShadow: "0 0 0 1px rgba(123, 112, 245, 0.35)",
         pointerEvents: "none",
         zIndex: 2147483000,
@@ -99,17 +95,51 @@ function InsertionLine({ y }: { y: number }) {
   );
 }
 
-export function usePanelDropTarget() {
-  const [target, setTarget] = useState<PanelDropTarget | null>(null);
-  // Separate from `target` because the frame and the line answer different
+export function usePanelDropTarget(editorContext: any) {
+  const [aim, setAim] = useState<PanelDropAim | null>(null);
+  // Separate from `aim` because the frame and the line answer different
   // questions, and the frame has to be up from the first `dragenter` — before
-  // any section has been measured.
+  // anything has been measured.
   const [isOver, setIsOver] = useState(false);
 
   const clear = useCallback(() => {
-    setTarget(null);
+    setAim(null);
     setIsOver(false);
   }, []);
+
+  /**
+   * Which collection the pointer is in, and where in it the item would go.
+   *
+   * Measured fresh on every `dragover` rather than once at `dragenter`, because
+   * the page moves under the pointer: an accordion opens, an image finishes
+   * loading, the canvas scrolls. A stale rectangle would answer with a gap that
+   * is no longer there.
+   */
+  const aimAt = useCallback(
+    (event: DragEvent): PanelDropAim | null => {
+      const pointer = { x: event.clientX, y: event.clientY };
+
+      /*
+       * Paint order, not geometry, decides which block the pointer is on. A
+       * sticky header keeps its place while the page scrolls underneath it, so
+       * more than one block can contain the same point and the deeper of the two
+       * is the one nobody can see. `elementsFromPoint` answers with what is
+       * actually on top, which is what the person is pointing at.
+       */
+      const topmost = document
+        .elementsFromPoint(pointer.x, pointer.y)
+        .map((element) => element.closest(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`))
+        .find((frame): frame is Element => frame !== null);
+
+      const slot = pickSlotForPath(
+        collectPanelDropSlots(document, editorContext),
+        topmost?.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE) ?? null,
+      );
+
+      return slot ? resolveSlotAim(pointer, slot) : null;
+    },
+    [editorContext],
+  );
 
   useEffect(() => {
     /**
@@ -145,7 +175,7 @@ export function usePanelDropTarget() {
       accept(event);
       setIsOver(true);
 
-      setTarget(resolvePanelDropTarget(event.clientY, readSectionRects(document)));
+      setAim(aimAt(event));
     };
 
     const onDrop = (event: DragEvent) => {
@@ -156,14 +186,17 @@ export function usePanelDropTarget() {
       event.preventDefault();
       clear();
 
-      const dropped = resolvePanelDropTarget(
-        event.clientY,
-        readSectionRects(document),
-      );
+      const dropped = aimAt(event);
+
+      if (!dropped) {
+        return;
+      }
 
       const message: PanelDropMessage = {
         type: PANEL_DROP_MESSAGE,
         index: dropped.index,
+        parentPath: dropped.parentPath,
+        prop: dropped.prop,
       };
 
       window.parent.postMessage(message);
@@ -193,7 +226,7 @@ export function usePanelDropTarget() {
       document.removeEventListener("dragleave", onDragLeave);
       document.removeEventListener("dragend", clear);
     };
-  }, [clear]);
+  }, [aimAt, clear]);
 
   if (!isOver) {
     return null;
@@ -202,7 +235,7 @@ export function usePanelDropTarget() {
   return (
     <>
       <AcceptFrame />
-      {target ? <InsertionLine y={target.y} /> : null}
+      {aim ? <InsertionLine line={aim.line} /> : null}
     </>
   );
 }
