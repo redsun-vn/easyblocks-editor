@@ -7479,6 +7479,26 @@ const ModalPicker = ({
       coreComponentOf.set(template.id, resolved);
       return resolved;
     };
+
+    /** The components this particular slot is offering. */
+    const offeredIds = new Set(localComponents.map(component => component.id));
+
+    /**
+     * Which group a template belongs to, for this slot.
+     *
+     * Its payload when the slot offers that — so a column offering mini carts
+     * lists the mini cart template instead of hiding it among the rows. Its own
+     * outermost component otherwise, which is what keeps a band reachable where
+     * only sections are allowed: at the page root the payload's group does not
+     * exist, and filing the template under the payload alone would have taken it
+     * off the add dialog entirely. Two templates did exactly that before this
+     * fallback, and a template quietly disappearing is a worse trade than one
+     * filed under a heading somebody has to look twice at.
+     */
+    const groupIdFor = template => {
+      const payload = coreComponentId(template);
+      return offeredIds.has(payload) ? payload : template.entry._component;
+    };
     localComponents.forEach(localComponent => {
       templatesDictionary[localComponent.id] = {
         component: localComponent,
@@ -7494,7 +7514,7 @@ const ModalPicker = ({
          * packaging like this, and only 2 of those become visible to containers
          * that predate the rule.
          */
-        if (localComponent.id === coreComponentId(remoteTemplate)) {
+        if (localComponent.id === groupIdFor(remoteTemplate)) {
           // For local components are visible & remote templates
           if (!remoteTemplate.isUserDefined && localComponent.visible !== false || remoteTemplate.isUserDefined) {
             templatesDictionary[localComponent.id].templates.push(remoteTemplate);
