@@ -60,22 +60,36 @@ export function resolvePanelInsertion({
     (schemaProp) =>
       schemaProp.prop === target.prop &&
       schemaProp.type === "component-collection",
-  ) as { accepts?: string[] } | undefined;
+  ) as { accepts?: string[]; panelDropTarget?: boolean } | undefined;
 
   if (!slot?.accepts) {
     return null;
   }
 
-  const block = resolveShapeForSlot({
-    entry,
-    accepts: slot.accepts,
-    wrapperLevels: resolveWrapperLevels({
-      templates: editorContext.configTemplates,
-      dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
-      context: editorContext,
-    }),
-    context: editorContext,
-  });
+  /*
+   * Only a slot that opted in gets reshaped. Everything else takes the entry
+   * exactly as its author wrote it, which is what this code did before any of
+   * this existed.
+   *
+   * That matters in two directions. A document built out of components that
+   * predate the rule has no opted-in slot anywhere, so every drop it can make
+   * lands byte for byte as before. And the page root does not opt in either, so
+   * a section template dropped there keeps the band its author drew — without
+   * this, a row holding one section-typed block would be unwrapped on the way
+   * in and the band's own padding would go with it.
+   */
+  const block = slot.panelDropTarget
+    ? resolveShapeForSlot({
+        entry,
+        accepts: slot.accepts,
+        wrapperLevels: resolveWrapperLevels({
+          templates: editorContext.configTemplates,
+          dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
+          context: editorContext,
+        }),
+        context: editorContext,
+      })
+    : entry;
 
   if (!block) {
     return null;

@@ -7483,6 +7483,13 @@ const ModalPicker = ({
     /** The components this particular slot is offering. */
     const offeredIds = new Set(localComponents.map(component => component.id));
 
+    /*
+     * Only a slot that opted in is filed by payload. A container that predates
+     * the rule keeps the dialog it has always had, listing exactly the templates
+     * whose own outermost component it accepts — no card added, none taken away.
+     */
+    const filesByPayload = schemaProp.panelDropTarget === true;
+
     /**
      * Which group a template belongs to, for this slot.
      *
@@ -7496,6 +7503,9 @@ const ModalPicker = ({
      * filed under a heading somebody has to look twice at.
      */
     const groupIdFor = template => {
+      if (!filesByPayload) {
+        return template.entry._component;
+      }
       const payload = coreComponentId(template);
       return offeredIds.has(payload) ? payload : template.entry._component;
     };
@@ -7567,8 +7577,9 @@ const ModalPicker = ({
      * cart there, with no row and column around it, while picking it at the page
      * root keeps the band the template was authored as.
      */
-    const shaped = resolveShapeForSlot({
-      entry: _internals.normalize(template.entry, editorContext),
+    const normalized = _internals.normalize(template.entry, editorContext);
+    const shaped = schemaProp.panelDropTarget === true ? resolveShapeForSlot({
+      entry: normalized,
       accepts: componentTypes,
       wrapperLevels: resolveWrapperLevels({
         templates: editorContext.configTemplates,
@@ -7576,7 +7587,7 @@ const ModalPicker = ({
         context: editorContext
       }),
       context: editorContext
-    });
+    }) : normalized;
 
     // Nothing fits: leave the slot alone rather than write a child it cannot
     // hold, because the insert that follows performs no check of its own.
@@ -8943,7 +8954,20 @@ function resolvePanelInsertion({
   if (!slot?.accepts) {
     return null;
   }
-  const block = resolveShapeForSlot({
+
+  /*
+   * Only a slot that opted in gets reshaped. Everything else takes the entry
+   * exactly as its author wrote it, which is what this code did before any of
+   * this existed.
+   *
+   * That matters in two directions. A document built out of components that
+   * predate the rule has no opted-in slot anywhere, so every drop it can make
+   * lands byte for byte as before. And the page root does not opt in either, so
+   * a section template dropped there keeps the band its author drew — without
+   * this, a row holding one section-typed block would be unwrapped on the way
+   * in and the band's own padding would go with it.
+   */
+  const block = slot.panelDropTarget ? resolveShapeForSlot({
     entry,
     accepts: slot.accepts,
     wrapperLevels: resolveWrapperLevels({
@@ -8952,7 +8976,7 @@ function resolvePanelInsertion({
       context: editorContext
     }),
     context: editorContext
-  });
+  }) : entry;
   if (!block) {
     return null;
   }

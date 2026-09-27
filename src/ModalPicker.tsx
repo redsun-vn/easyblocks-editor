@@ -97,6 +97,13 @@ export const ModalPicker: FC<ModalProps> = ({
     /** The components this particular slot is offering. */
     const offeredIds = new Set(localComponents.map((component) => component.id));
 
+    /*
+     * Only a slot that opted in is filed by payload. A container that predates
+     * the rule keeps the dialog it has always had, listing exactly the templates
+     * whose own outermost component it accepts — no card added, none taken away.
+     */
+    const filesByPayload = schemaProp.panelDropTarget === true;
+
     /**
      * Which group a template belongs to, for this slot.
      *
@@ -110,6 +117,10 @@ export const ModalPicker: FC<ModalProps> = ({
      * filed under a heading somebody has to look twice at.
      */
     const groupIdFor = (template: Template) => {
+      if (!filesByPayload) {
+        return template.entry._component;
+      }
+
       const payload = coreComponentId(template);
 
       return offeredIds.has(payload) ? payload : template.entry._component;
@@ -207,16 +218,21 @@ export const ModalPicker: FC<ModalProps> = ({
      * cart there, with no row and column around it, while picking it at the page
      * root keeps the band the template was authored as.
      */
-    const shaped = resolveShapeForSlot({
-      entry: normalize(template.entry, editorContext),
-      accepts: componentTypes,
-      wrapperLevels: resolveWrapperLevels({
-        templates: editorContext.configTemplates,
-        dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
-        context: editorContext,
-      }),
-      context: editorContext,
-    });
+    const normalized = normalize(template.entry, editorContext);
+
+    const shaped =
+      schemaProp.panelDropTarget === true
+        ? resolveShapeForSlot({
+            entry: normalized,
+            accepts: componentTypes,
+            wrapperLevels: resolveWrapperLevels({
+              templates: editorContext.configTemplates,
+              dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
+              context: editorContext,
+            }),
+            context: editorContext,
+          })
+        : normalized;
 
     // Nothing fits: leave the slot alone rather than write a child it cannot
     // hold, because the insert that follows performs no check of its own.

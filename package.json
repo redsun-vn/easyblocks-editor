@@ -1,6 +1,6 @@
 {
   "name": "@redsun-vn/easyblocks-editor",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/es/index.js",
