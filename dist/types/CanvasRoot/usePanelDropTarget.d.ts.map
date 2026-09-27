@@ -1,1 +1,1 @@
-{"version":3,"file":"usePanelDropTarget.d.ts","sourceRoot":"","sources":["../../../src/CanvasRoot/usePanelDropTarget.tsx"],"names":[],"mappings":"AAAA,OAAO,KAA2C,MAAM,OAAO,CAAC;AAqGhE,wBAAgB,kBAAkB,6BA0GjC"}
+{"version":3,"file":"usePanelDropTarget.d.ts","sourceRoot":"","sources":["../../../src/CanvasRoot/usePanelDropTarget.tsx"],"names":[],"mappings":"AAAA,OAAO,KAA2C,MAAM,OAAO,CAAC;AAiGhE,wBAAgB,kBAAkB,CAAC,aAAa,EAAE,GAAG,4BA+IpD"}

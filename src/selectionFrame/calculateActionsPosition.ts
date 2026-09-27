@@ -11,6 +11,8 @@
  * It hangs off the top-left corner now, outside the block.
  */
 
+import { DRAG_HANDLE_SIZE } from "../EditableComponentBuilder/canvasLayers";
+
 /** The bar's own size, from the buttons it is made of. */
 const BUTTON_SIZE = 28;
 const BUTTON_GAP = 2;
@@ -35,6 +37,16 @@ export const ACTIONS_MAX_WIDTH =
 
 /** Breathing room between the bar and the block it belongs to. */
 const GAP = 8;
+
+/**
+ * How far past its own edges the bar keeps answering the pointer.
+ *
+ * Reaching the bar means crossing `GAP`, where the pointer is over neither it
+ * nor the block, and that crossing used to read as "the pointer has gone" and
+ * take the bar away mid-travel. The bar carries an invisible margin of exactly
+ * the width of the gap it has to be reached across.
+ */
+export const ACTIONS_REACH = GAP;
 
 type Rect = { top: number; left: number; width: number; height: number };
 
@@ -65,6 +77,56 @@ function resolveBounds(viewport: Viewport, container?: Bounds): Bounds {
   };
 }
 
+/**
+ * Whether the block is big enough to wear the bar inside itself.
+ *
+ * A header's search icon is not. The bar is both taller and wider than a block
+ * that size, so placing it inside covers the icon whole and spills onto
+ * whatever sits beside it — in a header that is the next icon along, which is
+ * exactly the block the author reaches for next and could no longer hover or
+ * click.
+ */
+function canHostBar(target: Rect) {
+  return (
+    target.height >= ACTIONS_HEIGHT + GAP && target.width >= ACTIONS_MAX_WIDTH
+  );
+}
+
+/**
+ * Above the block when there is room, and one of two fallbacks when there is
+ * not.
+ *
+ * A block big enough wears the bar inside itself, below its own drag grip.
+ * The grip is the one part of the corner that is not free to cover: it is in
+ * the canvas iframe and the bar is in the window around it, so the bar is
+ * above the grip whatever either of them asks for, and a bar starting at the
+ * block's top edge left nothing of the grip to take hold of.
+ *
+ * A block smaller than the bar has no inside to speak of — the bar covers all
+ * of it and reaches past its edges either way — so it goes below the block,
+ * where it covers the content underneath rather than the siblings pressed up
+ * against it. Below only when below fits: a narrow column taller than the
+ * canvas has no bottom edge in view, and chasing it would pin the bar to the
+ * foot of the canvas with its block at the head.
+ */
+function resolveTop(target: Rect, bounds: Bounds) {
+  const above = target.top - ACTIONS_HEIGHT - GAP;
+
+  if (above >= bounds.top) {
+    return above;
+  }
+
+  const below = target.top + target.height + GAP;
+  const isBelowInView = below + ACTIONS_HEIGHT <= bounds.bottom;
+
+  const fallback =
+    !canHostBar(target) && isBelowInView
+      ? below
+      : target.top + GAP + DRAG_HANDLE_SIZE;
+
+  return clamp(fallback, bounds.top, bounds.bottom - ACTIONS_HEIGHT);
+}
+
 function calculateActionsPosition(
   target: Rect,
   viewport: Viewport,
@@ -78,22 +140,8 @@ function calculateActionsPosition(
   const isBlockInView =
     target.top <= bounds.bottom && target.top + target.height >= bounds.top;
 
-  const above = target.top - ACTIONS_HEIGHT - GAP;
-
   return {
-    /**
-     * Above the block when there is room for it, and just inside the block's
-     * own top edge when there is not.
-     *
-     * Overlapping the block being edited costs its top-left corner. Overlapping
-     * the block above it hides something nobody selected, which is what this
-     * replaced — so when only one of the two is possible, the bar covers its
-     * own block.
-     */
-    top:
-      above >= bounds.top
-        ? above
-        : clamp(target.top + GAP, bounds.top, bounds.bottom - ACTIONS_HEIGHT),
+    top: resolveTop(target, bounds),
     /**
      * The block's left edge, pulled back only as far as staying inside needs.
      *

@@ -21,8 +21,19 @@ export declare const PANEL_DRAG_MIME = "application/x-easyblocks-panel-item";
 export declare const PANEL_DROP_MESSAGE = "@easyblocks-editor/panel-drop";
 export type PanelDropMessage = {
     type: typeof PANEL_DROP_MESSAGE;
-    /** Where in the root collection the item goes, 0..sectionCount. */
+    /** Where in the target collection the item goes, 0..childCount. */
     index: number;
+    /**
+     * The component owning the collection, as a dot path; absent or empty means the
+     * document root.
+     *
+     * Optional so that a message from a canvas that has not been updated still says
+     * something the parent understands: no path means the root collection, which is
+     * the only place this gesture could reach before slots could opt in.
+     */
+    parentPath?: string;
+    /** The collection prop's name. Absent means the root's own `data`. */
+    prop?: string;
 };
 /** Where the item would land, and where to draw the line that says so. */
 export type PanelDropTarget = {

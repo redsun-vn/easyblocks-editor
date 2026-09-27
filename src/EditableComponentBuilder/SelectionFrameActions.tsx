@@ -4,6 +4,7 @@ import { IMenu, Menu } from "@/menu/Menu";
 import { resolveWrapperLevels } from "@/dropShape/editorShapeAdapters";
 import { destinationResolver } from "@/paste/destinationResolver";
 import { pasteManager } from "@/paste/manager";
+import { ACTIONS_REACH } from "@/selectionFrame/calculateActionsPosition";
 import {
   SELECTION_ACTIONS_DISPLAY,
   SELECTION_ACTIONS_LEFT,
@@ -69,10 +70,8 @@ interface ISelectionFrameActionsProps {
   translationFiles: { [key: string]: any };
   contextParams: ContextParams;
   editorMode: TEasyblocksEditorMode;
-  /** On while the pointer is on the selected block or on the bar itself. */
+  /** On while the pointer is on the selected block or on the controls around it. */
   isRevealed: boolean;
-  /** The bar answering for its own half of "is the pointer near". */
-  onPointerNear: (isPointerNear: boolean) => void;
 }
 
 /**
@@ -83,18 +82,22 @@ interface ISelectionFrameActionsProps {
  * the bar hung from the middle and covered the content above the middle, which
  * is the part of the page the author was most likely reading. The corner is
  * where a bar like this belongs, and `calculateActionsPosition` keeps it inside
- * the canvas and flips it when there is no room above.
+ * the canvas, and moves it below a block too small to wear it.
+ *
+ * This box is the bar's reach rather than the bar: it is the visible bar plus
+ * the gap the pointer has to be crossed over to get there. That gap is ground
+ * the pointer is over neither the block nor the bar, which read as "the pointer
+ * has left" and took the bar away mid-travel. Padded by exactly the gap, the
+ * two touch and the journey is unbroken. The padding is invisible — the white
+ * box, its shadow and its corners belong to the bar inside.
  */
 const SelectionFrameActionsContainer = styled.div<{ $isRevealed: boolean }>`
   position: absolute;
-  top: var(${SELECTION_ACTIONS_TOP});
-  left: var(${SELECTION_ACTIONS_LEFT});
-  border-radius: 4px;
-  box-shadow: var(--tina-shadow-big);
+  top: calc(var(${SELECTION_ACTIONS_TOP}) - ${ACTIONS_REACH}px);
+  left: calc(var(${SELECTION_ACTIONS_LEFT}) - ${ACTIONS_REACH}px);
   display: var(${SELECTION_ACTIONS_DISPLAY}, none);
-  padding: 5px 10px;
+  padding: ${ACTIONS_REACH}px;
   width: max-content;
-  background: ${Colors.white};
 
   /*
     Faded rather than unmounted, so the bar can be pointed at on its way in and
@@ -105,6 +108,16 @@ const SelectionFrameActionsContainer = styled.div<{ $isRevealed: boolean }>`
   opacity: ${({ $isRevealed }) => ($isRevealed ? 1 : 0)};
   pointer-events: ${({ $isRevealed }) => ($isRevealed ? "all" : "none")};
   transition: opacity 120ms ease-out;
+`;
+
+/** The bar itself: what the reach above is invisible padding around. */
+const SelectionFrameActionsBar = styled.div`
+  position: relative;
+  border-radius: 4px;
+  box-shadow: var(--tina-shadow-big);
+  padding: 5px 10px;
+  width: max-content;
+  background: ${Colors.white};
 `;
 
 const SelectionFrameActionsGroupButtons = styled.div`
@@ -311,7 +324,6 @@ export const SelectionFrameActions = ({
   contextParams,
   editorMode,
   isRevealed,
-  onPointerNear,
 }: ISelectionFrameActionsProps) => {
   const { t } = getTranslation({
     translationFiles,
@@ -415,77 +427,80 @@ export const SelectionFrameActions = ({
     <SelectionFrameActionsContainer
       $isRevealed={isRevealed}
       onClick={(e) => e.stopPropagation()}
-      onPointerEnter={() => onPointerNear(true)}
-      onPointerLeave={() => onPointerNear(false)}
     >
-      <SelectionFrameActionsGroupButtons>
-        {/*
+      <SelectionFrameActionsBar>
+        <SelectionFrameActionsGroupButtons>
+          {/*
           No "select parent" here. The breadcrumb under the canvas does the same
           job and does it better: it is a button per ancestor rather than one
           step at a time, it says where each step lands, it is always on screen,
           and it covers nothing. Two controls for one job, one of them worse,
           is a button's worth of bar for nothing.
         */}
-        <ButtonGhost
-          icon={Icons.Duplicate}
-          hideLabel
-          onClick={() => actions.duplicateItems(focussedField)}
-        >
-          {t("duplicate")}
-        </ButtonGhost>
-        <ButtonGhost
-          icon={Icons.Trash}
-          hideLabel
-          onClick={() => actions.removeItems(focussedField)}
-        >
-          {t("delete")}
-        </ButtonGhost>
-        <ButtonGhost
-          icon={Icons.ArrowUp}
-          hideLabel
-          onClick={() => actions.moveItems(focussedField, "top")}
-        >
-          {t("editor.canvas.action.moveUp")}
-        </ButtonGhost>
-        <ButtonGhost
-          icon={Icons.ArrowDown}
-          hideLabel
-          onClick={() => actions.moveItems(focussedField, "bottom")}
-        >
-          {t("editor.canvas.action.moveDown")}
-        </ButtonGhost>
-        {moveDestinations.length > 0 && (
           <ButtonGhost
-            // Not the drag grip, although it used to wear its icon: this opens a
-            // list of destinations. The grip lives on the block frame, and two
-            // controls that look alike is how people ended up dragging this one.
-            icon={Icons.ArrowRight}
+            icon={Icons.Duplicate}
             hideLabel
-            onClick={() => setShowMoveTo((prev) => !prev)}
+            onClick={() => actions.duplicateItems(focussedField)}
           >
-            {t("editor.canvas.action.moveTo")}
+            {t("duplicate")}
           </ButtonGhost>
-        )}
-
-        {editorMode !== "admin-template" && (
           <ButtonGhost
-            icon={Icons.ThreeDotsHorizontal}
-            showTooltip={false}
+            icon={Icons.Trash}
             hideLabel
-            onClick={() => setShowMore((prev) => !prev)}
-          />
-        )}
-      </SelectionFrameActionsGroupButtons>
+            onClick={() => actions.removeItems(focussedField)}
+          >
+            {t("delete")}
+          </ButtonGhost>
+          <ButtonGhost
+            icon={Icons.ArrowUp}
+            hideLabel
+            onClick={() => actions.moveItems(focussedField, "top")}
+          >
+            {t("editor.canvas.action.moveUp")}
+          </ButtonGhost>
+          <ButtonGhost
+            icon={Icons.ArrowDown}
+            hideLabel
+            onClick={() => actions.moveItems(focussedField, "bottom")}
+          >
+            {t("editor.canvas.action.moveDown")}
+          </ButtonGhost>
+          {moveDestinations.length > 0 && (
+            <ButtonGhost
+              // Not the drag grip, although it used to wear its icon: this opens a
+              // list of destinations. The grip lives on the block frame, and two
+              // controls that look alike is how people ended up dragging this one.
+              icon={Icons.ArrowRight}
+              hideLabel
+              onClick={() => setShowMoveTo((prev) => !prev)}
+            >
+              {t("editor.canvas.action.moveTo")}
+            </ButtonGhost>
+          )}
 
-      {showMoveTo && moveDestinations.length > 0 ? (
-        <StyledMenu>
-          <Menu menus={moveDestinations} styles={{ top: "40px", left: "0%" }} />
-        </StyledMenu>
-      ) : null}
+          {editorMode !== "admin-template" && (
+            <ButtonGhost
+              icon={Icons.ThreeDotsHorizontal}
+              showTooltip={false}
+              hideLabel
+              onClick={() => setShowMore((prev) => !prev)}
+            />
+          )}
+        </SelectionFrameActionsGroupButtons>
 
-      {editorMode !== "admin-template" && showMore ? (
-        <SelectionMoreActions t={t} />
-      ) : null}
+        {showMoveTo && moveDestinations.length > 0 ? (
+          <StyledMenu>
+            <Menu
+              menus={moveDestinations}
+              styles={{ top: "40px", left: "0%" }}
+            />
+          </StyledMenu>
+        ) : null}
+
+        {editorMode !== "admin-template" && showMore ? (
+          <SelectionMoreActions t={t} />
+        ) : null}
+      </SelectionFrameActionsBar>
     </SelectionFrameActionsContainer>
   );
 };

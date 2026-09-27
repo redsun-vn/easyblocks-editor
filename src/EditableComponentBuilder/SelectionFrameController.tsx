@@ -7,6 +7,7 @@ import React, { MouseEvent, ReactNode, useEffect, useState } from "react";
 import {
   CANVAS_FRAME_LABEL_ATTRIBUTE,
   CANVAS_FRAME_PATH_ATTRIBUTE,
+  DRAG_HANDLE_SIZE,
 } from "./canvasLayers";
 import type { DropIndicatorEdge } from "./dropIndicator";
 
@@ -52,9 +53,6 @@ const DROP_REJECTION_ATTRIBUTE = "data-easyblocks-drop-rejection";
 
 /** Marks the drag grip so the frame around it can reveal it on hover. */
 const DRAG_HANDLE_ATTRIBUTE = "data-easyblocks-drag-handle";
-
-/** Edge length of the square grip, in canvas pixels. */
-const DRAG_HANDLE_SIZE = 20;
 
 /** Six dots, the conventional "pick this up" mark. */
 function DragHandleGlyph() {
@@ -373,9 +371,16 @@ function SelectionFrameController({
           {...{ [DRAG_HANDLE_ATTRIBUTE]: "" }}
           className={dragHandleClassName().className}
           title={label}
-          // Selecting is the frame's job; grabbing the grip must not also
-          // change what the sidebar is editing.
-          onClick={(event) => event.stopPropagation()}
+          // The click falls through to the frame and selects the block. The
+          // grip used to swallow it, on the reasoning that grabbing a block is
+          // not selecting it — which holds for a section, whose grip is a
+          // corner of a large box, and fails for a header icon, where a 20px
+          // grip covers most of the block. There the only part of the block
+          // worth aiming at was the part that did nothing.
+          // A real drag produces no click to fall through: the mouse sensor's
+          // 4px activation distance (`EditorChildWindow.tsx`) is what tells
+          // the two gestures apart, and dnd-kit suppresses the click once it
+          // is met. Drop that constraint and the grip stops selecting again.
           {...sortable.attributes}
           {...sortable.listeners}
         >
@@ -482,7 +487,13 @@ function useUpdateFramePosition({
      * came back, which is the opposite of what clicking a block asks for.
      *
      * `:hover` is the browser's own answer to "is the pointer in here", and it
-     * is already correct at this moment.
+     * answers for this document only: a pointer resting on the editor's own
+     * controls, which are in the window around the canvas, is a pointer this
+     * document cannot see and reports as absent. Saying so is still worth
+     * doing — it is how a block selected from the layers list, with the
+     * pointer nowhere near the canvas, leaves the canvas clean — and it is
+     * safe to say because the window keeps the controls' half of the answer
+     * separately and does not mistake this one for the whole of it.
      */
     dispatch(selectionPointerChanged(node.matches(":hover")));
 

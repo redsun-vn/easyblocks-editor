@@ -21,10 +21,27 @@ interface AddButtonProps {
   position: "before" | "after";
   index?: number;
   offset?: number | { x: number; y: number };
+  /**
+   * On while the pointer is on the selected block or on the controls around
+   * it, the same switch the action bar answers to.
+   *
+   * The button straddles the block's own edge, so half of it lies over the
+   * neighbour. On a page of sections that costs nothing; between two header
+   * icons pressed together it covered the next icon along and took its clicks,
+   * for the whole time the selection lasted. It is only there now while the
+   * author is looking at the block it belongs to.
+   */
+  isRevealed: boolean;
   onClick?: () => void;
 }
 
-function AddButton({ position, index, offset, onClick }: AddButtonProps) {
+function AddButton({
+  position,
+  index,
+  offset,
+  isRevealed,
+  onClick,
+}: AddButtonProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const addBlockButtonRef = React.useRef<HTMLButtonElement>(null);
   const {
@@ -58,6 +75,7 @@ function AddButton({ position, index, offset, onClick }: AddButtonProps) {
       offset={offset}
       position={position}
       isOpen={isOpen}
+      $isRevealed={isRevealed}
       {...triggerProps}
     >
       {isOpenTooltip && (
@@ -117,10 +135,20 @@ interface AddButtonWrapperProps {
   offset?: number | { x: number; y: number };
   position: "before" | "after";
   isOpen: boolean;
+  $isRevealed: boolean;
 }
 
 const AddButtonWrapper = styled.div<AddButtonWrapperProps>`
   position: absolute;
+
+  /*
+    Above the action bar, which is painted after it and reaches an invisible
+    8px past its own edges. This button straddles the block's edge and the bar
+    hangs off the same edge, so without this the bar's reach took the button's
+    inner half — and took it invisibly, with no hover feedback to say the
+    click would land on nothing.
+  */
+  z-index: 1;
 
   top: var(
     ${({ position }) =>
@@ -139,7 +167,13 @@ const AddButtonWrapper = styled.div<AddButtonWrapperProps>`
     none
   );
 
-  pointer-events: all;
+  /*
+    Faded rather than unmounted, and untouchable while faded: a button nobody
+    can see must not take a click meant for the block underneath it.
+  */
+  opacity: ${({ $isRevealed }) => ($isRevealed ? 1 : 0)};
+  pointer-events: ${({ $isRevealed }) => ($isRevealed ? "all" : "none")};
+  transition: opacity 120ms ease-out;
 
   &:hover {
     transform: scale(1.2);

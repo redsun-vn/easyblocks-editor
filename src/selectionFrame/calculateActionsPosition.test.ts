@@ -1,6 +1,8 @@
+import { DRAG_HANDLE_SIZE } from "../EditableComponentBuilder/canvasLayers";
 import {
   ACTIONS_HEIGHT,
   ACTIONS_MAX_WIDTH,
+  ACTIONS_REACH,
   calculateActionsPosition,
 } from "./calculateActionsPosition";
 
@@ -30,7 +32,77 @@ describe("calculateActionsPosition", () => {
     // off-screen, or over whatever sat above it.
     const { top } = calculateActionsPosition(block({ top: 4 }), VIEWPORT);
 
-    expect(top).toBe(4 + GAP);
+    expect(top).toBe(4 + GAP + DRAG_HANDLE_SIZE);
+  });
+
+  it("leaves the whole drag grip clear when it goes inside", () => {
+    // The bar is in the editor window and the grip is in the canvas iframe, so
+    // the bar is on top of it however either is stacked. Its reach — the
+    // invisible margin it answers the pointer across — has to clear the grip
+    // too, or the block can be selected and never picked up.
+    const top = 4;
+    const { top: barTop } = calculateActionsPosition(block({ top }), VIEWPORT);
+
+    expect(barTop - ACTIONS_REACH).toBeGreaterThanOrEqual(
+      top + DRAG_HANDLE_SIZE
+    );
+  });
+
+  describe("a block too small to wear the bar", () => {
+    // A header's search icon: shorter and narrower than the bar, pinned to the
+    // top of the canvas so there is no room above it either.
+    const icon = { top: 4, left: 1200, width: 32, height: 32 };
+
+    it("puts the bar below rather than inside", () => {
+      // Inside, the bar covered the icon whole and reached across the icons
+      // beside it — the basket next door could be neither hovered nor clicked.
+      const { top } = calculateActionsPosition(icon, VIEWPORT);
+
+      expect(top).toBe(icon.top + icon.height + GAP);
+    });
+
+    it("counts a block only as tall as the bar as too small", () => {
+      // Hosting the bar means room for it and the gap it keeps.
+      const { top } = calculateActionsPosition(
+        { ...icon, width: 900, height: ACTIONS_HEIGHT },
+        VIEWPORT
+      );
+
+      expect(top).toBe(icon.top + ACTIONS_HEIGHT + GAP);
+    });
+
+    it("counts a tall but narrow block as too small", () => {
+      // A narrow column is tall enough to hide the bar and not wide enough:
+      // the bar would still reach out over its neighbour.
+      const { top } = calculateActionsPosition(
+        { ...icon, width: ACTIONS_MAX_WIDTH - 1, height: 600 },
+        VIEWPORT
+      );
+
+      expect(top).toBe(icon.top + 600 + GAP);
+    });
+
+    it("still stays inside the canvas", () => {
+      // A canvas with room neither above the icon nor below it — the bar comes
+      // back up to the last row that fits rather than leaving the canvas.
+      const SHORT = { width: VIEWPORT.width, height: 60 };
+
+      const { top } = calculateActionsPosition(icon, SHORT);
+
+      expect(top).toBe(SHORT.height - ACTIONS_HEIGHT);
+    });
+
+    it("stays with a block whose bottom edge is nowhere in view", () => {
+      // A narrow column taller than the canvas: chasing its bottom edge would
+      // pin the bar to the foot of the canvas with its block at the head, so
+      // it stays at the block's own top instead, clear of the grip.
+      const { top } = calculateActionsPosition(
+        { ...icon, width: 150, height: VIEWPORT.height * 2 },
+        VIEWPORT
+      );
+
+      expect(top).toBe(icon.top + GAP + DRAG_HANDLE_SIZE);
+    });
   });
 
   it("stays inside the canvas when the block is against the right edge", () => {
@@ -62,7 +134,7 @@ describe("calculateActionsPosition", () => {
         CONTAINER
       );
 
-      expect(top).toBe(110 + GAP);
+      expect(top).toBe(110 + GAP + DRAG_HANDLE_SIZE);
     });
 
     it("keeps the bar inside the container's right edge", () => {

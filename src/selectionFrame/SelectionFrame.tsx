@@ -33,6 +33,12 @@ import {
   SELECTION_ACTIONS_LEFT,
   SELECTION_ACTIONS_TOP,
 } from "./cssVariables";
+import {
+  isPointerNearSelection,
+  NO_POINTER,
+  PointerLocation,
+  withPointerAt,
+} from "./pointerPresence";
 import { isSelectionPointerChanged } from "./selectionPointer";
 
 /**
@@ -91,30 +97,45 @@ function SelectionFrame({
    * Whether the bar is on show.
    *
    * It follows the pointer rather than a clock: on while the pointer is over
-   * the selected block or over the bar itself, off shortly after it leaves
-   * both. Always-on cost the canvas a bar's worth of chrome for the whole time
-   * somebody was working in the properties panel, which is most of the time.
+   * the selected block or over the controls the selection puts on the canvas,
+   * off shortly after it leaves them all. Always-on cost the canvas a bar's
+   * worth of chrome for the whole time somebody was working in the properties
+   * panel, which is most of the time.
    */
   const [isRevealed, setIsRevealed] = useState(false);
   const fadeTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const revealActions = useCallback((isPointerNear: boolean) => {
-    clearTimeout(fadeTimer.current);
+  /** The two sources of "the pointer is near", each keeping its own answer. */
+  const pointerPresence = useRef(NO_POINTER);
 
-    if (isPointerNear) {
-      setIsRevealed(true);
-      return;
-    }
+  const revealActions = useCallback(
+    (where: PointerLocation, isPointerNear: boolean) => {
+      pointerPresence.current = withPointerAt(
+        pointerPresence.current,
+        where,
+        isPointerNear,
+      );
 
-    fadeTimer.current = setTimeout(
-      () => setIsRevealed(false),
-      REVEAL_GRACE_MS,
-    );
-  }, []);
+      clearTimeout(fadeTimer.current);
+
+      if (isPointerNearSelection(pointerPresence.current)) {
+        setIsRevealed(true);
+        return;
+      }
+
+      fadeTimer.current = setTimeout(
+        () => setIsRevealed(false),
+        REVEAL_GRACE_MS,
+      );
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
     if (focussedField.length === 0) {
       hideAddButtons();
+      clearTimeout(fadeTimer.current);
+      pointerPresence.current = NO_POINTER;
       setIsRevealed(false);
     }
   }, [focussedField]);
@@ -127,7 +148,7 @@ function SelectionFrame({
     // other narrows to `never`.
     function handleSelectionFrameMessages(event: MessageEvent) {
       if (isSelectionPointerChanged(event.data)) {
-        revealActions(event.data.payload.isPointerOver);
+        revealActions("block", event.data.payload.isPointerOver);
         return;
       }
 
@@ -212,13 +233,34 @@ function SelectionFrame({
 
   return (
     <Wrapper>
-      <FrameWrapper width={width} height={height} transform={transform}>
+      <FrameWrapper
+        width={width}
+        height={height}
+        transform={transform}
+        /*
+          Every control the selection puts on the canvas lives in here, so one
+          pair of handlers answers for all of them. `over`/`out` rather than
+          `enter`/`leave` because only these bubble: the wrapper itself is
+          transparent to the pointer and each control switches pointer events
+          back on for itself. Moving between two of them fires `out` and then
+          `over` in the same breath, and the grace period is what keeps that
+          from reading as a departure.
+
+          The add buttons used to be outside this reckoning, which made them
+          the fastest way to lose the bar: they sit on the block's own edges,
+          right where the pointer passes on its way to the bar.
+        */
+        onPointerOver={() => revealActions("controls", true)}
+        onPointerOut={() => revealActions("controls", false)}
+      >
         <AddButton
           position="before"
+          isRevealed={isRevealed}
           onClick={() => handleAddButtonClick("before")}
         />
         <AddButton
           position="after"
+          isRevealed={isRevealed}
           onClick={() => handleAddButtonClick("after")}
         />
         {isAddingEnabled ? (
@@ -229,7 +271,6 @@ function SelectionFrame({
             contextParams={contextParams}
             editorMode={editorMode}
             isRevealed={isRevealed}
-            onPointerNear={revealActions}
           />
         ) : null}
       </FrameWrapper>

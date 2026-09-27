@@ -20,6 +20,15 @@ export declare const ACTIONS_HEIGHT: number;
  * six buttons appear conditionally, so the real width is often smaller.
  */
 export declare const ACTIONS_MAX_WIDTH: number;
+/**
+ * How far past its own edges the bar keeps answering the pointer.
+ *
+ * Reaching the bar means crossing `GAP`, where the pointer is over neither it
+ * nor the block, and that crossing used to read as "the pointer has gone" and
+ * take the bar away mid-travel. The bar carries an invisible margin of exactly
+ * the width of the gap it has to be reached across.
+ */
+export declare const ACTIONS_REACH = 8;
 type Rect = {
     top: number;
     left: number;

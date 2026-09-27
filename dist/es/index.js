@@ -1191,6 +1191,162 @@ function pasteManager() {
   };
 }
 
+/**
+ * Attributes set on every canvas selection frame. Hover styles and the layer context
+ * menu read them straight from the DOM, without tracking component state.
+ */
+const CANVAS_FRAME_PATH_ATTRIBUTE = "data-easyblocks-path";
+const CANVAS_FRAME_LABEL_ATTRIBUTE = "data-easyblocks-label";
+
+/**
+ * Edge length of the square drag grip, in canvas pixels.
+ *
+ * It sits in the frame's top-left corner, and the editor window draws the
+ * selection's action bar over the same canvas — from outside the iframe, so it
+ * is above the grip whatever either of them asks for. The bar's placement has
+ * to know how much corner to leave alone, which is why this measurement lives
+ * out here with the frame's other shared facts rather than beside its styles.
+ */
+const DRAG_HANDLE_SIZE = 20;
+/**
+ * Selection frames among hit-tested elements (e.g. `document.elementsFromPoint`), kept
+ * in the given order so the topmost layer under the pointer comes first.
+ */
+function getCanvasLayers(elements) {
+  return elements.flatMap(element => {
+    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
+    if (path === null) {
+      return [];
+    }
+    return [{
+      path,
+      label: element.getAttribute(CANVAS_FRAME_LABEL_ATTRIBUTE) ?? path
+    }];
+  });
+}
+
+/**
+ * Where the selection's action bar sits.
+ *
+ * It used to borrow the add button's position, and that was the whole problem:
+ * that position is the *middle* of the block's top edge, which is right for a
+ * 24px circle and wrong for a bar six buttons wide. The bar hung from the
+ * middle of the block and covered whatever was above the middle — most often
+ * the words of the section above, which is the one thing the author did not
+ * select and did want to read.
+ *
+ * It hangs off the top-left corner now, outside the block.
+ */
+
+/** The bar's own size, from the buttons it is made of. */
+const BUTTON_SIZE = 28;
+const BUTTON_GAP = 2;
+const BAR_PADDING_X = 10;
+const BAR_PADDING_Y = 5;
+
+/** Six buttons at most: duplicate, delete, up, down, move to, and the menu. */
+const MOST_BUTTONS = 6;
+const ACTIONS_HEIGHT = BUTTON_SIZE + BAR_PADDING_Y * 2;
+
+/**
+ * The widest the bar can be, used only to keep it inside the canvas.
+ *
+ * A ceiling rather than a measurement, and that is safe in one direction only:
+ * being generous parks the bar a little further from the right edge than it
+ * needed to be, while being mean would let it hang over the edge. Two of the
+ * six buttons appear conditionally, so the real width is often smaller.
+ */
+const ACTIONS_MAX_WIDTH = MOST_BUTTONS * BUTTON_SIZE + (MOST_BUTTONS - 1) * BUTTON_GAP + BAR_PADDING_X * 2;
+
+/** Breathing room between the bar and the block it belongs to. */
+const GAP = 8;
+
+/**
+ * How far past its own edges the bar keeps answering the pointer.
+ *
+ * Reaching the bar means crossing `GAP`, where the pointer is over neither it
+ * nor the block, and that crossing used to read as "the pointer has gone" and
+ * take the bar away mid-travel. The bar carries an invisible margin of exactly
+ * the width of the gap it has to be reached across.
+ */
+const ACTIONS_REACH = GAP;
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+/**
+ * What the bar is allowed to occupy: the canvas, narrowed to the scrollable
+ * container when the block is inside one.
+ */
+function resolveBounds(viewport, container) {
+  return {
+    top: Math.max(0, container?.top ?? 0),
+    left: Math.max(0, container?.left ?? 0),
+    right: Math.min(viewport.width, container?.right ?? viewport.width),
+    bottom: Math.min(viewport.height, container?.bottom ?? viewport.height)
+  };
+}
+
+/**
+ * Whether the block is big enough to wear the bar inside itself.
+ *
+ * A header's search icon is not. The bar is both taller and wider than a block
+ * that size, so placing it inside covers the icon whole and spills onto
+ * whatever sits beside it — in a header that is the next icon along, which is
+ * exactly the block the author reaches for next and could no longer hover or
+ * click.
+ */
+function canHostBar(target) {
+  return target.height >= ACTIONS_HEIGHT + GAP && target.width >= ACTIONS_MAX_WIDTH;
+}
+
+/**
+ * Above the block when there is room, and one of two fallbacks when there is
+ * not.
+ *
+ * A block big enough wears the bar inside itself, below its own drag grip.
+ * The grip is the one part of the corner that is not free to cover: it is in
+ * the canvas iframe and the bar is in the window around it, so the bar is
+ * above the grip whatever either of them asks for, and a bar starting at the
+ * block's top edge left nothing of the grip to take hold of.
+ *
+ * A block smaller than the bar has no inside to speak of — the bar covers all
+ * of it and reaches past its edges either way — so it goes below the block,
+ * where it covers the content underneath rather than the siblings pressed up
+ * against it. Below only when below fits: a narrow column taller than the
+ * canvas has no bottom edge in view, and chasing it would pin the bar to the
+ * foot of the canvas with its block at the head.
+ */
+function resolveTop(target, bounds) {
+  const above = target.top - ACTIONS_HEIGHT - GAP;
+  if (above >= bounds.top) {
+    return above;
+  }
+  const below = target.top + target.height + GAP;
+  const isBelowInView = below + ACTIONS_HEIGHT <= bounds.bottom;
+  const fallback = !canHostBar(target) && isBelowInView ? below : target.top + GAP + DRAG_HANDLE_SIZE;
+  return clamp(fallback, bounds.top, bounds.bottom - ACTIONS_HEIGHT);
+}
+function calculateActionsPosition(target, viewport, container) {
+  const bounds = resolveBounds(viewport, container);
+
+  // A block scrolled out of its container takes its bar with it. Without this
+  // the bar stayed put over whatever had scrolled into its place — the same
+  // fault the add buttons had.
+  const isBlockInView = target.top <= bounds.bottom && target.top + target.height >= bounds.top;
+  return {
+    top: resolveTop(target, bounds),
+    /**
+     * The block's left edge, pulled back only as far as staying inside needs.
+     *
+     * A narrow block against the right edge — the basket column of a header is
+     * exactly that — would otherwise push the bar off the canvas.
+     */
+    left: clamp(target.left, bounds.left, Math.max(bounds.left, bounds.right - ACTIONS_MAX_WIDTH)),
+    display: isBlockInView ? "block" : "none"
+  };
+}
+
 function editorVariable(name) {
   return `--shopstory-editor-${name}`;
 }
@@ -1411,27 +1567,40 @@ function planMoveAfterInsert(sourcePath, insertedPath) {
  * the bar hung from the middle and covered the content above the middle, which
  * is the part of the page the author was most likely reading. The corner is
  * where a bar like this belongs, and `calculateActionsPosition` keeps it inside
- * the canvas and flips it when there is no room above.
+ * the canvas, and moves it below a block too small to wear it.
+ *
+ * This box is the bar's reach rather than the bar: it is the visible bar plus
+ * the gap the pointer has to be crossed over to get there. That gap is ground
+ * the pointer is over neither the block nor the bar, which read as "the pointer
+ * has left" and took the bar away mid-travel. Padded by exactly the gap, the
+ * two touch and the journey is unbroken. The padding is invisible — the white
+ * box, its shadow and its corners belong to the bar inside.
  */
 const SelectionFrameActionsContainer = styled.div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
   componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:var(", ");left:var(", ");border-radius:4px;box-shadow:var(--tina-shadow-big);display:var(", ",none);padding:5px 10px;width:max-content;background:", ";opacity:", ";pointer-events:", ";transition:opacity 120ms ease-out;"], SELECTION_ACTIONS_TOP, SELECTION_ACTIONS_LEFT, SELECTION_ACTIONS_DISPLAY, Colors.white, ({
+})(["position:absolute;top:calc(var(", ") - ", "px);left:calc(var(", ") - ", "px);display:var(", ",none);padding:", "px;width:max-content;opacity:", ";pointer-events:", ";transition:opacity 120ms ease-out;"], SELECTION_ACTIONS_TOP, ACTIONS_REACH, SELECTION_ACTIONS_LEFT, ACTIONS_REACH, SELECTION_ACTIONS_DISPLAY, ACTIONS_REACH, ({
   $isRevealed
 }) => $isRevealed ? 1 : 0, ({
   $isRevealed
 }) => $isRevealed ? "all" : "none");
+
+/** The bar itself: what the reach above is invisible padding around. */
+const SelectionFrameActionsBar = styled.div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsBar",
+  componentId: "sc-1fta8jo-1"
+})(["position:relative;border-radius:4px;box-shadow:var(--tina-shadow-big);padding:5px 10px;width:max-content;background:", ";"], Colors.white);
 const SelectionFrameActionsGroupButtons = styled.div.withConfig({
   displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
-  componentId: "sc-1fta8jo-1"
+  componentId: "sc-1fta8jo-2"
 })(["display:flex;gap:2px;"]);
 const StyledButtonGroup$3 = styled.div.withConfig({
   displayName: "SelectionFrameActions__StyledButtonGroup",
-  componentId: "sc-1fta8jo-2"
+  componentId: "sc-1fta8jo-3"
 })(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
 const StyledMenu = styled.div.withConfig({
   displayName: "SelectionFrameActions__StyledMenu",
-  componentId: "sc-1fta8jo-3"
+  componentId: "sc-1fta8jo-4"
 })(["display:var(", ",none);"], SELECTION_ACTIONS_DISPLAY);
 const SelectionMoreActions = ({
   t
@@ -1567,8 +1736,7 @@ const SelectionFrameActions = ({
   translationFiles,
   contextParams,
   editorMode,
-  isRevealed,
-  onPointerNear
+  isRevealed
 }) => {
   const {
     t
@@ -1639,10 +1807,8 @@ const SelectionFrameActions = ({
   }, [sourcePath, editorContext.form.values, t]);
   return /*#__PURE__*/React__default.createElement(SelectionFrameActionsContainer, {
     $isRevealed: isRevealed,
-    onClick: e => e.stopPropagation(),
-    onPointerEnter: () => onPointerNear(true),
-    onPointerLeave: () => onPointerNear(false)
-  }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React__default.createElement(SelectionFrameActionsBar, null, /*#__PURE__*/React__default.createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default.createElement(ButtonGhost, {
     icon: Icons.Duplicate,
     hideLabel: true,
     onClick: () => actions.duplicateItems(focussedField)
@@ -1679,7 +1845,7 @@ const SelectionFrameActions = ({
     }
   })) : null, editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default.createElement(SelectionMoreActions, {
     t: t
-  }) : null);
+  }) : null));
 };
 
 const ExternalDataContext = /*#__PURE__*/createContext({});
@@ -8593,29 +8759,6 @@ const EditorGlobalSections = ({
 };
 
 /**
- * Attributes set on every canvas selection frame. Hover styles and the layer context
- * menu read them straight from the DOM, without tracking component state.
- */
-const CANVAS_FRAME_PATH_ATTRIBUTE = "data-easyblocks-path";
-const CANVAS_FRAME_LABEL_ATTRIBUTE = "data-easyblocks-label";
-/**
- * Selection frames among hit-tested elements (e.g. `document.elementsFromPoint`), kept
- * in the given order so the topmost layer under the pointer comes first.
- */
-function getCanvasLayers(elements) {
-  return elements.flatMap(element => {
-    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
-    if (path === null) {
-      return [];
-    }
-    return [{
-      path,
-      label: element.getAttribute(CANVAS_FRAME_LABEL_ATTRIBUTE) ?? path
-    }];
-  });
-}
-
-/**
  * Outputs comparable config that is FULL COPY of config
  */
 function getConfigSnapshot(config) {
@@ -10586,6 +10729,7 @@ function AddButton({
   position,
   index,
   offset,
+  isRevealed,
   onClick
 }) {
   const [isOpen, setIsOpen] = React__default.useState(false);
@@ -10618,7 +10762,8 @@ function AddButton({
     index: index,
     offset: offset,
     position: position,
-    isOpen: isOpen
+    isOpen: isOpen,
+    $isRevealed: isRevealed
   }, triggerProps), isOpenTooltip && /*#__PURE__*/React__default.createElement(Tooltip, tooltipProps, /*#__PURE__*/React__default.createElement(TooltipArrow, arrowProps), /*#__PURE__*/React__default.createElement(TooltipBody, null, t("tooltip.add.section.blocks"))), /*#__PURE__*/React__default.createElement(AddIconButton, {
     ref: addBlockButtonRef,
     onClick: handleOpenBlockMenu,
@@ -10655,13 +10800,17 @@ const AddIconButton = styled$1(IconButton).withConfig({
 const AddButtonWrapper = styled$1.div.withConfig({
   displayName: "AddButton__AddButtonWrapper",
   componentId: "sc-79bcl2-1"
-})(["position:absolute;top:var( ", " );left:var( ", " );display:var( ", ",none );pointer-events:all;&:hover{transform:scale(1.2);transition:transform 0.1s ease-in-out;}"], ({
+})(["position:absolute;z-index:1;top:var( ", " );left:var( ", " );display:var( ", ",none );opacity:", ";pointer-events:", ";transition:opacity 120ms ease-out;&:hover{transform:scale(1.2);transition:transform 0.1s ease-in-out;}"], ({
   position
 }) => position === "before" ? BEFORE_ADD_BUTTON_TOP : AFTER_ADD_BUTTON_TOP, ({
   position
 }) => position === "before" ? BEFORE_ADD_BUTTON_LEFT : AFTER_ADD_BUTTON_LEFT, ({
   position
-}) => position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY);
+}) => position === "before" ? BEFORE_ADD_BUTTON_DISPLAY : AFTER_ADD_BUTTON_DISPLAY, ({
+  $isRevealed
+}) => $isRevealed ? 1 : 0, ({
+  $isRevealed
+}) => $isRevealed ? "all" : "none");
 
 const Wrapper = styled$1.div.withConfig({
   displayName: "SelectionFramestyles__Wrapper",
@@ -10683,87 +10832,6 @@ const FrameWrapper = styled$1.div.attrs(({
   displayName: "SelectionFramestyles__FrameWrapper",
   componentId: "sc-xqih8j-1"
 })(["position:relative;z-index:1;display:grid;place-items:center;transform-origin:left;"]);
-
-/**
- * Where the selection's action bar sits.
- *
- * It used to borrow the add button's position, and that was the whole problem:
- * that position is the *middle* of the block's top edge, which is right for a
- * 24px circle and wrong for a bar six buttons wide. The bar hung from the
- * middle of the block and covered whatever was above the middle — most often
- * the words of the section above, which is the one thing the author did not
- * select and did want to read.
- *
- * It hangs off the top-left corner now, outside the block.
- */
-
-/** The bar's own size, from the buttons it is made of. */
-const BUTTON_SIZE = 28;
-const BUTTON_GAP = 2;
-const BAR_PADDING_X = 10;
-const BAR_PADDING_Y = 5;
-
-/** Six buttons at most: duplicate, delete, up, down, move to, and the menu. */
-const MOST_BUTTONS = 6;
-const ACTIONS_HEIGHT = BUTTON_SIZE + BAR_PADDING_Y * 2;
-
-/**
- * The widest the bar can be, used only to keep it inside the canvas.
- *
- * A ceiling rather than a measurement, and that is safe in one direction only:
- * being generous parks the bar a little further from the right edge than it
- * needed to be, while being mean would let it hang over the edge. Two of the
- * six buttons appear conditionally, so the real width is often smaller.
- */
-const ACTIONS_MAX_WIDTH = MOST_BUTTONS * BUTTON_SIZE + (MOST_BUTTONS - 1) * BUTTON_GAP + BAR_PADDING_X * 2;
-
-/** Breathing room between the bar and the block it belongs to. */
-const GAP = 8;
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-
-/**
- * What the bar is allowed to occupy: the canvas, narrowed to the scrollable
- * container when the block is inside one.
- */
-function resolveBounds(viewport, container) {
-  return {
-    top: Math.max(0, container?.top ?? 0),
-    left: Math.max(0, container?.left ?? 0),
-    right: Math.min(viewport.width, container?.right ?? viewport.width),
-    bottom: Math.min(viewport.height, container?.bottom ?? viewport.height)
-  };
-}
-function calculateActionsPosition(target, viewport, container) {
-  const bounds = resolveBounds(viewport, container);
-
-  // A block scrolled out of its container takes its bar with it. Without this
-  // the bar stayed put over whatever had scrolled into its place — the same
-  // fault the add buttons had.
-  const isBlockInView = target.top <= bounds.bottom && target.top + target.height >= bounds.top;
-  const above = target.top - ACTIONS_HEIGHT - GAP;
-  return {
-    /**
-     * Above the block when there is room for it, and just inside the block's
-     * own top edge when there is not.
-     *
-     * Overlapping the block being edited costs its top-left corner. Overlapping
-     * the block above it hides something nobody selected, which is what this
-     * replaced — so when only one of the two is possible, the bar covers its
-     * own block.
-     */
-    top: above >= bounds.top ? above : clamp(target.top + GAP, bounds.top, bounds.bottom - ACTIONS_HEIGHT),
-    /**
-     * The block's left edge, pulled back only as far as staying inside needs.
-     *
-     * A narrow block against the right edge — the basket column of a header is
-     * exactly that — would otherwise push the bar off the canvas.
-     */
-    left: clamp(target.left, bounds.left, Math.max(bounds.left, bounds.right - ACTIONS_MAX_WIDTH)),
-    display: isBlockInView ? "block" : "none"
-  };
-}
 
 function calculateAddButtonsProperties(direction, targetElementRect, viewport, containerElementRect) {
   const halfButtonSize = Math.floor(ICON_BUTTON_SIZE / 2);
@@ -10836,6 +10904,39 @@ function isButtonVisible(target, viewport, containerElementRect) {
 }
 
 /**
+ * Whether the pointer is near the selection, told by two sources that disagree
+ * in time.
+ *
+ * The selected block is in the canvas iframe and reports by `postMessage`,
+ * which lands a task after the event that caused it. The controls the
+ * selection puts on the canvas — the action bar, the add buttons — are in the
+ * editor window and report as it happens. Moving from the block onto a control
+ * therefore says "on the control" first and "off the block" second, and a
+ * single flag reads that second report as a departure: the controls go away
+ * from under the pointer that had only just reached them.
+ *
+ * So each source keeps its own answer, and the pointer is near the selection
+ * while either of them says it is. Order stops mattering.
+ */
+
+/** The two places a pointer counts as near the selection. */
+
+/** The pointer is nowhere near the selection, which is where it starts. */
+const NO_POINTER = {
+  block: false,
+  controls: false
+};
+function withPointerAt(presence, where, isOver) {
+  return {
+    ...presence,
+    [where]: isOver
+  };
+}
+function isPointerNearSelection(presence) {
+  return presence.block || presence.controls;
+}
+
+/**
  * Whether the pointer is on the selected block.
  *
  * The block lives in the canvas iframe and the action bar lives in the window
@@ -10897,15 +10998,20 @@ function SelectionFrame({
    * Whether the bar is on show.
    *
    * It follows the pointer rather than a clock: on while the pointer is over
-   * the selected block or over the bar itself, off shortly after it leaves
-   * both. Always-on cost the canvas a bar's worth of chrome for the whole time
-   * somebody was working in the properties panel, which is most of the time.
+   * the selected block or over the controls the selection puts on the canvas,
+   * off shortly after it leaves them all. Always-on cost the canvas a bar's
+   * worth of chrome for the whole time somebody was working in the properties
+   * panel, which is most of the time.
    */
   const [isRevealed, setIsRevealed] = useState(false);
   const fadeTimer = useRef();
-  const revealActions = useCallback(isPointerNear => {
+
+  /** The two sources of "the pointer is near", each keeping its own answer. */
+  const pointerPresence = useRef(NO_POINTER);
+  const revealActions = useCallback((where, isPointerNear) => {
+    pointerPresence.current = withPointerAt(pointerPresence.current, where, isPointerNear);
     clearTimeout(fadeTimer.current);
-    if (isPointerNear) {
+    if (isPointerNearSelection(pointerPresence.current)) {
       setIsRevealed(true);
       return;
     }
@@ -10914,6 +11020,8 @@ function SelectionFrame({
   useLayoutEffect(() => {
     if (focussedField.length === 0) {
       hideAddButtons();
+      clearTimeout(fadeTimer.current);
+      pointerPresence.current = NO_POINTER;
       setIsRevealed(false);
     }
   }, [focussedField]);
@@ -10924,7 +11032,7 @@ function SelectionFrame({
     // other narrows to `never`.
     function handleSelectionFrameMessages(event) {
       if (isSelectionPointerChanged(event.data)) {
-        revealActions(event.data.payload.isPointerOver);
+        revealActions("block", event.data.payload.isPointerOver);
         return;
       }
       if (!isAddingEnabled) {
@@ -10982,11 +11090,27 @@ function SelectionFrame({
     width: width,
     height: height,
     transform: transform
+    /*
+      Every control the selection puts on the canvas lives in here, so one
+      pair of handlers answers for all of them. `over`/`out` rather than
+      `enter`/`leave` because only these bubble: the wrapper itself is
+      transparent to the pointer and each control switches pointer events
+      back on for itself. Moving between two of them fires `out` and then
+      `over` in the same breath, and the grace period is what keeps that
+      from reading as a departure.
+       The add buttons used to be outside this reckoning, which made them
+      the fastest way to lose the bar: they sit on the block's own edges,
+      right where the pointer passes on its way to the bar.
+    */,
+    onPointerOver: () => revealActions("controls", true),
+    onPointerOut: () => revealActions("controls", false)
   }, /*#__PURE__*/React__default.createElement(AddButton, {
     position: "before",
+    isRevealed: isRevealed,
     onClick: () => handleAddButtonClick("before")
   }), /*#__PURE__*/React__default.createElement(AddButton, {
     position: "after",
+    isRevealed: isRevealed,
     onClick: () => handleAddButtonClick("after")
   }), isAddingEnabled ? /*#__PURE__*/React__default.createElement(SelectionFrameActions, {
     actions: actions,
@@ -10994,8 +11118,7 @@ function SelectionFrame({
     translationFiles: translationFiles,
     contextParams: contextParams,
     editorMode: editorMode,
-    isRevealed: isRevealed,
-    onPointerNear: revealActions
+    isRevealed: isRevealed
   }) : null));
 }
 function updateAddButtons(direction, targetElementRect, viewport, containerElementRect) {
@@ -14432,9 +14555,6 @@ const DROP_REJECTION_ATTRIBUTE = "data-easyblocks-drop-rejection";
 /** Marks the drag grip so the frame around it can reveal it on hover. */
 const DRAG_HANDLE_ATTRIBUTE = "data-easyblocks-drag-handle";
 
-/** Edge length of the square grip, in canvas pixels. */
-const DRAG_HANDLE_SIZE = 20;
-
 /** Six dots, the conventional "pick this up" mark. */
 function DragHandleGlyph() {
   return /*#__PURE__*/React__default.createElement("svg", {
@@ -14714,10 +14834,16 @@ function SelectionFrameController({
     [DRAG_HANDLE_ATTRIBUTE]: "",
     className: dragHandleClassName().className,
     title: label
-    // Selecting is the frame's job; grabbing the grip must not also
-    // change what the sidebar is editing.
-    ,
-    onClick: event => event.stopPropagation()
+    // The click falls through to the frame and selects the block. The
+    // grip used to swallow it, on the reasoning that grabbing a block is
+    // not selecting it — which holds for a section, whose grip is a
+    // corner of a large box, and fails for a header icon, where a 20px
+    // grip covers most of the block. There the only part of the block
+    // worth aiming at was the part that did nothing.
+    // A real drag produces no click to fall through: the mouse sensor's
+    // 4px activation distance (`EditorChildWindow.tsx`) is what tells
+    // the two gestures apart, and dnd-kit suppresses the click once it
+    // is met. Drop that constraint and the grip stops selecting again.
   }, sortable.attributes, sortable.listeners), /*#__PURE__*/React__default.createElement(DragHandleGlyph, null)), edgeDropTargets, dropRejectionMessage !== undefined && /*#__PURE__*/React__default.createElement("div", {
     [DROP_REJECTION_ATTRIBUTE]: "",
     role: "tooltip",
@@ -14772,7 +14898,13 @@ function useUpdateFramePosition({
      * came back, which is the opposite of what clicking a block asks for.
      *
      * `:hover` is the browser's own answer to "is the pointer in here", and it
-     * is already correct at this moment.
+     * answers for this document only: a pointer resting on the editor's own
+     * controls, which are in the window around the canvas, is a pointer this
+     * document cannot see and reports as absent. Saying so is still worth
+     * doing — it is how a block selected from the layers list, with the
+     * pointer nowhere near the canvas, leaves the canvas clean — and it is
+     * safe to say because the window keeps the controls' half of the answer
+     * separately and does not mistake this one for the whole of it.
      */
     dispatch(selectionPointerChanged(node.matches(":hover")));
     return () => {
