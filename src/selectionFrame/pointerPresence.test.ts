@@ -60,6 +60,29 @@ describe("pointerPresence", () => {
     expect(withPointerAt(presence, "controls", false)).toEqual({
       block: true,
       controls: false,
+      formatting: false,
     });
+  });
+
+  it("keeps the bar while a formatting control is in use", () => {
+    // An open dropdown takes the pointer off both the block and the bar.
+    expect(
+      isPointerNearSelection(
+        report(
+          ["controls", true],
+          ["formatting", true],
+          ["controls", false],
+          ["block", false]
+        )
+      )
+    ).toBe(true);
+  });
+
+  it("lets the bar go once the formatting control is done with", () => {
+    expect(
+      isPointerNearSelection(
+        report(["formatting", true], ["formatting", false])
+      )
+    ).toBe(false);
   });
 });

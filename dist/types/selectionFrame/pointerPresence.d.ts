@@ -13,8 +13,15 @@
  * So each source keeps its own answer, and the pointer is near the selection
  * while either of them says it is. Order stops mattering.
  */
-/** The two places a pointer counts as near the selection. */
-export type PointerLocation = "block" | "controls";
+/**
+ * The places a pointer counts as near the selection.
+ *
+ * `formatting` is not a place the pointer is but a formatting control that is
+ * in use: an open dropdown takes the pointer away from the page underneath it,
+ * which read as "the pointer has left" and faded the bar out from around the
+ * choice being made.
+ */
+export type PointerLocation = "block" | "controls" | "formatting";
 export type PointerPresence = Readonly<Record<PointerLocation, boolean>>;
 /** The pointer is nowhere near the selection, which is where it starts. */
 export declare const NO_POINTER: PointerPresence;

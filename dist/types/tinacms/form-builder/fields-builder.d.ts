@@ -7,6 +7,7 @@ export interface FieldBuilderProps {
     noWrap?: boolean;
     isLabelHidden?: boolean;
 }
+export declare function shouldFieldBeDisplayed(field: InternalField): boolean;
 export declare function FieldBuilder({ form, field, noWrap, isLabelHidden, }: FieldBuilderProps): React.JSX.Element | null;
 export interface FieldsBuilderProps {
     form: Form;

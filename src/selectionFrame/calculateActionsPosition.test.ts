@@ -167,4 +167,41 @@ describe("calculateActionsPosition", () => {
       expect(display).toBe("block");
     });
   });
+
+  describe("a bar grown by formatting controls", () => {
+    it("pulls back far enough for its drawn width", () => {
+      const { left } = calculateActionsPosition(
+        block({ left: VIEWPORT.width - 50, width: 40 }),
+        VIEWPORT,
+        undefined,
+        { width: 420, height: ACTIONS_HEIGHT }
+      );
+
+      expect(left).toBe(VIEWPORT.width - 420);
+    });
+
+    it("sits above the block by its drawn height once it wraps", () => {
+      const wrappedHeight = ACTIONS_HEIGHT * 2;
+      const { top } = calculateActionsPosition(
+        block({ top: 200 }),
+        VIEWPORT,
+        undefined,
+        { width: 300, height: wrappedHeight }
+      );
+
+      expect(top).toBe(200 - wrappedHeight - GAP);
+    });
+
+    it("never trusts a size measured while the bar was hidden", () => {
+      const { top, left } = calculateActionsPosition(
+        block({ left: VIEWPORT.width - 50, width: 40, top: 200 }),
+        VIEWPORT,
+        undefined,
+        { width: 0, height: 0 }
+      );
+
+      expect(left).toBe(VIEWPORT.width - ACTIONS_MAX_WIDTH);
+      expect(top).toBe(200 - ACTIONS_HEIGHT - GAP);
+    });
+  });
 });

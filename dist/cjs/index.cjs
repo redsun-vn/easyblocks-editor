@@ -21,7 +21,6 @@ var Loader = require('@redsun-vn/easyblocks-design-system/Loader');
 var Typography = require('@redsun-vn/easyblocks-design-system/Typography');
 var buttons = require('@redsun-vn/easyblocks-design-system/buttons');
 var Input = require('@redsun-vn/easyblocks-design-system/Input');
-var lodash = require('lodash');
 var ThumbnailButton = require('@redsun-vn/easyblocks-design-system/ThumbnailButton');
 var ReactDOM = require('react-dom');
 var tooltip = require('@react-aria/tooltip');
@@ -33,6 +32,7 @@ var ToggleButton = require('@redsun-vn/easyblocks-design-system/ToggleButton');
 var Slider$1 = require('@redsun-vn/easyblocks-design-system/Slider');
 var ReactIcons = require('@redsun-vn/easyblocks-design-system/radix-ui/ReactIcons');
 var ReactSelect = require('@redsun-vn/easyblocks-design-system/radix-ui/ReactSelect');
+var lodash = require('lodash');
 var ToggleGroup = require('@redsun-vn/easyblocks-design-system/ToggleGroup');
 var FormElement = require('@redsun-vn/easyblocks-design-system/FormElement');
 var AccordionGroup = require('@redsun-vn/easyblocks-design-system/AccordionGroup');
@@ -1305,6 +1305,22 @@ const GAP = 8;
  * the width of the gap it has to be reached across.
  */
 const ACTIONS_REACH = GAP;
+
+/** The bar as drawn. Either side reads 0 while the bar is hidden. */
+
+/**
+ * The bar's size for the sums below.
+ *
+ * Only ever larger than the structural buttons alone: the formatting controls
+ * widen the bar, and wrap it onto a second line in a narrow canvas. A bar
+ * measured while hidden reads 0 and falls back to the buttons' size.
+ */
+function resolveBarSize(barSize) {
+  return {
+    width: Math.max(ACTIONS_MAX_WIDTH, barSize?.width ?? 0),
+    height: Math.max(ACTIONS_HEIGHT, barSize?.height ?? 0)
+  };
+}
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -1331,8 +1347,8 @@ function resolveBounds(viewport, container) {
  * exactly the block the author reaches for next and could no longer hover or
  * click.
  */
-function canHostBar(target) {
-  return target.height >= ACTIONS_HEIGHT + GAP && target.width >= ACTIONS_MAX_WIDTH;
+function canHostBar(target, bar) {
+  return target.height >= bar.height + GAP && target.width >= bar.width;
 }
 
 /**
@@ -1352,17 +1368,18 @@ function canHostBar(target) {
  * canvas has no bottom edge in view, and chasing it would pin the bar to the
  * foot of the canvas with its block at the head.
  */
-function resolveTop(target, bounds) {
-  const above = target.top - ACTIONS_HEIGHT - GAP;
+function resolveTop(target, bounds, bar) {
+  const above = target.top - bar.height - GAP;
   if (above >= bounds.top) {
     return above;
   }
   const below = target.top + target.height + GAP;
-  const isBelowInView = below + ACTIONS_HEIGHT <= bounds.bottom;
-  const fallback = !canHostBar(target) && isBelowInView ? below : target.top + GAP + DRAG_HANDLE_SIZE;
-  return clamp(fallback, bounds.top, bounds.bottom - ACTIONS_HEIGHT);
+  const isBelowInView = below + bar.height <= bounds.bottom;
+  const fallback = !canHostBar(target, bar) && isBelowInView ? below : target.top + GAP + DRAG_HANDLE_SIZE;
+  return clamp(fallback, bounds.top, bounds.bottom - bar.height);
 }
-function calculateActionsPosition(target, viewport, container) {
+function calculateActionsPosition(target, viewport, container, barSize) {
+  const bar = resolveBarSize(barSize);
   const bounds = resolveBounds(viewport, container);
 
   // A block scrolled out of its container takes its bar with it. Without this
@@ -1370,14 +1387,14 @@ function calculateActionsPosition(target, viewport, container) {
   // fault the add buttons had.
   const isBlockInView = target.top <= bounds.bottom && target.top + target.height >= bounds.top;
   return {
-    top: resolveTop(target, bounds),
+    top: resolveTop(target, bounds, bar),
     /**
      * The block's left edge, pulled back only as far as staying inside needs.
      *
      * A narrow block against the right edge — the basket column of a header is
      * exactly that — would otherwise push the bar off the canvas.
      */
-    left: clamp(target.left, bounds.left, Math.max(bounds.left, bounds.right - ACTIONS_MAX_WIDTH)),
+    left: clamp(target.left, bounds.left, Math.max(bounds.left, bounds.right - bar.width)),
     display: isBlockInView ? "block" : "none"
   };
 }
@@ -1577,1678 +1594,6 @@ function getSelectionBreadcrumb(path, editorContext, translate) {
   } catch {
     return [];
   }
-}
-
-/**
- * Moving a block is an insert followed by a remove, and each of those shifts the indices of
- * everything after it in the same collection. Replaying those shifts is what makes the block
- * that gets removed the original one rather than a neighbour that slid into its place.
- *
- * The insert happens first on purpose: if no collection in the chosen section accepts the
- * block the document is simply left alone, whereas removing first would destroy it.
- */
-function planMoveAfterInsert(sourcePath, insertedPath) {
-  const sourceToRemove = shiftPath(sourcePath, insertedPath, "downward");
-  return {
-    sourceToRemove,
-    pathToFocus: shiftPath(insertedPath, sourceToRemove, "upward")
-  };
-}
-/**
- * Hangs off the block's top-left corner, from its own position.
- *
- * It used to read the add button's, which is the middle of the block's top
- * edge. That is right for a 24px circle and wrong for a bar six buttons wide:
- * the bar hung from the middle and covered the content above the middle, which
- * is the part of the page the author was most likely reading. The corner is
- * where a bar like this belongs, and `calculateActionsPosition` keeps it inside
- * the canvas, and moves it below a block too small to wear it.
- *
- * This box is the bar's reach rather than the bar: it is the visible bar plus
- * the gap the pointer has to be crossed over to get there. That gap is ground
- * the pointer is over neither the block nor the bar, which read as "the pointer
- * has left" and took the bar away mid-travel. Padded by exactly the gap, the
- * two touch and the journey is unbroken. The padding is invisible — the white
- * box, its shadow and its corners belong to the bar inside.
- */
-const SelectionFrameActionsContainer = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
-  componentId: "sc-1fta8jo-0"
-})(["position:absolute;top:calc(var(", ") - ", "px);left:calc(var(", ") - ", "px);display:var(", ",none);padding:", "px;width:max-content;opacity:", ";pointer-events:", ";transition:opacity 120ms ease-out;"], SELECTION_ACTIONS_TOP, ACTIONS_REACH, SELECTION_ACTIONS_LEFT, ACTIONS_REACH, SELECTION_ACTIONS_DISPLAY, ACTIONS_REACH, ({
-  $isRevealed
-}) => $isRevealed ? 1 : 0, ({
-  $isRevealed
-}) => $isRevealed ? "all" : "none");
-
-/** The bar itself: what the reach above is invisible padding around. */
-const SelectionFrameActionsBar = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsBar",
-  componentId: "sc-1fta8jo-1"
-})(["position:relative;border-radius:4px;box-shadow:var(--tina-shadow-big);padding:5px 10px;width:max-content;background:", ";"], easyblocksDesignSystem.Colors.white);
-const SelectionFrameActionsGroupButtons = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
-  componentId: "sc-1fta8jo-2"
-})(["display:flex;gap:2px;"]);
-const StyledButtonGroup$3 = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__StyledButtonGroup",
-  componentId: "sc-1fta8jo-3"
-})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
-const StyledMenu = styled__default["default"].div.withConfig({
-  displayName: "SelectionFrameActions__StyledMenu",
-  componentId: "sc-1fta8jo-4"
-})(["display:var(", ",none);"], SELECTION_ACTIONS_DISPLAY);
-const SelectionMoreActions = ({
-  t
-}) => {
-  const editorContext = useEditorContext();
-  const router = new URLSearchParams(window.location.search);
-  const currentDocument = router.get("document") ?? "";
-  const toaster = Toaster.useToaster();
-  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = React.useState(null);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const inputRef = React.useRef(null);
-  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
-  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
-  const onRemoveGlobalSection = () => {
-    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
-    const groupName = currentSection?.[0];
-    if (groupName) {
-      setIsLoading(true);
-      editorContext.onGlobalSectionChange?.({
-        mode: "update",
-        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
-        label: currentSection?.[1].entities[currentEntry._id].label,
-        groupName,
-        entry: currentEntry
-      }).then(() => {
-        toaster.success(`${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`, {
-          duration: 5000
-        });
-        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
-          ...currentEntry,
-          _id: uniqueId()
-        });
-      }).catch(reason => {
-        toaster.error(reason);
-      }).finally(() => {
-        setIsLoading(false);
-      });
-    }
-  };
-  const menus = [{
-    id: "set-global",
-    label: t("editor.sidebar.globalSections.setGlobal"),
-    children: easyblocksCore.globalSectionGroups.map(globalSectionGroup => ({
-      id: globalSectionGroup.id,
-      label: globalSectionGroup.name,
-      onClick: () => setOpenConfirmGlobalSection({
-        groupName: globalSectionGroup.name
-      })
-    })),
-    isHidden: isAddedToPage
-  }, {
-    id: "remove-global",
-    label: t("editor.sidebar.globalSections.removeGlobal"),
-    isLoading,
-    isHidden: !isAddedToPage,
-    onClick: onRemoveGlobalSection
-  }];
-  const onClose = () => {
-    if (!isLoading) {
-      setOpenConfirmGlobalSection(null);
-    }
-  };
-  const onConfirmSetGlobalSection = () => {
-    if (!inputRef?.current?.value) {
-      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
-      return;
-    }
-    if (isLoading) {
-      return;
-    }
-    setIsLoading(true);
-    editorContext.onGlobalSectionChange?.({
-      mode: "update",
-      groupName: openConfirmGlobalSection?.groupName ?? "",
-      label: inputRef?.current?.value,
-      entry: currentEntry
-    }).then(() => {
-      setIsLoading(false);
-      toaster.success(`${t("editor.sidebar.globalSections.setGlobal.success")} ${t("saveBeforeExit")}`, {
-        duration: 5000
-      });
-      onClose();
-    }).catch(reason => {
-      setIsLoading(false);
-      toaster.error(reason);
-    });
-  };
-  const onEnter = e => {
-    if (e.code === "Enter" || e.code === "NumpadEnter") {
-      e.preventDefault();
-      e.stopPropagation();
-      onConfirmSetGlobalSection();
-    }
-  };
-  React.useEffect(() => {
-    if (openConfirmGlobalSection?.groupName) {
-      queueMicrotask(() => {
-        inputRef.current?.focus();
-      });
-    }
-  }, [openConfirmGlobalSection]);
-  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
-    menus: menus,
-    styles: {
-      top: "40px",
-      left: "80%"
-    }
-  })), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
-    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
-    isOpen: !!openConfirmGlobalSection,
-    onRequestClose: onClose,
-    mode: "fit",
-    height: "auto",
-    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
-      onClick: onClose
-    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
-      isLoading: isLoading,
-      disabled: isLoading,
-      onClick: onConfirmSetGlobalSection
-    }, t("template.save.default")))
-  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
-    ref: inputRef,
-    withBorder: true,
-    style: {
-      width: 300
-    },
-    onKeyDown: onEnter
-  })));
-};
-const SelectionFrameActions = ({
-  focussedField,
-  actions,
-  translationFiles,
-  contextParams,
-  editorMode,
-  isRevealed
-}) => {
-  const {
-    t
-  } = getTranslation({
-    translationFiles,
-    contextParams
-  });
-  const [showMore, setShowMore] = React.useState(false);
-  const [showMoveTo, setShowMoveTo] = React.useState(false);
-  const editorContext = useEditorContext();
-  const toaster = Toaster.useToaster();
-
-  // Moving carries one block: the block is inserted into the chosen section and removed from
-  // where it was, and a multi-selection has no single source path to remove. Several blocks
-  // are still moved together with cut and paste.
-  const sourcePath = focussedField.length === 1 ? focussedField[0] : undefined;
-  const moveTo = destinationPath => {
-    setShowMoveTo(false);
-    if (!sourcePath) {
-      return;
-    }
-    const sourceEntry = dotNotationGet(editorContext.form.values, sourcePath);
-    if (!sourceEntry) {
-      return;
-    }
-    const block = _internals.duplicateConfig(sourceEntry, editorContext);
-    let wasRejected = false;
-    editorContext.actions.runChange(() => {
-      const insertedPath = pasteManager()(destinationResolver({
-        form: editorContext.form,
-        context: editorContext,
-        wrapperLevels: resolveWrapperLevels({
-          templates: editorContext.configTemplates,
-          dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
-          context: editorContext
-        })
-      })(destinationPath))(block);
-      if (!insertedPath) {
-        // Nothing in the chosen section accepts this block, so the document is untouched.
-        wasRejected = true;
-        return [sourcePath];
-      }
-      const {
-        sourceToRemove,
-        pathToFocus
-      } = planMoveAfterInsert(sourcePath, insertedPath);
-      editorContext.actions.removeItems([sourceToRemove]);
-      return [pathToFocus];
-    });
-    if (wasRejected) {
-      toaster.error(t("editor.canvas.action.moveTo.rejected"));
-    }
-  };
-
-  // Every other top level section is offered as a destination. The section the block is
-  // already in, and any section inside the block itself, are not destinations.
-  const moveDestinations = React.useMemo(() => {
-    if (!sourcePath) {
-      return [];
-    }
-    const sections = editorContext.form.values?.data ?? [];
-    return sections.map((_, index) => `data.${index}`).filter(destinationPath => destinationPath !== sourcePath && !destinationPath.startsWith(`${sourcePath}.`) && !sourcePath.startsWith(`${destinationPath}.`)).map((destinationPath, _, all) => ({
-      id: destinationPath,
-      // Sections repeat, so the position disambiguates two blocks with the same name.
-      label: `${all.indexOf(destinationPath) + 1}. ${getComponentLabel(_internals.parsePath(destinationPath, editorContext.form).templateId, editorContext, t)}`,
-      onClick: () => moveTo(destinationPath)
-    }));
-  }, [sourcePath, editorContext.form.values, t]);
-  return /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsContainer, {
-    $isRevealed: isRevealed,
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsBar, null, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.Duplicate,
-    hideLabel: true,
-    onClick: () => actions.duplicateItems(focussedField)
-  }, t("duplicate")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.Trash,
-    hideLabel: true,
-    onClick: () => actions.removeItems(focussedField)
-  }, t("delete")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.ArrowUp,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "top")
-  }, t("editor.canvas.action.moveUp")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.ArrowDown,
-    hideLabel: true,
-    onClick: () => actions.moveItems(focussedField, "bottom")
-  }, t("editor.canvas.action.moveDown")), moveDestinations.length > 0 && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost
-  // Not the drag grip, although it used to wear its icon: this opens a
-  // list of destinations. The grip lives on the block frame, and two
-  // controls that look alike is how people ended up dragging this one.
-  , {
-    icon: icons.Icons.ArrowRight,
-    hideLabel: true,
-    onClick: () => setShowMoveTo(prev => !prev)
-  }, t("editor.canvas.action.moveTo")), editorMode !== "admin-template" && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
-    icon: icons.Icons.ThreeDotsHorizontal,
-    showTooltip: false,
-    hideLabel: true,
-    onClick: () => setShowMore(prev => !prev)
-  })), showMoveTo && moveDestinations.length > 0 ? /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
-    menus: moveDestinations,
-    styles: {
-      top: "40px",
-      left: "0%"
-    }
-  })) : null, editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default["default"].createElement(SelectionMoreActions, {
-    t: t
-  }) : null));
-};
-
-const ExternalDataContext = /*#__PURE__*/React.createContext({});
-function EditorExternalDataProvider({
-  children,
-  externalData
-}) {
-  return /*#__PURE__*/React__default["default"].createElement(ExternalDataContext.Provider, {
-    value: externalData
-  }, children);
-}
-function useEditorExternalData() {
-  return React.useContext(ExternalDataContext);
-}
-
-let ExtraKeys = /*#__PURE__*/function (ExtraKeys) {
-  ExtraKeys["ALT_KEY"] = "altKey";
-  ExtraKeys["CTRL_KEY"] = "ctrlKey";
-  ExtraKeys["META_KEY"] = "metaKey";
-  ExtraKeys["SHIFT_KEY"] = "shiftKey";
-  return ExtraKeys;
-}({});
-const actionKeys = [ExtraKeys.ALT_KEY, ExtraKeys.CTRL_KEY, ExtraKeys.META_KEY, ExtraKeys.SHIFT_KEY];
-const useWindowKeyDown = (key, callback, {
-  extraKeys,
-  isDisabled
-} = {
-  extraKeys: [],
-  isDisabled: false
-}) => {
-  const downHandler = event => {
-    const isExtraKeysPressed = extraKeys.every(k => event[k]);
-    const extraKeysSet = new Set([...extraKeys]);
-    const isOtherExtraKeysPressed = actionKeys.filter(k => !extraKeysSet.has(k)).some(k => event[k]);
-    if (event.key === key && isExtraKeysPressed && !isOtherExtraKeysPressed) {
-      event.preventDefault();
-      callback();
-    }
-  };
-  React.useEffect(() => {
-    if (!isDisabled) {
-      document.getElementsByTagName("iframe")[0].contentWindow.window.document.body.addEventListener("keydown", downHandler);
-      window.addEventListener("keydown", downHandler);
-      return () => {
-        window.removeEventListener("keydown", downHandler);
-      };
-    }
-  }, [isDisabled]);
-};
-
-// ---------------------------------------------------------------------------
-// xs  → mobile-portrait   (phone portrait)
-// sm  → mobile-landscape  (phone landscape)
-// md  → tablet-portrait   (tablet portrait)
-// lg  → tablet-landscape  (tablet landscape)
-// xl  → laptop            (laptop/macbook)
-// 2xl → desktop           (desktop monitor)
-// ---------------------------------------------------------------------------
-
-function getDeviceFamily(viewport) {
-  if (viewport === "fit-screen") return null;
-  if (viewport === "xs") return "mobile-portrait";
-  if (viewport === "sm") return "mobile-landscape";
-  if (viewport === "md") return "tablet-portrait";
-  if (viewport === "lg") return "tablet-landscape";
-  if (viewport === "xl") return "laptop";
-  if (viewport === "2xl") return "desktop";
-  return null;
-}
-const DEVICE_LABELS = {
-  xs: "Mobile",
-  sm: "Mobile",
-  md: "Tablet",
-  lg: "Tablet",
-  xl: "Laptop",
-  "2xl": "Desktop",
-  "fit-screen": "Fit Screen"
-};
-
-// Shared helper — builds a rounded-rect SVG path
-function rrPath(x, y, w, h, r, cw = true) {
-  if (r <= 0) {
-    // Degenerate: plain rect
-    return cw ? `M ${x} ${y} H ${x + w} V ${y + h} H ${x} Z` : `M ${x} ${y} V ${y + h} H ${x + w} V ${y} Z`;
-  }
-  if (cw) {
-    return [`M ${x + r} ${y}`, `H ${x + w - r}`, `Q ${x + w} ${y}   ${x + w} ${y + r}`, `V ${y + h - r}`, `Q ${x + w} ${y + h} ${x + w - r} ${y + h}`, `H ${x + r}`, `Q ${x}   ${y + h} ${x}     ${y + h - r}`, `V ${y + r}`, `Q ${x}   ${y}   ${x + r}   ${y}`, `Z`].join(" ");
-  } else {
-    // CCW — for evenodd screen hole; include display corner radius
-    return [`M ${x + r} ${y}`, `V ${y}`,
-    // noop, start here
-    `Q ${x} ${y}   ${x}     ${y + r}`, `V ${y + h - r}`, `Q ${x}   ${y + h} ${x + r}   ${y + h}`, `H ${x + w - r}`, `Q ${x + w} ${y + h} ${x + w}   ${y + h - r}`, `V ${y + r}`, `Q ${x + w} ${y}   ${x + w - r} ${y}`, `Z`].join(" ");
-  }
-}
-
-// Frame gradient IDs are made unique per-frame via a prefix prop
-function FrameGrads({
-  id
-}) {
-  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement("linearGradient", {
-    id: `${id}Fill`,
-    x1: "0",
-    y1: "0",
-    x2: "1",
-    y2: "1"
-  }, /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "0%",
-    stopColor: "#2e2e32"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "40%",
-    stopColor: "#1e1e22"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "100%",
-    stopColor: "#111114"
-  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
-    id: `${id}TopEdge`,
-    x1: "0",
-    y1: "0",
-    x2: "1",
-    y2: "0"
-  }, /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "0%",
-    stopColor: "rgba(255,255,255,0.14)"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "50%",
-    stopColor: "rgba(255,255,255,0.09)"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "100%",
-    stopColor: "rgba(255,255,255,0.04)"
-  })));
-}
-function MobilePortraitFrame({
-  width,
-  height
-}) {
-  const bezel = width * 0.0422;
-  const rxOuter = width * 0.170;
-  const rxScr = width * 0.112;
-  const svgLeft = -bezel;
-  const svgTop = -bezel;
-  const svgW = width + bezel * 2;
-  const svgH = height + bezel * 2;
-  const shellPath = rrPath(0, 0, svgW, svgH, rxOuter, true) + " " + rrPath(bezel, bezel, width, height, rxScr, false);
-
-  // Power button — right side
-  const btnDepth = Math.max(2.5, bezel * 0.42);
-  const btnRx = btnDepth * 0.4;
-  const pwrH = height * (95 / 852);
-  const pwrY = bezel + height * (190 / 852);
-  // Volume up / down — left side
-  const vuH = height * (61 / 852);
-  const vuY = bezel + height * (195 / 852);
-  const vdH = height * (61 / 852);
-  const vdY = bezel + height * (265 / 852);
-  // Action button — left side (replaces silent switch on 15 Pro)
-  const actH = height * (67 / 852);
-  const actY = bezel + height * (115 / 852);
-
-  // Dynamic Island — pill-shaped cutout near top of screen, horizontally
-  // centered. Real iPhone proportions: ~126pt wide x 37pt tall on a 393pt
-  // wide / 852pt tall screen, sitting ~11pt below the top edge.
-  const diW = width * (126 / 393);
-  const diH = height * (37 / 852);
-  const diX = bezel + (width - diW) / 2;
-  const diY = bezel + height * (11 / 852);
-  const diRx = diH / 2;
-
-  // Camera — sits inside the Dynamic Island, offset toward the right side
-  // (matches real hardware: the TrueDepth/IR camera cluster sits right of
-  // center while the left portion of the pill is reserved for sensors).
-  const camR = diH * 0.30;
-  const camCx = diX + diW - diH * 0.62;
-  const camCy = diY + diH / 2;
-
-  // Home indicator bar — bottom safe-area gesture bar, thin rounded pill
-  // centered near the bottom edge of the screen.
-  const homeW = width * (134 / 393);
-  const homeH = height * (5 / 852);
-  const homeX = bezel + (width - homeW) / 2;
-  const homeY = bezel + height - height * (8 / 852) - homeH;
-  return /*#__PURE__*/React__default["default"].createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    width: svgW,
-    height: svgH,
-    style: {
-      position: "absolute",
-      top: svgTop,
-      left: svgLeft,
-      pointerEvents: "none",
-      overflow: "visible"
-    }
-  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement(FrameGrads, {
-    id: "mobP"
-  })), /*#__PURE__*/React__default["default"].createElement("g", {
-    filter: "url(#frameShadow)"
-  }, /*#__PURE__*/React__default["default"].createElement("path", {
-    d: shellPath,
-    fillRule: "evenodd",
-    fill: "url(#mobPFill)"
-  })), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.16)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M 0 ${rxOuter} V ${svgH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.08)",
-    strokeWidth: "0.8"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${svgW} ${rxOuter} V ${svgH - rxOuter} Q ${svgW} ${svgH} ${svgW - rxOuter} ${svgH} H ${rxOuter} Q 0 ${svgH} 0 ${svgH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(0,0,0,0.35)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: rrPath(bezel, bezel, width, height, rxScr, true),
-    fill: "none",
-    stroke: "rgba(0,0,0,0.55)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: 0,
-    y: actY,
-    width: btnDepth,
-    height: actH,
-    rx: btnRx,
-    ry: btnRx,
-    fill: "url(#mobPFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: 0,
-    y: vuY,
-    width: btnDepth,
-    height: vuH,
-    rx: btnRx,
-    ry: btnRx,
-    fill: "url(#mobPFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: 0,
-    y: vdY,
-    width: btnDepth,
-    height: vdH,
-    rx: btnRx,
-    ry: btnRx,
-    fill: "url(#mobPFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: svgW - btnDepth,
-    y: pwrY,
-    width: btnDepth,
-    height: pwrH,
-    rx: btnRx,
-    ry: btnRx,
-    fill: "url(#mobPFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: diX,
-    y: diY,
-    width: diW,
-    height: diH,
-    rx: diRx,
-    ry: diRx,
-    fill: "#000000"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: diX,
-    y: diY,
-    width: diW,
-    height: diH,
-    rx: diRx,
-    ry: diRx,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.06)",
-    strokeWidth: "0.6"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR,
-    fill: "#0a0a0c"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR * 0.55,
-    fill: "#1c2230"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx - camR * 0.25,
-    cy: camCy - camR * 0.25,
-    r: camR * 0.18,
-    fill: "rgba(255,255,255,0.35)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: homeX,
-    y: homeY,
-    width: homeW,
-    height: homeH,
-    rx: homeH / 2,
-    ry: homeH / 2,
-    fill: "rgba(0,0,0,0.55)"
-  }));
-}
-function MobileLandscapeFrame({
-  width,
-  height
-}) {
-  const bezel = height * 0.0422;
-  const rxOuter = height * 0.170;
-  const rxScr = height * 0.112;
-  const svgLeft = -bezel;
-  const svgTop = -bezel;
-  const svgW = width + bezel * 2;
-  const svgH = height + bezel * 2;
-  const shellPath = rrPath(0, 0, svgW, svgH, rxOuter, true) + " " + rrPath(bezel, bezel, width, height, rxScr, false);
-  const btnDepth = Math.max(2.5, bezel * 0.42);
-  const btnRx = btnDepth * 0.4;
-  // Power — top
-  const pwrW = width * (95 / 852);
-  const pwrX = bezel + width * (190 / 852);
-  // Action — bottom right
-  const actW = width * (67 / 852);
-  const actX = bezel + width * (670 / 852);
-  // Volume up/down — bottom
-  const vuW = width * (61 / 852);
-  const vuX = bezel + width * (588 / 852);
-  const vdW = width * (61 / 852);
-  const vdX = bezel + width * (518 / 852);
-
-  // Dynamic Island — rotated 90°, now a vertical pill on the left edge of
-  // the screen, vertically centered (mirrors the portrait top-center pill).
-  const diH = height * (126 / 393);
-  const diW = width * (37 / 852);
-  const diY = bezel + (height - diH) / 2;
-  const diX = bezel + width * (11 / 852);
-  const diRx = diW / 2;
-
-  // Camera — offset toward the bottom of the island (mirrors the
-  // "right side" offset from portrait, rotated 90° clockwise).
-  const camR = diW * 0.30;
-  const camCy = diY + diH - diW * 0.62;
-  const camCx = diX + diW / 2;
-
-  // Home indicator bar — moves to the right edge in landscape.
-  const homeH = height * (134 / 393);
-  const homeW = width * (5 / 852);
-  const homeY = bezel + (height - homeH) / 2;
-  const homeX = bezel + width - width * (8 / 852) - homeW;
-  return /*#__PURE__*/React__default["default"].createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    width: svgW,
-    height: svgH,
-    style: {
-      position: "absolute",
-      top: svgTop,
-      left: svgLeft,
-      pointerEvents: "none",
-      overflow: "visible"
-    }
-  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement(FrameGrads, {
-    id: "mobL"
-  })), /*#__PURE__*/React__default["default"].createElement("g", {
-    filter: "url(#frameShadow)"
-  }, /*#__PURE__*/React__default["default"].createElement("path", {
-    d: shellPath,
-    fillRule: "evenodd",
-    fill: "url(#mobLFill)"
-  })), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.16)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M 0 ${rxOuter} V ${svgH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.08)",
-    strokeWidth: "0.8"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${svgW} ${rxOuter} V ${svgH - rxOuter} Q ${svgW} ${svgH} ${svgW - rxOuter} ${svgH} H ${rxOuter} Q 0 ${svgH} 0 ${svgH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(0,0,0,0.35)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: rrPath(bezel, bezel, width, height, rxScr, true),
-    fill: "none",
-    stroke: "rgba(0,0,0,0.55)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: pwrX,
-    y: 0,
-    width: pwrW,
-    height: btnDepth,
-    rx: btnRx,
-    ry: btnRx,
-    fill: "url(#mobLFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: actX,
-    y: svgH - btnDepth,
-    width: actW,
-    height: btnDepth,
-    rx: btnRx,
-    ry: btnRx,
-    fill: "url(#mobLFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: vuX,
-    y: svgH - btnDepth,
-    width: vuW,
-    height: btnDepth,
-    rx: btnRx,
-    ry: btnRx,
-    fill: "url(#mobLFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: vdX,
-    y: svgH - btnDepth,
-    width: vdW,
-    height: btnDepth,
-    rx: btnRx,
-    ry: btnRx,
-    fill: "url(#mobLFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: diX,
-    y: diY,
-    width: diW,
-    height: diH,
-    rx: diRx,
-    ry: diRx,
-    fill: "#000000"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: diX,
-    y: diY,
-    width: diW,
-    height: diH,
-    rx: diRx,
-    ry: diRx,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.06)",
-    strokeWidth: "0.6"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR,
-    fill: "#0a0a0c"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR * 0.55,
-    fill: "#1c2230"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx - camR * 0.25,
-    cy: camCy - camR * 0.25,
-    r: camR * 0.18,
-    fill: "rgba(255,255,255,0.35)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: homeX,
-    y: homeY,
-    width: homeW,
-    height: homeH,
-    rx: homeW / 2,
-    ry: homeW / 2,
-    fill: "rgba(0,0,0,0.55)"
-  }));
-}
-function TabletPortraitFrame({
-  width,
-  height
-}) {
-  const bezel = width * 0.0426;
-  const rxOuter = width * 0.0907;
-  const rxScr = Math.max(0, rxOuter - bezel);
-  const svgLeft = -bezel;
-  const svgTop = -bezel;
-  const svgW = width + bezel * 2;
-  const svgH = height + bezel * 2;
-  const shellPath = rrPath(0, 0, svgW, svgH, rxOuter, true) + " " + rrPath(bezel, bezel, width, height, rxScr, false);
-
-  // Power/Touch ID — top edge, right area
-  const pwrW = width * 0.176;
-  const pwrH = bezel * 0.62;
-  const pwrX = bezel + width - width * 0.060 - pwrW;
-  // Volume — right side
-  const volH = height * 0.113;
-  const volBW = bezel * 0.62;
-  const vol1Y = bezel + height * 0.220;
-  const vol2Y = bezel + height * 0.345;
-
-  // Front camera — latest iPad Pro (M4) moved the TrueDepth camera to the
-  // landscape long edge so it's centered when the device is used sideways
-  // (the most common orientation for video calls on iPad). In portrait
-  // that puts it on the right-edge bezel, vertically centered.
-  const camR = bezel * 0.26;
-  const camCx = bezel + width + bezel / 2;
-  const camCy = bezel + height / 2;
-  return /*#__PURE__*/React__default["default"].createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    width: svgW,
-    height: svgH,
-    style: {
-      position: "absolute",
-      top: svgTop,
-      left: svgLeft,
-      pointerEvents: "none",
-      overflow: "visible"
-    }
-  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement(FrameGrads, {
-    id: "tabP"
-  })), /*#__PURE__*/React__default["default"].createElement("g", {
-    filter: "url(#frameShadow)"
-  }, /*#__PURE__*/React__default["default"].createElement("path", {
-    d: shellPath,
-    fillRule: "evenodd",
-    fill: "url(#tabPFill)"
-  })), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.16)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M 0 ${rxOuter} V ${svgH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.08)",
-    strokeWidth: "0.8"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${svgW} ${rxOuter} V ${svgH - rxOuter} Q ${svgW} ${svgH} ${svgW - rxOuter} ${svgH} H ${rxOuter} Q 0 ${svgH} 0 ${svgH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(0,0,0,0.35)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: rrPath(bezel, bezel, width, height, rxScr, true),
-    fill: "none",
-    stroke: "rgba(0,0,0,0.55)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: pwrX,
-    y: 0,
-    width: pwrW,
-    height: pwrH,
-    rx: pwrH * 0.30,
-    ry: pwrH * 0.30,
-    fill: "url(#tabPFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: svgW - volBW,
-    y: vol1Y,
-    width: volBW,
-    height: volH,
-    rx: volBW * 0.28,
-    ry: volBW * 0.28,
-    fill: "url(#tabPFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: svgW - volBW,
-    y: vol2Y,
-    width: volBW,
-    height: volH,
-    rx: volBW * 0.28,
-    ry: volBW * 0.28,
-    fill: "url(#tabPFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR,
-    fill: "#0a0a0c"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR * 0.55,
-    fill: "#1c2230"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx - camR * 0.25,
-    cy: camCy - camR * 0.25,
-    r: camR * 0.18,
-    fill: "rgba(255,255,255,0.30)"
-  }));
-}
-function TabletLandscapeFrame({
-  width,
-  height
-}) {
-  const bezelH = height * 0.0426;
-  const bezelW = width * 0.0319;
-  const rxOuter = height * 0.0907;
-  // Concentric with the outer radius (see TabletPortraitFrame for rationale)
-  const rxScr = Math.max(0, rxOuter - bezelH);
-  const svgLeft = -bezelW;
-  const svgTop = -bezelH;
-  const svgW = width + bezelW * 2;
-  const svgH = height + bezelH * 2;
-  const shellPath = rrPath(0, 0, svgW, svgH, rxOuter, true) + " " + rrPath(bezelW, bezelH, width, height, rxScr, false);
-
-  // Power — right side, lower area
-  const pwrH = height * 0.176;
-  const pwrW = bezelH * 0.62;
-  const pwrY = bezelH + height - height * 0.060 - pwrH;
-  // Volume — top edge
-  const volW = width * 0.113;
-  const volBH = bezelH * 0.62;
-  const vol1X = bezelW + width * 0.220;
-  const vol2X = bezelW + width * 0.345;
-
-  // Front camera — top edge bezel, horizontally centered. This is the
-  // native orientation for the relocated TrueDepth camera on the latest
-  // iPad Pro: centered on the long edge for landscape video calls.
-  const camR = bezelH * 0.26;
-  const camCx = bezelW + width / 2;
-  const camCy = bezelH / 2;
-  return /*#__PURE__*/React__default["default"].createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    width: svgW,
-    height: svgH,
-    style: {
-      position: "absolute",
-      top: svgTop,
-      left: svgLeft,
-      pointerEvents: "none",
-      overflow: "visible"
-    }
-  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement(FrameGrads, {
-    id: "tabL"
-  })), /*#__PURE__*/React__default["default"].createElement("g", {
-    filter: "url(#frameShadow)"
-  }, /*#__PURE__*/React__default["default"].createElement("path", {
-    d: shellPath,
-    fillRule: "evenodd",
-    fill: "url(#tabLFill)"
-  })), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.16)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M 0 ${rxOuter} V ${svgH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.08)",
-    strokeWidth: "0.8"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${svgW} ${rxOuter} V ${svgH - rxOuter} Q ${svgW} ${svgH} ${svgW - rxOuter} ${svgH} H ${rxOuter} Q 0 ${svgH} 0 ${svgH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(0,0,0,0.35)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: rrPath(bezelW, bezelH, width, height, rxScr, true),
-    fill: "none",
-    stroke: "rgba(0,0,0,0.55)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: svgW - pwrW,
-    y: pwrY,
-    width: pwrW,
-    height: pwrH,
-    rx: pwrW * 0.30,
-    ry: pwrW * 0.30,
-    fill: "url(#tabLFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: vol1X,
-    y: 0,
-    width: volW,
-    height: volBH,
-    rx: volBH * 0.28,
-    ry: volBH * 0.28,
-    fill: "url(#tabLFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: vol2X,
-    y: 0,
-    width: volW,
-    height: volBH,
-    rx: volBH * 0.28,
-    ry: volBH * 0.28,
-    fill: "url(#tabLFill)"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR,
-    fill: "#0a0a0c"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR * 0.55,
-    fill: "#1c2230"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx - camR * 0.25,
-    cy: camCy - camR * 0.25,
-    r: camR * 0.18,
-    fill: "rgba(255,255,255,0.30)"
-  }));
-}
-function LaptopFrame({
-  width,
-  height
-}) {
-  const bT = Math.round(height * 0.032);
-  const bS = Math.round(width * 0.014);
-  const bB = Math.round(height * 0.040);
-  const rx = Math.round(width * 0.010);
-  const overhang = Math.round(width * 0.026);
-  const bodyH = Math.round(width * 0.021);
-  const bodyRx = Math.round(width * 0.006);
-  const hingeH = Math.round(bodyH * 0.35);
-  const edgeH = Math.round(bodyH * 0.30);
-  const svgLeft = -(overhang + bS);
-  const svgTop = -bT;
-  const lidX = overhang;
-  const lidY = 0;
-  const lidW = bS + width + bS;
-  const lidH = bT + height + bB;
-  const scrX = overhang + bS;
-  const scrY = bT;
-  const scrW = width;
-  const scrH = height;
-  const camCx = lidX + lidW / 2;
-  const camCy = bT / 2;
-  const camR = Math.max(2.5, Math.round(width * 0.003));
-  const indW = Math.round(width * 0.060);
-  const indH = Math.round(bB * 0.28);
-  const indX = lidX + (lidW - indW) / 2;
-  const indY = scrY + scrH + (bB - indH) / 2;
-  const glare = {
-    x1: lidX + 6,
-    y1: bT * 0.3,
-    cx: lidX + 60,
-    cy: bT * 0.1,
-    x2: lidX + Math.round(width * 0.14),
-    y2: bT * 0.55
-  };
-  const bodyX = 0;
-  const bodyY = lidH;
-  const bodyW = overhang + lidW + overhang;
-  const svgW = bodyW;
-  const svgH = lidH + bodyH + Math.round(height * 0.015);
-  const lidPath = rrPath(lidX, lidY, lidW, lidH, rx, true) + " " + rrPath(scrX, scrY, scrW, scrH, 0, false);
-  return /*#__PURE__*/React__default["default"].createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    width: svgW,
-    height: svgH,
-    style: {
-      position: "absolute",
-      top: svgTop,
-      left: svgLeft,
-      pointerEvents: "none",
-      overflow: "visible"
-    }
-  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement("linearGradient", {
-    id: "mbBodyGrad",
-    x1: "0",
-    y1: "0",
-    x2: "0",
-    y2: "1"
-  }, /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "0%",
-    stopColor: "#b2b2b6"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "45%",
-    stopColor: "#9c9ca0"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "100%",
-    stopColor: "#8a8a8e"
-  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
-    id: "mbHingeGrad",
-    x1: "0",
-    y1: "0",
-    x2: "0",
-    y2: "1"
-  }, /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "0%",
-    stopColor: "#505054"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "100%",
-    stopColor: "#3c3c40"
-  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
-    id: "mbEdgeGrad",
-    x1: "0",
-    y1: "0",
-    x2: "0",
-    y2: "1"
-  }, /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "0%",
-    stopColor: "#686870"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "100%",
-    stopColor: "#8a8a8e"
-  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
-    id: "mbLidGrad",
-    gradientUnits: "userSpaceOnUse",
-    x1: "0",
-    y1: `${lidY}`,
-    x2: "0",
-    y2: `${lidH}`
-  }, /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "0%",
-    stopColor: "#2c2c30"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "100%",
-    stopColor: "#1c1c20"
-  }))), /*#__PURE__*/React__default["default"].createElement("g", {
-    filter: "url(#mbShadow)"
-  }, /*#__PURE__*/React__default["default"].createElement("path", {
-    d: lidPath,
-    fillRule: "evenodd",
-    fill: "url(#mbLidGrad)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: bodyX,
-    y: bodyY,
-    width: bodyW,
-    height: bodyH,
-    rx: bodyRx,
-    ry: bodyRx,
-    fill: "url(#mbBodyGrad)"
-  })), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: lidPath,
-    fillRule: "evenodd",
-    fill: "none",
-    stroke: "rgba(90,90,96,0.85)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: scrX - 1,
-    y: scrY - 1,
-    width: scrW + 2,
-    height: scrH + 2,
-    fill: "none",
-    stroke: "rgba(0,0,0,0.5)",
-    strokeWidth: "1.5"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${glare.x1} ${glare.y1} Q ${glare.cx} ${glare.cy} ${glare.x2} ${glare.y2}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.09)",
-    strokeWidth: "5",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR,
-    fill: "rgba(55,55,62,0.92)"
-  }), /*#__PURE__*/React__default["default"].createElement("circle", {
-    cx: camCx,
-    cy: camCy,
-    r: camR * 0.40,
-    fill: "rgba(90,90,110,0.45)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: indX,
-    y: indY,
-    width: indW,
-    height: indH,
-    rx: indH / 2,
-    ry: indH / 2,
-    fill: "rgba(0,0,0,0.32)",
-    stroke: "rgba(255,255,255,0.05)",
-    strokeWidth: "0.8"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: bodyX,
-    y: bodyY,
-    width: bodyW,
-    height: hingeH,
-    fill: "url(#mbHingeGrad)"
-  }), /*#__PURE__*/React__default["default"].createElement("line", {
-    x1: bodyX,
-    y1: bodyY + hingeH,
-    x2: bodyX + bodyW,
-    y2: bodyY + hingeH,
-    stroke: "rgba(255,255,255,0.16)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: bodyX + bodyRx,
-    y: bodyY + bodyH - edgeH,
-    width: bodyW - bodyRx * 2,
-    height: edgeH,
-    fill: "url(#mbEdgeGrad)"
-  }));
-}
-function DesktopFrame({
-  width,
-  height
-}) {
-  const bezelSide = width * 0.0239;
-  const bezelTop = width * 0.0192;
-  const chinH = width * 0.0671;
-  const rxOuter = width * 0.0230;
-  const rxScr = width * 0.0153;
-  const neckTopW = width * 0.1916;
-  const neckBotW = width * 0.2491;
-  const neckH = width * 0.1820;
-  const baseW = width * 0.5939;
-  const baseH = width * 0.0421;
-  const baseRx = baseH * 0.50;
-  const svgLeft = -bezelSide;
-  const svgTop = -bezelTop;
-  const svgW = width + bezelSide * 2;
-  const monH = bezelTop + height + chinH;
-  const svgH = monH + neckH + baseH + width * 0.010;
-
-  // Monitor: outer rounded rect (CW) + screen hole (CCW with display rx)
-  const monPath = rrPath(0, 0, svgW, monH, rxOuter, true) + " " + rrPath(bezelSide, bezelTop, width, height, rxScr, false);
-  const neckTopX = (svgW - neckTopW) / 2;
-  const neckBotX = (svgW - neckBotW) / 2;
-  const neckY = monH;
-  const baseX = (svgW - baseW) / 2;
-  const baseY = neckY + neckH;
-  return /*#__PURE__*/React__default["default"].createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    width: svgW,
-    height: svgH,
-    style: {
-      position: "absolute",
-      top: svgTop,
-      left: svgLeft,
-      pointerEvents: "none",
-      overflow: "visible"
-    }
-  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement("linearGradient", {
-    id: "deskMon",
-    gradientUnits: "userSpaceOnUse",
-    x1: "0",
-    y1: "0",
-    x2: "0",
-    y2: `${monH}`
-  }, /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "0%",
-    stopColor: "#242428"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "100%",
-    stopColor: "#131316"
-  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
-    id: "deskNeck",
-    x1: "0",
-    y1: "0",
-    x2: "1",
-    y2: "0"
-  }, /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "0%",
-    stopColor: "#141418"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "50%",
-    stopColor: "#2e2e34"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "100%",
-    stopColor: "#141418"
-  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
-    id: "deskBase",
-    x1: "0",
-    y1: "0",
-    x2: "1",
-    y2: "0"
-  }, /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "0%",
-    stopColor: "#0e0e12"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "50%",
-    stopColor: "#282830"
-  }), /*#__PURE__*/React__default["default"].createElement("stop", {
-    offset: "100%",
-    stopColor: "#0e0e12"
-  }))), /*#__PURE__*/React__default["default"].createElement("g", {
-    filter: "url(#desktopShadow)"
-  }, /*#__PURE__*/React__default["default"].createElement("path", {
-    d: monPath,
-    fillRule: "evenodd",
-    fill: "url(#deskMon)"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: [`M ${neckTopX} ${neckY}`, `L ${neckBotX} ${neckY + neckH}`, `L ${neckBotX + neckBotW} ${neckY + neckH}`, `L ${neckTopX + neckTopW} ${neckY}`, `Z`].join(" "),
-    fill: "url(#deskNeck)"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: baseX,
-    y: baseY,
-    width: baseW,
-    height: baseH,
-    rx: baseRx,
-    ry: baseRx,
-    fill: "url(#deskBase)"
-  })), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.10)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M 0 ${rxOuter} V ${monH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(255,255,255,0.05)",
-    strokeWidth: "0.8"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: `M ${svgW} ${rxOuter} V ${monH - rxOuter} Q ${svgW} ${monH} ${svgW - rxOuter} ${monH} H ${rxOuter} Q 0 ${monH} 0 ${monH - rxOuter}`,
-    fill: "none",
-    stroke: "rgba(0,0,0,0.45)",
-    strokeWidth: "0.8",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("path", {
-    d: rrPath(bezelSide, bezelTop, width, height, rxScr, true),
-    fill: "none",
-    stroke: "rgba(0,0,0,0.55)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("line", {
-    x1: bezelSide + rxScr,
-    y1: bezelTop + height,
-    x2: bezelSide + width - rxScr,
-    y2: bezelTop + height,
-    stroke: "rgba(0,0,0,0.40)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("line", {
-    x1: neckTopX,
-    y1: neckY,
-    x2: neckBotX,
-    y2: neckY + neckH,
-    stroke: "rgba(0,0,0,0.40)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("line", {
-    x1: neckTopX + neckTopW,
-    y1: neckY,
-    x2: neckBotX + neckBotW,
-    y2: neckY + neckH,
-    stroke: "rgba(0,0,0,0.40)",
-    strokeWidth: "1"
-  }), /*#__PURE__*/React__default["default"].createElement("line", {
-    x1: neckTopX + neckTopW * 0.4,
-    y1: neckY + 2,
-    x2: neckBotX + neckBotW * 0.4,
-    y2: neckY + neckH - 2,
-    stroke: "rgba(255,255,255,0.06)",
-    strokeWidth: "2.5",
-    strokeLinecap: "round"
-  }), /*#__PURE__*/React__default["default"].createElement("rect", {
-    x: baseX,
-    y: baseY,
-    width: baseW,
-    height: baseH,
-    rx: baseRx,
-    ry: baseRx,
-    fill: "none",
-    stroke: "rgba(0,0,0,0.40)",
-    strokeWidth: "0.8"
-  }), /*#__PURE__*/React__default["default"].createElement("line", {
-    x1: baseX + baseRx + 4,
-    y1: baseY + 1,
-    x2: baseX + baseW - baseRx - 4,
-    y2: baseY + 1,
-    stroke: "rgba(255,255,255,0.08)",
-    strokeWidth: "1"
-  }));
-}
-const FrameWrap = styled.styled.div.withConfig({
-  displayName: "DeviceFrame__FrameWrap",
-  componentId: "sc-tojvsf-0"
-})(["position:absolute;inset:0;display:grid;justify-content:center;align-items:center;pointer-events:none;z-index:10;overflow:visible;"]);
-const FrameBox = styled.styled.div.withConfig({
-  displayName: "DeviceFrame__FrameBox",
-  componentId: "sc-tojvsf-1"
-})(["width:", "px;height:", "px;transform:", ";transform-origin:center;position:relative;flex-shrink:0;overflow:visible;"], p => p.$width, p => p.$height, p => p.$transform);
-/** Overlay frame — rendered above the iframe via z-index:10 */
-function DeviceFrame({
-  viewport,
-  width,
-  height,
-  transform,
-  visible
-}) {
-  if (!visible || width === 0 || height === 0) return null;
-  const family = getDeviceFamily(viewport);
-  if (!family) return null;
-  return /*#__PURE__*/React__default["default"].createElement(FrameWrap, null, /*#__PURE__*/React__default["default"].createElement(FrameBox, {
-    $width: width,
-    $height: height,
-    $transform: transform
-  }, family === "mobile-portrait" && /*#__PURE__*/React__default["default"].createElement(MobilePortraitFrame, {
-    width: width,
-    height: height
-  }), family === "mobile-landscape" && /*#__PURE__*/React__default["default"].createElement(MobileLandscapeFrame, {
-    width: width,
-    height: height
-  }), family === "tablet-portrait" && /*#__PURE__*/React__default["default"].createElement(TabletPortraitFrame, {
-    width: width,
-    height: height
-  }), family === "tablet-landscape" && /*#__PURE__*/React__default["default"].createElement(TabletLandscapeFrame, {
-    width: width,
-    height: height
-  }), family === "laptop" && /*#__PURE__*/React__default["default"].createElement(LaptopFrame, {
-    width: width,
-    height: height
-  }), family === "desktop" && /*#__PURE__*/React__default["default"].createElement(DesktopFrame, {
-    width: width,
-    height: height
-  })));
-}
-
-function EditorIframe({
-  onEditorHistoryRedo,
-  onEditorHistoryUndo,
-  onSave,
-  isSaving,
-  width,
-  height,
-  transform,
-  containerRef,
-  showDeviceFrame = false,
-  viewport = "fit-screen"
-}) {
-  const [isIframeReady, setIframeReady] = React.useState(false);
-  const debouncedSave = lodash.debounce(fn => fn(), 200);
-  const handleIframeLoaded = () => {
-    setIframeReady(true);
-  };
-  const onKeyDownSave = () => {
-    if (onSave && !isSaving) {
-      debouncedSave(onSave);
-    }
-  };
-  useWindowKeyDown("z", onEditorHistoryUndo, {
-    extraKeys: [ExtraKeys.META_KEY],
-    isDisabled: !isIframeReady
-  });
-  useWindowKeyDown("z", onEditorHistoryRedo, {
-    extraKeys: [ExtraKeys.META_KEY, ExtraKeys.SHIFT_KEY],
-    isDisabled: !isIframeReady
-  });
-  useWindowKeyDown("z", onEditorHistoryUndo, {
-    extraKeys: [ExtraKeys.CTRL_KEY],
-    isDisabled: !isIframeReady
-  });
-  useWindowKeyDown("y", onEditorHistoryRedo, {
-    extraKeys: [ExtraKeys.CTRL_KEY],
-    isDisabled: !isIframeReady
-  });
-  useWindowKeyDown("s", onKeyDownSave, {
-    extraKeys: [ExtraKeys.CTRL_KEY],
-    isDisabled: !isIframeReady
-  });
-  useWindowKeyDown("s", onKeyDownSave, {
-    extraKeys: [ExtraKeys.META_KEY],
-    isDisabled: !isIframeReady
-  });
-  return /*#__PURE__*/React__default["default"].createElement(IframeContainer, {
-    ref: containerRef
-  }, /*#__PURE__*/React__default["default"].createElement(IframeInnerContainer, null, /*#__PURE__*/React__default["default"].createElement(Iframe, {
-    id: "editor-canvas",
-    src: window.location.href,
-    onLoad: handleIframeLoaded,
-    style: {
-      // These properties will change a lot during resizing, so we don't pass it to styled component to prevent
-      // class name recalculations
-      width,
-      height,
-      transform
-    }
-  }), /*#__PURE__*/React__default["default"].createElement(DeviceFrame, {
-    viewport: viewport,
-    width: width,
-    height: height,
-    transform: transform,
-    visible: showDeviceFrame
-  })));
-}
-const IframeContainer = styled.styled.div.withConfig({
-  displayName: "EditorIframe__IframeContainer",
-  componentId: "sc-1k2h6r-0"
-})(["position:relative;flex:1 1 auto;background:", ";isolation:isolate;"], easyblocksDesignSystem.Colors.black100);
-const IframeInnerContainer = styled.styled.div.withConfig({
-  displayName: "EditorIframe__IframeInnerContainer",
-  componentId: "sc-1k2h6r-1"
-})(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;justify-content:center;align-items:center;"]);
-const Iframe = styled.styled.iframe.withConfig({
-  displayName: "EditorIframe__Iframe",
-  componentId: "sc-1k2h6r-2"
-})(["background:white;border:none;transform-origin:center;"]);
-
-function isFieldPortal(x) {
-  return "portal" in x;
-}
-function buildTinaFields(path, editorContext) {
-  return internalBuildTinaFields(path, editorContext);
-}
-function internalBuildTinaFields(path, editorContext, fieldsFilter) {
-  const compiledPath = pathToCompiledPath(_internals.stripRichTextPartSelection(path), editorContext);
-  const compiledComponent = dotNotationGet(editorContext.compiledComponentConfig, compiledPath);
-  let allFields = [];
-  (compiledComponent?.__editing?.fields ?? []).filter(field => fieldsFilter ? fieldsFilter(field) : true).forEach(item => {
-    if (isFieldPortal(item)) {
-      let fields = [];
-      if (item.portal === "component") {
-        const portalComponentFields = internalBuildTinaFields(item.source, editorContext);
-        fields.push(...portalComponentFields);
-        if (!item.includeHeader) {
-          fields = fields.filter(x => x.prop !== "$myself");
-        }
-        const groups = item.groups;
-        if (groups) {
-          fields = fields.filter(x => x.prop === "$myself" || groups.includes(x.group || "___doesn't matter___"));
-        }
-      } else if (item.portal === "field") {
-        if (item.hidden) {
-          return;
-        }
-        const portalFieldFields = internalBuildTinaFields(item.source, editorContext, field => !isFieldPortal(field) && field.prop === item.fieldName);
-        if (portalFieldFields.length === 0) {
-          console.warn(`Missing field "${item.fieldName}" at path "${item.source}" in portal for component ${compiledComponent._component}`);
-          return;
-        }
-        const portalField = {
-          ...portalFieldFields[0],
-          ...item.overrides
-        };
-        fields.push(portalField);
-      } else if (item.portal === "multi-field") {
-        if (item.sources.length === 0) {
-          if (item.hidden) {
-            return;
-          }
-          throw new Error(`Missing sources for multi field portal of component "${compiledComponent._component}" at path "${path}". Set "hidden" to "true" for this portal if sources are empty`);
-        }
-        const portalFieldFields = item.sources.flatMap(source => internalBuildTinaFields(source, editorContext, field => !isFieldPortal(field) && field.prop === item.fieldName));
-        const firstField = portalFieldFields[0];
-        const combinedField = {
-          ...firstField,
-          ...item.overrides,
-          name: portalFieldFields.flatMap(field => field.name)
-        };
-        fields.push(combinedField);
-      }
-      allFields = [...allFields, ...fields];
-    } else {
-      allFields.push(item);
-    }
-  });
-
-  // Analytics fields should always go to the bottom (later they'll be in separate tab)
-
-  const nonAnalyticsFields = allFields.filter(x => x.group !== "Analytics");
-  const analyticsFields = allFields.filter(x => x.group === "Analytics");
-  return [...nonAnalyticsFields, ...analyticsFields];
-}
-
-function SaveAsPicker({
-  mode,
-  Component,
-  saveAsEntry,
-  setSaveAsEntry
-}) {
-  const toaster = Toaster.useToaster();
-  const {
-    t
-  } = useTranslation();
-  return /*#__PURE__*/React__default["default"].createElement(Component, {
-    isOpen: !!saveAsEntry,
-    saveAsEntry: saveAsEntry,
-    onClose: () => setSaveAsEntry(null),
-    onSuccess: () => toaster.success(t("template.entry.saveAs.success")),
-    onError: () => toaster.error(t("template.entry.saveAs.error")),
-    editorMode: mode
-  });
-}
-
-async function copyToClipboard(textToCopy) {
-  // Navigator clipboard api needs a secure context (https)
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(textToCopy);
-  } else {
-    // Use the 'out of viewport hidden text area' trick
-    const textArea = document.createElement("textarea");
-    textArea.value = textToCopy;
-
-    // Move textarea out of the viewport so it's not visible
-    textArea.style.position = "absolute";
-    textArea.style.left = "-999999px";
-    document.body.prepend(textArea);
-    textArea.select();
-    try {
-      document.execCommand("copy");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      textArea.remove();
-    }
-  }
-}
-
-const SidebarFooterContainer = styled.styled.div.withConfig({
-  displayName: "SidebarFooter__SidebarFooterContainer",
-  componentId: "sc-17xf0ak-0"
-})(["position:sticky;bottom:0;background:", ";"], easyblocksDesignSystem.Colors.white);
-const HorizontalLine$4 = styled.styled.div.withConfig({
-  displayName: "SidebarFooter__HorizontalLine",
-  componentId: "sc-17xf0ak-1"
-})(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
-const IdWrapper = styled.styled.div.withConfig({
-  displayName: "SidebarFooter__IdWrapper",
-  componentId: "sc-17xf0ak-2"
-})(["padding:12px 16px;gap:16px;", " color:", ";"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black40);
-const ButtonWrapper = styled.styled.div.withConfig({
-  displayName: "SidebarFooter__ButtonWrapper",
-  componentId: "sc-17xf0ak-3"
-})(["display:flex;justify-content:end;gap:8px;"]);
-const StyledButtonCopyTemplate = styled.styled(buttons.ButtonSecondary).withConfig({
-  displayName: "SidebarFooter__StyledButtonCopyTemplate",
-  componentId: "sc-17xf0ak-4"
-})(["min-width:auto !important;& svg{width:14px !important;height:14px !important;}"]);
-function SidebarFooter(props) {
-  const editorContext = useEditorContext();
-  const toaster = Toaster.useToaster();
-  const {
-    t
-  } = useTranslation();
-  const {
-    form,
-    mode
-  } = editorContext;
-  const [saveAsEntry, setSaveAsEntry] = React.useState(null);
-  if (props.paths.length === 0) {
-    return null;
-  }
-  const path = _internals.stripRichTextPartSelection(props.paths[0]);
-  const value = dotNotationGet(form.values, path);
-  if (!value) {
-    return null;
-  }
-  const compiledPath = pathToCompiledPath(path, editorContext);
-  const compiledValue = dotNotationGet(editorContext.compiledComponentConfig, compiledPath);
-  const widthInfo = compiledValue.__editing?.widthInfo;
-  const width = widthInfo?.width?.xl;
-  const widthAuto = widthInfo?.auto?.xl;
-  const definition = _internals.findComponentDefinition(value, editorContext);
-  const isSaveable = !!definition?.allowSave;
-  const showSaveAsTemplate = isSaveable && !editorContext.readOnly && !editorContext.disableCustomTemplates;
-  const onCopy = async value => {
-    try {
-      if (typeof value === "string") {
-        await copyToClipboard(value);
-      } else {
-        await copyToClipboard(JSON.stringify(value));
-      }
-      toaster.success(t("template.entry.copy.success"));
-    } catch (error) {
-      toaster.error(t("template.entry.copy.error"));
-    }
-  };
-  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$4, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && mode !== "admin" && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
-    icon: icons.Icons.Save1,
-    hideLabel: true,
-    onClick: () => {
-      editorContext.actions.openTemplateModal({
-        mode: "create",
-        config: value,
-        width,
-        widthAuto
-      });
-    },
-    style: {
-      minWidth: "auto"
-    }
-  }, t("template.save")), /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
-    style: {
-      minWidth: "auto"
-    },
-    icon: icons.Icons.SaveAs,
-    hideLabel: true,
-    onClick: () => setSaveAsEntry(value)
-  }, t("template.saveAs"))), mode !== "user" && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(StyledButtonCopyTemplate, {
-    icon: icons.Icons.Copy,
-    hideLabel: true,
-    onClick: () => onCopy(value)
-  }, t("template.entry.copy")), value._master && /*#__PURE__*/React__namespace.createElement("div", {
-    style: {
-      paddingTop: 16
-    }
-  }, "Master: ", value._master)), /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
-    icon: icons.Icons.Id,
-    hideLabel: true,
-    onClick: () => onCopy(value._id),
-    style: {
-      minWidth: "auto"
-    }
-  }, t("template.id.copy"))) : null), props.SaveAsPicker ? /*#__PURE__*/React__namespace.createElement(SaveAsPicker, {
-    saveAsEntry: saveAsEntry,
-    setSaveAsEntry: setSaveAsEntry,
-    Component: props.SaveAsPicker,
-    mode: mode
-  }) : null);
 }
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -3490,6 +1835,19 @@ const NumberInput = ({
   min: min,
   max: max
 });
+
+const ExternalDataContext = /*#__PURE__*/React.createContext({});
+function EditorExternalDataProvider({
+  children,
+  externalData
+}) {
+  return /*#__PURE__*/React__default["default"].createElement(ExternalDataContext.Provider, {
+    value: externalData
+  }, children);
+}
+function useEditorExternalData() {
+  return React.useContext(ExternalDataContext);
+}
 
 const Tooltip = /*#__PURE__*/React.forwardRef(({
   children,
@@ -4646,6 +3004,153 @@ const SelectColorTokenItem = /*#__PURE__*/React.forwardRef((props, ref) => {
 });
 SelectColorTokenItem.displayName = "SelectColorTokenItem";
 
+function SaveAsPicker({
+  mode,
+  Component,
+  saveAsEntry,
+  setSaveAsEntry
+}) {
+  const toaster = Toaster.useToaster();
+  const {
+    t
+  } = useTranslation();
+  return /*#__PURE__*/React__default["default"].createElement(Component, {
+    isOpen: !!saveAsEntry,
+    saveAsEntry: saveAsEntry,
+    onClose: () => setSaveAsEntry(null),
+    onSuccess: () => toaster.success(t("template.entry.saveAs.success")),
+    onError: () => toaster.error(t("template.entry.saveAs.error")),
+    editorMode: mode
+  });
+}
+
+async function copyToClipboard(textToCopy) {
+  // Navigator clipboard api needs a secure context (https)
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(textToCopy);
+  } else {
+    // Use the 'out of viewport hidden text area' trick
+    const textArea = document.createElement("textarea");
+    textArea.value = textToCopy;
+
+    // Move textarea out of the viewport so it's not visible
+    textArea.style.position = "absolute";
+    textArea.style.left = "-999999px";
+    document.body.prepend(textArea);
+    textArea.select();
+    try {
+      document.execCommand("copy");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      textArea.remove();
+    }
+  }
+}
+
+const SidebarFooterContainer = styled.styled.div.withConfig({
+  displayName: "SidebarFooter__SidebarFooterContainer",
+  componentId: "sc-17xf0ak-0"
+})(["position:sticky;bottom:0;background:", ";"], easyblocksDesignSystem.Colors.white);
+const HorizontalLine$4 = styled.styled.div.withConfig({
+  displayName: "SidebarFooter__HorizontalLine",
+  componentId: "sc-17xf0ak-1"
+})(["height:1px;margin-top:-1px;background-color:", ";"], easyblocksDesignSystem.Colors.black10);
+const IdWrapper = styled.styled.div.withConfig({
+  displayName: "SidebarFooter__IdWrapper",
+  componentId: "sc-17xf0ak-2"
+})(["padding:12px 16px;gap:16px;", " color:", ";"], easyblocksDesignSystem.Fonts.body, easyblocksDesignSystem.Colors.black40);
+const ButtonWrapper = styled.styled.div.withConfig({
+  displayName: "SidebarFooter__ButtonWrapper",
+  componentId: "sc-17xf0ak-3"
+})(["display:flex;justify-content:end;gap:8px;"]);
+const StyledButtonCopyTemplate = styled.styled(buttons.ButtonSecondary).withConfig({
+  displayName: "SidebarFooter__StyledButtonCopyTemplate",
+  componentId: "sc-17xf0ak-4"
+})(["min-width:auto !important;& svg{width:14px !important;height:14px !important;}"]);
+function SidebarFooter(props) {
+  const editorContext = useEditorContext();
+  const toaster = Toaster.useToaster();
+  const {
+    t
+  } = useTranslation();
+  const {
+    form,
+    mode
+  } = editorContext;
+  const [saveAsEntry, setSaveAsEntry] = React.useState(null);
+  if (props.paths.length === 0) {
+    return null;
+  }
+  const path = _internals.stripRichTextPartSelection(props.paths[0]);
+  const value = dotNotationGet(form.values, path);
+  if (!value) {
+    return null;
+  }
+  const compiledPath = pathToCompiledPath(path, editorContext);
+  const compiledValue = dotNotationGet(editorContext.compiledComponentConfig, compiledPath);
+  const widthInfo = compiledValue.__editing?.widthInfo;
+  const width = widthInfo?.width?.xl;
+  const widthAuto = widthInfo?.auto?.xl;
+  const definition = _internals.findComponentDefinition(value, editorContext);
+  const isSaveable = !!definition?.allowSave;
+  const showSaveAsTemplate = isSaveable && !editorContext.readOnly && !editorContext.disableCustomTemplates;
+  const onCopy = async value => {
+    try {
+      if (typeof value === "string") {
+        await copyToClipboard(value);
+      } else {
+        await copyToClipboard(JSON.stringify(value));
+      }
+      toaster.success(t("template.entry.copy.success"));
+    } catch (error) {
+      toaster.error(t("template.entry.copy.error"));
+    }
+  };
+  return /*#__PURE__*/React__namespace.createElement(SidebarFooterContainer, null, /*#__PURE__*/React__namespace.createElement(HorizontalLine$4, null), /*#__PURE__*/React__namespace.createElement(IdWrapper, null, showSaveAsTemplate ? /*#__PURE__*/React__namespace.createElement(ButtonWrapper, null, showSaveAsTemplate && mode !== "admin" && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
+    icon: icons.Icons.Save1,
+    hideLabel: true,
+    onClick: () => {
+      editorContext.actions.openTemplateModal({
+        mode: "create",
+        config: value,
+        width,
+        widthAuto
+      });
+    },
+    style: {
+      minWidth: "auto"
+    }
+  }, t("template.save")), /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
+    style: {
+      minWidth: "auto"
+    },
+    icon: icons.Icons.SaveAs,
+    hideLabel: true,
+    onClick: () => setSaveAsEntry(value)
+  }, t("template.saveAs"))), mode !== "user" && /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null, /*#__PURE__*/React__namespace.createElement(StyledButtonCopyTemplate, {
+    icon: icons.Icons.Copy,
+    hideLabel: true,
+    onClick: () => onCopy(value)
+  }, t("template.entry.copy")), value._master && /*#__PURE__*/React__namespace.createElement("div", {
+    style: {
+      paddingTop: 16
+    }
+  }, "Master: ", value._master)), /*#__PURE__*/React__namespace.createElement(buttons.ButtonSecondary, {
+    icon: icons.Icons.Id,
+    hideLabel: true,
+    onClick: () => onCopy(value._id),
+    style: {
+      minWidth: "auto"
+    }
+  }, t("template.id.copy"))) : null), props.SaveAsPicker ? /*#__PURE__*/React__namespace.createElement(SaveAsPicker, {
+    saveAsEntry: saveAsEntry,
+    setSaveAsEntry: setSaveAsEntry,
+    Component: props.SaveAsPicker,
+    mode: mode
+  }) : null);
+}
+
 /**
  *
  * @param collection Array of values
@@ -4731,6 +3236,84 @@ function getPropertyName(fieldName) {
 }
 function getFieldSchemaWithDefinition(field) {
   return field.schemaProp;
+}
+
+function isFieldPortal(x) {
+  return "portal" in x;
+}
+function buildTinaFields(path, editorContext) {
+  return internalBuildTinaFields(path, editorContext);
+}
+
+/**
+ * The fields the properties panel shows for the whole selection: every field of
+ * a single block, or only the fields all of the selected blocks share.
+ */
+function buildTinaFieldsForSelection(focussedField, editorContext) {
+  const focusedFields = focussedField.length === 0 ? [""] : focussedField;
+  const fieldsPerFocusedField = focusedFields.map(focusedField => buildTinaFields(focusedField, editorContext));
+  return focussedField.length > 1 ? mergeCommonFields({
+    fields: fieldsPerFocusedField
+  }) : fieldsPerFocusedField.flat();
+}
+function internalBuildTinaFields(path, editorContext, fieldsFilter) {
+  const compiledPath = pathToCompiledPath(_internals.stripRichTextPartSelection(path), editorContext);
+  const compiledComponent = dotNotationGet(editorContext.compiledComponentConfig, compiledPath);
+  let allFields = [];
+  (compiledComponent?.__editing?.fields ?? []).filter(field => fieldsFilter ? fieldsFilter(field) : true).forEach(item => {
+    if (isFieldPortal(item)) {
+      let fields = [];
+      if (item.portal === "component") {
+        const portalComponentFields = internalBuildTinaFields(item.source, editorContext);
+        fields.push(...portalComponentFields);
+        if (!item.includeHeader) {
+          fields = fields.filter(x => x.prop !== "$myself");
+        }
+        const groups = item.groups;
+        if (groups) {
+          fields = fields.filter(x => x.prop === "$myself" || groups.includes(x.group || "___doesn't matter___"));
+        }
+      } else if (item.portal === "field") {
+        if (item.hidden) {
+          return;
+        }
+        const portalFieldFields = internalBuildTinaFields(item.source, editorContext, field => !isFieldPortal(field) && field.prop === item.fieldName);
+        if (portalFieldFields.length === 0) {
+          console.warn(`Missing field "${item.fieldName}" at path "${item.source}" in portal for component ${compiledComponent._component}`);
+          return;
+        }
+        const portalField = {
+          ...portalFieldFields[0],
+          ...item.overrides
+        };
+        fields.push(portalField);
+      } else if (item.portal === "multi-field") {
+        if (item.sources.length === 0) {
+          if (item.hidden) {
+            return;
+          }
+          throw new Error(`Missing sources for multi field portal of component "${compiledComponent._component}" at path "${path}". Set "hidden" to "true" for this portal if sources are empty`);
+        }
+        const portalFieldFields = item.sources.flatMap(source => internalBuildTinaFields(source, editorContext, field => !isFieldPortal(field) && field.prop === item.fieldName));
+        const firstField = portalFieldFields[0];
+        const combinedField = {
+          ...firstField,
+          ...item.overrides,
+          name: portalFieldFields.flatMap(field => field.name)
+        };
+        fields.push(combinedField);
+      }
+      allFields = [...allFields, ...fields];
+    } else {
+      allFields.push(item);
+    }
+  });
+
+  // Analytics fields should always go to the bottom (later they'll be in separate tab)
+
+  const nonAnalyticsFields = allFields.filter(x => x.group !== "Analytics");
+  const analyticsFields = allFields.filter(x => x.group === "Analytics");
+  return [...nonAnalyticsFields, ...analyticsFields];
 }
 
 const BlockField = ({
@@ -6243,6 +4826,1537 @@ const FieldsGroup = styled.styled.div.withConfig({
   componentId: "sc-ignixa-8"
 })(["position:relative;display:block;width:100%;padding:0;white-space:nowrap;overflow:unset;"]);
 
+const QuickFormatGroup = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameQuickFormat__QuickFormatGroup",
+  componentId: "sc-641zn6-0"
+})(["display:flex;align-items:center;gap:6px;"]);
+
+/**
+ * One panel field, shrunk to its control.
+ *
+ * The panel lays a field out for a 250px column: 16px of padding either side,
+ * and the control pushed to the far end of the row from its label. On a bar
+ * with no label and no column that turned into wide gaps with a control
+ * floating at the right of each. Here the field is exactly as wide as its
+ * control, starting where it starts. Scoped to the bar, so the panel keeps its
+ * own layout.
+ */
+const QuickFormatControl = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameQuickFormat__QuickFormatControl",
+  componentId: "sc-641zn6-1"
+})(["flex:none;width:max-content;max-width:100%;white-space:nowrap;& > div{padding:0;gap:0;}& > div > div{flex-grow:0;justify-content:flex-start;width:auto;}"]);
+
+/**
+ * Splits the bar into its groups: how the block looks, what can be done with
+ * it, and deleting it. Full height and dark enough to read against the white
+ * bar — the first one was too faint to tell the groups apart.
+ */
+const BarDivider = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameQuickFormat__BarDivider",
+  componentId: "sc-641zn6-2"
+})(["flex:none;align-self:stretch;width:1px;margin:0 6px;background:", ";"], easyblocksDesignSystem.Colors.black20);
+
+/**
+ * The formatting controls on the selection's bar.
+ *
+ * Each one is the properties panel's own field, drawn without its label, so it
+ * reads and writes exactly what the panel does: the breakpoint being edited, the
+ * current language, a rich text selection sent to the canvas, a block's own
+ * `change` rules. The label moves into the tooltip.
+ */
+function SelectionFrameQuickFormat({
+  fields,
+  onInUseChange
+}) {
+  const {
+    form
+  } = useEditorContext();
+  const {
+    t
+  } = useTranslation();
+  return /*#__PURE__*/React__default["default"].createElement(QuickFormatGroup, {
+    onFocus: () => onInUseChange(true),
+    onBlur: () => onInUseChange(false)
+  }, fields.map(field => /*#__PURE__*/React__default["default"].createElement(QuickFormatControl
+  // By path: a block can show a child's field of the same name beside
+  // its own, and the two must not share a control's state.
+  , {
+    key: toArray(field.name).join(","),
+    title: typeof field.label === "string" ? translatePanelLabel(field.label, t) : undefined
+  }, /*#__PURE__*/React__default["default"].createElement(FieldBuilder, {
+    form: form,
+    field: field,
+    isLabelHidden: true
+  }))));
+}
+
+/**
+ * Moving a block is an insert followed by a remove, and each of those shifts the indices of
+ * everything after it in the same collection. Replaying those shifts is what makes the block
+ * that gets removed the original one rather than a neighbour that slid into its place.
+ *
+ * The insert happens first on purpose: if no collection in the chosen section accepts the
+ * block the document is simply left alone, whereas removing first would destroy it.
+ */
+function planMoveAfterInsert(sourcePath, insertedPath) {
+  const sourceToRemove = shiftPath(sourcePath, insertedPath, "downward");
+  return {
+    sourceToRemove,
+    pathToFocus: shiftPath(insertedPath, sourceToRemove, "upward")
+  };
+}
+/**
+ * Hangs off the block's top-left corner, from its own position.
+ *
+ * It used to read the add button's, which is the middle of the block's top
+ * edge. That is right for a 24px circle and wrong for a bar six buttons wide:
+ * the bar hung from the middle and covered the content above the middle, which
+ * is the part of the page the author was most likely reading. The corner is
+ * where a bar like this belongs, and `calculateActionsPosition` keeps it inside
+ * the canvas, and moves it below a block too small to wear it.
+ *
+ * This box is the bar's reach rather than the bar: it is the visible bar plus
+ * the gap the pointer has to be crossed over to get there. That gap is ground
+ * the pointer is over neither the block nor the bar, which read as "the pointer
+ * has left" and took the bar away mid-travel. Padded by exactly the gap, the
+ * two touch and the journey is unbroken. The padding is invisible — the white
+ * box, its shadow and its corners belong to the bar inside.
+ */
+const SelectionFrameActionsContainer = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsContainer",
+  componentId: "sc-1fta8jo-0"
+})(["position:absolute;top:calc(var(", ") - ", "px);left:calc(var(", ") - ", "px);display:var(", ",none);padding:", "px;width:max-content;max-width:100%;box-sizing:border-box;opacity:", ";pointer-events:", ";transition:opacity 120ms ease-out;"], SELECTION_ACTIONS_TOP, ACTIONS_REACH, SELECTION_ACTIONS_LEFT, ACTIONS_REACH, SELECTION_ACTIONS_DISPLAY, ACTIONS_REACH, ({
+  $isRevealed
+}) => $isRevealed ? 1 : 0, ({
+  $isRevealed
+}) => $isRevealed ? "all" : "none");
+
+/** The bar itself: what the reach above is invisible padding around. */
+const SelectionFrameActionsBar = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsBar",
+  componentId: "sc-1fta8jo-1"
+})(["position:relative;max-width:100%;box-sizing:border-box;border-radius:4px;box-shadow:var(--tina-shadow-big);padding:5px 10px;width:max-content;background:", ";"], easyblocksDesignSystem.Colors.white);
+const SelectionFrameActionsGroupButtons = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__SelectionFrameActionsGroupButtons",
+  componentId: "sc-1fta8jo-2"
+})(["display:flex;flex-wrap:wrap;align-items:center;row-gap:6px;"]);
+
+/**
+ * The buttons that act on the block, and delete after them, kept on one line.
+ *
+ * In a canvas too narrow for the whole bar it wraps between its groups, never
+ * inside one: split anywhere else, "move down" and "delete" ended up on a line
+ * of their own, away from the buttons they belong with.
+ */
+const StructuralActions = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__StructuralActions",
+  componentId: "sc-1fta8jo-3"
+})(["display:flex;flex-wrap:nowrap;align-items:center;gap:2px;"]);
+const StyledButtonGroup$3 = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__StyledButtonGroup",
+  componentId: "sc-1fta8jo-4"
+})(["display:flex;flex-direction:row;justify-content:flex-end;margin-top:14px;gap:12px;"]);
+const StyledMenu = styled__default["default"].div.withConfig({
+  displayName: "SelectionFrameActions__StyledMenu",
+  componentId: "sc-1fta8jo-5"
+})(["display:var(", ",none);"], SELECTION_ACTIONS_DISPLAY);
+const SelectionMoreActions = ({
+  t
+}) => {
+  const editorContext = useEditorContext();
+  const router = new URLSearchParams(window.location.search);
+  const currentDocument = router.get("document") ?? "";
+  const toaster = Toaster.useToaster();
+  const [openConfirmGlobalSection, setOpenConfirmGlobalSection] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const inputRef = React.useRef(null);
+  const currentEntry = dotNotationGet(editorContext.form.values, editorContext.focussedField[editorContext.focussedField.length - 1]);
+  const isAddedToPage = Object.values(editorContext?.globalSections ?? {}).some(globalSections => Object.keys(globalSections?.entities ?? {}).includes(currentEntry._id));
+  const onRemoveGlobalSection = () => {
+    const currentSection = Object.entries(editorContext?.globalSections ?? {}).find(([_, groupValue]) => Object.keys(groupValue?.entities ?? {}).includes(currentEntry._id));
+    const groupName = currentSection?.[0];
+    if (groupName) {
+      setIsLoading(true);
+      editorContext.onGlobalSectionChange?.({
+        mode: "update",
+        pages: currentSection?.[1].entities[currentEntry._id].pages.filter(page => page !== currentDocument),
+        label: currentSection?.[1].entities[currentEntry._id].label,
+        groupName,
+        entry: currentEntry
+      }).then(() => {
+        toaster.success(`${t("editor.sidebar.globalSections.removeGlobal.success")} ${t("saveBeforeExit")}`, {
+          duration: 5000
+        });
+        editorContext.actions.replaceItems([editorContext.focussedField[editorContext.focussedField.length - 1]], {
+          ...currentEntry,
+          _id: uniqueId()
+        });
+      }).catch(reason => {
+        toaster.error(reason);
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    }
+  };
+  const menus = [{
+    id: "set-global",
+    label: t("editor.sidebar.globalSections.setGlobal"),
+    children: easyblocksCore.globalSectionGroups.map(globalSectionGroup => ({
+      id: globalSectionGroup.id,
+      label: globalSectionGroup.name,
+      onClick: () => setOpenConfirmGlobalSection({
+        groupName: globalSectionGroup.name
+      })
+    })),
+    isHidden: isAddedToPage
+  }, {
+    id: "remove-global",
+    label: t("editor.sidebar.globalSections.removeGlobal"),
+    isLoading,
+    isHidden: !isAddedToPage,
+    onClick: onRemoveGlobalSection
+  }];
+  const onClose = () => {
+    if (!isLoading) {
+      setOpenConfirmGlobalSection(null);
+    }
+  };
+  const onConfirmSetGlobalSection = () => {
+    if (!inputRef?.current?.value) {
+      toaster.error(t("editor.sidebar.globalSections.setGlobal.validName"));
+      return;
+    }
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+    editorContext.onGlobalSectionChange?.({
+      mode: "update",
+      groupName: openConfirmGlobalSection?.groupName ?? "",
+      label: inputRef?.current?.value,
+      entry: currentEntry
+    }).then(() => {
+      setIsLoading(false);
+      toaster.success(`${t("editor.sidebar.globalSections.setGlobal.success")} ${t("saveBeforeExit")}`, {
+        duration: 5000
+      });
+      onClose();
+    }).catch(reason => {
+      setIsLoading(false);
+      toaster.error(reason);
+    });
+  };
+  const onEnter = e => {
+    if (e.code === "Enter" || e.code === "NumpadEnter") {
+      e.preventDefault();
+      e.stopPropagation();
+      onConfirmSetGlobalSection();
+    }
+  };
+  React.useEffect(() => {
+    if (openConfirmGlobalSection?.groupName) {
+      queueMicrotask(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [openConfirmGlobalSection]);
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
+    menus: menus,
+    styles: {
+      top: "40px",
+      left: "80%"
+    }
+  })), /*#__PURE__*/React__default["default"].createElement(modals.Modal, {
+    title: t("editor.sidebar.globalSections.setGlobal.enterName"),
+    isOpen: !!openConfirmGlobalSection,
+    onRequestClose: onClose,
+    mode: "fit",
+    height: "auto",
+    endAdornment: /*#__PURE__*/React__default["default"].createElement(StyledButtonGroup$3, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonSecondary, {
+      onClick: onClose
+    }, t("cancel")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonPrimary, {
+      isLoading: isLoading,
+      disabled: isLoading,
+      onClick: onConfirmSetGlobalSection
+    }, t("template.save.default")))
+  }, /*#__PURE__*/React__default["default"].createElement(Input.Input, {
+    ref: inputRef,
+    withBorder: true,
+    style: {
+      width: 300
+    },
+    onKeyDown: onEnter
+  })));
+};
+const SelectionFrameActions = ({
+  focussedField,
+  actions,
+  translationFiles,
+  contextParams,
+  editorMode,
+  isRevealed,
+  quickFormatFields,
+  hasStructuralActions,
+  barRef,
+  onFormattingInUseChange
+}) => {
+  const {
+    t
+  } = getTranslation({
+    translationFiles,
+    contextParams
+  });
+  const [showMore, setShowMore] = React.useState(false);
+  const [showMoveTo, setShowMoveTo] = React.useState(false);
+  const editorContext = useEditorContext();
+  const toaster = Toaster.useToaster();
+
+  // Moving carries one block: the block is inserted into the chosen section and removed from
+  // where it was, and a multi-selection has no single source path to remove. Several blocks
+  // are still moved together with cut and paste.
+  const sourcePath = focussedField.length === 1 ? focussedField[0] : undefined;
+  const moveTo = destinationPath => {
+    setShowMoveTo(false);
+    if (!sourcePath) {
+      return;
+    }
+    const sourceEntry = dotNotationGet(editorContext.form.values, sourcePath);
+    if (!sourceEntry) {
+      return;
+    }
+    const block = _internals.duplicateConfig(sourceEntry, editorContext);
+    let wasRejected = false;
+    editorContext.actions.runChange(() => {
+      const insertedPath = pasteManager()(destinationResolver({
+        form: editorContext.form,
+        context: editorContext,
+        wrapperLevels: resolveWrapperLevels({
+          templates: editorContext.configTemplates,
+          dropWrapperTemplateId: editorContext.dropWrapperTemplateId,
+          context: editorContext
+        })
+      })(destinationPath))(block);
+      if (!insertedPath) {
+        // Nothing in the chosen section accepts this block, so the document is untouched.
+        wasRejected = true;
+        return [sourcePath];
+      }
+      const {
+        sourceToRemove,
+        pathToFocus
+      } = planMoveAfterInsert(sourcePath, insertedPath);
+      editorContext.actions.removeItems([sourceToRemove]);
+      return [pathToFocus];
+    });
+    if (wasRejected) {
+      toaster.error(t("editor.canvas.action.moveTo.rejected"));
+    }
+  };
+
+  // Every other top level section is offered as a destination. The section the block is
+  // already in, and any section inside the block itself, are not destinations.
+  const moveDestinations = React.useMemo(() => {
+    if (!sourcePath) {
+      return [];
+    }
+    const sections = editorContext.form.values?.data ?? [];
+    return sections.map((_, index) => `data.${index}`).filter(destinationPath => destinationPath !== sourcePath && !destinationPath.startsWith(`${sourcePath}.`) && !sourcePath.startsWith(`${destinationPath}.`)).map((destinationPath, _, all) => ({
+      id: destinationPath,
+      // Sections repeat, so the position disambiguates two blocks with the same name.
+      label: `${all.indexOf(destinationPath) + 1}. ${getComponentLabel(_internals.parsePath(destinationPath, editorContext.form).templateId, editorContext, t)}`,
+      onClick: () => moveTo(destinationPath)
+    }));
+  }, [sourcePath, editorContext.form.values, t]);
+  return /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsContainer, {
+    $isRevealed: isRevealed,
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsBar, {
+    ref: barRef
+  }, /*#__PURE__*/React__default["default"].createElement(SelectionFrameActionsGroupButtons, null, quickFormatFields.length > 0 && /*#__PURE__*/React__default["default"].createElement(SelectionFrameQuickFormat, {
+    fields: quickFormatFields,
+    onInUseChange: onFormattingInUseChange
+  }), quickFormatFields.length > 0 && hasStructuralActions && /*#__PURE__*/React__default["default"].createElement(BarDivider, null), hasStructuralActions && /*#__PURE__*/React__default["default"].createElement(StructuralActions, null, /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Duplicate,
+    hideLabel: true,
+    onClick: () => actions.duplicateItems(focussedField)
+  }, t("duplicate")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ArrowUp,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "top")
+  }, t("editor.canvas.action.moveUp")), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ArrowDown,
+    hideLabel: true,
+    onClick: () => actions.moveItems(focussedField, "bottom")
+  }, t("editor.canvas.action.moveDown")), moveDestinations.length > 0 && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost
+  // Not the drag grip, although it used to wear its icon: this opens a
+  // list of destinations. The grip lives on the block frame, and two
+  // controls that look alike is how people ended up dragging this one.
+  , {
+    icon: icons.Icons.ArrowRight,
+    hideLabel: true,
+    onClick: () => setShowMoveTo(prev => !prev)
+  }, t("editor.canvas.action.moveTo")), editorMode !== "admin-template" && /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.ThreeDotsHorizontal,
+    showTooltip: false,
+    hideLabel: true,
+    onClick: () => setShowMore(prev => !prev)
+  }), /*#__PURE__*/React__default["default"].createElement(BarDivider, null), /*#__PURE__*/React__default["default"].createElement(buttons.ButtonGhost, {
+    icon: icons.Icons.Trash,
+    hideLabel: true,
+    onClick: () => actions.removeItems(focussedField)
+  }, t("delete")))), hasStructuralActions && showMoveTo && moveDestinations.length > 0 ? /*#__PURE__*/React__default["default"].createElement(StyledMenu, null, /*#__PURE__*/React__default["default"].createElement(Menu, {
+    menus: moveDestinations,
+    styles: {
+      top: "40px",
+      left: "0%"
+    }
+  })) : null, hasStructuralActions && editorMode !== "admin-template" && showMore ? /*#__PURE__*/React__default["default"].createElement(SelectionMoreActions, {
+    t: t
+  }) : null));
+};
+
+let ExtraKeys = /*#__PURE__*/function (ExtraKeys) {
+  ExtraKeys["ALT_KEY"] = "altKey";
+  ExtraKeys["CTRL_KEY"] = "ctrlKey";
+  ExtraKeys["META_KEY"] = "metaKey";
+  ExtraKeys["SHIFT_KEY"] = "shiftKey";
+  return ExtraKeys;
+}({});
+const actionKeys = [ExtraKeys.ALT_KEY, ExtraKeys.CTRL_KEY, ExtraKeys.META_KEY, ExtraKeys.SHIFT_KEY];
+const useWindowKeyDown = (key, callback, {
+  extraKeys,
+  isDisabled
+} = {
+  extraKeys: [],
+  isDisabled: false
+}) => {
+  const downHandler = event => {
+    const isExtraKeysPressed = extraKeys.every(k => event[k]);
+    const extraKeysSet = new Set([...extraKeys]);
+    const isOtherExtraKeysPressed = actionKeys.filter(k => !extraKeysSet.has(k)).some(k => event[k]);
+    if (event.key === key && isExtraKeysPressed && !isOtherExtraKeysPressed) {
+      event.preventDefault();
+      callback();
+    }
+  };
+  React.useEffect(() => {
+    if (!isDisabled) {
+      document.getElementsByTagName("iframe")[0].contentWindow.window.document.body.addEventListener("keydown", downHandler);
+      window.addEventListener("keydown", downHandler);
+      return () => {
+        window.removeEventListener("keydown", downHandler);
+      };
+    }
+  }, [isDisabled]);
+};
+
+// ---------------------------------------------------------------------------
+// xs  → mobile-portrait   (phone portrait)
+// sm  → mobile-landscape  (phone landscape)
+// md  → tablet-portrait   (tablet portrait)
+// lg  → tablet-landscape  (tablet landscape)
+// xl  → laptop            (laptop/macbook)
+// 2xl → desktop           (desktop monitor)
+// ---------------------------------------------------------------------------
+
+function getDeviceFamily(viewport) {
+  if (viewport === "fit-screen") return null;
+  if (viewport === "xs") return "mobile-portrait";
+  if (viewport === "sm") return "mobile-landscape";
+  if (viewport === "md") return "tablet-portrait";
+  if (viewport === "lg") return "tablet-landscape";
+  if (viewport === "xl") return "laptop";
+  if (viewport === "2xl") return "desktop";
+  return null;
+}
+const DEVICE_LABELS = {
+  xs: "Mobile",
+  sm: "Mobile",
+  md: "Tablet",
+  lg: "Tablet",
+  xl: "Laptop",
+  "2xl": "Desktop",
+  "fit-screen": "Fit Screen"
+};
+
+// Shared helper — builds a rounded-rect SVG path
+function rrPath(x, y, w, h, r, cw = true) {
+  if (r <= 0) {
+    // Degenerate: plain rect
+    return cw ? `M ${x} ${y} H ${x + w} V ${y + h} H ${x} Z` : `M ${x} ${y} V ${y + h} H ${x + w} V ${y} Z`;
+  }
+  if (cw) {
+    return [`M ${x + r} ${y}`, `H ${x + w - r}`, `Q ${x + w} ${y}   ${x + w} ${y + r}`, `V ${y + h - r}`, `Q ${x + w} ${y + h} ${x + w - r} ${y + h}`, `H ${x + r}`, `Q ${x}   ${y + h} ${x}     ${y + h - r}`, `V ${y + r}`, `Q ${x}   ${y}   ${x + r}   ${y}`, `Z`].join(" ");
+  } else {
+    // CCW — for evenodd screen hole; include display corner radius
+    return [`M ${x + r} ${y}`, `V ${y}`,
+    // noop, start here
+    `Q ${x} ${y}   ${x}     ${y + r}`, `V ${y + h - r}`, `Q ${x}   ${y + h} ${x + r}   ${y + h}`, `H ${x + w - r}`, `Q ${x + w} ${y + h} ${x + w}   ${y + h - r}`, `V ${y + r}`, `Q ${x + w} ${y}   ${x + w - r} ${y}`, `Z`].join(" ");
+  }
+}
+
+// Frame gradient IDs are made unique per-frame via a prefix prop
+function FrameGrads({
+  id
+}) {
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement("linearGradient", {
+    id: `${id}Fill`,
+    x1: "0",
+    y1: "0",
+    x2: "1",
+    y2: "1"
+  }, /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "0%",
+    stopColor: "#2e2e32"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "40%",
+    stopColor: "#1e1e22"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "100%",
+    stopColor: "#111114"
+  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
+    id: `${id}TopEdge`,
+    x1: "0",
+    y1: "0",
+    x2: "1",
+    y2: "0"
+  }, /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "0%",
+    stopColor: "rgba(255,255,255,0.14)"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "50%",
+    stopColor: "rgba(255,255,255,0.09)"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "100%",
+    stopColor: "rgba(255,255,255,0.04)"
+  })));
+}
+function MobilePortraitFrame({
+  width,
+  height
+}) {
+  const bezel = width * 0.0422;
+  const rxOuter = width * 0.170;
+  const rxScr = width * 0.112;
+  const svgLeft = -bezel;
+  const svgTop = -bezel;
+  const svgW = width + bezel * 2;
+  const svgH = height + bezel * 2;
+  const shellPath = rrPath(0, 0, svgW, svgH, rxOuter, true) + " " + rrPath(bezel, bezel, width, height, rxScr, false);
+
+  // Power button — right side
+  const btnDepth = Math.max(2.5, bezel * 0.42);
+  const btnRx = btnDepth * 0.4;
+  const pwrH = height * (95 / 852);
+  const pwrY = bezel + height * (190 / 852);
+  // Volume up / down — left side
+  const vuH = height * (61 / 852);
+  const vuY = bezel + height * (195 / 852);
+  const vdH = height * (61 / 852);
+  const vdY = bezel + height * (265 / 852);
+  // Action button — left side (replaces silent switch on 15 Pro)
+  const actH = height * (67 / 852);
+  const actY = bezel + height * (115 / 852);
+
+  // Dynamic Island — pill-shaped cutout near top of screen, horizontally
+  // centered. Real iPhone proportions: ~126pt wide x 37pt tall on a 393pt
+  // wide / 852pt tall screen, sitting ~11pt below the top edge.
+  const diW = width * (126 / 393);
+  const diH = height * (37 / 852);
+  const diX = bezel + (width - diW) / 2;
+  const diY = bezel + height * (11 / 852);
+  const diRx = diH / 2;
+
+  // Camera — sits inside the Dynamic Island, offset toward the right side
+  // (matches real hardware: the TrueDepth/IR camera cluster sits right of
+  // center while the left portion of the pill is reserved for sensors).
+  const camR = diH * 0.30;
+  const camCx = diX + diW - diH * 0.62;
+  const camCy = diY + diH / 2;
+
+  // Home indicator bar — bottom safe-area gesture bar, thin rounded pill
+  // centered near the bottom edge of the screen.
+  const homeW = width * (134 / 393);
+  const homeH = height * (5 / 852);
+  const homeX = bezel + (width - homeW) / 2;
+  const homeY = bezel + height - height * (8 / 852) - homeH;
+  return /*#__PURE__*/React__default["default"].createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: svgW,
+    height: svgH,
+    style: {
+      position: "absolute",
+      top: svgTop,
+      left: svgLeft,
+      pointerEvents: "none",
+      overflow: "visible"
+    }
+  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement(FrameGrads, {
+    id: "mobP"
+  })), /*#__PURE__*/React__default["default"].createElement("g", {
+    filter: "url(#frameShadow)"
+  }, /*#__PURE__*/React__default["default"].createElement("path", {
+    d: shellPath,
+    fillRule: "evenodd",
+    fill: "url(#mobPFill)"
+  })), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.16)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M 0 ${rxOuter} V ${svgH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.08)",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${svgW} ${rxOuter} V ${svgH - rxOuter} Q ${svgW} ${svgH} ${svgW - rxOuter} ${svgH} H ${rxOuter} Q 0 ${svgH} 0 ${svgH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(0,0,0,0.35)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: rrPath(bezel, bezel, width, height, rxScr, true),
+    fill: "none",
+    stroke: "rgba(0,0,0,0.55)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: 0,
+    y: actY,
+    width: btnDepth,
+    height: actH,
+    rx: btnRx,
+    ry: btnRx,
+    fill: "url(#mobPFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: 0,
+    y: vuY,
+    width: btnDepth,
+    height: vuH,
+    rx: btnRx,
+    ry: btnRx,
+    fill: "url(#mobPFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: 0,
+    y: vdY,
+    width: btnDepth,
+    height: vdH,
+    rx: btnRx,
+    ry: btnRx,
+    fill: "url(#mobPFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: svgW - btnDepth,
+    y: pwrY,
+    width: btnDepth,
+    height: pwrH,
+    rx: btnRx,
+    ry: btnRx,
+    fill: "url(#mobPFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: diX,
+    y: diY,
+    width: diW,
+    height: diH,
+    rx: diRx,
+    ry: diRx,
+    fill: "#000000"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: diX,
+    y: diY,
+    width: diW,
+    height: diH,
+    rx: diRx,
+    ry: diRx,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.06)",
+    strokeWidth: "0.6"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR,
+    fill: "#0a0a0c"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR * 0.55,
+    fill: "#1c2230"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx - camR * 0.25,
+    cy: camCy - camR * 0.25,
+    r: camR * 0.18,
+    fill: "rgba(255,255,255,0.35)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: homeX,
+    y: homeY,
+    width: homeW,
+    height: homeH,
+    rx: homeH / 2,
+    ry: homeH / 2,
+    fill: "rgba(0,0,0,0.55)"
+  }));
+}
+function MobileLandscapeFrame({
+  width,
+  height
+}) {
+  const bezel = height * 0.0422;
+  const rxOuter = height * 0.170;
+  const rxScr = height * 0.112;
+  const svgLeft = -bezel;
+  const svgTop = -bezel;
+  const svgW = width + bezel * 2;
+  const svgH = height + bezel * 2;
+  const shellPath = rrPath(0, 0, svgW, svgH, rxOuter, true) + " " + rrPath(bezel, bezel, width, height, rxScr, false);
+  const btnDepth = Math.max(2.5, bezel * 0.42);
+  const btnRx = btnDepth * 0.4;
+  // Power — top
+  const pwrW = width * (95 / 852);
+  const pwrX = bezel + width * (190 / 852);
+  // Action — bottom right
+  const actW = width * (67 / 852);
+  const actX = bezel + width * (670 / 852);
+  // Volume up/down — bottom
+  const vuW = width * (61 / 852);
+  const vuX = bezel + width * (588 / 852);
+  const vdW = width * (61 / 852);
+  const vdX = bezel + width * (518 / 852);
+
+  // Dynamic Island — rotated 90°, now a vertical pill on the left edge of
+  // the screen, vertically centered (mirrors the portrait top-center pill).
+  const diH = height * (126 / 393);
+  const diW = width * (37 / 852);
+  const diY = bezel + (height - diH) / 2;
+  const diX = bezel + width * (11 / 852);
+  const diRx = diW / 2;
+
+  // Camera — offset toward the bottom of the island (mirrors the
+  // "right side" offset from portrait, rotated 90° clockwise).
+  const camR = diW * 0.30;
+  const camCy = diY + diH - diW * 0.62;
+  const camCx = diX + diW / 2;
+
+  // Home indicator bar — moves to the right edge in landscape.
+  const homeH = height * (134 / 393);
+  const homeW = width * (5 / 852);
+  const homeY = bezel + (height - homeH) / 2;
+  const homeX = bezel + width - width * (8 / 852) - homeW;
+  return /*#__PURE__*/React__default["default"].createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: svgW,
+    height: svgH,
+    style: {
+      position: "absolute",
+      top: svgTop,
+      left: svgLeft,
+      pointerEvents: "none",
+      overflow: "visible"
+    }
+  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement(FrameGrads, {
+    id: "mobL"
+  })), /*#__PURE__*/React__default["default"].createElement("g", {
+    filter: "url(#frameShadow)"
+  }, /*#__PURE__*/React__default["default"].createElement("path", {
+    d: shellPath,
+    fillRule: "evenodd",
+    fill: "url(#mobLFill)"
+  })), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.16)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M 0 ${rxOuter} V ${svgH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.08)",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${svgW} ${rxOuter} V ${svgH - rxOuter} Q ${svgW} ${svgH} ${svgW - rxOuter} ${svgH} H ${rxOuter} Q 0 ${svgH} 0 ${svgH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(0,0,0,0.35)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: rrPath(bezel, bezel, width, height, rxScr, true),
+    fill: "none",
+    stroke: "rgba(0,0,0,0.55)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: pwrX,
+    y: 0,
+    width: pwrW,
+    height: btnDepth,
+    rx: btnRx,
+    ry: btnRx,
+    fill: "url(#mobLFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: actX,
+    y: svgH - btnDepth,
+    width: actW,
+    height: btnDepth,
+    rx: btnRx,
+    ry: btnRx,
+    fill: "url(#mobLFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: vuX,
+    y: svgH - btnDepth,
+    width: vuW,
+    height: btnDepth,
+    rx: btnRx,
+    ry: btnRx,
+    fill: "url(#mobLFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: vdX,
+    y: svgH - btnDepth,
+    width: vdW,
+    height: btnDepth,
+    rx: btnRx,
+    ry: btnRx,
+    fill: "url(#mobLFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: diX,
+    y: diY,
+    width: diW,
+    height: diH,
+    rx: diRx,
+    ry: diRx,
+    fill: "#000000"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: diX,
+    y: diY,
+    width: diW,
+    height: diH,
+    rx: diRx,
+    ry: diRx,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.06)",
+    strokeWidth: "0.6"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR,
+    fill: "#0a0a0c"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR * 0.55,
+    fill: "#1c2230"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx - camR * 0.25,
+    cy: camCy - camR * 0.25,
+    r: camR * 0.18,
+    fill: "rgba(255,255,255,0.35)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: homeX,
+    y: homeY,
+    width: homeW,
+    height: homeH,
+    rx: homeW / 2,
+    ry: homeW / 2,
+    fill: "rgba(0,0,0,0.55)"
+  }));
+}
+function TabletPortraitFrame({
+  width,
+  height
+}) {
+  const bezel = width * 0.0426;
+  const rxOuter = width * 0.0907;
+  const rxScr = Math.max(0, rxOuter - bezel);
+  const svgLeft = -bezel;
+  const svgTop = -bezel;
+  const svgW = width + bezel * 2;
+  const svgH = height + bezel * 2;
+  const shellPath = rrPath(0, 0, svgW, svgH, rxOuter, true) + " " + rrPath(bezel, bezel, width, height, rxScr, false);
+
+  // Power/Touch ID — top edge, right area
+  const pwrW = width * 0.176;
+  const pwrH = bezel * 0.62;
+  const pwrX = bezel + width - width * 0.060 - pwrW;
+  // Volume — right side
+  const volH = height * 0.113;
+  const volBW = bezel * 0.62;
+  const vol1Y = bezel + height * 0.220;
+  const vol2Y = bezel + height * 0.345;
+
+  // Front camera — latest iPad Pro (M4) moved the TrueDepth camera to the
+  // landscape long edge so it's centered when the device is used sideways
+  // (the most common orientation for video calls on iPad). In portrait
+  // that puts it on the right-edge bezel, vertically centered.
+  const camR = bezel * 0.26;
+  const camCx = bezel + width + bezel / 2;
+  const camCy = bezel + height / 2;
+  return /*#__PURE__*/React__default["default"].createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: svgW,
+    height: svgH,
+    style: {
+      position: "absolute",
+      top: svgTop,
+      left: svgLeft,
+      pointerEvents: "none",
+      overflow: "visible"
+    }
+  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement(FrameGrads, {
+    id: "tabP"
+  })), /*#__PURE__*/React__default["default"].createElement("g", {
+    filter: "url(#frameShadow)"
+  }, /*#__PURE__*/React__default["default"].createElement("path", {
+    d: shellPath,
+    fillRule: "evenodd",
+    fill: "url(#tabPFill)"
+  })), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.16)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M 0 ${rxOuter} V ${svgH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.08)",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${svgW} ${rxOuter} V ${svgH - rxOuter} Q ${svgW} ${svgH} ${svgW - rxOuter} ${svgH} H ${rxOuter} Q 0 ${svgH} 0 ${svgH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(0,0,0,0.35)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: rrPath(bezel, bezel, width, height, rxScr, true),
+    fill: "none",
+    stroke: "rgba(0,0,0,0.55)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: pwrX,
+    y: 0,
+    width: pwrW,
+    height: pwrH,
+    rx: pwrH * 0.30,
+    ry: pwrH * 0.30,
+    fill: "url(#tabPFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: svgW - volBW,
+    y: vol1Y,
+    width: volBW,
+    height: volH,
+    rx: volBW * 0.28,
+    ry: volBW * 0.28,
+    fill: "url(#tabPFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: svgW - volBW,
+    y: vol2Y,
+    width: volBW,
+    height: volH,
+    rx: volBW * 0.28,
+    ry: volBW * 0.28,
+    fill: "url(#tabPFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR,
+    fill: "#0a0a0c"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR * 0.55,
+    fill: "#1c2230"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx - camR * 0.25,
+    cy: camCy - camR * 0.25,
+    r: camR * 0.18,
+    fill: "rgba(255,255,255,0.30)"
+  }));
+}
+function TabletLandscapeFrame({
+  width,
+  height
+}) {
+  const bezelH = height * 0.0426;
+  const bezelW = width * 0.0319;
+  const rxOuter = height * 0.0907;
+  // Concentric with the outer radius (see TabletPortraitFrame for rationale)
+  const rxScr = Math.max(0, rxOuter - bezelH);
+  const svgLeft = -bezelW;
+  const svgTop = -bezelH;
+  const svgW = width + bezelW * 2;
+  const svgH = height + bezelH * 2;
+  const shellPath = rrPath(0, 0, svgW, svgH, rxOuter, true) + " " + rrPath(bezelW, bezelH, width, height, rxScr, false);
+
+  // Power — right side, lower area
+  const pwrH = height * 0.176;
+  const pwrW = bezelH * 0.62;
+  const pwrY = bezelH + height - height * 0.060 - pwrH;
+  // Volume — top edge
+  const volW = width * 0.113;
+  const volBH = bezelH * 0.62;
+  const vol1X = bezelW + width * 0.220;
+  const vol2X = bezelW + width * 0.345;
+
+  // Front camera — top edge bezel, horizontally centered. This is the
+  // native orientation for the relocated TrueDepth camera on the latest
+  // iPad Pro: centered on the long edge for landscape video calls.
+  const camR = bezelH * 0.26;
+  const camCx = bezelW + width / 2;
+  const camCy = bezelH / 2;
+  return /*#__PURE__*/React__default["default"].createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: svgW,
+    height: svgH,
+    style: {
+      position: "absolute",
+      top: svgTop,
+      left: svgLeft,
+      pointerEvents: "none",
+      overflow: "visible"
+    }
+  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement(FrameGrads, {
+    id: "tabL"
+  })), /*#__PURE__*/React__default["default"].createElement("g", {
+    filter: "url(#frameShadow)"
+  }, /*#__PURE__*/React__default["default"].createElement("path", {
+    d: shellPath,
+    fillRule: "evenodd",
+    fill: "url(#tabLFill)"
+  })), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.16)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M 0 ${rxOuter} V ${svgH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.08)",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${svgW} ${rxOuter} V ${svgH - rxOuter} Q ${svgW} ${svgH} ${svgW - rxOuter} ${svgH} H ${rxOuter} Q 0 ${svgH} 0 ${svgH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(0,0,0,0.35)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: rrPath(bezelW, bezelH, width, height, rxScr, true),
+    fill: "none",
+    stroke: "rgba(0,0,0,0.55)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: svgW - pwrW,
+    y: pwrY,
+    width: pwrW,
+    height: pwrH,
+    rx: pwrW * 0.30,
+    ry: pwrW * 0.30,
+    fill: "url(#tabLFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: vol1X,
+    y: 0,
+    width: volW,
+    height: volBH,
+    rx: volBH * 0.28,
+    ry: volBH * 0.28,
+    fill: "url(#tabLFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: vol2X,
+    y: 0,
+    width: volW,
+    height: volBH,
+    rx: volBH * 0.28,
+    ry: volBH * 0.28,
+    fill: "url(#tabLFill)"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR,
+    fill: "#0a0a0c"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR * 0.55,
+    fill: "#1c2230"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx - camR * 0.25,
+    cy: camCy - camR * 0.25,
+    r: camR * 0.18,
+    fill: "rgba(255,255,255,0.30)"
+  }));
+}
+function LaptopFrame({
+  width,
+  height
+}) {
+  const bT = Math.round(height * 0.032);
+  const bS = Math.round(width * 0.014);
+  const bB = Math.round(height * 0.040);
+  const rx = Math.round(width * 0.010);
+  const overhang = Math.round(width * 0.026);
+  const bodyH = Math.round(width * 0.021);
+  const bodyRx = Math.round(width * 0.006);
+  const hingeH = Math.round(bodyH * 0.35);
+  const edgeH = Math.round(bodyH * 0.30);
+  const svgLeft = -(overhang + bS);
+  const svgTop = -bT;
+  const lidX = overhang;
+  const lidY = 0;
+  const lidW = bS + width + bS;
+  const lidH = bT + height + bB;
+  const scrX = overhang + bS;
+  const scrY = bT;
+  const scrW = width;
+  const scrH = height;
+  const camCx = lidX + lidW / 2;
+  const camCy = bT / 2;
+  const camR = Math.max(2.5, Math.round(width * 0.003));
+  const indW = Math.round(width * 0.060);
+  const indH = Math.round(bB * 0.28);
+  const indX = lidX + (lidW - indW) / 2;
+  const indY = scrY + scrH + (bB - indH) / 2;
+  const glare = {
+    x1: lidX + 6,
+    y1: bT * 0.3,
+    cx: lidX + 60,
+    cy: bT * 0.1,
+    x2: lidX + Math.round(width * 0.14),
+    y2: bT * 0.55
+  };
+  const bodyX = 0;
+  const bodyY = lidH;
+  const bodyW = overhang + lidW + overhang;
+  const svgW = bodyW;
+  const svgH = lidH + bodyH + Math.round(height * 0.015);
+  const lidPath = rrPath(lidX, lidY, lidW, lidH, rx, true) + " " + rrPath(scrX, scrY, scrW, scrH, 0, false);
+  return /*#__PURE__*/React__default["default"].createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: svgW,
+    height: svgH,
+    style: {
+      position: "absolute",
+      top: svgTop,
+      left: svgLeft,
+      pointerEvents: "none",
+      overflow: "visible"
+    }
+  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement("linearGradient", {
+    id: "mbBodyGrad",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "0%",
+    stopColor: "#b2b2b6"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "45%",
+    stopColor: "#9c9ca0"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "100%",
+    stopColor: "#8a8a8e"
+  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
+    id: "mbHingeGrad",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "0%",
+    stopColor: "#505054"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "100%",
+    stopColor: "#3c3c40"
+  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
+    id: "mbEdgeGrad",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "0%",
+    stopColor: "#686870"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "100%",
+    stopColor: "#8a8a8e"
+  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
+    id: "mbLidGrad",
+    gradientUnits: "userSpaceOnUse",
+    x1: "0",
+    y1: `${lidY}`,
+    x2: "0",
+    y2: `${lidH}`
+  }, /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "0%",
+    stopColor: "#2c2c30"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "100%",
+    stopColor: "#1c1c20"
+  }))), /*#__PURE__*/React__default["default"].createElement("g", {
+    filter: "url(#mbShadow)"
+  }, /*#__PURE__*/React__default["default"].createElement("path", {
+    d: lidPath,
+    fillRule: "evenodd",
+    fill: "url(#mbLidGrad)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: bodyX,
+    y: bodyY,
+    width: bodyW,
+    height: bodyH,
+    rx: bodyRx,
+    ry: bodyRx,
+    fill: "url(#mbBodyGrad)"
+  })), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: lidPath,
+    fillRule: "evenodd",
+    fill: "none",
+    stroke: "rgba(90,90,96,0.85)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: scrX - 1,
+    y: scrY - 1,
+    width: scrW + 2,
+    height: scrH + 2,
+    fill: "none",
+    stroke: "rgba(0,0,0,0.5)",
+    strokeWidth: "1.5"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${glare.x1} ${glare.y1} Q ${glare.cx} ${glare.cy} ${glare.x2} ${glare.y2}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.09)",
+    strokeWidth: "5",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR,
+    fill: "rgba(55,55,62,0.92)"
+  }), /*#__PURE__*/React__default["default"].createElement("circle", {
+    cx: camCx,
+    cy: camCy,
+    r: camR * 0.40,
+    fill: "rgba(90,90,110,0.45)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: indX,
+    y: indY,
+    width: indW,
+    height: indH,
+    rx: indH / 2,
+    ry: indH / 2,
+    fill: "rgba(0,0,0,0.32)",
+    stroke: "rgba(255,255,255,0.05)",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: bodyX,
+    y: bodyY,
+    width: bodyW,
+    height: hingeH,
+    fill: "url(#mbHingeGrad)"
+  }), /*#__PURE__*/React__default["default"].createElement("line", {
+    x1: bodyX,
+    y1: bodyY + hingeH,
+    x2: bodyX + bodyW,
+    y2: bodyY + hingeH,
+    stroke: "rgba(255,255,255,0.16)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: bodyX + bodyRx,
+    y: bodyY + bodyH - edgeH,
+    width: bodyW - bodyRx * 2,
+    height: edgeH,
+    fill: "url(#mbEdgeGrad)"
+  }));
+}
+function DesktopFrame({
+  width,
+  height
+}) {
+  const bezelSide = width * 0.0239;
+  const bezelTop = width * 0.0192;
+  const chinH = width * 0.0671;
+  const rxOuter = width * 0.0230;
+  const rxScr = width * 0.0153;
+  const neckTopW = width * 0.1916;
+  const neckBotW = width * 0.2491;
+  const neckH = width * 0.1820;
+  const baseW = width * 0.5939;
+  const baseH = width * 0.0421;
+  const baseRx = baseH * 0.50;
+  const svgLeft = -bezelSide;
+  const svgTop = -bezelTop;
+  const svgW = width + bezelSide * 2;
+  const monH = bezelTop + height + chinH;
+  const svgH = monH + neckH + baseH + width * 0.010;
+
+  // Monitor: outer rounded rect (CW) + screen hole (CCW with display rx)
+  const monPath = rrPath(0, 0, svgW, monH, rxOuter, true) + " " + rrPath(bezelSide, bezelTop, width, height, rxScr, false);
+  const neckTopX = (svgW - neckTopW) / 2;
+  const neckBotX = (svgW - neckBotW) / 2;
+  const neckY = monH;
+  const baseX = (svgW - baseW) / 2;
+  const baseY = neckY + neckH;
+  return /*#__PURE__*/React__default["default"].createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: svgW,
+    height: svgH,
+    style: {
+      position: "absolute",
+      top: svgTop,
+      left: svgLeft,
+      pointerEvents: "none",
+      overflow: "visible"
+    }
+  }, /*#__PURE__*/React__default["default"].createElement("defs", null, /*#__PURE__*/React__default["default"].createElement("linearGradient", {
+    id: "deskMon",
+    gradientUnits: "userSpaceOnUse",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: `${monH}`
+  }, /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "0%",
+    stopColor: "#242428"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "100%",
+    stopColor: "#131316"
+  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
+    id: "deskNeck",
+    x1: "0",
+    y1: "0",
+    x2: "1",
+    y2: "0"
+  }, /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "0%",
+    stopColor: "#141418"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "50%",
+    stopColor: "#2e2e34"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "100%",
+    stopColor: "#141418"
+  })), /*#__PURE__*/React__default["default"].createElement("linearGradient", {
+    id: "deskBase",
+    x1: "0",
+    y1: "0",
+    x2: "1",
+    y2: "0"
+  }, /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "0%",
+    stopColor: "#0e0e12"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "50%",
+    stopColor: "#282830"
+  }), /*#__PURE__*/React__default["default"].createElement("stop", {
+    offset: "100%",
+    stopColor: "#0e0e12"
+  }))), /*#__PURE__*/React__default["default"].createElement("g", {
+    filter: "url(#desktopShadow)"
+  }, /*#__PURE__*/React__default["default"].createElement("path", {
+    d: monPath,
+    fillRule: "evenodd",
+    fill: "url(#deskMon)"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: [`M ${neckTopX} ${neckY}`, `L ${neckBotX} ${neckY + neckH}`, `L ${neckBotX + neckBotW} ${neckY + neckH}`, `L ${neckTopX + neckTopW} ${neckY}`, `Z`].join(" "),
+    fill: "url(#deskNeck)"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: baseX,
+    y: baseY,
+    width: baseW,
+    height: baseH,
+    rx: baseRx,
+    ry: baseRx,
+    fill: "url(#deskBase)"
+  })), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${rxOuter} 0 H ${svgW - rxOuter} Q ${svgW} 0 ${svgW} ${rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.10)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M 0 ${rxOuter} V ${monH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(255,255,255,0.05)",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: `M ${svgW} ${rxOuter} V ${monH - rxOuter} Q ${svgW} ${monH} ${svgW - rxOuter} ${monH} H ${rxOuter} Q 0 ${monH} 0 ${monH - rxOuter}`,
+    fill: "none",
+    stroke: "rgba(0,0,0,0.45)",
+    strokeWidth: "0.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("path", {
+    d: rrPath(bezelSide, bezelTop, width, height, rxScr, true),
+    fill: "none",
+    stroke: "rgba(0,0,0,0.55)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("line", {
+    x1: bezelSide + rxScr,
+    y1: bezelTop + height,
+    x2: bezelSide + width - rxScr,
+    y2: bezelTop + height,
+    stroke: "rgba(0,0,0,0.40)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("line", {
+    x1: neckTopX,
+    y1: neckY,
+    x2: neckBotX,
+    y2: neckY + neckH,
+    stroke: "rgba(0,0,0,0.40)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("line", {
+    x1: neckTopX + neckTopW,
+    y1: neckY,
+    x2: neckBotX + neckBotW,
+    y2: neckY + neckH,
+    stroke: "rgba(0,0,0,0.40)",
+    strokeWidth: "1"
+  }), /*#__PURE__*/React__default["default"].createElement("line", {
+    x1: neckTopX + neckTopW * 0.4,
+    y1: neckY + 2,
+    x2: neckBotX + neckBotW * 0.4,
+    y2: neckY + neckH - 2,
+    stroke: "rgba(255,255,255,0.06)",
+    strokeWidth: "2.5",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React__default["default"].createElement("rect", {
+    x: baseX,
+    y: baseY,
+    width: baseW,
+    height: baseH,
+    rx: baseRx,
+    ry: baseRx,
+    fill: "none",
+    stroke: "rgba(0,0,0,0.40)",
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React__default["default"].createElement("line", {
+    x1: baseX + baseRx + 4,
+    y1: baseY + 1,
+    x2: baseX + baseW - baseRx - 4,
+    y2: baseY + 1,
+    stroke: "rgba(255,255,255,0.08)",
+    strokeWidth: "1"
+  }));
+}
+const FrameWrap = styled.styled.div.withConfig({
+  displayName: "DeviceFrame__FrameWrap",
+  componentId: "sc-tojvsf-0"
+})(["position:absolute;inset:0;display:grid;justify-content:center;align-items:center;pointer-events:none;z-index:10;overflow:visible;"]);
+const FrameBox = styled.styled.div.withConfig({
+  displayName: "DeviceFrame__FrameBox",
+  componentId: "sc-tojvsf-1"
+})(["width:", "px;height:", "px;transform:", ";transform-origin:center;position:relative;flex-shrink:0;overflow:visible;"], p => p.$width, p => p.$height, p => p.$transform);
+/** Overlay frame — rendered above the iframe via z-index:10 */
+function DeviceFrame({
+  viewport,
+  width,
+  height,
+  transform,
+  visible
+}) {
+  if (!visible || width === 0 || height === 0) return null;
+  const family = getDeviceFamily(viewport);
+  if (!family) return null;
+  return /*#__PURE__*/React__default["default"].createElement(FrameWrap, null, /*#__PURE__*/React__default["default"].createElement(FrameBox, {
+    $width: width,
+    $height: height,
+    $transform: transform
+  }, family === "mobile-portrait" && /*#__PURE__*/React__default["default"].createElement(MobilePortraitFrame, {
+    width: width,
+    height: height
+  }), family === "mobile-landscape" && /*#__PURE__*/React__default["default"].createElement(MobileLandscapeFrame, {
+    width: width,
+    height: height
+  }), family === "tablet-portrait" && /*#__PURE__*/React__default["default"].createElement(TabletPortraitFrame, {
+    width: width,
+    height: height
+  }), family === "tablet-landscape" && /*#__PURE__*/React__default["default"].createElement(TabletLandscapeFrame, {
+    width: width,
+    height: height
+  }), family === "laptop" && /*#__PURE__*/React__default["default"].createElement(LaptopFrame, {
+    width: width,
+    height: height
+  }), family === "desktop" && /*#__PURE__*/React__default["default"].createElement(DesktopFrame, {
+    width: width,
+    height: height
+  })));
+}
+
+function EditorIframe({
+  onEditorHistoryRedo,
+  onEditorHistoryUndo,
+  onSave,
+  isSaving,
+  width,
+  height,
+  transform,
+  containerRef,
+  showDeviceFrame = false,
+  viewport = "fit-screen"
+}) {
+  const [isIframeReady, setIframeReady] = React.useState(false);
+  const debouncedSave = lodash.debounce(fn => fn(), 200);
+  const handleIframeLoaded = () => {
+    setIframeReady(true);
+  };
+  const onKeyDownSave = () => {
+    if (onSave && !isSaving) {
+      debouncedSave(onSave);
+    }
+  };
+  useWindowKeyDown("z", onEditorHistoryUndo, {
+    extraKeys: [ExtraKeys.META_KEY],
+    isDisabled: !isIframeReady
+  });
+  useWindowKeyDown("z", onEditorHistoryRedo, {
+    extraKeys: [ExtraKeys.META_KEY, ExtraKeys.SHIFT_KEY],
+    isDisabled: !isIframeReady
+  });
+  useWindowKeyDown("z", onEditorHistoryUndo, {
+    extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady
+  });
+  useWindowKeyDown("y", onEditorHistoryRedo, {
+    extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady
+  });
+  useWindowKeyDown("s", onKeyDownSave, {
+    extraKeys: [ExtraKeys.CTRL_KEY],
+    isDisabled: !isIframeReady
+  });
+  useWindowKeyDown("s", onKeyDownSave, {
+    extraKeys: [ExtraKeys.META_KEY],
+    isDisabled: !isIframeReady
+  });
+  return /*#__PURE__*/React__default["default"].createElement(IframeContainer, {
+    ref: containerRef
+  }, /*#__PURE__*/React__default["default"].createElement(IframeInnerContainer, null, /*#__PURE__*/React__default["default"].createElement(Iframe, {
+    id: "editor-canvas",
+    src: window.location.href,
+    onLoad: handleIframeLoaded,
+    style: {
+      // These properties will change a lot during resizing, so we don't pass it to styled component to prevent
+      // class name recalculations
+      width,
+      height,
+      transform
+    }
+  }), /*#__PURE__*/React__default["default"].createElement(DeviceFrame, {
+    viewport: viewport,
+    width: width,
+    height: height,
+    transform: transform,
+    visible: showDeviceFrame
+  })));
+}
+const IframeContainer = styled.styled.div.withConfig({
+  displayName: "EditorIframe__IframeContainer",
+  componentId: "sc-1k2h6r-0"
+})(["position:relative;flex:1 1 auto;background:", ";isolation:isolate;"], easyblocksDesignSystem.Colors.black100);
+const IframeInnerContainer = styled.styled.div.withConfig({
+  displayName: "EditorIframe__IframeInnerContainer",
+  componentId: "sc-1k2h6r-1"
+})(["position:absolute;top:0;left:0;width:100%;height:100%;display:grid;justify-content:center;align-items:center;"]);
+const Iframe = styled.styled.iframe.withConfig({
+  displayName: "EditorIframe__Iframe",
+  componentId: "sc-1k2h6r-2"
+})(["background:white;border:none;transform-origin:center;"]);
+
 const theme = styled.css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Roboto\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
 const GlobalStyles = styled.createGlobalStyle(["", ";"], theme);
 const tina_reset_styles = styled.css(["*{font-family:\"Roboto\",sans-serif;&::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:transparent;border-left:1px solid var(--tina-color-grey-2);}&::-webkit-scrollbar-thumb{background-color:var(--tina-color-grey-3);border-radius:0;border:none;}}*,*:before,*:after{box-sizing:border-box;}hr{border-color:var(--tina-color-grey-2);color:var(--tina-color-grey-2);margin-bottom:var(--tina-padding-big);margin-left:calc(var(--tina-padding-big) * -1);margin-right:calc(var(--tina-padding-big) * -1);border-top:1px solid var(--tina-color-grey-2);border-bottom:none;height:0;box-sizing:content-box;}h1,h2,h3,h4,h5,h6,p{:not([class]){font-family:\"Roboto\",sans-serif;&:first-child{margin-top:0;}&:last-child{margin-bottom:0;}}}td,th{padding:0;width:auto;height:auto;border:inherit;margin:0;}h1,h2,h3,h4,h5,h6{:not([class]){font-weight:var(--tina-font-weight-bold);}}h1:not([class]){font-size:var(--tina-font-size-8);}h2:not([class]){font-size:var(--tina-font-size-7);}h3:not([class]){font-size:var(--tina-font-size-5);}h4:not([class]){font-size:var(--tina-font-size-4);}h5:not([class]){font-size:var(--tina-font-size-3);}h6:not([class]){font-size:var(--tina-font-size-2);}"]);
@@ -6347,14 +6461,7 @@ const EditorSidebar = props => {
     }
     return null;
   })();
-  const areMultipleFieldsSelected = focussedField.length > 1;
-  const focusedFields = focussedField.length === 0 ? [""] : focussedField;
-  const fieldsPerFocusedField = focusedFields.map(focusedField => {
-    return buildTinaFields(focusedField, editorContext);
-  });
-  const mergedFields = areMultipleFieldsSelected ? mergeCommonFields({
-    fields: fieldsPerFocusedField
-  }) : fieldsPerFocusedField.flat();
+  const mergedFields = buildTinaFieldsForSelection(focussedField, editorContext);
   return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, error && /*#__PURE__*/React__default["default"].createElement(Error$1, null, error), /*#__PURE__*/React__default["default"].createElement(InlineSettings, {
     fields: mergedFields,
     SaveAsPicker: SaveAsPicker
@@ -10954,12 +11061,20 @@ function isButtonVisible(target, viewport, containerElementRect) {
  * while either of them says it is. Order stops mattering.
  */
 
-/** The two places a pointer counts as near the selection. */
+/**
+ * The places a pointer counts as near the selection.
+ *
+ * `formatting` is not a place the pointer is but a formatting control that is
+ * in use: an open dropdown takes the pointer away from the page underneath it,
+ * which read as "the pointer has left" and faded the bar out from around the
+ * choice being made.
+ */
 
 /** The pointer is nowhere near the selection, which is where it starts. */
 const NO_POINTER = {
   block: false,
-  controls: false
+  controls: false,
+  formatting: false
 };
 function withPointerAt(presence, where, isOver) {
   return {
@@ -10968,7 +11083,97 @@ function withPointerAt(presence, where, isOver) {
   };
 }
 function isPointerNearSelection(presence) {
-  return presence.block || presence.controls;
+  return presence.block || presence.controls || presence.formatting;
+}
+
+/**
+ * The properties-panel fields that are also offered on the selection's action
+ * bar, so the formatting people reach for most can be changed where the block is.
+ *
+ * Chosen by prop name, because the block library names its formatting props the
+ * same way everywhere (`font`, `color`, `align`…), and by type as well, so a prop
+ * that only shares the name (`size` as a spacing token, say) is not picked up.
+ * Anything else — spacing, shadows, hover states, behaviour switches, data
+ * sources, child components, images — stays in the panel: it is either not
+ * formatting, or needs more room than a bar has.
+ *
+ * The order here is the order on the bar: what the text looks like, then its
+ * emphasis, then how it sits.
+ */
+const QUICK_FORMAT_PROPS = [
+// A font token bundles family, size and weight, so this one control is all three.
+{
+  prop: "font",
+  types: ["font"]
+}, {
+  prop: "color",
+  types: ["color"]
+}, {
+  prop: "textColor",
+  types: ["color"]
+}, {
+  prop: "accent",
+  types: ["color"]
+}, {
+  prop: "markerColor",
+  types: ["color"]
+}, {
+  prop: "backgroundColor",
+  types: ["color"]
+}, {
+  prop: "size",
+  types: ["select"]
+}, {
+  prop: "level",
+  types: ["select"]
+}, {
+  prop: "fontStyle",
+  types: ["select"]
+}, {
+  prop: "italic",
+  types: ["boolean"]
+}, {
+  prop: "textTransform",
+  types: ["select"]
+}, {
+  prop: "align",
+  types: ["select", "radio-group"]
+}, {
+  prop: "textAlign",
+  types: ["select", "radio-group"]
+}, {
+  prop: "horizontalAlign",
+  types: ["select", "radio-group"]
+}, {
+  prop: "aspectRatio",
+  types: ["select"]
+}, {
+  prop: "objectFit",
+  types: ["select"]
+}];
+function quickFormatRank(field) {
+  return QUICK_FORMAT_PROPS.findIndex(({
+    prop,
+    types
+  }) => prop === field.schemaProp.prop && types.includes(field.schemaProp.type));
+}
+
+/**
+ * The selection's fields that belong on the bar, in bar order.
+ *
+ * Takes the fields the panel shows for the same selection, so a field hidden
+ * there (a background colour while the button has no background, say) is
+ * hidden here too, and every change goes through the panel's own controller.
+ */
+function pickQuickFormatFields(fields) {
+  return fields.filter(shouldFieldBeDisplayed).map(field => ({
+    field,
+    rank: quickFormatRank(field)
+  })).filter(({
+    rank
+  }) => rank !== -1).sort((a, b) => a.rank - b.rank).map(({
+    field
+  }) => field);
 }
 
 /**
@@ -11030,6 +11235,34 @@ function SelectionFrame({
   const isAddingEnabled = isAddingEnabledForSelectedFields(focussedField, editorContext);
 
   /**
+   * Words picked inside a rich text block. One frame is drawn for them — the
+   * block's — however many runs of text the selection spans.
+   */
+  const isRichTextSelection = focussedField.length > 0 && focussedField.every(isConfigPathRichTextPart);
+
+  /**
+   * The panel's formatting fields for what is selected, offered on the bar too.
+   *
+   * Only for a selection with one frame to hang the bar from. Several blocks
+   * picked at once each draw their own, and a bar that jumped between them
+   * would be worse than the panel it is standing in for.
+   */
+  const quickFormatFields = React.useMemo(() => focussedField.length === 1 || isRichTextSelection ? pickQuickFormatFields(buildTinaFieldsForSelection(focussedField, editorContext)) : [],
+  // The fields follow the compiled config: a field the panel shows or hides
+  // depending on another value (a button's background colour) must do the
+  // same here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [focussedField, isRichTextSelection, editorContext.compiledComponentConfig]);
+
+  /**
+   * The bar is shown for a block that can be duplicated and moved, and for any
+   * single selection with something to format — a rich text selection, or a
+   * block fixed in place, which has formatting but no neighbours to swap with.
+   */
+  const isBarShown = isAddingEnabled || quickFormatFields.length > 0;
+  const barRef = React.useRef(null);
+
+  /**
    * Whether the bar is on show.
    *
    * It follows the pointer rather than a clock: on while the pointer is over
@@ -11055,6 +11288,7 @@ function SelectionFrame({
   React.useLayoutEffect(() => {
     if (focussedField.length === 0) {
       hideAddButtons();
+      hideSelectionActions();
       clearTimeout(fadeTimer.current);
       pointerPresence.current = NO_POINTER;
       setIsRevealed(false);
@@ -11072,6 +11306,9 @@ function SelectionFrame({
       }
       if (!isAddingEnabled) {
         hideAddButtons();
+      }
+      if (!isBarShown) {
+        hideSelectionActions();
         return;
       }
       const data = event.data;
@@ -11080,15 +11317,17 @@ function SelectionFrame({
           width,
           height
         };
-        updateAddButtons(direction, data.payload.target, viewport, data.payload.container);
-        updateSelectionActions(data.payload.target, viewport, data.payload.container);
+        if (isAddingEnabled) {
+          updateAddButtons(direction, data.payload.target, viewport, data.payload.container);
+        }
+        updateSelectionActions(data.payload.target, viewport, data.payload.container, barRef.current);
       }
     }
     window.addEventListener("message", handleSelectionFrameMessages);
     return () => {
       window.removeEventListener("message", handleSelectionFrameMessages);
     };
-  }, [direction, height, isAddingEnabled, revealActions, width]);
+  }, [direction, height, isAddingEnabled, isBarShown, revealActions, width]);
   async function handleAddButtonClick(which) {
     let path = focussedField.length === 1 ? focussedField[0] : undefined;
     if (!path) {
@@ -11147,13 +11386,17 @@ function SelectionFrame({
     position: "after",
     isRevealed: isRevealed,
     onClick: () => handleAddButtonClick("after")
-  }), isAddingEnabled ? /*#__PURE__*/React__default["default"].createElement(SelectionFrameActions, {
+  }), isBarShown ? /*#__PURE__*/React__default["default"].createElement(SelectionFrameActions, {
     actions: actions,
     focussedField: focussedField,
     translationFiles: translationFiles,
     contextParams: contextParams,
     editorMode: editorMode,
-    isRevealed: isRevealed
+    isRevealed: isRevealed,
+    quickFormatFields: quickFormatFields,
+    hasStructuralActions: isAddingEnabled,
+    barRef: barRef,
+    onFormattingInUseChange: isInUse => revealActions("formatting", isInUse)
   }) : null));
 }
 function updateAddButtons(direction, targetElementRect, viewport, containerElementRect) {
@@ -11168,21 +11411,40 @@ function updateAddButtons(direction, targetElementRect, viewport, containerEleme
   setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, before.display);
   setCssVariable(AFTER_ADD_BUTTON_DISPLAY, after.display);
 }
-function updateSelectionActions(targetElementRect, viewport, containerElementRect) {
-  const {
-    top,
-    left,
-    display
-  } = calculateActionsPosition(targetElementRect, viewport, containerElementRect);
-  setCssVariable(SELECTION_ACTIONS_TOP, top + "px");
-  setCssVariable(SELECTION_ACTIONS_LEFT, left + "px");
-  setCssVariable(SELECTION_ACTIONS_DISPLAY, display);
+function updateSelectionActions(targetElementRect, viewport, containerElementRect, bar) {
+  function place() {
+    const {
+      top,
+      left,
+      display
+    } = calculateActionsPosition(targetElementRect, viewport, containerElementRect, bar ? {
+      width: bar.offsetWidth,
+      height: bar.offsetHeight
+    } : undefined);
+    setCssVariable(SELECTION_ACTIONS_TOP, top + "px");
+    setCssVariable(SELECTION_ACTIONS_LEFT, left + "px");
+    setCssVariable(SELECTION_ACTIONS_DISPLAY, display);
+  }
+  const wasHidden = !bar || bar.offsetWidth === 0;
+  place();
+
+  // A bar that was just switched on had no size to measure, and was placed as
+  // if it were the structural buttons alone. Now it is shown it has one, and a
+  // bar wider than that would hang off the canvas until the next scroll.
+  if (wasHidden && bar && bar.offsetWidth > 0) {
+    place();
+  }
 }
 function hideAddButtons() {
   setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, "none");
   setCssVariable(AFTER_ADD_BUTTON_DISPLAY, "none");
-  // The bar has its own switch now, so hiding the add buttons no longer hides
-  // it by accident — it has to be told.
+}
+
+/**
+ * The bar has its own switch, apart from the add buttons': a rich text
+ * selection has no add buttons and still has a bar to show.
+ */
+function hideSelectionActions() {
   setCssVariable(SELECTION_ACTIONS_DISPLAY, "none");
 }
 function setCssVariable(name, value) {

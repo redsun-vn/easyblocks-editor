@@ -9,7 +9,14 @@ import {
   parsePath,
   SelectionFramePositionChangedEvent,
 } from "@redsun-vn/easyblocks-core/_internals";
-import React, { useCallback, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { buildTinaFieldsForSelection } from "../buildTinaFields";
 import { SelectionFrameActions } from "../EditableComponentBuilder/SelectionFrameActions";
 import { EditorContextType, useEditorContext } from "../EditorContext";
 import { pathToCompiledPath } from "../pathToCompiledPath";
@@ -39,6 +46,7 @@ import {
   PointerLocation,
   withPointerAt,
 } from "./pointerPresence";
+import { pickQuickFormatFields } from "./quickFormatFields";
 import { isSelectionPointerChanged } from "./selectionPointer";
 
 /**
@@ -94,6 +102,42 @@ function SelectionFrame({
   );
 
   /**
+   * Words picked inside a rich text block. One frame is drawn for them — the
+   * block's — however many runs of text the selection spans.
+   */
+  const isRichTextSelection =
+    focussedField.length > 0 && focussedField.every(isConfigPathRichTextPart);
+
+  /**
+   * The panel's formatting fields for what is selected, offered on the bar too.
+   *
+   * Only for a selection with one frame to hang the bar from. Several blocks
+   * picked at once each draw their own, and a bar that jumped between them
+   * would be worse than the panel it is standing in for.
+   */
+  const quickFormatFields = useMemo(
+    () =>
+      focussedField.length === 1 || isRichTextSelection
+        ? pickQuickFormatFields(
+            buildTinaFieldsForSelection(focussedField, editorContext),
+          )
+        : [],
+    // The fields follow the compiled config: a field the panel shows or hides
+    // depending on another value (a button's background colour) must do the
+    // same here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [focussedField, isRichTextSelection, editorContext.compiledComponentConfig],
+  );
+
+  /**
+   * The bar is shown for a block that can be duplicated and moved, and for any
+   * single selection with something to format — a rich text selection, or a
+   * block fixed in place, which has formatting but no neighbours to swap with.
+   */
+  const isBarShown = isAddingEnabled || quickFormatFields.length > 0;
+  const barRef = useRef<HTMLDivElement>(null);
+
+  /**
    * Whether the bar is on show.
    *
    * It follows the pointer rather than a clock: on while the pointer is over
@@ -134,6 +178,7 @@ function SelectionFrame({
   useLayoutEffect(() => {
     if (focussedField.length === 0) {
       hideAddButtons();
+      hideSelectionActions();
       clearTimeout(fadeTimer.current);
       pointerPresence.current = NO_POINTER;
       setIsRevealed(false);
@@ -154,6 +199,10 @@ function SelectionFrame({
 
       if (!isAddingEnabled) {
         hideAddButtons();
+      }
+
+      if (!isBarShown) {
+        hideSelectionActions();
         return;
       }
 
@@ -162,17 +211,20 @@ function SelectionFrame({
       if (data.type === "@easyblocks-editor/selection-frame-position-changed") {
         const viewport = { width, height };
 
-        updateAddButtons(
-          direction,
-          data.payload.target,
-          viewport,
-          data.payload.container,
-        );
+        if (isAddingEnabled) {
+          updateAddButtons(
+            direction,
+            data.payload.target,
+            viewport,
+            data.payload.container,
+          );
+        }
 
         updateSelectionActions(
           data.payload.target,
           viewport,
           data.payload.container,
+          barRef.current,
         );
       }
     }
@@ -182,7 +234,7 @@ function SelectionFrame({
     return () => {
       window.removeEventListener("message", handleSelectionFrameMessages);
     };
-  }, [direction, height, isAddingEnabled, revealActions, width]);
+  }, [direction, height, isAddingEnabled, isBarShown, revealActions, width]);
 
   async function handleAddButtonClick(which: "before" | "after") {
     let path = focussedField.length === 1 ? focussedField[0] : undefined;
@@ -263,7 +315,7 @@ function SelectionFrame({
           isRevealed={isRevealed}
           onClick={() => handleAddButtonClick("after")}
         />
-        {isAddingEnabled ? (
+        {isBarShown ? (
           <SelectionFrameActions
             actions={actions}
             focussedField={focussedField}
@@ -271,6 +323,12 @@ function SelectionFrame({
             contextParams={contextParams}
             editorMode={editorMode}
             isRevealed={isRevealed}
+            quickFormatFields={quickFormatFields}
+            hasStructuralActions={isAddingEnabled}
+            barRef={barRef}
+            onFormattingInUseChange={(isInUse) =>
+              revealActions("formatting", isInUse)
+            }
           />
         ) : null}
       </FrameWrapper>
@@ -311,23 +369,43 @@ function updateSelectionActions(
     height: number;
   },
   containerElementRect?: DOMRect,
+  bar?: HTMLElement | null,
 ) {
-  const { top, left, display } = calculateActionsPosition(
-    targetElementRect,
-    viewport,
-    containerElementRect,
-  );
+  function place() {
+    const { top, left, display } = calculateActionsPosition(
+      targetElementRect,
+      viewport,
+      containerElementRect,
+      bar ? { width: bar.offsetWidth, height: bar.offsetHeight } : undefined,
+    );
 
-  setCssVariable(SELECTION_ACTIONS_TOP, top + "px");
-  setCssVariable(SELECTION_ACTIONS_LEFT, left + "px");
-  setCssVariable(SELECTION_ACTIONS_DISPLAY, display);
+    setCssVariable(SELECTION_ACTIONS_TOP, top + "px");
+    setCssVariable(SELECTION_ACTIONS_LEFT, left + "px");
+    setCssVariable(SELECTION_ACTIONS_DISPLAY, display);
+  }
+
+  const wasHidden = !bar || bar.offsetWidth === 0;
+
+  place();
+
+  // A bar that was just switched on had no size to measure, and was placed as
+  // if it were the structural buttons alone. Now it is shown it has one, and a
+  // bar wider than that would hang off the canvas until the next scroll.
+  if (wasHidden && bar && bar.offsetWidth > 0) {
+    place();
+  }
 }
 
 function hideAddButtons() {
   setCssVariable(BEFORE_ADD_BUTTON_DISPLAY, "none");
   setCssVariable(AFTER_ADD_BUTTON_DISPLAY, "none");
-  // The bar has its own switch now, so hiding the add buttons no longer hides
-  // it by accident — it has to be told.
+}
+
+/**
+ * The bar has its own switch, apart from the add buttons': a rich text
+ * selection has no add buttons and still has a bar to show.
+ */
+function hideSelectionActions() {
   setCssVariable(SELECTION_ACTIONS_DISPLAY, "none");
 }
 

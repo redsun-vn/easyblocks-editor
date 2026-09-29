@@ -1,6 +1,7 @@
 import { ActionsType, TEasyblocksEditorMode } from "@/types";
 import { ContextParams } from "@redsun-vn/easyblocks-core";
-import React from "react";
+import { InternalField } from "@redsun-vn/easyblocks-core/_internals";
+import React, { RefObject } from "react";
 export interface MovePlan {
     /** Where the source block sits once the copy has been inserted. */
     sourceToRemove: string;
@@ -26,7 +27,18 @@ interface ISelectionFrameActionsProps {
     editorMode: TEasyblocksEditorMode;
     /** On while the pointer is on the selected block or on the controls around it. */
     isRevealed: boolean;
+    /** Formatting fields from the properties panel to offer on the bar, in bar order. */
+    quickFormatFields: ReadonlyArray<InternalField>;
+    /**
+     * Off for a rich text selection: the words inside a block are formatted, not
+     * duplicated, moved or deleted as a block, so only the formatting is offered.
+     */
+    hasStructuralActions: boolean;
+    /** The drawn bar, measured to keep it inside the canvas. */
+    barRef: RefObject<HTMLDivElement>;
+    /** A formatting control has focus — its dropdown may be open. */
+    onFormattingInUseChange: (isInUse: boolean) => void;
 }
-export declare const SelectionFrameActions: ({ focussedField, actions, translationFiles, contextParams, editorMode, isRevealed, }: ISelectionFrameActionsProps) => React.JSX.Element;
+export declare const SelectionFrameActions: ({ focussedField, actions, translationFiles, contextParams, editorMode, isRevealed, quickFormatFields, hasStructuralActions, barRef, onFormattingInUseChange, }: ISelectionFrameActionsProps) => React.JSX.Element;
 export {};
 //# sourceMappingURL=SelectionFrameActions.d.ts.map

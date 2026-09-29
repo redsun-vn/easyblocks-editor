@@ -77,7 +77,7 @@ const EmptyField = () => {
   );
 };
 
-function shouldFieldBeDisplayed(field: InternalField): boolean {
+export function shouldFieldBeDisplayed(field: InternalField): boolean {
   if (field.component === null) return false;
 
   if (Array.isArray(field.name)) {

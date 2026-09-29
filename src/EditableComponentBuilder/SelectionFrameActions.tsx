@@ -21,6 +21,7 @@ import {
   globalSectionGroups,
 } from "@redsun-vn/easyblocks-core";
 import {
+  InternalField,
   duplicateConfig,
   parsePath,
 } from "@redsun-vn/easyblocks-core/_internals";
@@ -34,8 +35,12 @@ import { Icons } from "@redsun-vn/easyblocks-design-system/icons";
 import { Input } from "@redsun-vn/easyblocks-design-system/Input";
 import { Modal } from "@redsun-vn/easyblocks-design-system/modals";
 import { useToaster } from "@redsun-vn/easyblocks-design-system/Toaster";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
+import {
+  BarDivider,
+  SelectionFrameQuickFormat,
+} from "./SelectionFrameQuickFormat";
 
 export interface MovePlan {
   /** Where the source block sits once the copy has been inserted. */
@@ -72,6 +77,17 @@ interface ISelectionFrameActionsProps {
   editorMode: TEasyblocksEditorMode;
   /** On while the pointer is on the selected block or on the controls around it. */
   isRevealed: boolean;
+  /** Formatting fields from the properties panel to offer on the bar, in bar order. */
+  quickFormatFields: ReadonlyArray<InternalField>;
+  /**
+   * Off for a rich text selection: the words inside a block are formatted, not
+   * duplicated, moved or deleted as a block, so only the formatting is offered.
+   */
+  hasStructuralActions: boolean;
+  /** The drawn bar, measured to keep it inside the canvas. */
+  barRef: RefObject<HTMLDivElement>;
+  /** A formatting control has focus — its dropdown may be open. */
+  onFormattingInUseChange: (isInUse: boolean) => void;
 }
 
 /**
@@ -100,6 +116,14 @@ const SelectionFrameActionsContainer = styled.div<{ $isRevealed: boolean }>`
   width: max-content;
 
   /*
+    No wider than the canvas. The formatting controls can make the bar wider
+    than a phone preview, and a bar spilling over the panels beside the canvas
+    covers them; it wraps onto a second line instead.
+  */
+  max-width: 100%;
+  box-sizing: border-box;
+
+  /*
     Faded rather than unmounted, so the bar can be pointed at on its way in and
     cannot move under the pointer on its way out. Pointer events follow the
     opacity, because a bar nobody can see must not be a bar that swallows a
@@ -113,6 +137,8 @@ const SelectionFrameActionsContainer = styled.div<{ $isRevealed: boolean }>`
 /** The bar itself: what the reach above is invisible padding around. */
 const SelectionFrameActionsBar = styled.div`
   position: relative;
+  max-width: 100%;
+  box-sizing: border-box;
   border-radius: 4px;
   box-shadow: var(--tina-shadow-big);
   padding: 5px 10px;
@@ -122,6 +148,22 @@ const SelectionFrameActionsBar = styled.div`
 
 const SelectionFrameActionsGroupButtons = styled.div`
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 6px;
+`;
+
+/**
+ * The buttons that act on the block, and delete after them, kept on one line.
+ *
+ * In a canvas too narrow for the whole bar it wraps between its groups, never
+ * inside one: split anywhere else, "move down" and "delete" ended up on a line
+ * of their own, away from the buttons they belong with.
+ */
+const StructuralActions = styled.div`
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 2px;
 `;
 
@@ -324,6 +366,10 @@ export const SelectionFrameActions = ({
   contextParams,
   editorMode,
   isRevealed,
+  quickFormatFields,
+  hasStructuralActions,
+  barRef,
+  onFormattingInUseChange,
 }: ISelectionFrameActionsProps) => {
   const { t } = getTranslation({
     translationFiles,
@@ -428,67 +474,87 @@ export const SelectionFrameActions = ({
       $isRevealed={isRevealed}
       onClick={(e) => e.stopPropagation()}
     >
-      <SelectionFrameActionsBar>
+      <SelectionFrameActionsBar ref={barRef}>
         <SelectionFrameActionsGroupButtons>
-          {/*
+          {quickFormatFields.length > 0 && (
+            <SelectionFrameQuickFormat
+              fields={quickFormatFields}
+              onInUseChange={onFormattingInUseChange}
+            />
+          )}
+          {quickFormatFields.length > 0 && hasStructuralActions && (
+            <BarDivider />
+          )}
+          {hasStructuralActions && (
+            <StructuralActions>
+              {/*
           No "select parent" here. The breadcrumb under the canvas does the same
           job and does it better: it is a button per ancestor rather than one
           step at a time, it says where each step lands, it is always on screen,
           and it covers nothing. Two controls for one job, one of them worse,
           is a button's worth of bar for nothing.
         */}
-          <ButtonGhost
-            icon={Icons.Duplicate}
-            hideLabel
-            onClick={() => actions.duplicateItems(focussedField)}
-          >
-            {t("duplicate")}
-          </ButtonGhost>
-          <ButtonGhost
-            icon={Icons.Trash}
-            hideLabel
-            onClick={() => actions.removeItems(focussedField)}
-          >
-            {t("delete")}
-          </ButtonGhost>
-          <ButtonGhost
-            icon={Icons.ArrowUp}
-            hideLabel
-            onClick={() => actions.moveItems(focussedField, "top")}
-          >
-            {t("editor.canvas.action.moveUp")}
-          </ButtonGhost>
-          <ButtonGhost
-            icon={Icons.ArrowDown}
-            hideLabel
-            onClick={() => actions.moveItems(focussedField, "bottom")}
-          >
-            {t("editor.canvas.action.moveDown")}
-          </ButtonGhost>
-          {moveDestinations.length > 0 && (
-            <ButtonGhost
-              // Not the drag grip, although it used to wear its icon: this opens a
-              // list of destinations. The grip lives on the block frame, and two
-              // controls that look alike is how people ended up dragging this one.
-              icon={Icons.ArrowRight}
-              hideLabel
-              onClick={() => setShowMoveTo((prev) => !prev)}
-            >
-              {t("editor.canvas.action.moveTo")}
-            </ButtonGhost>
-          )}
+              <ButtonGhost
+                icon={Icons.Duplicate}
+                hideLabel
+                onClick={() => actions.duplicateItems(focussedField)}
+              >
+                {t("duplicate")}
+              </ButtonGhost>
+              <ButtonGhost
+                icon={Icons.ArrowUp}
+                hideLabel
+                onClick={() => actions.moveItems(focussedField, "top")}
+              >
+                {t("editor.canvas.action.moveUp")}
+              </ButtonGhost>
+              <ButtonGhost
+                icon={Icons.ArrowDown}
+                hideLabel
+                onClick={() => actions.moveItems(focussedField, "bottom")}
+              >
+                {t("editor.canvas.action.moveDown")}
+              </ButtonGhost>
+              {moveDestinations.length > 0 && (
+                <ButtonGhost
+                  // Not the drag grip, although it used to wear its icon: this opens a
+                  // list of destinations. The grip lives on the block frame, and two
+                  // controls that look alike is how people ended up dragging this one.
+                  icon={Icons.ArrowRight}
+                  hideLabel
+                  onClick={() => setShowMoveTo((prev) => !prev)}
+                >
+                  {t("editor.canvas.action.moveTo")}
+                </ButtonGhost>
+              )}
 
-          {editorMode !== "admin-template" && (
-            <ButtonGhost
-              icon={Icons.ThreeDotsHorizontal}
-              showTooltip={false}
-              hideLabel
-              onClick={() => setShowMore((prev) => !prev)}
-            />
+              {editorMode !== "admin-template" && (
+                <ButtonGhost
+                  icon={Icons.ThreeDotsHorizontal}
+                  showTooltip={false}
+                  hideLabel
+                  onClick={() => setShowMore((prev) => !prev)}
+                />
+              )}
+              {/*
+                Last and on its own. It used to sit between duplicate and the
+                arrows, the one button on the bar that destroys something, in
+                the middle of the ones that are reached for without a second
+                thought.
+              */}
+              <BarDivider />
+              <ButtonGhost
+                icon={Icons.Trash}
+                hideLabel
+                onClick={() => actions.removeItems(focussedField)}
+              >
+                {t("delete")}
+              </ButtonGhost>
+            </StructuralActions>
           )}
         </SelectionFrameActionsGroupButtons>
 
-        {showMoveTo && moveDestinations.length > 0 ? (
+        {hasStructuralActions && showMoveTo && moveDestinations.length > 0 ? (
           <StyledMenu>
             <Menu
               menus={moveDestinations}
@@ -497,7 +563,7 @@ export const SelectionFrameActions = ({
           </StyledMenu>
         ) : null}
 
-        {editorMode !== "admin-template" && showMore ? (
+        {hasStructuralActions && editorMode !== "admin-template" && showMore ? (
           <SelectionMoreActions t={t} />
         ) : null}
       </SelectionFrameActionsBar>

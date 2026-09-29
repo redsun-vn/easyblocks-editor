@@ -54,6 +54,23 @@ type Bounds = { top: number; left: number; right: number; bottom: number };
 
 type Viewport = { width: number; height: number };
 
+/** The bar as drawn. Either side reads 0 while the bar is hidden. */
+type BarSize = { width: number; height: number };
+
+/**
+ * The bar's size for the sums below.
+ *
+ * Only ever larger than the structural buttons alone: the formatting controls
+ * widen the bar, and wrap it onto a second line in a narrow canvas. A bar
+ * measured while hidden reads 0 and falls back to the buttons' size.
+ */
+function resolveBarSize(barSize?: BarSize): BarSize {
+  return {
+    width: Math.max(ACTIONS_MAX_WIDTH, barSize?.width ?? 0),
+    height: Math.max(ACTIONS_HEIGHT, barSize?.height ?? 0),
+  };
+}
+
 export type ActionsPosition = {
   top: number;
   left: number;
@@ -86,10 +103,8 @@ function resolveBounds(viewport: Viewport, container?: Bounds): Bounds {
  * exactly the block the author reaches for next and could no longer hover or
  * click.
  */
-function canHostBar(target: Rect) {
-  return (
-    target.height >= ACTIONS_HEIGHT + GAP && target.width >= ACTIONS_MAX_WIDTH
-  );
+function canHostBar(target: Rect, bar: BarSize) {
+  return target.height >= bar.height + GAP && target.width >= bar.width;
 }
 
 /**
@@ -109,29 +124,31 @@ function canHostBar(target: Rect) {
  * canvas has no bottom edge in view, and chasing it would pin the bar to the
  * foot of the canvas with its block at the head.
  */
-function resolveTop(target: Rect, bounds: Bounds) {
-  const above = target.top - ACTIONS_HEIGHT - GAP;
+function resolveTop(target: Rect, bounds: Bounds, bar: BarSize) {
+  const above = target.top - bar.height - GAP;
 
   if (above >= bounds.top) {
     return above;
   }
 
   const below = target.top + target.height + GAP;
-  const isBelowInView = below + ACTIONS_HEIGHT <= bounds.bottom;
+  const isBelowInView = below + bar.height <= bounds.bottom;
 
   const fallback =
-    !canHostBar(target) && isBelowInView
+    !canHostBar(target, bar) && isBelowInView
       ? below
       : target.top + GAP + DRAG_HANDLE_SIZE;
 
-  return clamp(fallback, bounds.top, bounds.bottom - ACTIONS_HEIGHT);
+  return clamp(fallback, bounds.top, bounds.bottom - bar.height);
 }
 
 function calculateActionsPosition(
   target: Rect,
   viewport: Viewport,
-  container?: Bounds
+  container?: Bounds,
+  barSize?: BarSize
 ): ActionsPosition {
+  const bar = resolveBarSize(barSize);
   const bounds = resolveBounds(viewport, container);
 
   // A block scrolled out of its container takes its bar with it. Without this
@@ -141,7 +158,7 @@ function calculateActionsPosition(
     target.top <= bounds.bottom && target.top + target.height >= bounds.top;
 
   return {
-    top: resolveTop(target, bounds),
+    top: resolveTop(target, bounds, bar),
     /**
      * The block's left edge, pulled back only as far as staying inside needs.
      *
@@ -151,7 +168,7 @@ function calculateActionsPosition(
     left: clamp(
       target.left,
       bounds.left,
-      Math.max(bounds.left, bounds.right - ACTIONS_MAX_WIDTH)
+      Math.max(bounds.left, bounds.right - bar.width)
     ),
     display: isBlockInView ? "block" : "none",
   };

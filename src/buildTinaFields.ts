@@ -10,6 +10,7 @@ import {
 } from "@redsun-vn/easyblocks-core/_internals";
 import type { EditorContextType } from "./EditorContext";
 import { pathToCompiledPath } from "./pathToCompiledPath";
+import { mergeCommonFields } from "./tinacms/form-builder/utils/mergeCommonFields";
 
 export function isFieldPortal(
   x: InternalAnyTinaField | FieldPortal,
@@ -22,6 +23,24 @@ export function buildTinaFields(
   editorContext: EditorContextType,
 ) {
   return internalBuildTinaFields(path, editorContext);
+}
+
+/**
+ * The fields the properties panel shows for the whole selection: every field of
+ * a single block, or only the fields all of the selected blocks share.
+ */
+export function buildTinaFieldsForSelection(
+  focussedField: Array<string>,
+  editorContext: EditorContextType,
+): Array<InternalField> {
+  const focusedFields = focussedField.length === 0 ? [""] : focussedField;
+  const fieldsPerFocusedField = focusedFields.map((focusedField) =>
+    buildTinaFields(focusedField, editorContext),
+  );
+
+  return focussedField.length > 1
+    ? mergeCommonFields({ fields: fieldsPerFocusedField })
+    : fieldsPerFocusedField.flat();
 }
 
 function internalBuildTinaFields(

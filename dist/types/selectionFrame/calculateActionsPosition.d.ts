@@ -45,11 +45,16 @@ type Viewport = {
     width: number;
     height: number;
 };
+/** The bar as drawn. Either side reads 0 while the bar is hidden. */
+type BarSize = {
+    width: number;
+    height: number;
+};
 export type ActionsPosition = {
     top: number;
     left: number;
     display: "block" | "none";
 };
-declare function calculateActionsPosition(target: Rect, viewport: Viewport, container?: Bounds): ActionsPosition;
+declare function calculateActionsPosition(target: Rect, viewport: Viewport, container?: Bounds, barSize?: BarSize): ActionsPosition;
 export { calculateActionsPosition };
 //# sourceMappingURL=calculateActionsPosition.d.ts.map

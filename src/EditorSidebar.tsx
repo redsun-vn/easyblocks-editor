@@ -3,12 +3,11 @@ import { CompiledComponentConfig } from "@redsun-vn/easyblocks-core";
 import { Fonts } from "@redsun-vn/easyblocks-design-system";
 import React from "react";
 import { styled } from "styled-components";
-import { buildTinaFields } from "./buildTinaFields";
+import { buildTinaFieldsForSelection } from "./buildTinaFields";
 import { useEditorContext } from "./EditorContext";
 import { Form } from "./form";
 import { InlineSettings } from "./inline-settings";
 import { SaveAsTemplatePicker } from "./TemplatePicker";
-import { mergeCommonFields } from "./tinacms/form-builder/utils/mergeCommonFields";
 import { useTranslation } from "./useTranslation";
 
 type EditorSidebarProps = {
@@ -65,17 +64,10 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = (props) => {
     return null;
   })();
 
-  const areMultipleFieldsSelected = focussedField.length > 1;
-  const focusedFields = focussedField.length === 0 ? [""] : focussedField;
-  const fieldsPerFocusedField = focusedFields.map((focusedField) => {
-    return buildTinaFields(focusedField, editorContext);
-  });
-
-  const mergedFields = areMultipleFieldsSelected
-    ? mergeCommonFields({
-        fields: fieldsPerFocusedField,
-      })
-    : fieldsPerFocusedField.flat();
+  const mergedFields = buildTinaFieldsForSelection(
+    focussedField,
+    editorContext,
+  );
 
   return (
     <>
