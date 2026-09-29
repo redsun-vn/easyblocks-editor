@@ -16012,6 +16012,178 @@ function usePanelDropTarget(editorContext) {
 }
 
 /**
+ * The alignment guide on the canvas: dashed and thinner than the insertion
+ * line, so the solid line still reads as "it lands here" and this one as "and
+ * lines up with this".
+ */
+function AlignmentGuideLine({
+  guide
+}) {
+  const isUpright = guide.axis === "horizontal";
+  return /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      position: "fixed",
+      top: guide.y,
+      left: guide.x,
+      width: isUpright ? 0 : guide.length,
+      height: isUpright ? guide.length : 0,
+      [isUpright ? "borderLeft" : "borderTop"]: `1px dashed ${ACCENT}`,
+      boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.6)",
+      pointerEvents: "none",
+      zIndex: 2147483000
+    }
+  });
+}
+
+/**
+ * The second line a drag draws: across the insertion line, where the dropped
+ * block will line up with its neighbours.
+ *
+ * The insertion line already says where along a collection the block lands.
+ * What it does not say is where across: a column that centres its blocks puts
+ * the new one on the centre line, one that starts them at the left puts it at
+ * the left. That is read from the neighbours the block lands between, which
+ * the collection has already laid out the same way it will lay out this one.
+ *
+ * "The collection" here is the box its blocks take up together — the slot's
+ * bounds are the union of its children, not the column's own frame. So a
+ * collection of one block, or of blocks all the same width, gives no guide:
+ * nothing in it tells a start from a centre.
+ *
+ * Geometry only, so it is tested without a browser.
+ */
+
+/** Same shape as the insertion line, so both draw with one component. */
+
+/** How close two coordinates must be to count as the same line, in pixels. */
+const SAME_LINE = 1.5;
+const isSame = (a, b) => Math.abs(a - b) < SAME_LINE;
+
+/** A child's extent across the collection, and the collection's own. */
+function across(rect, axis) {
+  return axis === "horizontal" ? {
+    start: rect.top,
+    end: rect.bottom
+  } : {
+    start: rect.left,
+    end: rect.right
+  };
+}
+
+/**
+ * Which line of the collection a child sits on: its start, its centre or its
+ * end. A child filling the collection sits on all three, which tells the
+ * person nothing, so it counts as none.
+ */
+function alignedEdge(child, container) {
+  const fillsStart = isSame(child.start, container.start);
+  const fillsEnd = isSame(child.end, container.end);
+  if (fillsStart && fillsEnd) {
+    return null;
+  }
+  if (fillsStart) {
+    return "start";
+  }
+  if (fillsEnd) {
+    return "end";
+  }
+  const childCentre = (child.start + child.end) / 2;
+  const containerCentre = (container.start + container.end) / 2;
+  return isSame(childCentre, containerCentre) ? "center" : null;
+}
+
+/** Whether every child of a row overlaps one band of height: one line, not wrapped. */
+function sharesOneLine(children) {
+  if (children.length === 0) {
+    return true;
+  }
+  const lowestTop = Math.max(...children.map(child => child.top));
+  const highestBottom = Math.min(...children.map(child => child.bottom));
+  return lowestTop < highestBottom;
+}
+
+/**
+ * The guide for a drop at `aim` into `slot`, or `null` when the neighbours
+ * give no line worth drawing.
+ *
+ * `fromIndex` is the dragged block's own place when it is moving within this
+ * collection: it is about to leave that place, so it is no neighbour.
+ */
+function resolveAlignmentGuide({
+  slot,
+  aim,
+  fromIndex
+}) {
+  const axis = aim.line.axis;
+  const neighbours = slot.children.filter(child => child.index !== fromIndex && (child.index === aim.index - 1 || child.index === aim.index));
+
+  // The one before the gap first: it is the one the eye reads down from.
+  neighbours.sort((a, b) => a.index - b.index);
+
+  // A row that wraps onto several lines has no one line its blocks share, and
+  // a guide read across all of them could point where the block will not go.
+  if (axis === "horizontal" && !sharesOneLine(slot.children)) {
+    return null;
+  }
+  const container = across(slot.bounds, axis);
+  for (const neighbour of neighbours) {
+    const extent = across(neighbour, axis);
+    const edge = alignedEdge(extent, container);
+    if (!edge) {
+      continue;
+    }
+    const position = edge === "start" ? extent.start : edge === "end" ? extent.end : (extent.start + extent.end) / 2;
+
+    // Along the collection, from the first neighbour to the last, taking in
+    // the gap the insertion line marks.
+    const along = neighbours.flatMap(child => axis === "horizontal" ? [child.left, child.right] : [child.top, child.bottom]);
+    const lineAt = axis === "horizontal" ? aim.line.x : aim.line.y;
+    const from = Math.min(lineAt, ...along);
+    const to = Math.max(lineAt, ...along);
+    return axis === "horizontal" ? {
+      axis: "vertical",
+      x: from,
+      y: position,
+      length: to - from
+    } : {
+      axis: "horizontal",
+      x: position,
+      y: from,
+      length: to - from
+    };
+  }
+  return null;
+}
+
+/**
+ * The alignment guide for an aim, from the collection it lands in. The dragged
+ * block's own place counts only when it is moving within that collection.
+ */
+function guideFor(slots, aim, fromPath) {
+  const slot = slots.find(candidate => candidate.parentPath === aim.parentPath && candidate.prop === aim.prop);
+  const from = parseSlotPath(fromPath);
+
+  // A drop right beside the block's own place moves nothing; a guide there
+  // would suggest a change that will not happen.
+  if (toItemMove(aim, fromPath) === null) {
+    return null;
+  }
+  return slot ? resolveAlignmentGuide({
+    slot,
+    aim,
+    fromIndex: from && from.parentPath === aim.parentPath && from.prop === aim.prop ? from.index : undefined
+  }) : null;
+}
+
+/**
+ * Keeps the current line when the next one is the same, so a line that has
+ * not moved does not re-render the page at pointer rate.
+ */
+function keepIfSame(next) {
+  return current => current === next || current !== null && next !== null && current.x === next.x && current.y === next.y && current.length === next.length && current.axis === next.axis ? current : next;
+}
+
+/**
  * Whether the block at `path` sits in a collection that opted in with
  * `panelDropTarget`. Answered from the schema alone, before anything on the
  * canvas is measured, so a drag inside older components costs nothing extra
@@ -16048,12 +16220,15 @@ function collectionOfCollision(collisions) {
  */
 function useCanvasMoveAim(editorContext, fallback) {
   const aimRef = useRef(null);
+  const guideRef = useRef(null);
   const [line, setLine] = useState(null);
+  const [guide, setGuide] = useState(null);
   const collisionDetection = useCallback(args => {
     const legacy = fallback(args);
     const fromPath = args.active.data.current?.path;
     const pointer = args.pointerCoordinates;
     aimRef.current = null;
+    guideRef.current = null;
     if (typeof fromPath !== "string" || !pointer || !isInOptedInCollection(fromPath, editorContext)) {
       return legacy;
     }
@@ -16064,14 +16239,16 @@ function useCanvasMoveAim(editorContext, fallback) {
     }
     const ids = [definition.id, ...toArray(definition.type ?? [])];
     const canHold = slot => (slot.accepts ?? []).some(accepted => ids.includes(accepted));
+    const slots = collectPanelDropSlots(document, editorContext);
     aimRef.current = resolveCanvasMoveAim({
-      slots: collectPanelDropSlots(document, editorContext),
+      slots,
       fromPath,
       topmostPath: topmostFramePath(document, pointer),
       pointer,
       legacyOverPath: collectionOfCollision(legacy),
       canHold
     });
+    guideRef.current = aimRef.current ? guideFor(slots, aimRef.current, fromPath) : null;
     return aimRef.current ? [] : legacy;
   }, [editorContext, fallback]);
 
@@ -16081,8 +16258,8 @@ function useCanvasMoveAim(editorContext, fallback) {
    * a new object on every pointer move would render the page at pointer rate.
    */
   const onDragMove = useCallback(() => {
-    const next = aimRef.current?.line ?? null;
-    setLine(current => current === next || current !== null && next !== null && current.x === next.x && current.y === next.y && current.length === next.length && current.axis === next.axis ? current : next);
+    setLine(keepIfSame(aimRef.current?.line ?? null));
+    setGuide(keepIfSame(guideRef.current));
   }, []);
 
   /**
@@ -16092,7 +16269,9 @@ function useCanvasMoveAim(editorContext, fallback) {
   const takeMove = useCallback(fromPath => {
     const aim = aimRef.current;
     aimRef.current = null;
+    guideRef.current = null;
     setLine(null);
+    setGuide(null);
     if (!aim) {
       return null;
     }
@@ -16100,11 +16279,15 @@ function useCanvasMoveAim(editorContext, fallback) {
   }, []);
   const clear = useCallback(() => {
     aimRef.current = null;
+    guideRef.current = null;
     setLine(null);
+    setGuide(null);
   }, []);
-  const indicator = line ? /*#__PURE__*/React__default.createElement(InsertionLine, {
+  const indicator = line ? /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(InsertionLine, {
     line: line
-  }) : null;
+  }), guide ? /*#__PURE__*/React__default.createElement(AlignmentGuideLine, {
+    guide: guide
+  }) : null) : null;
   return {
     collisionDetection,
     onDragMove,

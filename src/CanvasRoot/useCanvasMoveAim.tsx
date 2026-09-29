@@ -8,9 +8,19 @@ import {
   parseSlotPath,
   type PanelDropSlot,
 } from "../editorSidebar/editorSections/panelDropSlots";
-import { resolveCanvasMoveAim, toItemMove, type CanvasMoveAim } from "./canvasMoveAim";
-import { collectPanelDropSlots, topmostFramePath } from "./collectPanelDropSlots";
+import {
+  resolveCanvasMoveAim,
+  toItemMove,
+  type CanvasMoveAim,
+} from "./canvasMoveAim";
+import {
+  collectPanelDropSlots,
+  topmostFramePath,
+} from "./collectPanelDropSlots";
 import { InsertionLine } from "./usePanelDropTarget";
+import { AlignmentGuideLine } from "./alignment-guide-line";
+import type { AlignmentGuide } from "./alignment-guide-resolver";
+import { guideFor, keepIfSame } from "./canvas-move-guide";
 
 /**
  * Whether the block at `path` sits in a collection that opted in with
@@ -67,7 +77,9 @@ export function useCanvasMoveAim(
   fallback: CollisionDetection,
 ) {
   const aimRef = useRef<CanvasMoveAim | null>(null);
+  const guideRef = useRef<AlignmentGuide | null>(null);
   const [line, setLine] = useState<CanvasMoveAim["line"] | null>(null);
+  const [guide, setGuide] = useState<AlignmentGuide | null>(null);
 
   const collisionDetection = useCallback<CollisionDetection>(
     (args) => {
@@ -76,6 +88,7 @@ export function useCanvasMoveAim(
       const pointer = args.pointerCoordinates;
 
       aimRef.current = null;
+      guideRef.current = null;
 
       if (
         typeof fromPath !== "string" ||
@@ -98,14 +111,19 @@ export function useCanvasMoveAim(
       const canHold = (slot: PanelDropSlot) =>
         (slot.accepts ?? []).some((accepted) => ids.includes(accepted));
 
+      const slots = collectPanelDropSlots(document, editorContext);
+
       aimRef.current = resolveCanvasMoveAim({
-        slots: collectPanelDropSlots(document, editorContext),
+        slots,
         fromPath,
         topmostPath: topmostFramePath(document, pointer),
         pointer,
         legacyOverPath: collectionOfCollision(legacy),
         canHold,
       });
+      guideRef.current = aimRef.current
+        ? guideFor(slots, aimRef.current, fromPath)
+        : null;
 
       return aimRef.current ? [] : legacy;
     },
@@ -118,19 +136,8 @@ export function useCanvasMoveAim(
    * a new object on every pointer move would render the page at pointer rate.
    */
   const onDragMove = useCallback(() => {
-    const next = aimRef.current?.line ?? null;
-
-    setLine((current) =>
-      current === next ||
-      (current !== null &&
-        next !== null &&
-        current.x === next.x &&
-        current.y === next.y &&
-        current.length === next.length &&
-        current.axis === next.axis)
-        ? current
-        : next,
-    );
+    setLine(keepIfSame(aimRef.current?.line ?? null));
+    setGuide(keepIfSame(guideRef.current));
   }, []);
 
   /**
@@ -141,7 +148,9 @@ export function useCanvasMoveAim(
     const aim = aimRef.current;
 
     aimRef.current = null;
+    guideRef.current = null;
     setLine(null);
+    setGuide(null);
 
     if (!aim) {
       return null;
@@ -152,10 +161,17 @@ export function useCanvasMoveAim(
 
   const clear = useCallback(() => {
     aimRef.current = null;
+    guideRef.current = null;
     setLine(null);
+    setGuide(null);
   }, []);
 
-  const indicator = line ? <InsertionLine line={line} /> : null;
+  const indicator = line ? (
+    <>
+      <InsertionLine line={line} />
+      {guide ? <AlignmentGuideLine guide={guide} /> : null}
+    </>
+  ) : null;
 
   return { collisionDetection, onDragMove, takeMove, clear, indicator };
 }

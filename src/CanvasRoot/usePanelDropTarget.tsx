@@ -34,7 +34,7 @@ import { collectPanelDropSlots, topmostFramePath } from "./collectPanelDropSlots
  * document of older components still has exactly one answer available.
  */
 
-const ACCENT = "#7B70F5";
+export const ACCENT = "#7B70F5";
 
 /**
  * What the canvas looks like while it is willing to take the item.
