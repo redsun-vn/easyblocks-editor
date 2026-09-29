@@ -134,16 +134,17 @@ function SelectionFrame({
     [selectionFields],
   );
 
-  /** The one field a handle on the block's sides sets, when the block has one. */
-  const widthResizeField = useMemo(
-    () =>
-      isRichTextSelection
-        ? undefined
-        : pickCanvasResizeFields(selectionFields).find(
-            ({ option }) => option.axis === "x",
-          ),
-    [selectionFields, isRichTextSelection],
-  );
+  /** The fields the block's side and bottom handles set, when it has them. */
+  const [widthResizeField, heightResizeField] = useMemo(() => {
+    const resizeFields = isRichTextSelection
+      ? []
+      : pickCanvasResizeFields(selectionFields);
+
+    return [
+      resizeFields.find(({ option }) => option.axis === "x"),
+      resizeFields.find(({ option }) => option.axis === "y"),
+    ];
+  }, [selectionFields, isRichTextSelection]);
 
   /**
    * The bar is shown for a block that can be duplicated and moved, and for any
@@ -331,11 +332,12 @@ function SelectionFrame({
           isRevealed={isRevealed}
           onClick={() => handleAddButtonClick("after")}
         />
-        {widthResizeField ? (
+        {widthResizeField || heightResizeField ? (
           <ResizeHandles
             // A fresh drag state for every block picked.
             key={focussedField[0]}
-            resizeField={widthResizeField}
+            widthField={widthResizeField}
+            heightField={heightResizeField}
             path={focussedField[0]}
           />
         ) : null}

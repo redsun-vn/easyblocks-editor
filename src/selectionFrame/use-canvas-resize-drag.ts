@@ -1,14 +1,16 @@
 import { toArray } from "@/utils/array/toArray";
 import { dotNotationGet } from "@/utils/object/dotNotationGet";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { EditorContextType } from "../EditorContext";
 import {
   CanvasResizeField,
-  canvasResizeValues,
+  canvasResizeChoices,
+  ResizeChoice,
   writeCanvasResizeValue,
 } from "./canvas-resize-fields";
 import { readResizeGeometry, ResizeGeometry } from "./canvas-resize-geometry";
 import { nearestResizeStep, targetSizeFromDrag } from "./resize-step-resolver";
+import { useEscapeWhileDragging } from "./use-escape-while-dragging";
 
 export type ResizeEdge = "left" | "right" | "bottom";
 
@@ -22,18 +24,12 @@ type Drag = {
   /** Canvas pixels per screen pixel: the canvas is drawn scaled by the zoom. */
   scale: number;
   geometry: ResizeGeometry;
+  choices: Map<string, ResizeChoice>;
   lastValue: string;
   hasWritten: boolean;
   /** The field's stored value before the drag, to put back on Esc. */
   originalRawValue: unknown;
 };
-
-function canvasWindow(): Window | null {
-  const iframe = document.getElementById(
-    "editor-canvas",
-  ) as HTMLIFrameElement | null;
-  return iframe?.contentWindow ?? null;
-}
 
 /**
  * One drag of a resize handle, from press to release.
@@ -48,15 +44,23 @@ export function useCanvasResizeDrag({
   path,
   editorContext,
   configAfterAuto,
+  gestureHasWritten,
 }: {
-  resizeField: CanvasResizeField;
+  /** Absent when the block has no field for this axis; the hook then does nothing. */
+  resizeField: CanvasResizeField | undefined;
   path: string;
   editorContext: EditorContextType;
   configAfterAuto: Record<string, any>;
+  /**
+   * Whether the gesture has written yet, shared by the hooks one gesture
+   * drives: a corner moves a width and a height, and both belong to the same
+   * undo step.
+   */
+  gestureHasWritten: { current: boolean };
 }) {
   const drag = useRef<Drag | null>(null);
   const [reading, setReading] = useState<ResizeReading | null>(null);
-  const fieldName = toArray(resizeField.field.name)[0];
+  const fieldName = resizeField ? toArray(resizeField.field.name)[0] : "";
 
   const end = useCallback(() => {
     drag.current = null;
@@ -78,41 +82,18 @@ export function useCanvasResizeDrag({
     end();
   }, [editorContext, fieldName, end]);
 
-  // Esc is heard in the canvas too: focus stays there after a block is picked
-  // by clicking it, and the canvas's own Esc would otherwise select the parent
-  // and take the handle away mid-drag.
-  useEffect(() => {
-    if (!reading) {
+  useEscapeWhileDragging(reading !== null, cancel);
+
+  const onPointerDown = (edge: ResizeEdge) => (event: React.PointerEvent) => {
+    if (!resizeField) {
       return;
     }
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.stopPropagation();
-        event.preventDefault();
-        cancel();
-      }
-    };
-
-    const targets = [window, canvasWindow()].filter(
-      (target): target is Window => target !== null,
-    );
-
-    targets.forEach((target) =>
-      target.addEventListener("keydown", onKeyDown, true),
-    );
-
-    return () =>
-      targets.forEach((target) =>
-        target.removeEventListener("keydown", onKeyDown, true),
-      );
-  }, [reading, cancel]);
-
-  const onPointerDown = (edge: ResizeEdge) => (event: React.PointerEvent) => {
+    const choices = canvasResizeChoices(resizeField, editorContext.types);
     const geometry = readResizeGeometry({
       path,
       axis: resizeField.option.axis,
-      values: canvasResizeValues(resizeField),
+      choices,
     });
     const start = geometry && nearestResizeStep(geometry.steps, geometry.size);
 
@@ -126,6 +107,7 @@ export function useCanvasResizeDrag({
     const handle = event.currentTarget as HTMLElement;
     const layer = handle.offsetParent as HTMLElement | null;
     handle.setPointerCapture(event.pointerId);
+    gestureHasWritten.current = false;
 
     drag.current = {
       edge,
@@ -136,6 +118,7 @@ export function useCanvasResizeDrag({
           ? layer.getBoundingClientRect().width / layer.offsetWidth
           : 1,
       geometry,
+      choices: new Map(choices.map((choice) => [choice.key, choice])),
       lastValue: start.value,
       hasWritten: false,
       originalRawValue: dotNotationGet(editorContext.form.values, fieldName),
@@ -150,6 +133,7 @@ export function useCanvasResizeDrag({
     // No button held means this is a hover, not a drag, whatever state says.
     if (
       !current ||
+      !resizeField ||
       current.pointerId !== event.pointerId ||
       (event.buttons & 1) === 0
     ) {
@@ -172,12 +156,13 @@ export function useCanvasResizeDrag({
 
     writeCanvasResizeValue({
       field: resizeField.field,
-      value: step.value,
+      value: current.choices.get(step.value)?.value ?? step.value,
       editorContext,
       configAfterAuto,
-      history: current.hasWritten ? "replace" : "push",
+      history: gestureHasWritten.current ? "replace" : "push",
     });
     current.hasWritten = true;
+    gestureHasWritten.current = true;
     current.lastValue = step.value;
     setReading({
       edge: current.edge,

@@ -112,6 +112,16 @@ export function offeredSteps(
   return steps.filter((step) => offered.has(step.value));
 }
 
+/** Whether every track of a grid came out the same width, to a pixel. */
+export function hasEqualTracks(trackWidths: ReadonlyArray<number>): boolean {
+  return (
+    trackWidths.length > 0 &&
+    trackWidths.every(
+      (width) => Number.isFinite(width) && Math.abs(width - trackWidths[0]) < 1,
+    )
+  );
+}
+
 /**
  * Whether a grid is drawing its items one under another — every visible item
  * the full width of the grid — which is how a row stacked for a phone looks.

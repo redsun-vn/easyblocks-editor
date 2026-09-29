@@ -15,10 +15,23 @@ export type CanvasResizeField = {
  */
 export declare function pickCanvasResizeFields(fields: ReadonlyArray<InternalField>): Array<CanvasResizeField>;
 /**
- * The values a drag steps through: the field's own `steps` when it names them,
- * otherwise every option the panel offers, in the panel's order.
+ * One value a handle can land on.
+ *
+ * `key` names it, `value` is what gets written — a token is stored as
+ * `{ tokenId, value }`, not as a string — and `css` is the length the value
+ * draws, which is how the canvas works out how big the block would be.
  */
-export declare function canvasResizeValues({ field, option, }: CanvasResizeField): Array<string>;
+export type ResizeChoice = {
+    key: string;
+    value: unknown;
+    css: string;
+    label: string;
+};
+/**
+ * The values a drag steps through: the field's own `steps` when it names them,
+ * otherwise what the panel offers — its options, or its theme tokens.
+ */
+export declare function canvasResizeChoices({ field, option }: CanvasResizeField, types: EditorContextType["types"]): Array<ResizeChoice>;
 /**
  * Writes one value exactly as picking it in the panel would.
  *
@@ -30,7 +43,7 @@ export declare function canvasResizeValues({ field, option, }: CanvasResizeField
  */
 export declare function writeCanvasResizeValue({ field, value, editorContext, configAfterAuto, history, }: {
     field: InternalField;
-    value: string;
+    value: unknown;
     editorContext: EditorContextType;
     configAfterAuto: Record<string, any>;
     history: RunChangeOptions["history"];

@@ -1,5 +1,3 @@
-import { SelectionFramePositionChangedEvent } from "@redsun-vn/easyblocks-core/_internals";
-import { Colors } from "@redsun-vn/easyblocks-design-system";
 import React, {
   useEffect,
   useLayoutEffect,
@@ -7,85 +5,22 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { styled } from "styled-components";
 import { useConfigAfterAuto } from "../ConfigAfterAutoContext";
 import { useEditorContext } from "../EditorContext";
-import { CanvasResizeField, canvasResizeValues } from "./canvas-resize-fields";
-import { readResizeGeometry } from "./canvas-resize-geometry";
-import { ResizeEdge, useCanvasResizeDrag } from "./use-canvas-resize-drag";
-
-/** The selected block's box, in canvas pixels, as the position messages give it. */
-type TargetBox = { top: number; left: number; width: number; height: number };
-
-/** Screen pixels. Divided by the zoom so a handle stays catchable at any zoom. */
-const HANDLE_LENGTH = 24;
-const HANDLE_THICKNESS = 6;
-const HIT_AREA = 14;
-
-const Layer = styled.div`
-  position: absolute;
-  pointer-events: none;
-`;
-
-const Handle = styled.div<{ $edge: ResizeEdge; $scale: number }>`
-  position: absolute;
-  pointer-events: auto;
-  touch-action: none;
-  display: grid;
-  place-items: center;
-  cursor: ${({ $edge }) => ($edge === "bottom" ? "ns-resize" : "ew-resize")};
-  ${({ $edge, $scale }) => {
-    const length = HANDLE_LENGTH / $scale;
-    const hit = HIT_AREA / $scale;
-    return $edge === "bottom"
-      ? `left: calc(50% - ${length / 2}px); bottom: -${hit / 2}px; width: ${length}px; height: ${hit}px;`
-      : `top: calc(50% - ${length / 2}px); ${$edge}: -${hit / 2}px; width: ${hit}px; height: ${length}px;`;
-  }}
-
-  &::before {
-    content: "";
-    box-sizing: border-box;
-    border-radius: 3px;
-    background: var(--tina-color-primary, #2296fe);
-    border: 1px solid ${Colors.white};
-    box-shadow: 0 0 0 1px ${Colors.black900};
-    ${({ $edge, $scale }) =>
-      $edge === "bottom"
-        ? `width: ${HANDLE_LENGTH / $scale}px; height: ${HANDLE_THICKNESS / $scale}px;`
-        : `width: ${HANDLE_THICKNESS / $scale}px; height: ${HANDLE_LENGTH / $scale}px;`}
-  }
-`;
-
-const Chip = styled.div<{ $edge: ResizeEdge; $scale: number }>`
-  position: absolute;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: ${Colors.black900};
-  color: ${Colors.white};
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
-  white-space: nowrap;
-  pointer-events: none;
-  ${({ $edge, $scale }) =>
-    $edge === "bottom"
-      ? `left: 50%; bottom: -28px; transform: translateX(-50%) scale(${1 / $scale});`
-      : `top: 50%; ${$edge}: 12px; transform: translateY(-50%) scale(${1 / $scale});`}
-`;
-
-function isPositionChanged(
-  data: unknown,
-): data is SelectionFramePositionChangedEvent["data"] {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    (data as { type?: unknown }).type ===
-      "@easyblocks-editor/selection-frame-position-changed"
-  );
-}
+import { CanvasResizeField } from "./canvas-resize-fields";
+import {
+  deviceLabel,
+  geometryOf,
+  isPositionChanged,
+  TargetBox,
+} from "./resize-handles-helpers";
+import { Chip, Handle, HandlePlace, Layer } from "./resize-handles-styles";
+import { useCanvasFrameRedraws } from "./use-canvas-frame-redraws";
+import { useCanvasResizeDrag } from "./use-canvas-resize-drag";
 
 /**
- * Handles on the selected block's edges for a field that opted into them.
+ * Handles on the selected block's edges for the fields that opted into them:
+ * the sides for a width, the bottom for a height, and the corner for both.
  *
  * The box follows the same position messages the action bar hangs from. A
  * handle is offered only while a drag would change something the page shows,
@@ -94,23 +29,25 @@ function isPositionChanged(
  * vanished mid-drag would take the pointer with it.
  */
 export function ResizeHandles({
-  resizeField,
+  widthField,
+  heightField,
   path,
 }: {
-  resizeField: CanvasResizeField;
+  widthField?: CanvasResizeField;
+  heightField?: CanvasResizeField;
   path: string;
 }) {
   const editorContext = useEditorContext();
   const configAfterAuto = useConfigAfterAuto();
   const [box, setBox] = useState<TargetBox | null>(null);
   const [scale, setScale] = useState(1);
+  /** The handle being dragged, which is the one that carries the chip. */
+  const [activePlace, setActivePlace] = useState<HandlePlace | null>(null);
   const layerRef = useRef<HTMLDivElement>(null);
-  const { reading, handlers } = useCanvasResizeDrag({
-    resizeField,
-    path,
-    editorContext,
-    configAfterAuto,
-  });
+  const gestureHasWritten = useRef(false);
+  const shared = { path, editorContext, configAfterAuto, gestureHasWritten };
+  const width = useCanvasResizeDrag({ ...shared, resizeField: widthField });
+  const height = useCanvasResizeDrag({ ...shared, resizeField: heightField });
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -124,19 +61,26 @@ export function ResizeHandles({
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
-  // Read the page only when the block's size or the config changed, not on
-  // every scroll message.
-  const isDraggable = useMemo(
+  const redraws = useCanvasFrameRedraws(path, configAfterAuto);
+
+  // Read the page only when the block's size changed or the canvas redrew it,
+  // not on every scroll message. The fields are keyed by name: their objects
+  // are rebuilt on every write, before the canvas has drawn it.
+  const widthKey = widthField ? String(widthField.field.name) : "";
+  const heightKey = heightField ? String(heightField.field.name) : "";
+  const [widthGeometry, heightGeometry] = useMemo(
     () =>
-      box !== null &&
-      readResizeGeometry({
-        path,
-        axis: resizeField.option.axis,
-        values: canvasResizeValues(resizeField),
-      }) !== null,
+      box === null
+        ? [null, null]
+        : [
+            geometryOf(path, widthField, editorContext.types),
+            geometryOf(path, heightField, editorContext.types),
+          ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [path, resizeField, box?.width, box?.height, configAfterAuto],
+    [path, widthKey, heightKey, box?.width, box?.height, redraws],
   );
+  const canDragWidth = widthGeometry !== null;
+  const canDragHeight = heightGeometry !== null;
 
   useLayoutEffect(() => {
     const layer = layerRef.current;
@@ -146,44 +90,91 @@ export function ResizeHandles({
     }
   }, [box?.width]);
 
-  if (!box || (!isDraggable && !reading)) {
+  if (!box) {
     return null;
   }
 
-  const edges: ReadonlyArray<ResizeEdge> =
-    resizeField.option.axis === "x" ? ["left", "right"] : ["bottom"];
+  const showWidth = canDragWidth || width.reading !== null;
+  const showHeight = canDragHeight || height.reading !== null;
+  const device = deviceLabel(editorContext);
+
+  const handle = (
+    place: HandlePlace,
+    drags: Array<typeof width>,
+    edges: Array<"left" | "right" | "bottom">,
+  ) => {
+    const labels = drags.flatMap((drag) =>
+      drag.reading ? [drag.reading.label] : [],
+    );
+    const release = () => setActivePlace(null);
+
+    return (
+      <Handle
+        key={place}
+        $place={place}
+        $scale={scale}
+        onPointerDown={(event) => {
+          setActivePlace(place);
+          drags.forEach((drag, index) =>
+            drag.handlers.onPointerDown(edges[index])(event),
+          );
+        }}
+        onPointerMove={(event) =>
+          drags.forEach((drag) => drag.handlers.onPointerMove(event))
+        }
+        onPointerUp={() => {
+          release();
+          drags.forEach((drag) => drag.handlers.onPointerUp());
+        }}
+        onLostPointerCapture={() => {
+          release();
+          drags.forEach((drag) => drag.handlers.onLostPointerCapture());
+        }}
+        onPointerCancel={() => {
+          release();
+          drags.forEach((drag) => drag.handlers.onPointerCancel());
+        }}
+        // Releasing a drag fires a click, and the canvas area underneath
+        // reads a click as "pick nothing".
+        onClick={(event) => event.stopPropagation()}
+      >
+        {activePlace === place && labels.length > 0 && (
+          <Chip $place={place} $scale={scale}>
+            {labels.join(" × ")} · {device}
+          </Chip>
+        )}
+      </Handle>
+    );
+  };
+
+  // A width drawn by a grid moves the frame itself; any other size moves the
+  // content inside it, which is where the handles belong.
+  const content = widthGeometry
+    ? widthGeometry.content
+    : heightGeometry?.content;
+  const layerBox = content
+    ? { ...content, top: box.top + content.top, left: box.left + content.left }
+    : box;
+
+  // Only a grid span grows from either side. Any other width grows from the
+  // edge the block's alignment leaves free, so a left handle would move away
+  // from the pointer or at half its pace.
+  const isSpan = widthGeometry !== null && !widthGeometry.content;
+  // A height given as a ratio follows the width: the corner scales the block.
+  const corner: [Array<typeof width>, Array<"right" | "bottom">] =
+    heightGeometry?.followsWidth
+      ? [[width], ["right"]]
+      : [
+          [width, height],
+          ["right", "bottom"],
+        ];
 
   return (
-    <Layer ref={layerRef} style={box}>
-      {edges.map((edge) => (
-        <Handle
-          key={edge}
-          $edge={edge}
-          $scale={scale}
-          {...handlers}
-          onPointerDown={handlers.onPointerDown(edge)}
-          // Releasing a drag fires a click, and the canvas area underneath
-          // reads a click as "pick nothing".
-          onClick={(event) => event.stopPropagation()}
-        >
-          {reading?.edge === edge && (
-            <Chip $edge={edge} $scale={scale}>
-              {reading.label} · {deviceLabel(editorContext)}
-            </Chip>
-          )}
-        </Handle>
-      ))}
+    <Layer ref={layerRef} style={layerBox}>
+      {showWidth && isSpan && handle("left", [width], ["left"])}
+      {showWidth && handle("right", [width], ["right"])}
+      {showHeight && handle("bottom", [height], ["bottom"])}
+      {showWidth && showHeight && handle("corner", ...corner)}
     </Layer>
   );
-}
-
-function deviceLabel({
-  devices,
-  breakpointIndex,
-}: {
-  devices: Array<{ id: string; label?: string }>;
-  breakpointIndex: string;
-}) {
-  const device = devices.find((candidate) => candidate.id === breakpointIndex);
-  return device?.label ?? breakpointIndex;
 }

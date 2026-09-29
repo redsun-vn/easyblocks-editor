@@ -11512,21 +11512,53 @@ function pickCanvasResizeFields(fields) {
 }
 
 /**
- * The values a drag steps through: the field's own `steps` when it names them,
- * otherwise every option the panel offers, in the panel's order.
+ * One value a handle can land on.
+ *
+ * `key` names it, `value` is what gets written — a token is stored as
+ * `{ tokenId, value }`, not as a string — and `css` is the length the value
+ * draws, which is how the canvas works out how big the block would be.
  */
-function canvasResizeValues({
+
+function stringChoice(value, label = value) {
+  return {
+    key: value,
+    value,
+    css: value,
+    label
+  };
+}
+
+/**
+ * The values a drag steps through: the field's own `steps` when it names them,
+ * otherwise what the panel offers — its options, or its theme tokens.
+ */
+function canvasResizeChoices({
   field,
   option
-}) {
+}, types) {
   if (option.steps) {
-    return option.steps;
+    return option.steps.map(step => stringChoice(step));
+  }
+  const tokens = field.tokens;
+  if (tokens) {
+    // Stored the way the panel's token field stores a pick, widget included.
+    const widgetId = types[field.schemaProp.type]?.widget?.id;
+    return Object.entries(tokens).map(([tokenId, token]) => ({
+      key: tokenId,
+      value: {
+        tokenId,
+        value: token.value,
+        widgetId
+      },
+      css: typeof token.value === "number" ? `${token.value}px` : String(token.value),
+      label: token.label ?? tokenId
+    }));
   }
   const options = field.schemaProp.params?.options;
   if (!Array.isArray(options)) {
     return [];
   }
-  return options.map(entry => typeof entry === "object" && entry !== null && "value" in entry ? String(entry.value) : String(entry));
+  return options.map(entry => typeof entry === "object" && entry !== null && "value" in entry ? stringChoice(String(entry.value), String(entry.label ?? entry.value)) : stringChoice(String(entry)));
 }
 
 /**
@@ -11659,6 +11691,71 @@ function pickQuickFormatFields(fields) {
   }) => field);
 }
 
+/** `width:height`, as an aspect ratio field stores it. */
+const RATIO = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/;
+
+/** Whether a field's values are aspect ratios rather than lengths. */
+function isRatioList(choices) {
+  return choices.some(choice => RATIO.test(choice.css.trim()));
+}
+
+/** What a length is measured against when it is not in pixels. */
+
+/**
+ * How big a CSS value draws the block along the dragged axis, or `null` for a
+ * value that is not a size — `none`, `fit-content` — which a drag skips.
+ *
+ * `auto` on the vertical axis is the block at its content height, the least
+ * it can be, so it counts as zero: dragging the bottom edge up far enough
+ * gives the height back to the content.
+ */
+function lengthToPixels(css, axis, reference) {
+  const value = css.trim();
+  if (axis === "y" && value === "auto") {
+    return 0;
+  }
+  const ratio = RATIO.exec(value);
+  if (ratio) {
+    return axis === "y" ? reference.width * Number(ratio[2]) / Number(ratio[1]) : null;
+  }
+  const length = /^(-?\d+(?:\.\d+)?)(px|%|vh)?$/.exec(value);
+  if (!length) {
+    return null;
+  }
+  const amount = Number(length[1]);
+  switch (length[2]) {
+    case "%":
+      return axis === "x" ? amount / 100 * reference.percentOf : null;
+    case "vh":
+      return amount / 100 * reference.viewportHeight;
+    default:
+      return amount;
+  }
+}
+
+/**
+ * The steps a list of CSS values gives, smallest first. Values that are not a
+ * size are left out; so are widths beyond what the block can reach, which
+ * would all draw the same and leave the drag nothing to tell apart. Of two
+ * values that draw the same size, the first listed is kept.
+ */
+function lengthSteps(choices, axis, reference) {
+  const steps = [];
+  // Among ratios, `auto` is the picture's own ratio, not the least height.
+  const ratios = isRatioList(choices);
+  for (const choice of choices) {
+    const size = ratios && choice.css.trim() === "auto" ? null : lengthToPixels(choice.css, axis, reference);
+    if (size === null || axis === "x" && size > reference.percentOf + 1 || steps.some(step => Math.abs(step.size - size) < 0.5)) {
+      continue;
+    }
+    steps.push({
+      value: choice.key,
+      size
+    });
+  }
+  return steps.sort((a, b) => a.size - b.size);
+}
+
 /**
  * The arithmetic behind the resize handles, with nothing in it that needs a
  * browser: which of a field's values a dragged edge has reached.
@@ -11749,6 +11846,11 @@ function offeredSteps(steps, values) {
   return steps.filter(step => offered.has(step.value));
 }
 
+/** Whether every track of a grid came out the same width, to a pixel. */
+function hasEqualTracks(trackWidths) {
+  return trackWidths.length > 0 && trackWidths.every(width => Number.isFinite(width) && Math.abs(width - trackWidths[0]) < 1);
+}
+
 /**
  * Whether a grid is drawing its items one under another — every visible item
  * the full width of the grid — which is how a row stacked for a phone looks.
@@ -11760,15 +11862,10 @@ function isStackedGrid(itemWidths, contentWidth) {
   return visible.length > 1 && visible.every(width => Math.abs(width - contentWidth) < 1);
 }
 
-/**
- * What a handle needs to know about the block on the canvas, read from the
- * page as it is drawn rather than worked out from the config: the canvas is
- * the only place that knows how wide a track came out.
- */
-
-function canvasDocument() {
-  const iframe = document.getElementById("editor-canvas");
-  return iframe?.contentDocument ?? null;
+/** An element's width inside its padding: what its children are laid out in. */
+function contentWidthOf(element, view) {
+  const style = view.getComputedStyle(element);
+  return element.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
 }
 function isGrid(element, view) {
   const {
@@ -11804,15 +11901,29 @@ function findGridItem(frame, view) {
   }
   return null;
 }
+
+/**
+ * The spans a block on a grid can be dragged to, with the width each gives
+ * it, or `null` when the block is not on a grid or the grid is not drawing
+ * spans at all.
+ */
 function readGridSpan(frame, view, values) {
   const found = findGridItem(frame, view);
   if (!found) {
     return null;
   }
   const gridStyle = view.getComputedStyle(found.grid);
-  const trackCount = gridStyle.gridTemplateColumns.split(/\s+/).filter(Boolean).length;
+  const tracks = gridStyle.gridTemplateColumns.split(/\s+/).filter(Boolean).map(track => parseFloat(track));
+  const trackCount = tracks.length;
+
+  // Tracks of different widths are proportions (a row with a free percentage
+  // column), not a grid a span counts in: a number written there would not
+  // mean the width it showed.
+  if (!hasEqualTracks(tracks)) {
+    return null;
+  }
   const gap = parseFloat(gridStyle.columnGap) || 0;
-  const contentWidth = found.grid.clientWidth - (parseFloat(gridStyle.paddingLeft) || 0) - (parseFloat(gridStyle.paddingRight) || 0);
+  const contentWidth = contentWidthOf(found.grid, view);
 
   // A row stacked for a phone draws every column full width whatever it
   // stores, so a drag there would save a value nobody sees.
@@ -11836,30 +11947,259 @@ function readGridSpan(frame, view, values) {
 }
 
 /**
+ * What a handle needs to know about the block on the canvas, read from the
+ * page as it is drawn rather than worked out from the config: the canvas is
+ * the only place that knows how wide a track came out.
+ */
+
+/** The selected block's frame on the canvas, and the canvas window it is in. */
+function findCanvasFrame(path) {
+  const iframe = document.getElementById("editor-canvas");
+  const doc = iframe?.contentDocument;
+  const view = doc?.defaultView;
+  const frame = doc?.querySelector(`[${CANVAS_FRAME_PATH_ATTRIBUTE}="${CSS.escape(path)}"]`);
+  return view && frame ? {
+    frame,
+    view
+  } : null;
+}
+
+/**
+ * The box the block's own content draws, inside its frame.
+ *
+ * The frame stretches to the slot it sits in, so its box says nothing about a
+ * picture held to a narrower `max-width`. What the block draws is its in-flow
+ * children; the frame's own controls are positioned out of flow and left out.
+ */
+function contentBox(frame, view) {
+  const drawn = Array.from(frame.children).filter(child => {
+    const {
+      position,
+      display
+    } = view.getComputedStyle(child);
+    return position !== "absolute" && position !== "fixed" && display !== "none";
+  });
+  const frameRect = frame.getBoundingClientRect();
+  if (drawn.length === 0) {
+    return {
+      left: 0,
+      top: 0,
+      width: frameRect.width,
+      height: frameRect.height
+    };
+  }
+
+  // A box with no size (an empty placeholder, display: contents) draws
+  // nothing, and would pull the union towards the frame's corner.
+  const rects = drawn.map(child => child.getBoundingClientRect()).filter(rect => rect.width > 0 || rect.height > 0);
+  if (rects.length === 0) {
+    return {
+      left: 0,
+      top: 0,
+      width: frameRect.width,
+      height: frameRect.height
+    };
+  }
+  const left = Math.min(...rects.map(rect => rect.left));
+  const top = Math.min(...rects.map(rect => rect.top));
+  return {
+    left: left - frameRect.left,
+    top: top - frameRect.top,
+    width: Math.max(...rects.map(rect => rect.right)) - left,
+    height: Math.max(...rects.map(rect => rect.bottom)) - top
+  };
+}
+
+/**
+ * The block measured against a list of lengths: pixels, shares of the width
+ * it is given or of the screen, ratios, theme tokens.
+ */
+function readLengths(frame, view, axis, choices) {
+  const box = contentBox(frame, view);
+  const labels = new Map(choices.map(choice => [choice.key, choice.label]));
+  return {
+    size: axis === "x" ? box.width : box.height,
+    steps: lengthSteps(choices, axis, {
+      // The frame is the box the block is laid out in, so a percentage is a
+      // share of its width.
+      percentOf: contentWidthOf(frame, view),
+      viewportHeight: view.innerHeight,
+      width: box.width
+    }),
+    describe: key => labels.get(key) ?? key,
+    content: box,
+    followsWidth: axis === "y" && isRatioList(choices)
+  };
+}
+
+/** A span is a bare whole number; a token or a length carries a unit. */
+const isWholeNumber = css => /^\d+$/.test(css.trim());
+
+/**
  * The block's size and the values a drag can reach, or `null` when a drag
  * could not change anything the page shows — then no handle is offered.
+ *
+ * Whole numbers across a block's sides are grid spans; everything else is a
+ * length of some kind.
  */
 function readResizeGeometry({
   path,
   axis,
-  values
+  choices
 }) {
-  const doc = canvasDocument();
-  const view = doc?.defaultView;
-  const frame = doc?.querySelector(`[${CANVAS_FRAME_PATH_ATTRIBUTE}="${CSS.escape(path)}"]`);
-  if (!view || !frame || axis !== "x") {
+  const found = findCanvasFrame(path);
+  if (!found) {
     return null;
   }
-  const geometry = readGridSpan(frame, view, values);
+  const {
+    frame,
+    view
+  } = found;
+  const spans = choices.filter(choice => isWholeNumber(choice.css)).map(choice => choice.key);
+  const geometry = axis === "x" && spans.length > 0 ? readGridSpan(frame, view, spans) : readLengths(frame, view, axis, choices);
   return geometry && geometry.steps.length >= 2 ? geometry : null;
 }
 
-/** What the chip beside the dragged edge says while a drag is on. */
+/** The selected block's box, in canvas pixels, as the position messages give it. */
+
+function isPositionChanged(data) {
+  return typeof data === "object" && data !== null && data.type === "@easyblocks-editor/selection-frame-position-changed";
+}
+
+/** What a drag of this field could reach on the page now, if anything. */
+function geometryOf(path, resizeField, types) {
+  return resizeField ? readResizeGeometry({
+    path,
+    axis: resizeField.option.axis,
+    choices: canvasResizeChoices(resizeField, types)
+  }) : null;
+}
+
+/** The name of the breakpoint being edited, for the chip. */
+function deviceLabel({
+  devices,
+  breakpointIndex
+}) {
+  const device = devices.find(candidate => candidate.id === breakpointIndex);
+  return device?.label ?? breakpointIndex;
+}
+
+/** Where a handle sits on the selected block. */
+
+/** Screen pixels. Divided by the zoom so a handle stays catchable at any zoom. */
+const HANDLE_LENGTH = 24;
+const HANDLE_THICKNESS = 6;
+const HIT_AREA = 14;
+const CURSORS = {
+  left: "ew-resize",
+  right: "ew-resize",
+  bottom: "ns-resize",
+  corner: "nwse-resize"
+};
+function hitBox(place, scale) {
+  const length = HANDLE_LENGTH / scale;
+  const hit = HIT_AREA / scale;
+  switch (place) {
+    case "bottom":
+      return `left: calc(50% - ${length / 2}px); bottom: -${hit / 2}px; width: ${length}px; height: ${hit}px;`;
+    case "corner":
+      return `right: -${hit / 2}px; bottom: -${hit / 2}px; width: ${hit}px; height: ${hit}px;`;
+    default:
+      return `top: calc(50% - ${length / 2}px); ${place}: -${hit / 2}px; width: ${hit}px; height: ${length}px;`;
+  }
+}
+function mark(place, scale) {
+  const long = HANDLE_LENGTH / scale;
+  const thin = HANDLE_THICKNESS / scale;
+  switch (place) {
+    case "bottom":
+      return `width: ${long}px; height: ${thin}px;`;
+    case "corner":
+      return `width: ${thin * 1.6}px; height: ${thin * 1.6}px;`;
+    default:
+      return `width: ${thin}px; height: ${long}px;`;
+  }
+}
+const Layer = styled.styled.div.withConfig({
+  displayName: "resize-handles-styles__Layer",
+  componentId: "sc-1vwrox3-0"
+})(["position:absolute;pointer-events:none;"]);
+const Handle = styled.styled.div.withConfig({
+  displayName: "resize-handles-styles__Handle",
+  componentId: "sc-1vwrox3-1"
+})(["position:absolute;pointer-events:auto;touch-action:none;display:grid;place-items:center;cursor:", ";", " &::before{content:\"\";box-sizing:border-box;border-radius:3px;background:var(--tina-color-primary,#2296fe);border:1px solid ", ";box-shadow:0 0 0 1px ", ";", "}"], ({
+  $place
+}) => CURSORS[$place], ({
+  $place,
+  $scale
+}) => hitBox($place, $scale), easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black900, ({
+  $place,
+  $scale
+}) => mark($place, $scale));
+const Chip = styled.styled.div.withConfig({
+  displayName: "resize-handles-styles__Chip",
+  componentId: "sc-1vwrox3-2"
+})(["position:absolute;padding:2px 6px;border-radius:4px;background:", ";color:", ";font-size:11px;font-weight:600;line-height:16px;white-space:nowrap;pointer-events:none;", ""], easyblocksDesignSystem.Colors.black900, easyblocksDesignSystem.Colors.white, ({
+  $place,
+  $scale
+}) => $place === "left" || $place === "right" ? `top: 50%; ${$place}: 12px; transform: translateY(-50%) scale(${1 / $scale});` : `left: 50%; bottom: -28px; transform: translateX(-50%) scale(${1 / $scale});`);
+
+/**
+ * A count that goes up whenever the selected block's frame or anything drawn
+ * directly in it changes size on the canvas.
+ *
+ * A picture narrowing inside its frame after a write sends no position
+ * message — the frame itself did not move — so the handles would sit on the
+ * old edge until something else happened. Watching the canvas's own resize
+ * observer answers exactly when the page has redrawn, however long that took.
+ * `refreshKey` re-attaches it after a write, when the canvas may have drawn
+ * the block's content afresh.
+ */
+function useCanvasFrameRedraws(path, refreshKey) {
+  const [redraws, setRedraws] = React.useState(0);
+  React.useEffect(() => {
+    const found = findCanvasFrame(path);
+    const Observer = found?.view?.ResizeObserver;
+    if (!found || !Observer) {
+      return;
+    }
+    const observer = new Observer(() => setRedraws(count => count + 1));
+    observer.observe(found.frame);
+    Array.from(found.frame.children).forEach(child => observer.observe(child));
+    return () => observer.disconnect();
+  }, [path, refreshKey]);
+  return redraws;
+}
 
 function canvasWindow() {
   const iframe = document.getElementById("editor-canvas");
   return iframe?.contentWindow ?? null;
 }
+
+/**
+ * Esc cancels a drag, heard in the canvas as well as in the editor: focus
+ * stays in the canvas after a block is picked by clicking it, and the canvas's
+ * own Esc would otherwise select the parent and take the handle away mid-drag.
+ */
+function useEscapeWhileDragging(isDragging, cancel) {
+  React.useEffect(() => {
+    if (!isDragging) {
+      return;
+    }
+    const onKeyDown = event => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        event.preventDefault();
+        cancel();
+      }
+    };
+    const windows = [window, canvasWindow()].filter(candidate => candidate !== null);
+    windows.forEach(view => view.addEventListener("keydown", onKeyDown, true));
+    return () => windows.forEach(view => view.removeEventListener("keydown", onKeyDown, true));
+  }, [isDragging, cancel]);
+}
+
+/** What the chip beside the dragged edge says while a drag is on. */
 
 /**
  * One drag of a resize handle, from press to release.
@@ -11873,11 +12213,12 @@ function useCanvasResizeDrag({
   resizeField,
   path,
   editorContext,
-  configAfterAuto
+  configAfterAuto,
+  gestureHasWritten
 }) {
   const drag = React.useRef(null);
   const [reading, setReading] = React.useState(null);
-  const fieldName = toArray(resizeField.field.name)[0];
+  const fieldName = resizeField ? toArray(resizeField.field.name)[0] : "";
   const end = React.useCallback(() => {
     drag.current = null;
     setReading(null);
@@ -11893,30 +12234,16 @@ function useCanvasResizeDrag({
     }
     end();
   }, [editorContext, fieldName, end]);
-
-  // Esc is heard in the canvas too: focus stays there after a block is picked
-  // by clicking it, and the canvas's own Esc would otherwise select the parent
-  // and take the handle away mid-drag.
-  React.useEffect(() => {
-    if (!reading) {
+  useEscapeWhileDragging(reading !== null, cancel);
+  const onPointerDown = edge => event => {
+    if (!resizeField) {
       return;
     }
-    const onKeyDown = event => {
-      if (event.key === "Escape") {
-        event.stopPropagation();
-        event.preventDefault();
-        cancel();
-      }
-    };
-    const targets = [window, canvasWindow()].filter(target => target !== null);
-    targets.forEach(target => target.addEventListener("keydown", onKeyDown, true));
-    return () => targets.forEach(target => target.removeEventListener("keydown", onKeyDown, true));
-  }, [reading, cancel]);
-  const onPointerDown = edge => event => {
+    const choices = canvasResizeChoices(resizeField, editorContext.types);
     const geometry = readResizeGeometry({
       path,
       axis: resizeField.option.axis,
-      values: canvasResizeValues(resizeField)
+      choices
     });
     const start = geometry && nearestResizeStep(geometry.steps, geometry.size);
     if (!geometry || !start || event.button !== 0) {
@@ -11927,12 +12254,14 @@ function useCanvasResizeDrag({
     const handle = event.currentTarget;
     const layer = handle.offsetParent;
     handle.setPointerCapture(event.pointerId);
+    gestureHasWritten.current = false;
     drag.current = {
       edge,
       pointerId: event.pointerId,
       startPointer: edge === "bottom" ? event.clientY : event.clientX,
       scale: layer && layer.offsetWidth > 0 ? layer.getBoundingClientRect().width / layer.offsetWidth : 1,
       geometry,
+      choices: new Map(choices.map(choice => [choice.key, choice])),
       lastValue: start.value,
       hasWritten: false,
       originalRawValue: dotNotationGet(editorContext.form.values, fieldName)
@@ -11946,7 +12275,7 @@ function useCanvasResizeDrag({
     const current = drag.current;
 
     // No button held means this is a hover, not a drag, whatever state says.
-    if (!current || current.pointerId !== event.pointerId || (event.buttons & 1) === 0) {
+    if (!current || !resizeField || current.pointerId !== event.pointerId || (event.buttons & 1) === 0) {
       return;
     }
     const pointer = current.edge === "bottom" ? event.clientY : event.clientX;
@@ -11960,12 +12289,13 @@ function useCanvasResizeDrag({
     }
     writeCanvasResizeValue({
       field: resizeField.field,
-      value: step.value,
+      value: current.choices.get(step.value)?.value ?? step.value,
       editorContext,
       configAfterAuto,
-      history: current.hasWritten ? "replace" : "push"
+      history: gestureHasWritten.current ? "replace" : "push"
     });
     current.hasWritten = true;
+    gestureHasWritten.current = true;
     current.lastValue = step.value;
     setReading({
       edge: current.edge,
@@ -11986,45 +12316,9 @@ function useCanvasResizeDrag({
   };
 }
 
-/** The selected block's box, in canvas pixels, as the position messages give it. */
-
-/** Screen pixels. Divided by the zoom so a handle stays catchable at any zoom. */
-const HANDLE_LENGTH = 24;
-const HANDLE_THICKNESS = 6;
-const HIT_AREA = 14;
-const Layer = styled.styled.div.withConfig({
-  displayName: "resize-handles__Layer",
-  componentId: "sc-1b3xsuc-0"
-})(["position:absolute;pointer-events:none;"]);
-const Handle = styled.styled.div.withConfig({
-  displayName: "resize-handles__Handle",
-  componentId: "sc-1b3xsuc-1"
-})(["position:absolute;pointer-events:auto;touch-action:none;display:grid;place-items:center;cursor:", ";", " &::before{content:\"\";box-sizing:border-box;border-radius:3px;background:var(--tina-color-primary,#2296fe);border:1px solid ", ";box-shadow:0 0 0 1px ", ";", "}"], ({
-  $edge
-}) => $edge === "bottom" ? "ns-resize" : "ew-resize", ({
-  $edge,
-  $scale
-}) => {
-  const length = HANDLE_LENGTH / $scale;
-  const hit = HIT_AREA / $scale;
-  return $edge === "bottom" ? `left: calc(50% - ${length / 2}px); bottom: -${hit / 2}px; width: ${length}px; height: ${hit}px;` : `top: calc(50% - ${length / 2}px); ${$edge}: -${hit / 2}px; width: ${hit}px; height: ${length}px;`;
-}, easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black900, ({
-  $edge,
-  $scale
-}) => $edge === "bottom" ? `width: ${HANDLE_LENGTH / $scale}px; height: ${HANDLE_THICKNESS / $scale}px;` : `width: ${HANDLE_THICKNESS / $scale}px; height: ${HANDLE_LENGTH / $scale}px;`);
-const Chip = styled.styled.div.withConfig({
-  displayName: "resize-handles__Chip",
-  componentId: "sc-1b3xsuc-2"
-})(["position:absolute;padding:2px 6px;border-radius:4px;background:", ";color:", ";font-size:11px;font-weight:600;line-height:16px;white-space:nowrap;pointer-events:none;", ""], easyblocksDesignSystem.Colors.black900, easyblocksDesignSystem.Colors.white, ({
-  $edge,
-  $scale
-}) => $edge === "bottom" ? `left: 50%; bottom: -28px; transform: translateX(-50%) scale(${1 / $scale});` : `top: 50%; ${$edge}: 12px; transform: translateY(-50%) scale(${1 / $scale});`);
-function isPositionChanged(data) {
-  return typeof data === "object" && data !== null && data.type === "@easyblocks-editor/selection-frame-position-changed";
-}
-
 /**
- * Handles on the selected block's edges for a field that opted into them.
+ * Handles on the selected block's edges for the fields that opted into them:
+ * the sides for a width, the bottom for a height, and the corner for both.
  *
  * The box follows the same position messages the action bar hangs from. A
  * handle is offered only while a drag would change something the page shows,
@@ -12033,22 +12327,31 @@ function isPositionChanged(data) {
  * vanished mid-drag would take the pointer with it.
  */
 function ResizeHandles({
-  resizeField,
+  widthField,
+  heightField,
   path
 }) {
   const editorContext = useEditorContext();
   const configAfterAuto = useConfigAfterAuto();
   const [box, setBox] = React.useState(null);
   const [scale, setScale] = React.useState(1);
+  /** The handle being dragged, which is the one that carries the chip. */
+  const [activePlace, setActivePlace] = React.useState(null);
   const layerRef = React.useRef(null);
-  const {
-    reading,
-    handlers
-  } = useCanvasResizeDrag({
-    resizeField,
+  const gestureHasWritten = React.useRef(false);
+  const shared = {
     path,
     editorContext,
-    configAfterAuto
+    configAfterAuto,
+    gestureHasWritten
+  };
+  const width = useCanvasResizeDrag({
+    ...shared,
+    resizeField: widthField
+  });
+  const height = useCanvasResizeDrag({
+    ...shared,
+    resizeField: heightField
   });
   React.useEffect(() => {
     function onMessage(event) {
@@ -12070,50 +12373,83 @@ function ResizeHandles({
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, []);
+  const redraws = useCanvasFrameRedraws(path, configAfterAuto);
 
-  // Read the page only when the block's size or the config changed, not on
-  // every scroll message.
-  const isDraggable = React.useMemo(() => box !== null && readResizeGeometry({
-    path,
-    axis: resizeField.option.axis,
-    values: canvasResizeValues(resizeField)
-  }) !== null,
+  // Read the page only when the block's size changed or the canvas redrew it,
+  // not on every scroll message. The fields are keyed by name: their objects
+  // are rebuilt on every write, before the canvas has drawn it.
+  const widthKey = widthField ? String(widthField.field.name) : "";
+  const heightKey = heightField ? String(heightField.field.name) : "";
+  const [widthGeometry, heightGeometry] = React.useMemo(() => box === null ? [null, null] : [geometryOf(path, widthField, editorContext.types), geometryOf(path, heightField, editorContext.types)],
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  [path, resizeField, box?.width, box?.height, configAfterAuto]);
+  [path, widthKey, heightKey, box?.width, box?.height, redraws]);
+  const canDragWidth = widthGeometry !== null;
+  const canDragHeight = heightGeometry !== null;
   React.useLayoutEffect(() => {
     const layer = layerRef.current;
     if (layer && layer.offsetWidth > 0) {
       setScale(layer.getBoundingClientRect().width / layer.offsetWidth || 1);
     }
   }, [box?.width]);
-  if (!box || !isDraggable && !reading) {
+  if (!box) {
     return null;
   }
-  const edges = resizeField.option.axis === "x" ? ["left", "right"] : ["bottom"];
+  const showWidth = canDragWidth || width.reading !== null;
+  const showHeight = canDragHeight || height.reading !== null;
+  const device = deviceLabel(editorContext);
+  const handle = (place, drags, edges) => {
+    const labels = drags.flatMap(drag => drag.reading ? [drag.reading.label] : []);
+    const release = () => setActivePlace(null);
+    return /*#__PURE__*/React__default["default"].createElement(Handle, {
+      key: place,
+      $place: place,
+      $scale: scale,
+      onPointerDown: event => {
+        setActivePlace(place);
+        drags.forEach((drag, index) => drag.handlers.onPointerDown(edges[index])(event));
+      },
+      onPointerMove: event => drags.forEach(drag => drag.handlers.onPointerMove(event)),
+      onPointerUp: () => {
+        release();
+        drags.forEach(drag => drag.handlers.onPointerUp());
+      },
+      onLostPointerCapture: () => {
+        release();
+        drags.forEach(drag => drag.handlers.onLostPointerCapture());
+      },
+      onPointerCancel: () => {
+        release();
+        drags.forEach(drag => drag.handlers.onPointerCancel());
+      }
+      // Releasing a drag fires a click, and the canvas area underneath
+      // reads a click as "pick nothing".
+      ,
+      onClick: event => event.stopPropagation()
+    }, activePlace === place && labels.length > 0 && /*#__PURE__*/React__default["default"].createElement(Chip, {
+      $place: place,
+      $scale: scale
+    }, labels.join(" × "), " \xB7 ", device));
+  };
+
+  // A width drawn by a grid moves the frame itself; any other size moves the
+  // content inside it, which is where the handles belong.
+  const content = widthGeometry ? widthGeometry.content : heightGeometry?.content;
+  const layerBox = content ? {
+    ...content,
+    top: box.top + content.top,
+    left: box.left + content.left
+  } : box;
+
+  // Only a grid span grows from either side. Any other width grows from the
+  // edge the block's alignment leaves free, so a left handle would move away
+  // from the pointer or at half its pace.
+  const isSpan = widthGeometry !== null && !widthGeometry.content;
+  // A height given as a ratio follows the width: the corner scales the block.
+  const corner = heightGeometry?.followsWidth ? [[width], ["right"]] : [[width, height], ["right", "bottom"]];
   return /*#__PURE__*/React__default["default"].createElement(Layer, {
     ref: layerRef,
-    style: box
-  }, edges.map(edge => /*#__PURE__*/React__default["default"].createElement(Handle, _extends__default["default"]({
-    key: edge,
-    $edge: edge,
-    $scale: scale
-  }, handlers, {
-    onPointerDown: handlers.onPointerDown(edge)
-    // Releasing a drag fires a click, and the canvas area underneath
-    // reads a click as "pick nothing".
-    ,
-    onClick: event => event.stopPropagation()
-  }), reading?.edge === edge && /*#__PURE__*/React__default["default"].createElement(Chip, {
-    $edge: edge,
-    $scale: scale
-  }, reading.label, " \xB7 ", deviceLabel(editorContext)))));
-}
-function deviceLabel({
-  devices,
-  breakpointIndex
-}) {
-  const device = devices.find(candidate => candidate.id === breakpointIndex);
-  return device?.label ?? breakpointIndex;
+    style: layerBox
+  }, showWidth && isSpan && handle("left", [width], ["left"]), showWidth && handle("right", [width], ["right"]), showHeight && handle("bottom", [height], ["bottom"]), showWidth && showHeight && handle("corner", ...corner));
 }
 
 /**
@@ -12195,10 +12531,15 @@ function SelectionFrame({
   [focussedField, isRichTextSelection, editorContext.compiledComponentConfig]);
   const quickFormatFields = React.useMemo(() => pickQuickFormatFields(selectionFields), [selectionFields]);
 
-  /** The one field a handle on the block's sides sets, when the block has one. */
-  const widthResizeField = React.useMemo(() => isRichTextSelection ? undefined : pickCanvasResizeFields(selectionFields).find(({
-    option
-  }) => option.axis === "x"), [selectionFields, isRichTextSelection]);
+  /** The fields the block's side and bottom handles set, when it has them. */
+  const [widthResizeField, heightResizeField] = React.useMemo(() => {
+    const resizeFields = isRichTextSelection ? [] : pickCanvasResizeFields(selectionFields);
+    return [resizeFields.find(({
+      option
+    }) => option.axis === "x"), resizeFields.find(({
+      option
+    }) => option.axis === "y")];
+  }, [selectionFields, isRichTextSelection]);
 
   /**
    * The bar is shown for a block that can be duplicated and moved, and for any
@@ -12332,11 +12673,12 @@ function SelectionFrame({
     position: "after",
     isRevealed: isRevealed,
     onClick: () => handleAddButtonClick("after")
-  }), widthResizeField ? /*#__PURE__*/React__default["default"].createElement(ResizeHandles
+  }), widthResizeField || heightResizeField ? /*#__PURE__*/React__default["default"].createElement(ResizeHandles
   // A fresh drag state for every block picked.
   , {
     key: focussedField[0],
-    resizeField: widthResizeField,
+    widthField: widthResizeField,
+    heightField: heightResizeField,
     path: focussedField[0]
   }) : null, isBarShown ? /*#__PURE__*/React__default["default"].createElement(SelectionFrameActions, {
     actions: actions,

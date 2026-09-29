@@ -1,6 +1,7 @@
 import {
   gridSpanSteps,
   gridTrackWidth,
+  hasEqualTracks,
   isStackedGrid,
   nearestResizeStep,
   offeredSteps,
@@ -114,5 +115,20 @@ describe("isStackedGrid", () => {
 
   test("a hidden column does not break the reading", () => {
     expect(isStackedGrid([328, 0, 328], 328)).toBe(true);
+  });
+});
+
+describe("hasEqualTracks", () => {
+  test("a twelve track grid counts in spans", () => {
+    expect(hasEqualTracks(Array(12).fill(80))).toBe(true);
+  });
+
+  test("proportional tracks from a free percentage do not", () => {
+    expect(hasEqualTracks([375, 625])).toBe(false);
+  });
+
+  test("no tracks, or unreadable ones, do not", () => {
+    expect(hasEqualTracks([])).toBe(false);
+    expect(hasEqualTracks([NaN, NaN])).toBe(false);
   });
 });

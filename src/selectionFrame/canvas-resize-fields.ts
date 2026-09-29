@@ -41,15 +41,54 @@ export function pickCanvasResizeFields(
 }
 
 /**
- * The values a drag steps through: the field's own `steps` when it names them,
- * otherwise every option the panel offers, in the panel's order.
+ * One value a handle can land on.
+ *
+ * `key` names it, `value` is what gets written — a token is stored as
+ * `{ tokenId, value }`, not as a string — and `css` is the length the value
+ * draws, which is how the canvas works out how big the block would be.
  */
-export function canvasResizeValues({
-  field,
-  option,
-}: CanvasResizeField): Array<string> {
+export type ResizeChoice = {
+  key: string;
+  value: unknown;
+  css: string;
+  label: string;
+};
+
+function stringChoice(value: string, label = value): ResizeChoice {
+  return { key: value, value, css: value, label };
+}
+
+/**
+ * The values a drag steps through: the field's own `steps` when it names them,
+ * otherwise what the panel offers — its options, or its theme tokens.
+ */
+export function canvasResizeChoices(
+  { field, option }: CanvasResizeField,
+  types: EditorContextType["types"],
+): Array<ResizeChoice> {
   if (option.steps) {
-    return option.steps;
+    return option.steps.map((step) => stringChoice(step));
+  }
+
+  const tokens = (
+    field as { tokens?: Record<string, { value: unknown; label?: string }> }
+  ).tokens;
+
+  if (tokens) {
+    // Stored the way the panel's token field stores a pick, widget included.
+    const widgetId = (
+      types[field.schemaProp.type] as { widget?: { id?: string } } | undefined
+    )?.widget?.id;
+
+    return Object.entries(tokens).map(([tokenId, token]) => ({
+      key: tokenId,
+      value: { tokenId, value: token.value, widgetId },
+      css:
+        typeof token.value === "number"
+          ? `${token.value}px`
+          : String(token.value),
+      label: token.label ?? tokenId,
+    }));
   }
 
   const options = (field.schemaProp as { params?: { options?: unknown } })
@@ -61,8 +100,14 @@ export function canvasResizeValues({
 
   return options.map((entry) =>
     typeof entry === "object" && entry !== null && "value" in entry
-      ? String((entry as { value: unknown }).value)
-      : String(entry),
+      ? stringChoice(
+          String((entry as { value: unknown }).value),
+          String(
+            (entry as { label?: unknown }).label ??
+              (entry as { value: unknown }).value,
+          ),
+        )
+      : stringChoice(String(entry)),
   );
 }
 
@@ -83,7 +128,7 @@ export function writeCanvasResizeValue({
   history,
 }: {
   field: InternalField;
-  value: string;
+  value: unknown;
   editorContext: EditorContextType;
   configAfterAuto: Record<string, any>;
   history: RunChangeOptions["history"];

@@ -57,6 +57,8 @@ export declare function targetSizeFromDrag({ startSize, pointerDelta, edge, }: {
  * the panel would not let somebody pick.
  */
 export declare function offeredSteps(steps: ReadonlyArray<ResizeStep>, values: ReadonlyArray<string>): Array<ResizeStep>;
+/** Whether every track of a grid came out the same width, to a pixel. */
+export declare function hasEqualTracks(trackWidths: ReadonlyArray<number>): boolean;
 /**
  * Whether a grid is drawing its items one under another — every visible item
  * the full width of the grid — which is how a row stacked for a phone looks.
