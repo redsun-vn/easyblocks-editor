@@ -1,4 +1,5 @@
 import { Colors } from "@redsun-vn/easyblocks-design-system";
+import { CANVAS_FRAME_PATH_ATTRIBUTE } from "./canvasLayers";
 
 /**
  * Set on the canvas root while the author asks to see every block's boundary.
@@ -15,6 +16,13 @@ export const CANVAS_OUTLINES_ATTRIBUTE = "data-easyblocks-show-outlines";
  * vanished on anything darker than the blue itself.
  */
 export const CONTRAST_RING = `0 0 0 2px ${Colors.white}, 0 0 0 3px ${Colors.black900}`;
+
+/**
+ * A frame at rest on a canvas showing outlines. Every part that is not the
+ * frame itself sits in `:where()`, so these rules weigh the same as the resting
+ * rule and lose to hover, selection and every drag state declared after them.
+ */
+const OUTLINED_FRAME = `:where([${CANVAS_OUTLINES_ATTRIBUTE}=true]) &[data-draggable-active=false]`;
 
 /** The thinner ring hovering uses, so hover never reads as a selection. */
 const HOVER_RING = `0 0 0 1px ${Colors.white}`;
@@ -46,10 +54,28 @@ export function selectionFrameOutlineStyles(hoveredTargetFrame: string) {
       transition: "all 100ms",
     },
 
-    [`:where([${CANVAS_OUTLINES_ATTRIBUTE}=true]) &[data-draggable-active=false]::after`]:
+    // With outlines on, the line says what a block is, not how deep it sits:
+    // one colour, three weights. Colour already means selection, drop target
+    // and refusal on this canvas, and a colour per depth would sink into
+    // whatever colours the page itself uses.
+    // Content: a block holding no other block. Dotted and faintest.
+    [`${OUTLINED_FRAME}::after`]: {
+      opacity: 0.45,
+      borderStyle: "dotted",
+    },
+
+    // A container: a column, or anything else with blocks inside.
+    [`${OUTLINED_FRAME}:where(:has([${CANVAS_FRAME_PATH_ATTRIBUTE}]))::after`]:
       {
         opacity: 0.6,
         borderStyle: "dashed",
+      },
+
+    // A section: a frame no other frame contains. Solid and strongest.
+    [`${OUTLINED_FRAME}:where(:not([${CANVAS_FRAME_PATH_ATTRIBUTE}] *))::after`]:
+      {
+        opacity: 0.8,
+        borderStyle: "solid",
       },
 
     // A drop target keeps its own look while the pointer is on it.

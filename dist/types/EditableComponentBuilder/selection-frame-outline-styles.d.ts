@@ -110,6 +110,14 @@ export declare function selectionFrameOutlineStyles(hoveredTargetFrame: string):
         opacity: number;
         borderStyle: string;
     };
+    ":where([data-easyblocks-show-outlines=true]) &[data-draggable-active=false]:where(:has([data-easyblocks-path]))::after": {
+        opacity: number;
+        borderStyle: string;
+    };
+    ":where([data-easyblocks-show-outlines=true]) &[data-draggable-active=false]:where(:not([data-easyblocks-path] *))::after": {
+        opacity: number;
+        borderStyle: string;
+    };
     "&[data-active=true]::after": {
         opacity: number;
         borderStyle: string;
