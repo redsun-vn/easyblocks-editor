@@ -39,16 +39,6 @@ export type DragEndOutcome = {
  * branch, so any change here silently breaks moving a block out of its parent.
  */
 export declare function resolveDragEndOutcome(event: DragEndSubject): DragEndOutcome;
-/** Squared distance from a point to the nearest point of a rectangle; 0 inside it. */
-export declare function squaredDistanceToRect(pointer: {
-    x: number;
-    y: number;
-}, rect: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-}): number;
 /**
  * The block a drop is aimed at.
  *

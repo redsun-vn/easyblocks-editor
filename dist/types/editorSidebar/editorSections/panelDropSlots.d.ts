@@ -15,6 +15,8 @@
 export type SlotChildRect = {
     /** Position in the collection. */
     index: number;
+    /** The child's component id, when known. */
+    component?: string;
     top: number;
     bottom: number;
     left: number;
@@ -35,6 +37,13 @@ export type PanelDropSlot = {
     children: Array<SlotChildRect>;
     /** The area that counts as being inside this collection. */
     bounds: SlotBounds;
+    /**
+     * Which way the collection lays its children out, as measured on screen.
+     * Only consulted when there are too few children to infer it from.
+     */
+    axis?: SlotAxis;
+    /** Component ids and types the collection takes, when known. */
+    accepts?: Array<string>;
 };
 export type PanelDropAim = {
     parentPath: string;
@@ -113,4 +122,10 @@ export declare function resolveSlotAim(pointer: {
  * to whatever happens to be painted behind it.
  */
 export declare function pickSlotForPath(slots: Array<PanelDropSlot>, path: string | null): PanelDropSlot | null;
+/**
+ * Every collection the walk above passes through, innermost first and the root
+ * last. `pickSlotForPath` takes the first; a drag that knows what it carries
+ * takes the first one that can hold it.
+ */
+export declare function listSlotCandidates(slots: Array<PanelDropSlot>, path: string | null): Array<PanelDropSlot>;
 //# sourceMappingURL=panelDropSlots.d.ts.map

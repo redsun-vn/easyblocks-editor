@@ -64,6 +64,7 @@ import React, {
 } from "react";
 import Modal from "react-modal";
 import { styled } from "styled-components";
+import { planAimedMove } from "./CanvasRoot/canvasMoveAim";
 import { ConfigAfterAutoContext } from "./ConfigAfterAutoContext";
 import { ExternalDataChangeHandler } from "./EasyblocksEditorProps";
 import { planMoveAfterInsert } from "./EditableComponentBuilder/SelectionFrameActions";
@@ -1312,7 +1313,14 @@ const EditorContent = ({
       }
 
       if (event.data.type === "@easyblocks-editor/item-moved") {
-        const { fromPath, toPath, placement } = event.data.payload;
+        // `index` is sent only by a drag aimed at a gap in a column, which knows
+        // exactly where it lands; every other move works it out as it always has.
+        const { fromPath, toPath, placement, index } = event.data
+          .payload as ItemMovedEvent["data"]["payload"] & { index?: unknown };
+        const exactIndex =
+          typeof index === "number" && Number.isInteger(index) && index >= 0
+            ? index
+            : undefined;
 
         const fromPathParseResult = parsePath(fromPath, editorContext.form);
         const toPathParseResult = parsePath(toPath, editorContext.form);
@@ -1326,7 +1334,10 @@ const EditorContent = ({
           return;
         }
 
-        if (fromPathParseResult.parent.path === toPathParseResult.parent.path) {
+        if (
+          exactIndex === undefined &&
+          fromPathParseResult.parent.path === toPathParseResult.parent.path
+        ) {
           const pathToMove = `${
             fromPathParseResult.parent.path
               ? fromPathParseResult.parent.path + "."
@@ -1352,12 +1363,9 @@ const EditorContent = ({
               editorContext,
             );
 
-            const insertionIndex = calculateInsertionIndex(
-              fromPath,
-              toPath,
-              placement,
-              form,
-            );
+            const insertionIndex =
+              exactIndex ??
+              calculateInsertionIndex(fromPath, toPath, placement, form);
 
             // The insert lands first, and it renumbers everything after it in
             // the collection it lands in. `fromPath` was read before that, so
@@ -1365,10 +1373,13 @@ const EditorContent = ({
             // index — which is how a dragged block could vanish while one of
             // its old neighbours ended up duplicated. The "move to" menu has
             // always replayed the shift; the drag path now does too.
-            const { sourceToRemove, pathToFocus } = planMoveAfterInsert(
-              fromPath,
-              `${insertionPath}.${insertionIndex}`,
-            );
+            const { sourceToRemove, pathToFocus } =
+              exactIndex === undefined
+                ? planMoveAfterInsert(
+                    fromPath,
+                    `${insertionPath}.${insertionIndex}`,
+                  )
+                : planAimedMove(fromPath, insertionPath, exactIndex);
 
             form.mutators.insert(insertionPath, insertionIndex, newConfig);
 

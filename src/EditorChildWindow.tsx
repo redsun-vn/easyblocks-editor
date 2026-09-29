@@ -23,9 +23,11 @@ import { TooltipProvider } from "@redsun-vn/easyblocks-design-system/Tooltip";
 import React, { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { CanvasRoot } from "./CanvasRoot/CanvasRoot";
+import { useCanvasMoveAim } from "./CanvasRoot/useCanvasMoveAim";
 import { usePanelDropTarget } from "./CanvasRoot/usePanelDropTarget";
 import EditableComponentBuilder from "./EditableComponentBuilder/EditableComponentBuilder.editor";
 import TypePlaceholder from "./Placeholder";
+import { squaredDistanceToRect } from "./editorSidebar/editorSections/slotDescent";
 import SkeletonEditorCanvasArea from "./SkeletonEditorCanvasArea";
 
 const dragDataSchema = z.object({
@@ -144,17 +146,6 @@ export function resolveDragEndOutcome(event: DragEndSubject): DragEndOutcome {
   };
 }
 
-/** Squared distance from a point to the nearest point of a rectangle; 0 inside it. */
-export function squaredDistanceToRect(
-  pointer: { x: number; y: number },
-  rect: { left: number; top: number; width: number; height: number },
-): number {
-  const dx = Math.max(rect.left - pointer.x, 0, pointer.x - (rect.left + rect.width));
-  const dy = Math.max(rect.top - pointer.y, 0, pointer.y - (rect.top + rect.height));
-
-  return dx * dx + dy * dy;
-}
-
 /**
  * How far outside a block the pointer may stray and still be aimed at it, in
  * canvas pixels. Wide enough for a gutter or a section's padding, narrow enough
@@ -242,6 +233,12 @@ export function EasyblocksCanvas({
   // An item dragged out of a sidebar panel. A separate gesture from the one
   // below on purpose — see the note in `usePanelDropTarget`.
   const panelDropIndicator = usePanelDropTarget(editorContext);
+  // A block dragged across columns aims the way a panel drop does, so the two
+  // gestures agree on where it lands.
+  const canvasMoveAim = useCanvasMoveAim(
+    editorContext,
+    pointerNearestCollisionDetection,
+  );
   // Ten pixels was the price of the whole block being the handle: any press that
   // drifted had to be assumed accidental. Now that a drag starts from a grip, the
   // press is already deliberate, and a shorter threshold is what makes the block
@@ -299,7 +296,8 @@ export function EasyblocksCanvas({
         <CanvasRoot>
           <DndContext
             sensors={[mouseSensor, touchSensor]}
-            collisionDetection={pointerNearestCollisionDetection}
+            collisionDetection={canvasMoveAim.collisionDetection}
+            onDragMove={canvasMoveAim.onDragMove}
             onDragStart={(event) => {
               document.documentElement.style.cursor = "grabbing";
               const activeData = dragDataSchema.parse(event.active.data.current);
@@ -312,6 +310,25 @@ export function EasyblocksCanvas({
             onDragEnd={(event) => {
               document.documentElement.style.cursor = "";
               setDraggedLabel(null);
+
+              const fromPath = dragDataSchema.parse(
+                event.active.data.current,
+              ).path;
+              const aimedMove = canvasMoveAim.takeMove(fromPath);
+
+              if (aimedMove === "none") {
+                window.parent.editorWindowAPI?.editorContext?.setFocussedField(
+                  fromPath,
+                );
+                return;
+              }
+
+              if (aimedMove) {
+                requestAnimationFrame(() => {
+                  window.parent.postMessage(itemMoved(aimedMove));
+                });
+                return;
+              }
 
               const outcome = resolveDragEndOutcome(event);
 
@@ -329,6 +346,7 @@ export function EasyblocksCanvas({
             onDragCancel={(event) => {
               document.documentElement.style.cursor = "";
               setDraggedLabel(null);
+              canvasMoveAim.clear();
               // If the drag was canceled, we want to refocus dragged item.
               window.parent.editorWindowAPI?.editorContext?.setFocussedField(
                 dragDataSchema.parse(event.active.data.current).path,
@@ -360,6 +378,7 @@ export function EasyblocksCanvas({
             </DragOverlay>
           </DndContext>
           {panelDropIndicator}
+          {canvasMoveAim.indicator}
         </CanvasRoot>
       </TooltipProvider>
     </EasyblocksMetadataProvider>

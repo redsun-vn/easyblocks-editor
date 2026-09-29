@@ -5,6 +5,7 @@ import { CANVAS_FRAME_PATH_ATTRIBUTE } from "../EditableComponentBuilder/canvasL
 import {
   parseSlotPath,
   type PanelDropSlot,
+  type SlotAxis,
   type SlotBounds,
 } from "../editorSidebar/editorSections/panelDropSlots";
 
@@ -43,6 +44,61 @@ function union(a: SlotBounds, b: SlotBounds): SlotBounds {
 
 const slotKey = (parentPath: string, prop: string) => `${parentPath}|${prop}`;
 
+/**
+ * Which way the box holding `frame` lays out its children, read off the nearest
+ * flex or grid container between the frame and the block that owns it.
+ *
+ * Needed for a collection of one: two children say which way they run by where
+ * they sit, one says nothing, and a single icon in a horizontal column used to
+ * be treated as a stack — the left of it read as "below it".
+ */
+function measureAxis(frame: Element): SlotAxis | undefined {
+  const view = frame.ownerDocument.defaultView;
+
+  for (
+    let box = frame.parentElement;
+    box && view && !box.hasAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
+    box = box.parentElement
+  ) {
+    const style = view.getComputedStyle(box);
+
+    if (style.display.endsWith("flex")) {
+      return style.flexDirection.startsWith("row") ? "horizontal" : "vertical";
+    }
+
+    // A one-track grid is a box around a single item — `BlockColumn` puts
+    // one around each — and says nothing about how the items run, so the walk
+    // goes on to the container that does.
+    if (
+      style.display.endsWith("grid") &&
+      style.gridTemplateColumns.trim().split(/\s+/).length > 1
+    ) {
+      return "horizontal";
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Path of the frame painted on top at a point, or `null` over open canvas.
+ *
+ * Paint order, not geometry: a sticky header keeps its place while the page
+ * scrolls underneath, so two frames can contain the same point and the deeper
+ * one is the one nobody can see.
+ */
+export function topmostFramePath(
+  doc: Document,
+  pointer: { x: number; y: number },
+): string | null {
+  const frame = doc
+    .elementsFromPoint(pointer.x, pointer.y)
+    .map((element) => element.closest(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`))
+    .find((found): found is Element => found !== null);
+
+  return frame?.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE) ?? null;
+}
+
 export function collectPanelDropSlots(
   doc: Document,
   editorContext: any,
@@ -79,7 +135,24 @@ export function collectPanelDropSlots(
       ? editorContext.form.values
       : dotNotationGet(editorContext.form.values, path);
 
+  // Asked once per frame and again per collection; the answer only depends on
+  // the component at the path, and this runs on every pointer move of a drag.
+  const slotsByPath = new Map<string, ReturnType<typeof getCollectionSlots>>();
+
   const slotsOf = (path: string) => {
+    const known = slotsByPath.get(path);
+
+    if (known) {
+      return known;
+    }
+
+    const found = readSlotsOf(path);
+    slotsByPath.set(path, found);
+
+    return found;
+  };
+
+  const readSlotsOf = (path: string) => {
     const entry = entryAt(path);
 
     if (!isEntry(entry)) {
@@ -95,6 +168,11 @@ export function collectPanelDropSlots(
     slotsOf(parentPath).some(
       (slot) => slot.prop === prop && slot.panelDropTarget,
     );
+
+  const acceptsOf = (parentPath: string, prop: string) =>
+    slotsOf(parentPath).find((slot) => slot.prop === prop)?.accepts;
+
+  slots.get(slotKey("", "data"))!.accepts = acceptsOf("", "data");
 
   // Collections that already hold something: each child contributes its own
   // rectangle, and the collection's area is everything its children cover.
@@ -120,7 +198,12 @@ export function collectPanelDropSlots(
     const bounds = toBounds(element.getBoundingClientRect());
     const key = slotKey(parsed.parentPath, parsed.prop);
     const existing = slots.get(key);
-    const childRect = { index: parsed.index, ...bounds };
+    const child = entryAt(path);
+    const childRect = {
+      index: parsed.index,
+      component: isEntry(child) ? child._component : undefined,
+      ...bounds,
+    };
 
     if (existing) {
       existing.children.push(childRect);
@@ -139,6 +222,8 @@ export function collectPanelDropSlots(
       prop: parsed.prop,
       children: [childRect],
       bounds,
+      axis: measureAxis(element),
+      accepts: acceptsOf(parsed.parentPath, parsed.prop),
     });
   }
 
@@ -168,6 +253,7 @@ export function collectPanelDropSlots(
         prop: slot.prop,
         children: [],
         bounds: toBounds(element.getBoundingClientRect()),
+        accepts: slot.accepts,
       });
     }
   }

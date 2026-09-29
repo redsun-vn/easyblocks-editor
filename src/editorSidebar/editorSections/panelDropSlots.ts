@@ -16,6 +16,8 @@
 export type SlotChildRect = {
   /** Position in the collection. */
   index: number;
+  /** The child's component id, when known. */
+  component?: string;
   top: number;
   bottom: number;
   left: number;
@@ -38,6 +40,13 @@ export type PanelDropSlot = {
   children: Array<SlotChildRect>;
   /** The area that counts as being inside this collection. */
   bounds: SlotBounds;
+  /**
+   * Which way the collection lays its children out, as measured on screen.
+   * Only consulted when there are too few children to infer it from.
+   */
+  axis?: SlotAxis;
+  /** Component ids and types the collection takes, when known. */
+  accepts?: Array<string>;
 };
 
 export type PanelDropAim = {
@@ -122,7 +131,10 @@ export function resolveSlotAim(
   slot: PanelDropSlot,
 ): PanelDropAim {
   const children = [...slot.children].sort((a, b) => a.index - b.index);
-  const axis = inferSlotAxis(children);
+  // One child says nothing about direction, and assuming "down" is what made
+  // the left of the only icon in a horizontal column read as "below it".
+  const axis =
+    children.length < 2 && slot.axis ? slot.axis : inferSlotAxis(children);
 
   if (children.length === 0) {
     return {
@@ -206,39 +218,49 @@ export function pickSlotForPath(
   slots: Array<PanelDropSlot>,
   path: string | null,
 ): PanelDropSlot | null {
-  const root = slots.find((slot) => slot.parentPath === "") ?? null;
+  return listSlotCandidates(slots, path)[0] ?? null;
+}
 
-  if (path === null) {
-    return root;
-  }
+/**
+ * Every collection the walk above passes through, innermost first and the root
+ * last. `pickSlotForPath` takes the first; a drag that knows what it carries
+ * takes the first one that can hold it.
+ */
+export function listSlotCandidates(
+  slots: Array<PanelDropSlot>,
+  path: string | null,
+): Array<PanelDropSlot> {
+  const root = slots.find((slot) => slot.parentPath === "");
+  const candidates: Array<PanelDropSlot> = [];
+  const add = (slot: PanelDropSlot | undefined) => {
+    if (slot && !candidates.includes(slot)) candidates.push(slot);
+  };
 
   let current = path;
 
-  for (;;) {
-    const owned = slots.find((slot) => slot.parentPath === current);
-
-    if (owned) {
-      return owned;
-    }
+  while (current !== null) {
+    const owner = current;
+    slots
+      .filter((slot) => slot.parentPath === owner && owner !== "")
+      .forEach(add);
 
     const parsed = parseSlotPath(current);
 
     if (!parsed) {
-      return root;
+      break;
     }
 
-    const holder = slots.find(
-      (slot) => slot.parentPath === parsed.parentPath && slot.prop === parsed.prop,
+    add(
+      slots.find(
+        (slot) =>
+          slot.parentPath === parsed.parentPath && slot.prop === parsed.prop,
+      ),
     );
 
-    if (holder) {
-      return holder;
-    }
-
-    if (parsed.parentPath === "") {
-      return root;
-    }
-
-    current = parsed.parentPath;
+    current = parsed.parentPath === "" ? null : parsed.parentPath;
   }
+
+  add(root);
+
+  return candidates;
 }

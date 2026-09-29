@@ -9,8 +9,8 @@ import {
   resolveSlotAim,
   type PanelDropAim,
 } from "../editorSidebar/editorSections/panelDropSlots";
-import { CANVAS_FRAME_PATH_ATTRIBUTE } from "../EditableComponentBuilder/canvasLayers";
-import { collectPanelDropSlots } from "./collectPanelDropSlots";
+import { descendToNearestChildSlot } from "../editorSidebar/editorSections/slotDescent";
+import { collectPanelDropSlots, topmostFramePath } from "./collectPanelDropSlots";
 
 /**
  * Receiving an item dragged out of a sidebar panel.
@@ -75,7 +75,7 @@ function AcceptFrame() {
  * collection it belongs to, because a line spanning the window says "between two
  * sections" no matter which column it was actually drawn for.
  */
-function InsertionLine({ line }: { line: PanelDropAim["line"] }) {
+export function InsertionLine({ line }: { line: PanelDropAim["line"] }) {
   const isAcross = line.axis === "horizontal";
 
   return (
@@ -126,17 +126,14 @@ export function usePanelDropTarget(editorContext: any) {
        * is the one nobody can see. `elementsFromPoint` answers with what is
        * actually on top, which is what the person is pointing at.
        */
-      const topmost = document
-        .elementsFromPoint(pointer.x, pointer.y)
-        .map((element) => element.closest(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`))
-        .find((frame): frame is Element => frame !== null);
+      const slots = collectPanelDropSlots(document, editorContext);
+      const slot = pickSlotForPath(slots, topmostFramePath(document, pointer));
 
-      const slot = pickSlotForPath(
-        collectPanelDropSlots(document, editorContext),
-        topmost?.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE) ?? null,
-      );
-
-      return slot ? resolveSlotAim(pointer, slot) : null;
+      // A row's own space means the column nearest the pointer, never a new
+      // column — see `descendToNearestChildSlot`.
+      return slot
+        ? resolveSlotAim(pointer, descendToNearestChildSlot(slots, slot, pointer))
+        : null;
     },
     [editorContext],
   );

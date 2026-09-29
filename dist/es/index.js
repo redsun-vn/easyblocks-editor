@@ -8,7 +8,7 @@ import { useToaster, Toaster } from '@redsun-vn/easyblocks-design-system/Toaster
 import { Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, TooltipProvider } from '@redsun-vn/easyblocks-design-system/Tooltip';
 import styled, { styled as styled$1, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
-import { findComponentDefinition, parsePath, findComponentDefinitionById, duplicateConfig, normalize as normalize$1, isSchemaPropTextModifier, isSchemaPropActionTextModifier, isExternalSchemaProp, useTextValue, stripRichTextPartSelection, richTextChangedEvent, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, RichTextEditor, TextEditor, configTraverse, itemMoved } from '@redsun-vn/easyblocks-core/_internals';
+import { findComponentDefinition, parsePath, findComponentDefinitionById, duplicateConfig, normalize as normalize$1, isSchemaPropTextModifier, isSchemaPropActionTextModifier, isExternalSchemaProp, useTextValue, stripRichTextPartSelection, richTextChangedEvent, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
 import { Colors, Fonts } from '@redsun-vn/easyblocks-design-system';
 import throttle from 'lodash.throttle';
 import debounce$1 from 'lodash/debounce';
@@ -268,6 +268,395 @@ function uniqueId() {
     return v.toString(16);
   });
   return id;
+}
+
+/**
+ * Choosing which collection a panel drop is aimed at.
+ *
+ * The gesture used to have one possible answer — a gap between two top-level
+ * sections — because the canvas only ever measured frames whose path looked like
+ * `data.<n>`. Everything deeper was filtered out, so releasing the pointer over a
+ * column did not land in that column; it fell back to an index at the page root
+ * and the item arrived somewhere else entirely, with no sign that anything had
+ * been redirected.
+ *
+ * These functions are geometry and string work only. They take rectangles the
+ * canvas measured and answer where the item goes, which keeps the part that is
+ * easy to get wrong testable without a browser.
+ */
+
+/** A collection the pointer could be aiming at. */
+
+/**
+ * Splits a frame's path into the collection holding it and its position.
+ *
+ * Every editable frame's path ends in `<prop>.<index>`, at the root (`data.2`)
+ * just as much as deeper in (`data.0.Cells.1.Items.3`), so one rule reads both
+ * and the root stops being a special case.
+ */
+function parseSlotPath(path) {
+  const segments = path.split(".");
+  if (segments.length < 2) {
+    return null;
+  }
+  const index = Number(segments[segments.length - 1]);
+  if (!Number.isInteger(index) || index < 0) {
+    return null;
+  }
+  return {
+    parentPath: segments.slice(0, -2).join("."),
+    prop: segments[segments.length - 2],
+    index
+  };
+}
+function midX(rect) {
+  return rect.left + (rect.right - rect.left) / 2;
+}
+function midY(rect) {
+  return rect.top + (rect.bottom - rect.top) / 2;
+}
+
+/**
+ * Whether a collection lays its children out across or down the page.
+ *
+ * Read from where the children actually are rather than from the component's
+ * settings: a row of columns turns into a stack at a narrow breakpoint, and the
+ * insertion line has to follow what is on screen, not what the desktop layout
+ * says. Comparing how far apart the first two children are on each axis needs no
+ * tolerance value to tune.
+ */
+function inferSlotAxis(children) {
+  if (children.length < 2) {
+    return "vertical";
+  }
+  const [first, second] = children;
+  return Math.abs(midX(second) - midX(first)) > Math.abs(midY(second) - midY(first)) ? "horizontal" : "vertical";
+}
+
+/**
+ * Which gap inside one collection the pointer is aiming at.
+ *
+ * A child's midpoint is the boundary, not its nearest edge: a section is often
+ * taller than the screen, and with edges the whole middle of a tall one would aim
+ * at nothing. An empty collection still answers — index 0 — because dropping onto
+ * an empty column is the gesture this whole change exists to allow.
+ */
+function resolveSlotAim(pointer, slot) {
+  const children = [...slot.children].sort((a, b) => a.index - b.index);
+  // One child says nothing about direction, and assuming "down" is what made
+  // the left of the only icon in a horizontal column read as "below it".
+  const axis = children.length < 2 && slot.axis ? slot.axis : inferSlotAxis(children);
+  if (children.length === 0) {
+    return {
+      parentPath: slot.parentPath,
+      prop: slot.prop,
+      index: 0,
+      line: {
+        x: slot.bounds.left,
+        y: slot.bounds.top,
+        length: slot.bounds.right - slot.bounds.left,
+        axis: "vertical"
+      }
+    };
+  }
+  const aimAt = (index, rect, edge) => ({
+    parentPath: slot.parentPath,
+    prop: slot.prop,
+    index,
+    line: axis === "horizontal" ? {
+      x: edge === "before" ? rect.left : rect.right,
+      y: rect.top,
+      length: rect.bottom - rect.top,
+      axis
+    } : {
+      x: rect.left,
+      y: edge === "before" ? rect.top : rect.bottom,
+      length: rect.right - rect.left,
+      axis
+    }
+  });
+  for (const child of children) {
+    const boundary = axis === "horizontal" ? midX(child) : midY(child);
+    const position = axis === "horizontal" ? pointer.x : pointer.y;
+    if (position < boundary) {
+      return aimAt(child.index, child, "before");
+    }
+  }
+  const last = children[children.length - 1];
+  return aimAt(last.index + 1, last, "after");
+}
+
+/**
+ * The collection a frame under the pointer belongs to.
+ *
+ * Which frame is under the pointer is a paint-order question, answered by
+ * `elementsFromPoint` before this is called. What the frame *means* is a tree
+ * question, answered here, and keeping the two apart is the whole point: a
+ * geometric search for the deepest rectangle containing the pointer picks the
+ * wrong one as soon as anything overlaps. A sticky header is the case that
+ * proves it — it stays at the top of the canvas while the page scrolls beneath,
+ * so a pointer over the header sits inside the header *and* inside whatever row
+ * has scrolled under it, and the row is the deeper of the two. The item then
+ * lands in a block the person cannot even see.
+ *
+ * From the frame, three questions in order:
+ *
+ *   1. Does this block own a collection that takes drops? Reaching a block as
+ *      the topmost frame means the pointer is in its own space rather than in
+ *      any child, so its own collection is what is being aimed at — this is how
+ *      an empty column, and the gutter between two columns, are reachable.
+ *   2. Otherwise, does the collection holding it take drops? This is the common
+ *      case: the pointer is over an item, and the item's own collection is where
+ *      a sibling would go.
+ *   3. Otherwise ask the same of its parent, and so on outwards.
+ *
+ * The root collection ends every walk, so a frame belonging to a collection that
+ * never opted in — an older container — sends the drop to the page root, exactly
+ * where it would have gone before any of this existed. It does not fall through
+ * to whatever happens to be painted behind it.
+ */
+function pickSlotForPath(slots, path) {
+  return listSlotCandidates(slots, path)[0] ?? null;
+}
+
+/**
+ * Every collection the walk above passes through, innermost first and the root
+ * last. `pickSlotForPath` takes the first; a drag that knows what it carries
+ * takes the first one that can hold it.
+ */
+function listSlotCandidates(slots, path) {
+  const root = slots.find(slot => slot.parentPath === "");
+  const candidates = [];
+  const add = slot => {
+    if (slot && !candidates.includes(slot)) candidates.push(slot);
+  };
+  let current = path;
+  while (current !== null) {
+    const owner = current;
+    slots.filter(slot => slot.parentPath === owner && owner !== "").forEach(add);
+    const parsed = parseSlotPath(current);
+    if (!parsed) {
+      break;
+    }
+    add(slots.find(slot => slot.parentPath === parsed.parentPath && slot.prop === parsed.prop));
+    current = parsed.parentPath === "" ? null : parsed.parentPath;
+  }
+  add(root);
+  return candidates;
+}
+
+/**
+ * Aiming past a collection of containers into the container itself.
+ *
+ * A row's own space — its padding, the gutter between two columns, the strip
+ * above a column that is shorter than the row — belongs to the row, not to any
+ * column. Aimed at literally, a drop there lands between two columns, and a
+ * search bar released beside the cart icon of a header arrived as a column of
+ * its own. Nobody pointing at the gap beside an icon means "a new column": they
+ * mean the column the icon is in, so that is where the aim goes.
+ *
+ * Only a collection that takes its children by their own component id — a row,
+ * which takes columns and nothing else — and whose every child is exactly one
+ * opted-in collection is descended. A column is where content lives and stays
+ * the answer, even one holding nothing but sub-grids: it takes those by type,
+ * and descending there would put the block between the sub-grid's columns — the
+ * very thing this exists to stop. The root never descends: a pointer over
+ * open canvas below the last section means "a new section", as it always has.
+ */
+
+/** Squared distance from a point to the nearest point of a rectangle; 0 inside it. */
+function squaredDistanceToRect(pointer, rect) {
+  const dx = Math.max(rect.left - pointer.x, 0, pointer.x - (rect.left + rect.width));
+  const dy = Math.max(rect.top - pointer.y, 0, pointer.y - (rect.top + rect.height));
+  return dx * dx + dy * dy;
+}
+const distanceToChild = (pointer, child) => squaredDistanceToRect(pointer, {
+  left: child.left,
+  top: child.top,
+  width: child.right - child.left,
+  height: child.bottom - child.top
+});
+
+/** The collection inside the child nearest the pointer, or `slot` itself when it holds content. */
+function descendToNearestChildSlot(slots, slot, pointer) {
+  if (slot.parentPath === "" || slot.children.length === 0) {
+    return slot;
+  }
+  const accepts = slot.accepts ?? [];
+  if (!slot.children.every(child => child.component !== undefined && accepts.includes(child.component))) {
+    return slot;
+  }
+  const base = `${slot.parentPath}.${slot.prop}`;
+  let nearest;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const child of slot.children) {
+    const owned = slots.filter(candidate => candidate.parentPath === `${base}.${child.index}`);
+
+    // One child that is not a single-collection container means this holds
+    // content, not containers.
+    if (owned.length !== 1) {
+      return slot;
+    }
+    const distance = distanceToChild(pointer, child);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearest = owned[0];
+    }
+  }
+  return nearest ?? slot;
+}
+
+/**
+ * The collection a drag that knows what it carries is aimed at.
+ *
+ * Walks outwards from the frame under the pointer, as `pickSlotForPath` does,
+ * and takes the first collection that can hold the block — trying the column
+ * nearest the pointer whenever the collection itself is a row that cannot. A
+ * column being dragged is held by the row, so columns still reorder among
+ * themselves; a block inside one is not, so it moves to the nearest column.
+ */
+function pickSlotForDrag({
+  slots,
+  path,
+  pointer,
+  canHold
+}) {
+  for (const slot of listSlotCandidates(slots, path)) {
+    if (canHold(slot)) {
+      return slot;
+    }
+    const inner = descendToNearestChildSlot(slots, slot, pointer);
+    if (inner !== slot && canHold(inner)) {
+      return inner;
+    }
+  }
+  return null;
+}
+
+/**
+ * Where a block already on the canvas lands when it is dragged across columns.
+ *
+ * The block-by-block targeting that dragging used before only knows about
+ * blocks: a column's own space is a droppable only when the row it sits in can
+ * take the dragged block, and a row takes nothing but columns. So the empty part
+ * of a column — the part somebody aims at to put a block beside another — was
+ * no target at all, and the nearest-block fallback answered with whatever sat
+ * closest, often a block in the neighbouring column or nothing. Moving a block
+ * from one column to another, in the same row or a different one, was down to
+ * luck.
+ *
+ * This aims the way a drop from the panel does — the collection under the
+ * pointer and the gap in it — so both gestures agree on where a block goes.
+ *
+ * It only takes over for a block living in a collection that opted in with
+ * `panelDropTarget`, and never for a drop at the page root or into an older
+ * container: those keep the block-by-block targeting exactly as it was.
+ */
+
+const collectionPathOf = (parentPath, prop) => parentPath === "" ? prop : `${parentPath}.${prop}`;
+const isOptedIn = (slots, parentPath, prop) => parentPath !== "" && slots.some(slot => slot.parentPath === parentPath && slot.prop === prop);
+
+/** Whether a path is `ancestor` itself or somewhere inside it. */
+const isWithin = (path, ancestor) => path === ancestor || path.startsWith(`${ancestor}.`);
+function resolveCanvasMoveAim({
+  slots,
+  fromPath,
+  topmostPath,
+  pointer,
+  legacyOverPath,
+  canHold
+}) {
+  const from = parseSlotPath(fromPath);
+  if (!from || !isOptedIn(slots, from.parentPath, from.prop)) {
+    return null;
+  }
+  if (legacyOverPath !== null) {
+    const over = parseSlotPath(`${legacyOverPath}.0`);
+    if (over && over.parentPath !== "" && !isOptedIn(slots, over.parentPath, over.prop)) {
+      return null;
+    }
+  }
+  const slot = pickSlotForDrag({
+    slots,
+    path: topmostPath,
+    pointer,
+    // A block cannot go inside itself.
+    canHold: candidate => !isWithin(candidate.parentPath, fromPath) && canHold(candidate)
+  });
+  if (!slot || slot.parentPath === "") {
+    return null;
+  }
+  return {
+    ...resolveSlotAim(pointer, slot),
+    length: slot.children.length
+  };
+}
+
+/**
+ * The aim as the parent window's move event reads it, or `null` when the block
+ * would land where it already is.
+ *
+ * Within one collection the parent reorders to the index `toPath` ends in,
+ * counted after the block has left its place. Across two it inserts into the
+ * collection `toPath` sits in — or is, for an empty one — at `index`. The index
+ * travels with the event rather than being worked out from `placement`,
+ * because that arithmetic predates this and older documents depend on it
+ * exactly as it is.
+ */
+function toItemMove(aim, fromPath) {
+  const from = parseSlotPath(fromPath);
+  const collection = collectionPathOf(aim.parentPath, aim.prop);
+  if (collectionPathOf(from.parentPath, from.prop) === collection) {
+    const target = aim.index > from.index ? aim.index - 1 : aim.index;
+    return target === from.index ? null : {
+      fromPath,
+      toPath: `${collection}.${target}`
+    };
+  }
+  return {
+    fromPath,
+    toPath: aim.length === 0 ? collection : `${collection}.0`,
+    index: aim.index
+  };
+}
+
+/**
+ * `path` after an item has been inserted at, or removed from, `index` in
+ * `collectionPath`: only a path running through that collection at or past the
+ * index is renumbered, by one.
+ *
+ * The shared `shiftPath` every other move goes through gets two cases wrong that
+ * an aimed move reaches in one gesture: it does not lift a sub-grid pushed down
+ * by an insert right above it — so the original stayed behind as a duplicate —
+ * and it renumbers a sibling when something nested inside an earlier one is
+ * taken out. Aimed moves use this instead; the rest stay on `shiftPath`.
+ */
+function renumberThrough(path, collectionPath, index, delta) {
+  const prefix = `${collectionPath}.`;
+  if (!path.startsWith(prefix)) {
+    return path;
+  }
+  const [position, ...rest] = path.slice(prefix.length).split(".");
+  const at = Number(position);
+  const reached = delta === 1 ? at >= index : at > index;
+  if (!Number.isInteger(at) || !reached) {
+    return path;
+  }
+  return [`${prefix}${at + delta}`, ...rest].join(".");
+}
+
+/**
+ * Which path to remove and which to select after an aimed move has inserted the
+ * block at `index` in `collectionPath`.
+ */
+function planAimedMove(sourcePath, collectionPath, index) {
+  const sourceToRemove = renumberThrough(sourcePath, collectionPath, index, 1);
+  const removed = sourceToRemove.split(".");
+  const removedIndex = Number(removed.pop());
+  return {
+    sourceToRemove,
+    pathToFocus: renumberThrough(`${collectionPath}.${index}`, removed.join("."), removedIndex, -1)
+  };
 }
 
 const ConfigAfterAutoContext = /*#__PURE__*/React__default.createContext(null);
@@ -13108,17 +13497,21 @@ const EditorContent = ({
         actions.insertItem(event.data.payload);
       }
       if (event.data.type === "@easyblocks-editor/item-moved") {
+        // `index` is sent only by a drag aimed at a gap in a column, which knows
+        // exactly where it lands; every other move works it out as it always has.
         const {
           fromPath,
           toPath,
-          placement
+          placement,
+          index
         } = event.data.payload;
+        const exactIndex = typeof index === "number" && Number.isInteger(index) && index >= 0 ? index : undefined;
         const fromPathParseResult = parsePath(fromPath, editorContext.form);
         const toPathParseResult = parsePath(toPath, editorContext.form);
         if (!fromPathParseResult.parent || !toPathParseResult.parent || fromPathParseResult.index === undefined || toPathParseResult === undefined) {
           return;
         }
-        if (fromPathParseResult.parent.path === toPathParseResult.parent.path) {
+        if (exactIndex === undefined && fromPathParseResult.parent.path === toPathParseResult.parent.path) {
           const pathToMove = `${fromPathParseResult.parent.path ? fromPathParseResult.parent.path + "." : ""}${fromPathParseResult.parent.fieldName}`;
           actions.runChange(() => {
             form.mutators.move(pathToMove, fromPathParseResult.index, toPathParseResult.index);
@@ -13129,7 +13522,7 @@ const EditorContent = ({
           const insertionPath = getCrossParentInsertionPath(toPathParseResult);
           actions.runChange(() => {
             const newConfig = duplicateConfig(dotNotationGet(form.values, fromPath), editorContext);
-            const insertionIndex = calculateInsertionIndex(fromPath, toPath, placement, form);
+            const insertionIndex = exactIndex ?? calculateInsertionIndex(fromPath, toPath, placement, form);
 
             // The insert lands first, and it renumbers everything after it in
             // the collection it lands in. `fromPath` was read before that, so
@@ -13140,7 +13533,7 @@ const EditorContent = ({
             const {
               sourceToRemove,
               pathToFocus
-            } = planMoveAfterInsert(fromPath, `${insertionPath}.${insertionIndex}`);
+            } = exactIndex === undefined ? planMoveAfterInsert(fromPath, `${insertionPath}.${insertionIndex}`) : planAimedMove(fromPath, insertionPath, exactIndex);
             form.mutators.insert(insertionPath, insertionIndex, newConfig);
             actions.removeItems([sourceToRemove]);
             return [pathToFocus];
@@ -14188,175 +14581,6 @@ const globalEditorRendererStyles = `
 `;
 
 /**
- * Choosing which collection a panel drop is aimed at.
- *
- * The gesture used to have one possible answer — a gap between two top-level
- * sections — because the canvas only ever measured frames whose path looked like
- * `data.<n>`. Everything deeper was filtered out, so releasing the pointer over a
- * column did not land in that column; it fell back to an index at the page root
- * and the item arrived somewhere else entirely, with no sign that anything had
- * been redirected.
- *
- * These functions are geometry and string work only. They take rectangles the
- * canvas measured and answer where the item goes, which keeps the part that is
- * easy to get wrong testable without a browser.
- */
-
-/** A collection the pointer could be aiming at. */
-
-/**
- * Splits a frame's path into the collection holding it and its position.
- *
- * Every editable frame's path ends in `<prop>.<index>`, at the root (`data.2`)
- * just as much as deeper in (`data.0.Cells.1.Items.3`), so one rule reads both
- * and the root stops being a special case.
- */
-function parseSlotPath(path) {
-  const segments = path.split(".");
-  if (segments.length < 2) {
-    return null;
-  }
-  const index = Number(segments[segments.length - 1]);
-  if (!Number.isInteger(index) || index < 0) {
-    return null;
-  }
-  return {
-    parentPath: segments.slice(0, -2).join("."),
-    prop: segments[segments.length - 2],
-    index
-  };
-}
-function midX(rect) {
-  return rect.left + (rect.right - rect.left) / 2;
-}
-function midY(rect) {
-  return rect.top + (rect.bottom - rect.top) / 2;
-}
-
-/**
- * Whether a collection lays its children out across or down the page.
- *
- * Read from where the children actually are rather than from the component's
- * settings: a row of columns turns into a stack at a narrow breakpoint, and the
- * insertion line has to follow what is on screen, not what the desktop layout
- * says. Comparing how far apart the first two children are on each axis needs no
- * tolerance value to tune.
- */
-function inferSlotAxis(children) {
-  if (children.length < 2) {
-    return "vertical";
-  }
-  const [first, second] = children;
-  return Math.abs(midX(second) - midX(first)) > Math.abs(midY(second) - midY(first)) ? "horizontal" : "vertical";
-}
-
-/**
- * Which gap inside one collection the pointer is aiming at.
- *
- * A child's midpoint is the boundary, not its nearest edge: a section is often
- * taller than the screen, and with edges the whole middle of a tall one would aim
- * at nothing. An empty collection still answers — index 0 — because dropping onto
- * an empty column is the gesture this whole change exists to allow.
- */
-function resolveSlotAim(pointer, slot) {
-  const children = [...slot.children].sort((a, b) => a.index - b.index);
-  const axis = inferSlotAxis(children);
-  if (children.length === 0) {
-    return {
-      parentPath: slot.parentPath,
-      prop: slot.prop,
-      index: 0,
-      line: {
-        x: slot.bounds.left,
-        y: slot.bounds.top,
-        length: slot.bounds.right - slot.bounds.left,
-        axis: "vertical"
-      }
-    };
-  }
-  const aimAt = (index, rect, edge) => ({
-    parentPath: slot.parentPath,
-    prop: slot.prop,
-    index,
-    line: axis === "horizontal" ? {
-      x: edge === "before" ? rect.left : rect.right,
-      y: rect.top,
-      length: rect.bottom - rect.top,
-      axis
-    } : {
-      x: rect.left,
-      y: edge === "before" ? rect.top : rect.bottom,
-      length: rect.right - rect.left,
-      axis
-    }
-  });
-  for (const child of children) {
-    const boundary = axis === "horizontal" ? midX(child) : midY(child);
-    const position = axis === "horizontal" ? pointer.x : pointer.y;
-    if (position < boundary) {
-      return aimAt(child.index, child, "before");
-    }
-  }
-  const last = children[children.length - 1];
-  return aimAt(last.index + 1, last, "after");
-}
-
-/**
- * The collection a frame under the pointer belongs to.
- *
- * Which frame is under the pointer is a paint-order question, answered by
- * `elementsFromPoint` before this is called. What the frame *means* is a tree
- * question, answered here, and keeping the two apart is the whole point: a
- * geometric search for the deepest rectangle containing the pointer picks the
- * wrong one as soon as anything overlaps. A sticky header is the case that
- * proves it — it stays at the top of the canvas while the page scrolls beneath,
- * so a pointer over the header sits inside the header *and* inside whatever row
- * has scrolled under it, and the row is the deeper of the two. The item then
- * lands in a block the person cannot even see.
- *
- * From the frame, three questions in order:
- *
- *   1. Does this block own a collection that takes drops? Reaching a block as
- *      the topmost frame means the pointer is in its own space rather than in
- *      any child, so its own collection is what is being aimed at — this is how
- *      an empty column, and the gutter between two columns, are reachable.
- *   2. Otherwise, does the collection holding it take drops? This is the common
- *      case: the pointer is over an item, and the item's own collection is where
- *      a sibling would go.
- *   3. Otherwise ask the same of its parent, and so on outwards.
- *
- * The root collection ends every walk, so a frame belonging to a collection that
- * never opted in — an older container — sends the drop to the page root, exactly
- * where it would have gone before any of this existed. It does not fall through
- * to whatever happens to be painted behind it.
- */
-function pickSlotForPath(slots, path) {
-  const root = slots.find(slot => slot.parentPath === "") ?? null;
-  if (path === null) {
-    return root;
-  }
-  let current = path;
-  for (;;) {
-    const owned = slots.find(slot => slot.parentPath === current);
-    if (owned) {
-      return owned;
-    }
-    const parsed = parseSlotPath(current);
-    if (!parsed) {
-      return root;
-    }
-    const holder = slots.find(slot => slot.parentPath === parsed.parentPath && slot.prop === parsed.prop);
-    if (holder) {
-      return holder;
-    }
-    if (parsed.parentPath === "") {
-      return root;
-    }
-    current = parsed.parentPath;
-  }
-}
-
-/**
  * Reading the collections a panel drop could land in off the canvas.
  *
  * Every editable frame already carries its own dot path, at every depth — the
@@ -14388,6 +14612,44 @@ function union(a, b) {
   };
 }
 const slotKey = (parentPath, prop) => `${parentPath}|${prop}`;
+
+/**
+ * Which way the box holding `frame` lays out its children, read off the nearest
+ * flex or grid container between the frame and the block that owns it.
+ *
+ * Needed for a collection of one: two children say which way they run by where
+ * they sit, one says nothing, and a single icon in a horizontal column used to
+ * be treated as a stack — the left of it read as "below it".
+ */
+function measureAxis(frame) {
+  const view = frame.ownerDocument.defaultView;
+  for (let box = frame.parentElement; box && view && !box.hasAttribute(CANVAS_FRAME_PATH_ATTRIBUTE); box = box.parentElement) {
+    const style = view.getComputedStyle(box);
+    if (style.display.endsWith("flex")) {
+      return style.flexDirection.startsWith("row") ? "horizontal" : "vertical";
+    }
+
+    // A one-track grid is a box around a single item — `BlockColumn` puts
+    // one around each — and says nothing about how the items run, so the walk
+    // goes on to the container that does.
+    if (style.display.endsWith("grid") && style.gridTemplateColumns.trim().split(/\s+/).length > 1) {
+      return "horizontal";
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Path of the frame painted on top at a point, or `null` over open canvas.
+ *
+ * Paint order, not geometry: a sticky header keeps its place while the page
+ * scrolls underneath, so two frames can contain the same point and the deeper
+ * one is the one nobody can see.
+ */
+function topmostFramePath(doc, pointer) {
+  const frame = doc.elementsFromPoint(pointer.x, pointer.y).map(element => element.closest(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`)).find(found => found !== null);
+  return frame?.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE) ?? null;
+}
 function collectPanelDropSlots(doc, editorContext) {
   const slots = new Map();
 
@@ -14410,7 +14672,20 @@ function collectPanelDropSlots(doc, editorContext) {
   });
   const frames = Array.from(doc.querySelectorAll(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`));
   const entryAt = path => path === "" ? editorContext.form.values : dotNotationGet(editorContext.form.values, path);
+
+  // Asked once per frame and again per collection; the answer only depends on
+  // the component at the path, and this runs on every pointer move of a drag.
+  const slotsByPath = new Map();
   const slotsOf = path => {
+    const known = slotsByPath.get(path);
+    if (known) {
+      return known;
+    }
+    const found = readSlotsOf(path);
+    slotsByPath.set(path, found);
+    return found;
+  };
+  const readSlotsOf = path => {
     const entry = entryAt(path);
     if (!isEntry(entry)) {
       return [];
@@ -14419,6 +14694,8 @@ function collectPanelDropSlots(doc, editorContext) {
     return definition ? getCollectionSlots(definition) : [];
   };
   const isOptedIn = (parentPath, prop) => slotsOf(parentPath).some(slot => slot.prop === prop && slot.panelDropTarget);
+  const acceptsOf = (parentPath, prop) => slotsOf(parentPath).find(slot => slot.prop === prop)?.accepts;
+  slots.get(slotKey("", "data")).accepts = acceptsOf("", "data");
 
   // Collections that already hold something: each child contributes its own
   // rectangle, and the collection's area is everything its children cover.
@@ -14440,8 +14717,10 @@ function collectPanelDropSlots(doc, editorContext) {
     const bounds = toBounds(element.getBoundingClientRect());
     const key = slotKey(parsed.parentPath, parsed.prop);
     const existing = slots.get(key);
+    const child = entryAt(path);
     const childRect = {
       index: parsed.index,
+      component: isEntry(child) ? child._component : undefined,
       ...bounds
     };
     if (existing) {
@@ -14457,7 +14736,9 @@ function collectPanelDropSlots(doc, editorContext) {
       parentPath: parsed.parentPath,
       prop: parsed.prop,
       children: [childRect],
-      bounds
+      bounds,
+      axis: measureAxis(element),
+      accepts: acceptsOf(parsed.parentPath, parsed.prop)
     });
   }
 
@@ -14481,7 +14762,8 @@ function collectPanelDropSlots(doc, editorContext) {
         parentPath: path,
         prop: slot.prop,
         children: [],
-        bounds: toBounds(element.getBoundingClientRect())
+        bounds: toBounds(element.getBoundingClientRect()),
+        accepts: slot.accepts
       });
     }
   }
@@ -14599,9 +14881,12 @@ function usePanelDropTarget(editorContext) {
      * is the one nobody can see. `elementsFromPoint` answers with what is
      * actually on top, which is what the person is pointing at.
      */
-    const topmost = document.elementsFromPoint(pointer.x, pointer.y).map(element => element.closest(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`)).find(frame => frame !== null);
-    const slot = pickSlotForPath(collectPanelDropSlots(document, editorContext), topmost?.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE) ?? null);
-    return slot ? resolveSlotAim(pointer, slot) : null;
+    const slots = collectPanelDropSlots(document, editorContext);
+    const slot = pickSlotForPath(slots, topmostFramePath(document, pointer));
+
+    // A row's own space means the column nearest the pointer, never a new
+    // column — see `descendToNearestChildSlot`.
+    return slot ? resolveSlotAim(pointer, descendToNearestChildSlot(slots, slot, pointer)) : null;
   }, [editorContext]);
   useEffect(() => {
     /**
@@ -14682,6 +14967,109 @@ function usePanelDropTarget(editorContext) {
   return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(AcceptFrame, null), aim ? /*#__PURE__*/React__default.createElement(InsertionLine, {
     line: aim.line
   }) : null);
+}
+
+/**
+ * Whether the block at `path` sits in a collection that opted in with
+ * `panelDropTarget`. Answered from the schema alone, before anything on the
+ * canvas is measured, so a drag inside older components costs nothing extra
+ * and runs exactly the code it always did.
+ */
+function isInOptedInCollection(path, editorContext) {
+  const parsed = parseSlotPath(path);
+  if (!parsed || parsed.parentPath === "") {
+    return false;
+  }
+  const parent = dotNotationGet(editorContext.form.values, parsed.parentPath);
+  const definition = isEntry(parent) ? findComponentDefinition(parent, editorContext) : undefined;
+  return !!definition && getCollectionSlots(definition).some(slot => slot.prop === parsed.prop && slot.panelDropTarget);
+}
+
+/** The collection a block-by-block collision stands for. */
+function collectionOfCollision(collisions) {
+  const container = collisions[0]?.data?.droppableContainer;
+  const path = container?.data.current?.path;
+  if (typeof path !== "string") {
+    return null;
+  }
+
+  // An empty collection's placeholder already carries the collection's path.
+  return String(container.id).startsWith("placeholder.") ? path : path.split(".").slice(0, -1).join(".");
+}
+
+/**
+ * Column-aware aiming for a block dragged on the canvas. See `canvasMoveAim`.
+ *
+ * Wraps the block-by-block collision detection: when the aim applies it reports
+ * no collision at all, so no block frame claims a drop that is going somewhere
+ * else, and the insertion line drawn here is the only answer on screen.
+ */
+function useCanvasMoveAim(editorContext, fallback) {
+  const aimRef = useRef(null);
+  const [line, setLine] = useState(null);
+  const collisionDetection = useCallback(args => {
+    const legacy = fallback(args);
+    const fromPath = args.active.data.current?.path;
+    const pointer = args.pointerCoordinates;
+    aimRef.current = null;
+    if (typeof fromPath !== "string" || !pointer || !isInOptedInCollection(fromPath, editorContext)) {
+      return legacy;
+    }
+    const dragged = dotNotationGet(editorContext.form.values, fromPath);
+    const definition = isEntry(dragged) ? findComponentDefinition(dragged, editorContext) : undefined;
+    if (!definition) {
+      return legacy;
+    }
+    const ids = [definition.id, ...toArray(definition.type ?? [])];
+    const canHold = slot => (slot.accepts ?? []).some(accepted => ids.includes(accepted));
+    aimRef.current = resolveCanvasMoveAim({
+      slots: collectPanelDropSlots(document, editorContext),
+      fromPath,
+      topmostPath: topmostFramePath(document, pointer),
+      pointer,
+      legacyOverPath: collectionOfCollision(legacy),
+      canHold
+    });
+    return aimRef.current ? [] : legacy;
+  }, [editorContext, fallback]);
+
+  /**
+   * Keeps the line in step with the aim; collision detection cannot set state.
+   * Only a changed gap is stored: the state lives above the whole document, so
+   * a new object on every pointer move would render the page at pointer rate.
+   */
+  const onDragMove = useCallback(() => {
+    const next = aimRef.current?.line ?? null;
+    setLine(current => current === next || current !== null && next !== null && current.x === next.x && current.y === next.y && current.length === next.length && current.axis === next.axis ? current : next);
+  }, []);
+
+  /**
+   * The move this drag ends in, `"none"` when the aim applies but the block
+   * would stay put, or `null` when the block-by-block outcome decides.
+   */
+  const takeMove = useCallback(fromPath => {
+    const aim = aimRef.current;
+    aimRef.current = null;
+    setLine(null);
+    if (!aim) {
+      return null;
+    }
+    return toItemMove(aim, fromPath) ?? "none";
+  }, []);
+  const clear = useCallback(() => {
+    aimRef.current = null;
+    setLine(null);
+  }, []);
+  const indicator = line ? /*#__PURE__*/React__default.createElement(InsertionLine, {
+    line: line
+  }) : null;
+  return {
+    collisionDetection,
+    onDragMove,
+    takeMove,
+    clear,
+    indicator
+  };
 }
 
 /**
@@ -15841,13 +16229,6 @@ function resolveDragEndOutcome(event) {
   };
 }
 
-/** Squared distance from a point to the nearest point of a rectangle; 0 inside it. */
-function squaredDistanceToRect(pointer, rect) {
-  const dx = Math.max(rect.left - pointer.x, 0, pointer.x - (rect.left + rect.width));
-  const dy = Math.max(rect.top - pointer.y, 0, pointer.y - (rect.top + rect.height));
-  return dx * dx + dy * dy;
-}
-
 /**
  * How far outside a block the pointer may stray and still be aimed at it, in
  * canvas pixels. Wide enough for a gutter or a section's padding, narrow enough
@@ -15927,6 +16308,9 @@ function EasyblocksCanvas({
   // An item dragged out of a sidebar panel. A separate gesture from the one
   // below on purpose — see the note in `usePanelDropTarget`.
   const panelDropIndicator = usePanelDropTarget(editorContext);
+  // A block dragged across columns aims the way a panel drop does, so the two
+  // gestures agree on where it lands.
+  const canvasMoveAim = useCanvasMoveAim(editorContext, pointerNearestCollisionDetection);
   // Ten pixels was the price of the whole block being the handle: any press that
   // drifted had to be assumed accidental. Now that a drag starts from a grip, the
   // press is already deliberate, and a shorter threshold is what makes the block
@@ -15968,7 +16352,8 @@ function EasyblocksCanvas({
     meta: meta
   }, /*#__PURE__*/React__default.createElement(TooltipProvider, null, /*#__PURE__*/React__default.createElement(CanvasRoot, null, /*#__PURE__*/React__default.createElement(DndContext, {
     sensors: [mouseSensor, touchSensor],
-    collisionDetection: pointerNearestCollisionDetection,
+    collisionDetection: canvasMoveAim.collisionDetection,
+    onDragMove: canvasMoveAim.onDragMove,
     onDragStart: event => {
       document.documentElement.style.cursor = "grabbing";
       const activeData = dragDataSchema.parse(event.active.data.current);
@@ -15979,6 +16364,18 @@ function EasyblocksCanvas({
     onDragEnd: event => {
       document.documentElement.style.cursor = "";
       setDraggedLabel(null);
+      const fromPath = dragDataSchema.parse(event.active.data.current).path;
+      const aimedMove = canvasMoveAim.takeMove(fromPath);
+      if (aimedMove === "none") {
+        window.parent.editorWindowAPI?.editorContext?.setFocussedField(fromPath);
+        return;
+      }
+      if (aimedMove) {
+        requestAnimationFrame(() => {
+          window.parent.postMessage(itemMoved(aimedMove));
+        });
+        return;
+      }
       const outcome = resolveDragEndOutcome(event);
       if (outcome.type === "refocus") {
         window.parent.editorWindowAPI?.editorContext?.setFocussedField(outcome.path);
@@ -15991,6 +16388,7 @@ function EasyblocksCanvas({
     onDragCancel: event => {
       document.documentElement.style.cursor = "";
       setDraggedLabel(null);
+      canvasMoveAim.clear();
       // If the drag was canceled, we want to refocus dragged item.
       window.parent.editorWindowAPI?.editorContext?.setFocussedField(dragDataSchema.parse(event.active.data.current).path);
     }
@@ -16016,7 +16414,7 @@ function EasyblocksCanvas({
     }
   }, draggedLabel !== null ? /*#__PURE__*/React__default.createElement(DragPreview, {
     label: draggedLabel
-  }) : null)), panelDropIndicator)));
+  }) : null)), panelDropIndicator, canvasMoveAim.indicator)));
 }
 
 /**

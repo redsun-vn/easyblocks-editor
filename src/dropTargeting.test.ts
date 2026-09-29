@@ -1,4 +1,4 @@
-import { squaredDistanceToRect } from "./EditorChildWindow";
+import { squaredDistanceToRect } from "./editorSidebar/editorSections/slotDescent";
 
 // A block occupying x 100..200, y 50..90.
 const rect = { left: 100, top: 50, width: 100, height: 40 };
