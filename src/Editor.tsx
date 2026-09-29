@@ -919,7 +919,7 @@ const EditorContent = ({
         }),
       );
     },
-    runChange: (configChangeCallback) => {
+    runChange: (configChangeCallback, options) => {
       let fieldsToFocus!: Array<string>;
 
       // When multiple fields are selected, the update could probably invoke `form.change` multiple times.
@@ -944,10 +944,16 @@ const EditorContent = ({
         // triggered by calling `setFocussedField`.
         fieldsToFocus = configChangeCallback() ?? [...focussedField];
 
-        push({
+        const historyEntry = {
           config: form.values,
           focussedField: fieldsToFocus,
-        });
+        };
+
+        if (options?.history === "replace") {
+          editorHistoryInstance.replace(historyEntry);
+        } else {
+          push(historyEntry);
+        }
 
         setFocussedField(fieldsToFocus);
       });

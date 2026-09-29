@@ -1,0 +1,33 @@
+import React from "react";
+import { EditorContextType } from "../EditorContext";
+import { CanvasResizeField } from "./canvas-resize-fields";
+export type ResizeEdge = "left" | "right" | "bottom";
+/** What the chip beside the dragged edge says while a drag is on. */
+export type ResizeReading = {
+    edge: ResizeEdge;
+    label: string;
+};
+/**
+ * One drag of a resize handle, from press to release.
+ *
+ * Each time the edge reaches another value the field is written, so the page
+ * reflows under the pointer. The first write makes an undo step and the rest
+ * fold into it, which is what makes a whole drag one Ctrl+Z. Esc puts the
+ * stored value back, byte for byte, rather than writing the value it showed.
+ */
+export declare function useCanvasResizeDrag({ resizeField, path, editorContext, configAfterAuto, }: {
+    resizeField: CanvasResizeField;
+    path: string;
+    editorContext: EditorContextType;
+    configAfterAuto: Record<string, any>;
+}): {
+    reading: ResizeReading | null;
+    handlers: {
+        onPointerDown: (edge: ResizeEdge) => (event: React.PointerEvent) => void;
+        onPointerMove: (event: React.PointerEvent) => void;
+        onPointerUp: () => void;
+        onLostPointerCapture: () => void;
+        onPointerCancel: () => void;
+    };
+};
+//# sourceMappingURL=use-canvas-resize-drag.d.ts.map

@@ -11451,6 +11451,89 @@ function isPointerNearSelection(presence) {
   return presence.block || presence.controls || presence.formatting;
 }
 
+/** A panel field a handle on the canvas can set, and which way it drags. */
+
+function canvasResizeOf(field) {
+  return field.schemaProp.canvasResize;
+}
+
+/**
+ * The selection's panel fields that opted into a canvas handle.
+ *
+ * Only a single block: with several selected, one handle would have to mean a
+ * size for all of them, and the panel's own field is the better place for that.
+ */
+function pickCanvasResizeFields(fields) {
+  return fields.flatMap(field => {
+    const option = canvasResizeOf(field);
+    if (!option || toArray(field.name).length !== 1) {
+      return [];
+    }
+    return [{
+      field,
+      option
+    }];
+  });
+}
+
+/**
+ * The values a drag steps through: the field's own `steps` when it names them,
+ * otherwise every option the panel offers, in the panel's order.
+ */
+function canvasResizeValues({
+  field,
+  option
+}) {
+  if (option.steps) {
+    return option.steps;
+  }
+  const options = field.schemaProp.params?.options;
+  if (!Array.isArray(options)) {
+    return [];
+  }
+  return options.map(entry => typeof entry === "object" && entry !== null && "value" in entry ? String(entry.value) : String(entry));
+}
+
+/**
+ * Writes one value exactly as picking it in the panel would.
+ *
+ * The same two controllers the panel chains together do the work: the
+ * responsive one decides which breakpoint the value belongs to, and the field
+ * one runs the change through the editor — a block's own `change` rules
+ * included. Only the history is different: every write after the first of a
+ * drag folds into the step the first one made.
+ */
+function writeCanvasResizeValue({
+  field,
+  value,
+  editorContext,
+  configAfterAuto,
+  history
+}) {
+  const contextForThisWrite = {
+    ...editorContext,
+    actions: {
+      ...editorContext.actions,
+      runChange: callback => editorContext.actions.runChange(callback, {
+        history
+      })
+    }
+  };
+  const valueField = field.component === "responsive2" ? responsiveFieldController({
+    field: field,
+    formValues: editorContext.form.values,
+    onChange: () => {},
+    editorContext,
+    valuesAfterAuto: configAfterAuto
+  }).field : field;
+  createFieldController({
+    field: valueField,
+    editorContext: contextForThisWrite,
+    format: valueField.format,
+    parse: valueField.parse
+  }).onChange(value);
+}
+
 /**
  * The properties-panel fields that are also offered on the selection's action
  * bar, so the formatting people reach for most can be changed where the block is.
@@ -11542,6 +11625,463 @@ function pickQuickFormatFields(fields) {
 }
 
 /**
+ * The arithmetic behind the resize handles, with nothing in it that needs a
+ * browser: which of a field's values a dragged edge has reached.
+ *
+ * A handle does not write sizes. It picks one of the values the properties
+ * panel already offers for the field, the one whose rendered size is nearest
+ * to where the edge is. So a drag can only ever save a value somebody could
+ * have picked by hand, and each value is exactly one notch of the drag.
+ */
+
+/** One value a handle can land on, and how big the block is with it. */
+
+/**
+ * The step whose size is nearest to `targetSize`. A tie goes to the smaller
+ * one, so a drag has to cross the midpoint before the block grows.
+ */
+function nearestResizeStep(steps, targetSize) {
+  let nearest = null;
+  for (const step of steps) {
+    if (nearest === null || Math.abs(step.size - targetSize) < Math.abs(nearest.size - targetSize)) {
+      nearest = step;
+    }
+  }
+  return nearest;
+}
+
+/**
+ * How wide a grid item is for each whole number of tracks it can span.
+ *
+ * `count` tracks of `trackWidth` with a gap between each pair, which is what
+ * `grid-column: span N` draws. Values are the numbers `1` to `trackCount` as
+ * strings, the way a `select` field stores them.
+ */
+function gridSpanSteps({
+  trackCount,
+  trackWidth,
+  gap
+}) {
+  return Array.from({
+    length: Math.max(0, trackCount)
+  }, (_, index) => {
+    const span = index + 1;
+    return {
+      value: String(span),
+      size: span * trackWidth + index * gap
+    };
+  });
+}
+
+/**
+ * The width of one track of a grid, from the grid's content width.
+ *
+ * Tracks of a `repeat(N, minmax(0, 1fr))` grid share what the gaps leave, so
+ * this holds for the equal-track rows the handles are offered on.
+ */
+function gridTrackWidth({
+  contentWidth,
+  trackCount,
+  gap
+}) {
+  if (trackCount <= 0) {
+    return 0;
+  }
+  return (contentWidth - gap * (trackCount - 1)) / trackCount;
+}
+
+/**
+ * Where the dragged edge is asking the block to be, from the size it had when
+ * the drag began and how far the pointer has moved since.
+ *
+ * Dragging a left edge leftwards grows the block, so its movement counts
+ * against the size; the right and bottom edges count with it.
+ */
+function targetSizeFromDrag({
+  startSize,
+  pointerDelta,
+  edge
+}) {
+  return edge === "left" ? startSize - pointerDelta : startSize + pointerDelta;
+}
+
+/**
+ * Only the steps whose value the field offers: a drag must never save a value
+ * the panel would not let somebody pick.
+ */
+function offeredSteps(steps, values) {
+  const offered = new Set(values);
+  return steps.filter(step => offered.has(step.value));
+}
+
+/**
+ * Whether a grid is drawing its items one under another — every visible item
+ * the full width of the grid — which is how a row stacked for a phone looks.
+ * One item alone proves nothing: a single column may simply span the row.
+ * Hidden items (no width) are left out of the count.
+ */
+function isStackedGrid(itemWidths, contentWidth) {
+  const visible = itemWidths.filter(width => width > 0);
+  return visible.length > 1 && visible.every(width => Math.abs(width - contentWidth) < 1);
+}
+
+/**
+ * What a handle needs to know about the block on the canvas, read from the
+ * page as it is drawn rather than worked out from the config: the canvas is
+ * the only place that knows how wide a track came out.
+ */
+
+function canvasDocument() {
+  const iframe = document.getElementById("editor-canvas");
+  return iframe?.contentDocument ?? null;
+}
+function isGrid(element, view) {
+  const {
+    display
+  } = view.getComputedStyle(element);
+  return display === "grid" || display === "inline-grid";
+}
+
+/**
+ * The block's grid item and the grid it sits in: the nearest ancestor of the
+ * frame, the frame included, whose parent lays out on a grid. A row puts one
+ * wrapper per column between its grid and the column, and that wrapper is the
+ * box whose width a span decides.
+ *
+ * The walk stops at the next frame up. That frame owns the collection the
+ * block lives in, and a grid above it — a section's, a page's — has nothing
+ * to do with this block's span.
+ */
+function findGridItem(frame, view) {
+  let item = frame;
+  while (item.parentElement) {
+    const parent = item.parentElement;
+    if (isGrid(parent, view)) {
+      return {
+        item,
+        grid: parent
+      };
+    }
+    if (parent.hasAttribute(CANVAS_FRAME_PATH_ATTRIBUTE)) {
+      return null;
+    }
+    item = parent;
+  }
+  return null;
+}
+function readGridSpan(frame, view, values) {
+  const found = findGridItem(frame, view);
+  if (!found) {
+    return null;
+  }
+  const gridStyle = view.getComputedStyle(found.grid);
+  const trackCount = gridStyle.gridTemplateColumns.split(/\s+/).filter(Boolean).length;
+  const gap = parseFloat(gridStyle.columnGap) || 0;
+  const contentWidth = found.grid.clientWidth - (parseFloat(gridStyle.paddingLeft) || 0) - (parseFloat(gridStyle.paddingRight) || 0);
+
+  // A row stacked for a phone draws every column full width whatever it
+  // stores, so a drag there would save a value nobody sees.
+  const itemWidths = Array.from(found.grid.children).map(child => child.getBoundingClientRect().width);
+  if (isStackedGrid(itemWidths, contentWidth)) {
+    return null;
+  }
+  return {
+    size: found.item.getBoundingClientRect().width,
+    steps: offeredSteps(gridSpanSteps({
+      trackCount,
+      gap,
+      trackWidth: gridTrackWidth({
+        contentWidth,
+        trackCount,
+        gap
+      })
+    }), values),
+    describe: value => `${value}/${trackCount}`
+  };
+}
+
+/**
+ * The block's size and the values a drag can reach, or `null` when a drag
+ * could not change anything the page shows — then no handle is offered.
+ */
+function readResizeGeometry({
+  path,
+  axis,
+  values
+}) {
+  const doc = canvasDocument();
+  const view = doc?.defaultView;
+  const frame = doc?.querySelector(`[${CANVAS_FRAME_PATH_ATTRIBUTE}="${CSS.escape(path)}"]`);
+  if (!view || !frame || axis !== "x") {
+    return null;
+  }
+  const geometry = readGridSpan(frame, view, values);
+  return geometry && geometry.steps.length >= 2 ? geometry : null;
+}
+
+/** What the chip beside the dragged edge says while a drag is on. */
+
+function canvasWindow() {
+  const iframe = document.getElementById("editor-canvas");
+  return iframe?.contentWindow ?? null;
+}
+
+/**
+ * One drag of a resize handle, from press to release.
+ *
+ * Each time the edge reaches another value the field is written, so the page
+ * reflows under the pointer. The first write makes an undo step and the rest
+ * fold into it, which is what makes a whole drag one Ctrl+Z. Esc puts the
+ * stored value back, byte for byte, rather than writing the value it showed.
+ */
+function useCanvasResizeDrag({
+  resizeField,
+  path,
+  editorContext,
+  configAfterAuto
+}) {
+  const drag = useRef(null);
+  const [reading, setReading] = useState(null);
+  const fieldName = toArray(resizeField.field.name)[0];
+  const end = useCallback(() => {
+    drag.current = null;
+    setReading(null);
+  }, []);
+  const cancel = useCallback(() => {
+    const current = drag.current;
+    if (current?.hasWritten) {
+      editorContext.actions.runChange(() => {
+        editorContext.form.change(fieldName, current.originalRawValue);
+      }, {
+        history: "replace"
+      });
+    }
+    end();
+  }, [editorContext, fieldName, end]);
+
+  // Esc is heard in the canvas too: focus stays there after a block is picked
+  // by clicking it, and the canvas's own Esc would otherwise select the parent
+  // and take the handle away mid-drag.
+  useEffect(() => {
+    if (!reading) {
+      return;
+    }
+    const onKeyDown = event => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        event.preventDefault();
+        cancel();
+      }
+    };
+    const targets = [window, canvasWindow()].filter(target => target !== null);
+    targets.forEach(target => target.addEventListener("keydown", onKeyDown, true));
+    return () => targets.forEach(target => target.removeEventListener("keydown", onKeyDown, true));
+  }, [reading, cancel]);
+  const onPointerDown = edge => event => {
+    const geometry = readResizeGeometry({
+      path,
+      axis: resizeField.option.axis,
+      values: canvasResizeValues(resizeField)
+    });
+    const start = geometry && nearestResizeStep(geometry.steps, geometry.size);
+    if (!geometry || !start || event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const handle = event.currentTarget;
+    const layer = handle.offsetParent;
+    handle.setPointerCapture(event.pointerId);
+    drag.current = {
+      edge,
+      pointerId: event.pointerId,
+      startPointer: edge === "bottom" ? event.clientY : event.clientX,
+      scale: layer && layer.offsetWidth > 0 ? layer.getBoundingClientRect().width / layer.offsetWidth : 1,
+      geometry,
+      lastValue: start.value,
+      hasWritten: false,
+      originalRawValue: dotNotationGet(editorContext.form.values, fieldName)
+    };
+    setReading({
+      edge,
+      label: geometry.describe(start.value)
+    });
+  };
+  const onPointerMove = event => {
+    const current = drag.current;
+
+    // No button held means this is a hover, not a drag, whatever state says.
+    if (!current || current.pointerId !== event.pointerId || (event.buttons & 1) === 0) {
+      return;
+    }
+    const pointer = current.edge === "bottom" ? event.clientY : event.clientX;
+    const step = nearestResizeStep(current.geometry.steps, targetSizeFromDrag({
+      startSize: current.geometry.size,
+      pointerDelta: (pointer - current.startPointer) / current.scale,
+      edge: current.edge
+    }));
+    if (!step || step.value === current.lastValue) {
+      return;
+    }
+    writeCanvasResizeValue({
+      field: resizeField.field,
+      value: step.value,
+      editorContext,
+      configAfterAuto,
+      history: current.hasWritten ? "replace" : "push"
+    });
+    current.hasWritten = true;
+    current.lastValue = step.value;
+    setReading({
+      edge: current.edge,
+      label: current.geometry.describe(step.value)
+    });
+  };
+  return {
+    reading,
+    handlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: end,
+      // Losing the pointer — the handle re-rendered away, the window lost
+      // focus — ends the drag where it stands rather than leaving it armed.
+      onLostPointerCapture: end,
+      onPointerCancel: cancel
+    }
+  };
+}
+
+/** The selected block's box, in canvas pixels, as the position messages give it. */
+
+/** Screen pixels. Divided by the zoom so a handle stays catchable at any zoom. */
+const HANDLE_LENGTH = 24;
+const HANDLE_THICKNESS = 6;
+const HIT_AREA = 14;
+const Layer = styled$1.div.withConfig({
+  displayName: "resize-handles__Layer",
+  componentId: "sc-1b3xsuc-0"
+})(["position:absolute;pointer-events:none;"]);
+const Handle = styled$1.div.withConfig({
+  displayName: "resize-handles__Handle",
+  componentId: "sc-1b3xsuc-1"
+})(["position:absolute;pointer-events:auto;touch-action:none;display:grid;place-items:center;cursor:", ";", " &::before{content:\"\";box-sizing:border-box;border-radius:3px;background:var(--tina-color-primary,#2296fe);border:1px solid ", ";box-shadow:0 0 0 1px ", ";", "}"], ({
+  $edge
+}) => $edge === "bottom" ? "ns-resize" : "ew-resize", ({
+  $edge,
+  $scale
+}) => {
+  const length = HANDLE_LENGTH / $scale;
+  const hit = HIT_AREA / $scale;
+  return $edge === "bottom" ? `left: calc(50% - ${length / 2}px); bottom: -${hit / 2}px; width: ${length}px; height: ${hit}px;` : `top: calc(50% - ${length / 2}px); ${$edge}: -${hit / 2}px; width: ${hit}px; height: ${length}px;`;
+}, Colors.white, Colors.black900, ({
+  $edge,
+  $scale
+}) => $edge === "bottom" ? `width: ${HANDLE_LENGTH / $scale}px; height: ${HANDLE_THICKNESS / $scale}px;` : `width: ${HANDLE_THICKNESS / $scale}px; height: ${HANDLE_LENGTH / $scale}px;`);
+const Chip = styled$1.div.withConfig({
+  displayName: "resize-handles__Chip",
+  componentId: "sc-1b3xsuc-2"
+})(["position:absolute;padding:2px 6px;border-radius:4px;background:", ";color:", ";font-size:11px;font-weight:600;line-height:16px;white-space:nowrap;pointer-events:none;", ""], Colors.black900, Colors.white, ({
+  $edge,
+  $scale
+}) => $edge === "bottom" ? `left: 50%; bottom: -28px; transform: translateX(-50%) scale(${1 / $scale});` : `top: 50%; ${$edge}: 12px; transform: translateY(-50%) scale(${1 / $scale});`);
+function isPositionChanged(data) {
+  return typeof data === "object" && data !== null && data.type === "@easyblocks-editor/selection-frame-position-changed";
+}
+
+/**
+ * Handles on the selected block's edges for a field that opted into them.
+ *
+ * The box follows the same position messages the action bar hangs from. A
+ * handle is offered only while a drag would change something the page shows,
+ * and stays put for as long as a drag is on even if that reading changes
+ * under it — the canvas redraws a moment after each write, and a handle that
+ * vanished mid-drag would take the pointer with it.
+ */
+function ResizeHandles({
+  resizeField,
+  path
+}) {
+  const editorContext = useEditorContext();
+  const configAfterAuto = useConfigAfterAuto();
+  const [box, setBox] = useState(null);
+  const [scale, setScale] = useState(1);
+  const layerRef = useRef(null);
+  const {
+    reading,
+    handlers
+  } = useCanvasResizeDrag({
+    resizeField,
+    path,
+    editorContext,
+    configAfterAuto
+  });
+  useEffect(() => {
+    function onMessage(event) {
+      if (isPositionChanged(event.data)) {
+        const {
+          top,
+          left,
+          width,
+          height
+        } = event.data.payload.target;
+        setBox({
+          top,
+          left,
+          width,
+          height
+        });
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  // Read the page only when the block's size or the config changed, not on
+  // every scroll message.
+  const isDraggable = useMemo(() => box !== null && readResizeGeometry({
+    path,
+    axis: resizeField.option.axis,
+    values: canvasResizeValues(resizeField)
+  }) !== null,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [path, resizeField, box?.width, box?.height, configAfterAuto]);
+  useLayoutEffect(() => {
+    const layer = layerRef.current;
+    if (layer && layer.offsetWidth > 0) {
+      setScale(layer.getBoundingClientRect().width / layer.offsetWidth || 1);
+    }
+  }, [box?.width]);
+  if (!box || !isDraggable && !reading) {
+    return null;
+  }
+  const edges = resizeField.option.axis === "x" ? ["left", "right"] : ["bottom"];
+  return /*#__PURE__*/React__default.createElement(Layer, {
+    ref: layerRef,
+    style: box
+  }, edges.map(edge => /*#__PURE__*/React__default.createElement(Handle, _extends({
+    key: edge,
+    $edge: edge,
+    $scale: scale
+  }, handlers, {
+    onPointerDown: handlers.onPointerDown(edge)
+    // Releasing a drag fires a click, and the canvas area underneath
+    // reads a click as "pick nothing".
+    ,
+    onClick: event => event.stopPropagation()
+  }), reading?.edge === edge && /*#__PURE__*/React__default.createElement(Chip, {
+    $edge: edge,
+    $scale: scale
+  }, reading.label, " \xB7 ", deviceLabel(editorContext)))));
+}
+function deviceLabel({
+  devices,
+  breakpointIndex
+}) {
+  const device = devices.find(candidate => candidate.id === breakpointIndex);
+  return device?.label ?? breakpointIndex;
+}
+
+/**
  * Whether the pointer is on the selected block.
  *
  * The block lives in the canvas iframe and the action bar lives in the window
@@ -11612,12 +12152,18 @@ function SelectionFrame({
    * picked at once each draw their own, and a bar that jumped between them
    * would be worse than the panel it is standing in for.
    */
-  const quickFormatFields = useMemo(() => focussedField.length === 1 || isRichTextSelection ? pickQuickFormatFields(buildTinaFieldsForSelection(focussedField, editorContext)) : [],
+  const selectionFields = useMemo(() => focussedField.length === 1 || isRichTextSelection ? buildTinaFieldsForSelection(focussedField, editorContext) : [],
   // The fields follow the compiled config: a field the panel shows or hides
   // depending on another value (a button's background colour) must do the
   // same here.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   [focussedField, isRichTextSelection, editorContext.compiledComponentConfig]);
+  const quickFormatFields = useMemo(() => pickQuickFormatFields(selectionFields), [selectionFields]);
+
+  /** The one field a handle on the block's sides sets, when the block has one. */
+  const widthResizeField = useMemo(() => isRichTextSelection ? undefined : pickCanvasResizeFields(selectionFields).find(({
+    option
+  }) => option.axis === "x"), [selectionFields, isRichTextSelection]);
 
   /**
    * The bar is shown for a block that can be duplicated and moved, and for any
@@ -11751,7 +12297,13 @@ function SelectionFrame({
     position: "after",
     isRevealed: isRevealed,
     onClick: () => handleAddButtonClick("after")
-  }), isBarShown ? /*#__PURE__*/React__default.createElement(SelectionFrameActions, {
+  }), widthResizeField ? /*#__PURE__*/React__default.createElement(ResizeHandles
+  // A fresh drag state for every block picked.
+  , {
+    key: focussedField[0],
+    resizeField: widthResizeField,
+    path: focussedField[0]
+  }) : null, isBarShown ? /*#__PURE__*/React__default.createElement(SelectionFrameActions, {
     actions: actions,
     focussedField: focussedField,
     translationFiles: translationFiles,
@@ -13223,7 +13775,7 @@ const EditorContent = ({
         pasteCommand: pasteManager()
       }));
     },
-    runChange: configChangeCallback => {
+    runChange: (configChangeCallback, options) => {
       let fieldsToFocus;
 
       // When multiple fields are selected, the update could probably invoke `form.change` multiple times.
@@ -13247,10 +13799,15 @@ const EditorContent = ({
         // Making a shallow copy of `focussedField` will make the second invocation of `useEffect` different from the first
         // triggered by calling `setFocussedField`.
         fieldsToFocus = configChangeCallback() ?? [...focussedField];
-        push({
+        const historyEntry = {
           config: form.values,
           focussedField: fieldsToFocus
-        });
+        };
+        if (options?.history === "replace") {
+          editorHistoryInstance.replace(historyEntry);
+        } else {
+          push(historyEntry);
+        }
         setFocussedField(fieldsToFocus);
       });
     },
@@ -15280,7 +15837,7 @@ function resolveDropIndicatorEdge({
   return activeIndex > index ? "before" : "after";
 }
 
-const CSS = /*#__PURE__*/Object.freeze({
+const CSS$1 = /*#__PURE__*/Object.freeze({
   Translate: {
     toString(transform) {
       if (!transform) {
@@ -15315,7 +15872,7 @@ const CSS = /*#__PURE__*/Object.freeze({
         return;
       }
 
-      return [CSS.Translate.toString(transform), CSS.Scale.toString(transform)].join(' ');
+      return [CSS$1.Translate.toString(transform), CSS$1.Scale.toString(transform)].join(' ');
     }
 
   },
@@ -15596,7 +16153,7 @@ function SelectionFrameController({
     // answers for the collection being sorted, so nothing outside it shifts.
     ,
     style: {
-      transform: CSS.Translate.toString(sortable.transform),
+      transform: CSS$1.Translate.toString(sortable.transform),
       transition: sortable.transition
     },
     ref: node => {

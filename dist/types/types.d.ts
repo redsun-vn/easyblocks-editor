@@ -35,6 +35,14 @@ type OpenTemplateModalActionEdit = {
     template: Template;
 };
 export type OpenTemplateModalAction = OpenTemplateModalActionCreate | OpenTemplateModalActionEdit;
+export type RunChangeOptions = {
+    /**
+     * `push` (the default) makes the change its own undo step. `replace` folds
+     * it into the latest step instead, for a gesture that writes several times
+     * but should undo as one — dragging a resize handle across several values.
+     */
+    history?: "push" | "replace";
+};
 export type ActionsType = {
     openComponentPicker: (config: OpenComponentPickerConfig) => Promise<NoCodeComponentEntry | undefined>;
     openTemplateModal: (arg: OpenTemplateModalAction) => void;
@@ -44,7 +52,7 @@ export type ActionsType = {
     insertItem: (insertItemProps: InsertItemActionType) => void;
     duplicateItems: (fieldNames: Array<string>) => void;
     pasteItems: (items: Array<NoCodeComponentEntry>) => void;
-    runChange: <Callback extends () => Array<string> | void>(configChangeCallback: Callback) => void;
+    runChange: <Callback extends () => Array<string> | void>(configChangeCallback: Callback, options?: RunChangeOptions) => void;
     logSelectedItems: () => void;
     notify: (message: string) => void;
 };

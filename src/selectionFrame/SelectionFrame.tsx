@@ -46,7 +46,9 @@ import {
   PointerLocation,
   withPointerAt,
 } from "./pointerPresence";
+import { pickCanvasResizeFields } from "./canvas-resize-fields";
 import { pickQuickFormatFields } from "./quickFormatFields";
+import { ResizeHandles } from "./resize-handles";
 import { isSelectionPointerChanged } from "./selectionPointer";
 
 /**
@@ -115,18 +117,32 @@ function SelectionFrame({
    * picked at once each draw their own, and a bar that jumped between them
    * would be worse than the panel it is standing in for.
    */
-  const quickFormatFields = useMemo(
+  const selectionFields = useMemo(
     () =>
       focussedField.length === 1 || isRichTextSelection
-        ? pickQuickFormatFields(
-            buildTinaFieldsForSelection(focussedField, editorContext),
-          )
+        ? buildTinaFieldsForSelection(focussedField, editorContext)
         : [],
     // The fields follow the compiled config: a field the panel shows or hides
     // depending on another value (a button's background colour) must do the
     // same here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [focussedField, isRichTextSelection, editorContext.compiledComponentConfig],
+  );
+
+  const quickFormatFields = useMemo(
+    () => pickQuickFormatFields(selectionFields),
+    [selectionFields],
+  );
+
+  /** The one field a handle on the block's sides sets, when the block has one. */
+  const widthResizeField = useMemo(
+    () =>
+      isRichTextSelection
+        ? undefined
+        : pickCanvasResizeFields(selectionFields).find(
+            ({ option }) => option.axis === "x",
+          ),
+    [selectionFields, isRichTextSelection],
   );
 
   /**
@@ -315,6 +331,14 @@ function SelectionFrame({
           isRevealed={isRevealed}
           onClick={() => handleAddButtonClick("after")}
         />
+        {widthResizeField ? (
+          <ResizeHandles
+            // A fresh drag state for every block picked.
+            key={focussedField[0]}
+            resizeField={widthResizeField}
+            path={focussedField[0]}
+          />
+        ) : null}
         {isBarShown ? (
           <SelectionFrameActions
             actions={actions}

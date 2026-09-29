@@ -79,11 +79,12 @@ export function selectionFrameOutlineStyles(hoveredTargetFrame: string) {
       },
 
     // A drop target keeps its own look while the pointer is on it.
-    [`&[data-active=false]:not([data-drop-target=true])${hoveredTargetFrame}::after`]: {
-      opacity: 1,
-      borderStyle: "solid",
-      boxShadow: HOVER_RING,
-    },
+    [`&[data-active=false]:not([data-drop-target=true])${hoveredTargetFrame}::after`]:
+      {
+        opacity: 1,
+        borderStyle: "solid",
+        boxShadow: HOVER_RING,
+      },
 
     "&[data-active=true]::after": {
       opacity: 1,
