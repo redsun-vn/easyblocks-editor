@@ -139,10 +139,13 @@ export function readResizeGeometry({
   path,
   axis,
   choices,
+  switchedTracks,
 }: {
   path: string;
   axis: "x" | "y";
   choices: ReadonlyArray<ResizeChoice>;
+  /** See `readGridSpan`: the grid a pending parent switch will give. */
+  switchedTracks?: number;
 }): ResizeGeometry | null {
   const found = findCanvasFrame(path);
 
@@ -156,7 +159,7 @@ export function readResizeGeometry({
     .map((choice) => choice.key);
   const geometry =
     axis === "x" && spans.length > 0
-      ? readGridSpan(frame, view, spans)
+      ? readGridSpan(frame, view, spans, switchedTracks)
       : readLengths(frame, view, axis, choices);
 
   return geometry && geometry.steps.length >= 2 ? geometry : null;

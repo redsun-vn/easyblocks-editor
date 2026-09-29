@@ -11,25 +11,14 @@ import {
 import { readResizeGeometry, ResizeGeometry } from "./canvas-resize-geometry";
 import { nearestResizeStep, targetSizeFromDrag } from "./resize-step-resolver";
 import { useEscapeWhileDragging } from "./use-escape-while-dragging";
+import { pendingSwitch, turnSwitchOn } from "./canvas-resize-parent-switch";
+import type {
+  Drag,
+  ResizeEdge,
+  ResizeReading,
+} from "./canvas-resize-drag-types";
 
-export type ResizeEdge = "left" | "right" | "bottom";
-
-/** What the chip beside the dragged edge says while a drag is on. */
-export type ResizeReading = { edge: ResizeEdge; label: string };
-
-type Drag = {
-  edge: ResizeEdge;
-  pointerId: number;
-  startPointer: number;
-  /** Canvas pixels per screen pixel: the canvas is drawn scaled by the zoom. */
-  scale: number;
-  geometry: ResizeGeometry;
-  choices: Map<string, ResizeChoice>;
-  lastValue: string;
-  hasWritten: boolean;
-  /** The field's stored value before the drag, to put back on Esc. */
-  originalRawValue: unknown;
-};
+export type { ResizeEdge, ResizeReading };
 
 /**
  * One drag of a resize handle, from press to release.
@@ -73,14 +62,17 @@ export function useCanvasResizeDrag({
     if (current?.hasWritten) {
       editorContext.actions.runChange(
         () => {
-          editorContext.form.change(fieldName, current.originalRawValue);
+          editorContext.form.change(
+            current.restorePath,
+            current.originalRawValue,
+          );
         },
         { history: "replace" },
       );
     }
 
     end();
-  }, [editorContext, fieldName, end]);
+  }, [editorContext, end]);
 
   useEscapeWhileDragging(reading !== null, cancel);
 
@@ -90,11 +82,14 @@ export function useCanvasResizeDrag({
     }
 
     const choices = canvasResizeChoices(resizeField, editorContext.types);
+    const pending = pendingSwitch(resizeField, path, editorContext.form.values);
     const geometry = readResizeGeometry({
       path,
       axis: resizeField.option.axis,
       choices,
+      switchedTracks: pending?.tracks,
     });
+    const restorePath = pending ? pending.parentPath : fieldName;
     const start = geometry && nearestResizeStep(geometry.steps, geometry.size);
 
     if (!geometry || !start || event.button !== 0) {
@@ -121,7 +116,9 @@ export function useCanvasResizeDrag({
       choices: new Map(choices.map((choice) => [choice.key, choice])),
       lastValue: start.value,
       hasWritten: false,
-      originalRawValue: dotNotationGet(editorContext.form.values, fieldName),
+      pending,
+      restorePath,
+      originalRawValue: dotNotationGet(editorContext.form.values, restorePath),
     };
 
     setReading({ edge, label: geometry.describe(start.value) });
@@ -152,6 +149,19 @@ export function useCanvasResizeDrag({
 
     if (!step || step.value === current.lastValue) {
       return;
+    }
+
+    // The switch goes on only once the value really changes, so a press that
+    // moves nothing leaves the row as it was.
+    if (current.pending) {
+      turnSwitchOn({
+        pending: current.pending,
+        editorContext,
+        configAfterAuto,
+        history: gestureHasWritten.current ? "replace" : "push",
+      });
+      gestureHasWritten.current = true;
+      current.pending = null;
     }
 
     writeCanvasResizeValue({

@@ -42,9 +42,11 @@ export declare function findCanvasFrame(path: string): {
  * Whole numbers across a block's sides are grid spans; everything else is a
  * length of some kind.
  */
-export declare function readResizeGeometry({ path, axis, choices, }: {
+export declare function readResizeGeometry({ path, axis, choices, switchedTracks, }: {
     path: string;
     axis: "x" | "y";
     choices: ReadonlyArray<ResizeChoice>;
+    /** See `readGridSpan`: the grid a pending parent switch will give. */
+    switchedTracks?: number;
 }): ResizeGeometry | null;
 //# sourceMappingURL=canvas-resize-geometry.d.ts.map

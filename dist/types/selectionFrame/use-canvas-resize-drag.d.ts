@@ -1,12 +1,8 @@
 import React from "react";
 import { EditorContextType } from "../EditorContext";
 import { CanvasResizeField } from "./canvas-resize-fields";
-export type ResizeEdge = "left" | "right" | "bottom";
-/** What the chip beside the dragged edge says while a drag is on. */
-export type ResizeReading = {
-    edge: ResizeEdge;
-    label: string;
-};
+import type { ResizeEdge, ResizeReading } from "./canvas-resize-drag-types";
+export type { ResizeEdge, ResizeReading };
 /**
  * One drag of a resize handle, from press to release.
  *

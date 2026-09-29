@@ -11907,14 +11907,20 @@ function findGridItem(frame, view) {
  * it, or `null` when the block is not on a grid or the grid is not drawing
  * spans at all.
  */
-function readGridSpan(frame, view, values) {
+function readGridSpan(frame, view, values,
+/**
+ * The track count the grid is about to have: a row whose twelve-track grid
+ * the drag will switch on. Switching keeps every column where it is, so the
+ * steps can be worked out from the grid as drawn now.
+ */
+switchedTracks) {
   const found = findGridItem(frame, view);
   if (!found) {
     return null;
   }
   const gridStyle = view.getComputedStyle(found.grid);
   const tracks = gridStyle.gridTemplateColumns.split(/\s+/).filter(Boolean).map(track => parseFloat(track));
-  const trackCount = tracks.length;
+  const trackCount = switchedTracks ?? tracks.length;
 
   // Tracks of different widths are proportions (a row with a free percentage
   // column), not a grid a span counts in: a number written there would not
@@ -12045,7 +12051,8 @@ const isWholeNumber = css => /^\d+$/.test(css.trim());
 function readResizeGeometry({
   path,
   axis,
-  choices
+  choices,
+  switchedTracks
 }) {
   const found = findCanvasFrame(path);
   if (!found) {
@@ -12056,8 +12063,52 @@ function readResizeGeometry({
     view
   } = found;
   const spans = choices.filter(choice => isWholeNumber(choice.css)).map(choice => choice.key);
-  const geometry = axis === "x" && spans.length > 0 ? readGridSpan(frame, view, spans) : readLengths(frame, view, axis, choices);
+  const geometry = axis === "x" && spans.length > 0 ? readGridSpan(frame, view, spans, switchedTracks) : readLengths(frame, view, axis, choices);
   return geometry && geometry.steps.length >= 2 ? geometry : null;
+}
+
+/**
+ * The parent switch a drag has to turn on before it can step in its unit,
+ * when the field names one and the parent has it off. A row stores its
+ * columns' widths in tracks of its own until its twelve-track grid is on;
+ * turning it on first gives every drag the same twelve steps.
+ */
+function pendingSwitch(resizeField, path, formValues) {
+  const parentSwitch = resizeField?.option.parentSwitch;
+  const parentPath = parseSlotPath(path)?.parentPath;
+  if (!parentSwitch || !parentPath) {
+    return null;
+  }
+  const isOn = dotNotationGet(formValues, `${parentPath}.${parentSwitch.prop}`);
+  return isOn === true ? null : {
+    parentPath,
+    ...parentSwitch
+  };
+}
+
+/**
+ * Turns the parent switch on the way the panel's own switch would, so the
+ * parent's change rules rewrite the columns' stored widths and the page does
+ * not move.
+ */
+function turnSwitchOn({
+  pending,
+  editorContext,
+  configAfterAuto,
+  history
+}) {
+  const field = buildTinaFieldsForSelection([pending.parentPath], editorContext).find(candidate => candidate.schemaProp.prop === pending.prop);
+  if (!field) {
+    return false;
+  }
+  writeCanvasResizeValue({
+    field,
+    value: true,
+    editorContext,
+    configAfterAuto,
+    history
+  });
+  return true;
 }
 
 /** The selected block's box, in canvas pixels, as the position messages give it. */
@@ -12067,11 +12118,14 @@ function isPositionChanged(data) {
 }
 
 /** What a drag of this field could reach on the page now, if anything. */
-function geometryOf(path, resizeField, types) {
+function geometryOf(path, resizeField, editorContext) {
   return resizeField ? readResizeGeometry({
     path,
     axis: resizeField.option.axis,
-    choices: canvasResizeChoices(resizeField, types)
+    choices: canvasResizeChoices(resizeField, editorContext.types),
+    // A row with its twelve-track grid still off is offered the twelve
+    // steps it will have once the drag switches the grid on.
+    switchedTracks: pendingSwitch(resizeField, path, editorContext.form.values)?.tracks
   }) : null;
 }
 
@@ -12214,8 +12268,6 @@ function useEscapeWhileDragging(isDragging, cancel) {
   }, [isDragging, cancel]);
 }
 
-/** What the chip beside the dragged edge says while a drag is on. */
-
 /**
  * One drag of a resize handle, from press to release.
  *
@@ -12242,24 +12294,27 @@ function useCanvasResizeDrag({
     const current = drag.current;
     if (current?.hasWritten) {
       editorContext.actions.runChange(() => {
-        editorContext.form.change(fieldName, current.originalRawValue);
+        editorContext.form.change(current.restorePath, current.originalRawValue);
       }, {
         history: "replace"
       });
     }
     end();
-  }, [editorContext, fieldName, end]);
+  }, [editorContext, end]);
   useEscapeWhileDragging(reading !== null, cancel);
   const onPointerDown = edge => event => {
     if (!resizeField) {
       return;
     }
     const choices = canvasResizeChoices(resizeField, editorContext.types);
+    const pending = pendingSwitch(resizeField, path, editorContext.form.values);
     const geometry = readResizeGeometry({
       path,
       axis: resizeField.option.axis,
-      choices
+      choices,
+      switchedTracks: pending?.tracks
     });
+    const restorePath = pending ? pending.parentPath : fieldName;
     const start = geometry && nearestResizeStep(geometry.steps, geometry.size);
     if (!geometry || !start || event.button !== 0) {
       return;
@@ -12279,7 +12334,9 @@ function useCanvasResizeDrag({
       choices: new Map(choices.map(choice => [choice.key, choice])),
       lastValue: start.value,
       hasWritten: false,
-      originalRawValue: dotNotationGet(editorContext.form.values, fieldName)
+      pending,
+      restorePath,
+      originalRawValue: dotNotationGet(editorContext.form.values, restorePath)
     };
     setReading({
       edge,
@@ -12301,6 +12358,19 @@ function useCanvasResizeDrag({
     }));
     if (!step || step.value === current.lastValue) {
       return;
+    }
+
+    // The switch goes on only once the value really changes, so a press that
+    // moves nothing leaves the row as it was.
+    if (current.pending) {
+      turnSwitchOn({
+        pending: current.pending,
+        editorContext,
+        configAfterAuto,
+        history: gestureHasWritten.current ? "replace" : "push"
+      });
+      gestureHasWritten.current = true;
+      current.pending = null;
     }
     writeCanvasResizeValue({
       field: resizeField.field,
@@ -12396,7 +12466,7 @@ function ResizeHandles({
   // are rebuilt on every write, before the canvas has drawn it.
   const widthKey = widthField ? String(widthField.field.name) : "";
   const heightKey = heightField ? String(heightField.field.name) : "";
-  const [widthGeometry, heightGeometry] = React.useMemo(() => box === null ? [null, null] : [geometryOf(path, widthField, editorContext.types), geometryOf(path, heightField, editorContext.types)],
+  const [widthGeometry, heightGeometry] = React.useMemo(() => box === null ? [null, null] : [geometryOf(path, widthField, editorContext), geometryOf(path, heightField, editorContext)],
   // eslint-disable-next-line react-hooks/exhaustive-deps
   [path, widthKey, heightKey, box?.width, box?.height, redraws]);
   const canDragWidth = widthGeometry !== null;

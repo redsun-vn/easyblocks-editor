@@ -62,6 +62,12 @@ export function readGridSpan(
   frame: HTMLElement,
   view: Window,
   values: ReadonlyArray<string>,
+  /**
+   * The track count the grid is about to have: a row whose twelve-track grid
+   * the drag will switch on. Switching keeps every column where it is, so the
+   * steps can be worked out from the grid as drawn now.
+   */
+  switchedTracks?: number,
 ): ResizeGeometry | null {
   const found = findGridItem(frame, view);
 
@@ -74,7 +80,7 @@ export function readGridSpan(
     .split(/\s+/)
     .filter(Boolean)
     .map((track) => parseFloat(track));
-  const trackCount = tracks.length;
+  const trackCount = switchedTracks ?? tracks.length;
 
   // Tracks of different widths are proportions (a row with a free percentage
   // column), not a grid a span counts in: a number written there would not

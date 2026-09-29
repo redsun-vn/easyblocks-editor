@@ -1,6 +1,7 @@
 import { SelectionFramePositionChangedEvent } from "@redsun-vn/easyblocks-core/_internals";
 import { CanvasResizeField, canvasResizeChoices } from "./canvas-resize-fields";
 import { readResizeGeometry } from "./canvas-resize-geometry";
+import { pendingSwitch } from "./canvas-resize-parent-switch";
 import type { EditorContextType } from "../EditorContext";
 
 /** The selected block's box, in canvas pixels, as the position messages give it. */
@@ -26,13 +27,20 @@ export function isPositionChanged(
 export function geometryOf(
   path: string,
   resizeField: CanvasResizeField | undefined,
-  types: EditorContextType["types"],
+  editorContext: EditorContextType,
 ) {
   return resizeField
     ? readResizeGeometry({
         path,
         axis: resizeField.option.axis,
-        choices: canvasResizeChoices(resizeField, types),
+        choices: canvasResizeChoices(resizeField, editorContext.types),
+        // A row with its twelve-track grid still off is offered the twelve
+        // steps it will have once the drag switches the grid on.
+        switchedTracks: pendingSwitch(
+          resizeField,
+          path,
+          editorContext.form.values,
+        )?.tracks,
       })
     : null;
 }

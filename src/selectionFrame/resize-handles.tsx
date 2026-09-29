@@ -79,8 +79,8 @@ export function ResizeHandles({
       box === null
         ? [null, null]
         : [
-            geometryOf(path, widthField, editorContext.types),
-            geometryOf(path, heightField, editorContext.types),
+            geometryOf(path, widthField, editorContext),
+            geometryOf(path, heightField, editorContext),
           ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [path, widthKey, heightKey, box?.width, box?.height, redraws],

@@ -10,7 +10,7 @@ export type TargetBox = {
 };
 export declare function isPositionChanged(data: unknown): data is SelectionFramePositionChangedEvent["data"];
 /** What a drag of this field could reach on the page now, if anything. */
-export declare function geometryOf(path: string, resizeField: CanvasResizeField | undefined, types: EditorContextType["types"]): import("./canvas-resize-geometry").ResizeGeometry | null;
+export declare function geometryOf(path: string, resizeField: CanvasResizeField | undefined, editorContext: EditorContextType): import("./canvas-resize-geometry").ResizeGeometry | null;
 /** The name of the breakpoint being edited, for the chip. */
 export declare function deviceLabel({ devices, breakpointIndex, }: {
     devices: Array<{
