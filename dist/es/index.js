@@ -7674,6 +7674,8 @@ const EditorTopBar = ({
   editorMode,
   showDeviceFrame,
   onToggleDeviceFrame,
+  showOutlines,
+  onToggleOutlines,
   zoom,
   onZoomChange
 }) => {
@@ -7764,7 +7766,16 @@ const EditorTopBar = ({
     style: {
       background: showDeviceFrame ? Colors.black10 : "transparent"
     }
-  }, t('editor.sidebar.deviceFrame')), /*#__PURE__*/React__default.createElement(FontColorConfigsModal, {
+  }, t('editor.sidebar.deviceFrame')), /*#__PURE__*/React__default.createElement(ButtonGhost, {
+    icon: Icons.Grid3x3,
+    hideLabel: true,
+    onClick: onToggleOutlines,
+    "aria-pressed": showOutlines,
+    "aria-label": t("editor.sidebar.outlines"),
+    style: {
+      background: showOutlines ? Colors.black10 : "transparent"
+    }
+  }, t("editor.sidebar.outlines")), /*#__PURE__*/React__default.createElement(FontColorConfigsModal, {
     isOpen: isOpenConfigs,
     onConfigChange: onConfigChange,
     onClose: () => setIsOpenConfigs(false)
@@ -9879,7 +9890,7 @@ React__default.createElement(StyledThumbnail, {
  * theme should not inherit somebody else's folded panel.
  */
 
-const STORAGE_KEY = "easyblocks.editor.sidebar.collapsedGroups";
+const STORAGE_KEY$1 = "easyblocks.editor.sidebar.collapsedGroups";
 
 /**
  * The stored keys, or none.
@@ -9894,7 +9905,7 @@ const read = () => {
     return [];
   }
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(STORAGE_KEY$1);
     const parsed = raw ? JSON.parse(raw) : null;
     return Array.isArray(parsed) ? parsed.filter(key => typeof key === "string") : [];
   } catch {
@@ -9917,7 +9928,7 @@ const setGroupCollapsed = (key, collapsed) => {
     next.delete(key);
   }
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
+    window.localStorage.setItem(STORAGE_KEY$1, JSON.stringify([...next]));
   } catch {
     // Storage is full or blocked. The panel still folds for this session; it
     // just will not remember, which is better than refusing the click.
@@ -12664,6 +12675,44 @@ function useEditorHistory({
   };
 }
 
+const STORAGE_KEY = "easyblocks-editor:show-outlines";
+
+/**
+ * Remembered for the tab, not for good: outlines are a way to find your
+ * bearings on a page, and a fresh tab should show the page as it will look.
+ * Storage can be missing or throw (private windows, blocked site data), and
+ * then the toggle simply starts off.
+ */
+function readStored() {
+  try {
+    return window.sessionStorage.getItem(STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+function writeStored(value) {
+  try {
+    window.sessionStorage.setItem(STORAGE_KEY, String(value));
+  } catch {
+    // Not remembering is harmless; the toggle still works for this page.
+  }
+}
+
+/** Whether every block's boundary is drawn on the canvas, and the switch for it. */
+function useShowOutlinesPreference() {
+  const [showOutlines, setShowOutlines] = useState(readStored);
+  const toggleShowOutlines = useCallback(() => {
+    setShowOutlines(previous => {
+      writeStored(!previous);
+      return !previous;
+    });
+  }, []);
+  return {
+    showOutlines,
+    toggleShowOutlines
+  };
+}
+
 const debouncedUpdate = debounce$1(fn => fn(), 100);
 
 /** Breathing room so the device frame chrome is not clipped by the container. */
@@ -13020,6 +13069,10 @@ const EditorContent = ({
 
   // Off in every mode: Layers is the only control active when the editor opens.
   const [showDeviceFrame, setShowDeviceFrame] = useState(false);
+  const {
+    showOutlines,
+    toggleShowOutlines
+  } = useShowOutlinesPreference();
   const [zoom, setZoom] = useState("fit");
   const {
     breakpointIndex,
@@ -13377,6 +13430,7 @@ const EditorContent = ({
     translationFiles: props.config?.translationFiles ?? {},
     uiLocale,
     isEditing,
+    showOutlines,
     globalSections: props.config?.globalSections ?? null,
     onGlobalSectionChange: props.onGlobalSectionChange,
     actions,
@@ -13482,7 +13536,7 @@ const EditorContent = ({
     if (window.editorWindowAPI?.onUpdate) {
       window.editorWindowAPI.onUpdate();
     }
-  }, [renderableContent, focussedField, isEditing, currentViewport, externalData]);
+  }, [renderableContent, focussedField, isEditing, showOutlines, currentViewport, externalData]);
   useEffect(() => {
     function handleEditorEvents(event) {
       if (event.data.type === "@easyblocks-editor/component-picker-opened") {
@@ -13622,6 +13676,8 @@ const EditorContent = ({
     editorMode: mode,
     showDeviceFrame: showDeviceFrame,
     onToggleDeviceFrame: () => setShowDeviceFrame(p => !p),
+    showOutlines: showOutlines,
+    onToggleOutlines: toggleShowOutlines,
     zoom: zoom,
     onZoomChange: setZoom
   }), /*#__PURE__*/React__default.createElement(SidebarAndContentContainer, {
@@ -14262,6 +14318,70 @@ function EasyblocksParent(props) {
   })));
 }
 
+/**
+ * Set on the canvas root while the author asks to see every block's boundary.
+ * Frames read it through an ancestor selector, so turning it on or off is one
+ * attribute flip rather than a re-render of every frame.
+ */
+const CANVAS_OUTLINES_ATTRIBUTE = "data-easyblocks-show-outlines";
+
+/**
+ * A white ring inside a dark one. Whatever colour sits under a frame, one of
+ * the two stands out from it: the white on a dark hero video, the dark on a
+ * white page. The insertion line already carried customer content this way;
+ * the selection frame now does too, instead of a lone blue hairline that
+ * vanished on anything darker than the blue itself.
+ */
+const CONTRAST_RING = `0 0 0 2px ${Colors.white}, 0 0 0 3px ${Colors.black900}`;
+
+/** The thinner ring hovering uses, so hover never reads as a selection. */
+const HOVER_RING = `0 0 0 1px ${Colors.white}`;
+
+/**
+ * The frame's own `::after` for its resting, hovered and selected states.
+ *
+ * Hovered and selected differ in weight, not in opacity: a half-transparent
+ * hairline was the old hover, and on a busy background it was not there at all.
+ *
+ * The outlines rule sits in `:where()` so it adds no specificity: every drag
+ * state declared after it (drop target, refusal) still wins, and so does hover.
+ */
+function selectionFrameOutlineStyles(hoveredTargetFrame) {
+  return {
+    "&[data-draggable-active=false]::after": {
+      content: `''`,
+      boxSizing: "border-box",
+      display: "block",
+      position: "absolute",
+      left: 0,
+      top: 0,
+      width: "100%",
+      height: "100%",
+      border: "1px solid var(--tina-color-primary)",
+      opacity: 0,
+      pointerEvents: "none",
+      userSelect: "none",
+      transition: "all 100ms"
+    },
+    [`:where([${CANVAS_OUTLINES_ATTRIBUTE}=true]) &[data-draggable-active=false]::after`]: {
+      opacity: 0.6,
+      borderStyle: "dashed"
+    },
+    // A drop target keeps its own look while the pointer is on it.
+    [`&[data-active=false]:not([data-drop-target=true])${hoveredTargetFrame}::after`]: {
+      opacity: 1,
+      borderStyle: "solid",
+      boxShadow: HOVER_RING
+    },
+    "&[data-active=true]::after": {
+      opacity: 1,
+      borderStyle: "solid",
+      borderWidth: "2px",
+      boxShadow: CONTRAST_RING
+    }
+  };
+}
+
 // Inline styles: the menu renders inside the site page, so it must not depend on page CSS.
 
 const menuStyles = {
@@ -14444,7 +14564,8 @@ function CanvasRoot(props) {
   }, editorContext.isEditing && /*#__PURE__*/React__default.createElement("div", {
     style: {
       minHeight: "100vh"
-    }
+    },
+    [CANVAS_OUTLINES_ATTRIBUTE]: editorContext.showOutlines ? "true" : "false"
   }, /*#__PURE__*/React__default.createElement("style", {
     dangerouslySetInnerHTML: {
       __html: globalEditorRendererStyles
@@ -15260,7 +15381,7 @@ function SelectionFrameController({
     // what made the insertion line indistinguishable from the rest of the drag feedback.
     // The double ring carries it over customer content: the white one holds up on a dark
     // section, the dark one on a light section.
-    boxShadow: `0 0 0 2px ${Colors.white}, 0 0 0 3px ${Colors.black900}`,
+    boxShadow: CONTRAST_RING,
     ...(direction === "horizontal" ? {
       top: 0,
       bottom: 0,
@@ -15281,29 +15402,8 @@ function SelectionFrameController({
     // so children stay clickable. Ancestors are reached with Esc, the action bar parent
     // button, the breadcrumb under the canvas or the right-click layer menu.
 
-    "&[data-draggable-active=false]::after": {
-      content: `''`,
-      boxSizing: "border-box",
-      display: "block",
-      position: "absolute",
-      left: 0,
-      top: 0,
-      width: "100%",
-      height: "100%",
-      border: "1px solid var(--tina-color-primary)",
-      opacity: 0,
-      pointerEvents: "none",
-      userSelect: "none",
-      transition: "all 100ms",
-      boxShadow: "var(--tina-shadow-big)"
-    },
-    "&[data-active=true]::after": {
-      opacity: 1
-    },
     // `:hover` also matches every ancestor frame, so only the click target gets feedback.
-    [`&[data-active=false]${HOVERED_TARGET_FRAME}::after`]: {
-      opacity: 0.5
-    },
+    ...selectionFrameOutlineStyles(HOVERED_TARGET_FRAME),
     // Mid-drag, the block the drop would land against states plainly that it
     // would take it. A half-opacity hairline — the same one hovering shows when
     // nothing is being dragged — read as "nothing is happening here", which is
@@ -15312,6 +15412,8 @@ function SelectionFrameController({
       opacity: 1,
       borderColor: Colors.purple,
       borderWidth: "3px",
+      // Solid even with outlines on: dashed is how a refusal looks.
+      borderStyle: "solid",
       // A wash over the whole target, not just a line around it. Two blocks
       // sitting flush in a row leave the eye nowhere to notice a border, and a
       // reorder inside one row is the move that felt like nothing happened.

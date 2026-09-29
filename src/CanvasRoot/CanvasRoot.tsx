@@ -1,5 +1,6 @@
 import React, { ReactNode } from "react";
 import { useEditorGlobalKeyboardShortcuts } from "../useEditorGlobalKeyboardShortcuts";
+import { CANVAS_OUTLINES_ATTRIBUTE } from "../EditableComponentBuilder/selection-frame-outline-styles";
 import { CanvasLayerContextMenu } from "./CanvasLayerContextMenu";
 
 type CanvasRootProps = {
@@ -24,7 +25,14 @@ function CanvasRoot(props: CanvasRootProps) {
       }}
     >
       {editorContext.isEditing && (
-        <div style={{ minHeight: "100vh" }}>
+        <div
+          style={{ minHeight: "100vh" }}
+          {...{
+            [CANVAS_OUTLINES_ATTRIBUTE]: editorContext.showOutlines
+              ? "true"
+              : "false",
+          }}
+        >
           <style
             dangerouslySetInnerHTML={{
               __html: globalEditorRendererStyles,

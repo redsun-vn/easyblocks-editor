@@ -33,6 +33,8 @@ export declare const EditorTopBar: React.FC<{
     editorMode: TEasyblocksEditorMode;
     showDeviceFrame: boolean;
     onToggleDeviceFrame: () => void;
+    showOutlines: boolean;
+    onToggleOutlines: () => void;
     zoom: Zoom;
     onZoomChange: (zoom: Zoom) => void;
 }>;

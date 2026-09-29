@@ -126,6 +126,8 @@ export const EditorTopBar: React.FC<{
   editorMode: TEasyblocksEditorMode;
   showDeviceFrame: boolean;
   onToggleDeviceFrame: () => void;
+  showOutlines: boolean;
+  onToggleOutlines: () => void;
   zoom: Zoom;
   onZoomChange: (zoom: Zoom) => void;
 }> = ({
@@ -156,6 +158,8 @@ export const EditorTopBar: React.FC<{
   editorMode,
   showDeviceFrame,
   onToggleDeviceFrame,
+  showOutlines,
+  onToggleOutlines,
   zoom,
   onZoomChange,
 }) => {
@@ -318,6 +322,19 @@ export const EditorTopBar: React.FC<{
           }}
         >
           {t('editor.sidebar.deviceFrame')}
+        </ButtonGhost>
+
+        <ButtonGhost
+          icon={Icons.Grid3x3}
+          hideLabel
+          onClick={onToggleOutlines}
+          aria-pressed={showOutlines}
+          aria-label={t("editor.sidebar.outlines")}
+          style={{
+            background: showOutlines ? Colors.black10 : "transparent",
+          }}
+        >
+          {t("editor.sidebar.outlines")}
         </ButtonGhost>
 
         <FontColorConfigsModal

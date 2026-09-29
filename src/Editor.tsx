@@ -105,6 +105,7 @@ import {
 import { useDataSaver } from "./useDataSaver";
 import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShortcuts";
 import { useEditorHistory } from "./useEditorHistory";
+import { useShowOutlinesPreference } from "./use-show-outlines-preference";
 
 declare global {
   interface Window {
@@ -736,6 +737,7 @@ const EditorContent = ({
 
   // Off in every mode: Layers is the only control active when the editor opens.
   const [showDeviceFrame, setShowDeviceFrame] = useState(false);
+  const { showOutlines, toggleShowOutlines } = useShowOutlinesPreference();
   const [zoom, setZoom] = useState<Zoom>("fit");
 
   const { breakpointIndex, iframeSize } = calculateViewportRelatedStuff(
@@ -1148,6 +1150,7 @@ const EditorContent = ({
     translationFiles: props.config?.translationFiles ?? {},
     uiLocale,
     isEditing,
+    showOutlines,
     globalSections: props.config?.globalSections ?? null,
     onGlobalSectionChange: props.onGlobalSectionChange,
     actions,
@@ -1286,6 +1289,7 @@ const EditorContent = ({
     renderableContent,
     focussedField,
     isEditing,
+    showOutlines,
     currentViewport,
     externalData,
   ]);
@@ -1490,6 +1494,8 @@ const EditorContent = ({
               editorMode={mode}
               showDeviceFrame={showDeviceFrame}
               onToggleDeviceFrame={() => setShowDeviceFrame((p) => !p)}
+              showOutlines={showOutlines}
+              onToggleOutlines={toggleShowOutlines}
               zoom={zoom}
               onZoomChange={setZoom}
             />

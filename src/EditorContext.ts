@@ -72,6 +72,8 @@ export type EditorContextType = Omit<
   setFocussedField: (field: Array<string> | string) => void;
   form: Form<any, InternalAnyField>;
   isEditing?: boolean;
+  /** Every block's boundary is drawn on the canvas, not only the hovered and selected one. */
+  showOutlines?: boolean;
   actions: ActionsType;
   save: (document: Document) => Promise<void>;
   compiledComponentConfig?: CompiledComponentConfig;

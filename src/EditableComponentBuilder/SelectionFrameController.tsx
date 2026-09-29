@@ -10,6 +10,10 @@ import {
   DRAG_HANDLE_SIZE,
 } from "./canvasLayers";
 import type { DropIndicatorEdge } from "./dropIndicator";
+import {
+  CONTRAST_RING,
+  selectionFrameOutlineStyles,
+} from "./selection-frame-outline-styles";
 
 type SelectionFrameControllerProps = {
   isActive: boolean;
@@ -112,7 +116,7 @@ function SelectionFrameController({
     // what made the insertion line indistinguishable from the rest of the drag feedback.
     // The double ring carries it over customer content: the white one holds up on a dark
     // section, the dark one on a light section.
-    boxShadow: `0 0 0 2px ${Colors.white}, 0 0 0 3px ${Colors.black900}`,
+    boxShadow: CONTRAST_RING,
     ...(direction === "horizontal"
       ? { top: 0, bottom: 0, width: `${DROP_INDICATOR_THICKNESS}px` }
       : { left: 0, right: 0, height: `${DROP_INDICATOR_THICKNESS}px` }),
@@ -130,31 +134,8 @@ function SelectionFrameController({
     // so children stay clickable. Ancestors are reached with Esc, the action bar parent
     // button, the breadcrumb under the canvas or the right-click layer menu.
 
-    "&[data-draggable-active=false]::after": {
-      content: `''`,
-      boxSizing: "border-box",
-      display: "block",
-      position: "absolute",
-      left: 0,
-      top: 0,
-      width: "100%",
-      height: "100%",
-      border: "1px solid var(--tina-color-primary)",
-      opacity: 0,
-      pointerEvents: "none",
-      userSelect: "none",
-      transition: "all 100ms",
-      boxShadow: "var(--tina-shadow-big)",
-    },
-
-    "&[data-active=true]::after": {
-      opacity: 1,
-    },
-
     // `:hover` also matches every ancestor frame, so only the click target gets feedback.
-    [`&[data-active=false]${HOVERED_TARGET_FRAME}::after`]: {
-      opacity: 0.5,
-    },
+    ...selectionFrameOutlineStyles(HOVERED_TARGET_FRAME),
 
     // Mid-drag, the block the drop would land against states plainly that it
     // would take it. A half-opacity hairline — the same one hovering shows when
@@ -164,6 +145,8 @@ function SelectionFrameController({
       opacity: 1,
       borderColor: Colors.purple,
       borderWidth: "3px",
+      // Solid even with outlines on: dashed is how a refusal looks.
+      borderStyle: "solid",
       // A wash over the whole target, not just a line around it. Two blocks
       // sitting flush in a row leave the eye nowhere to notice a border, and a
       // reorder inside one row is the move that felt like nothing happened.
