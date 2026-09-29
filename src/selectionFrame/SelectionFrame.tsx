@@ -339,6 +339,13 @@ function SelectionFrame({
             widthField={widthResizeField}
             heightField={heightResizeField}
             path={focussedField[0]}
+            addButtonsOn={
+              isAddingEnabled
+                ? direction === "horizontal"
+                  ? "sides"
+                  : "ends"
+                : undefined
+            }
           />
         ) : null}
         {isBarShown ? (

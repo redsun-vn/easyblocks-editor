@@ -1,5 +1,6 @@
 import { Colors } from "@redsun-vn/easyblocks-design-system";
 import { styled } from "styled-components";
+import { ADD_BUTTON_SIZE } from "./AddButton";
 
 /** Where a handle sits on the selected block. */
 export type HandlePlace = "left" | "right" | "bottom" | "corner";
@@ -16,17 +17,34 @@ const CURSORS: Record<HandlePlace, string> = {
   corner: "nwse-resize",
 };
 
-function hitBox(place: HandlePlace, scale: number) {
+/** Screen pixels between a handle and an add button sharing its edge. */
+const ADD_BUTTON_GAP = 6;
+
+/**
+ * Where along its edge a handle's middle sits: the edge's middle, or past the
+ * add button when one sits there. The add button is drawn in canvas pixels,
+ * the handle in screen pixels, hence the two scales.
+ */
+function middleOf(length: number, scale: number, besideAddButton: boolean) {
+  const shift = besideAddButton
+    ? ADD_BUTTON_SIZE / 2 + (ADD_BUTTON_GAP + HANDLE_LENGTH / 2) / scale
+    : 0;
+
+  return `calc(50% - ${length / 2}px + ${shift}px)`;
+}
+
+function hitBox(place: HandlePlace, scale: number, besideAddButton: boolean) {
   const length = HANDLE_LENGTH / scale;
   const hit = HIT_AREA / scale;
+  const middle = middleOf(length, scale, besideAddButton);
 
   switch (place) {
     case "bottom":
-      return `left: calc(50% - ${length / 2}px); bottom: -${hit / 2}px; width: ${length}px; height: ${hit}px;`;
+      return `left: ${middle}; bottom: -${hit / 2}px; width: ${length}px; height: ${hit}px;`;
     case "corner":
       return `right: -${hit / 2}px; bottom: -${hit / 2}px; width: ${hit}px; height: ${hit}px;`;
     default:
-      return `top: calc(50% - ${length / 2}px); ${place}: -${hit / 2}px; width: ${hit}px; height: ${length}px;`;
+      return `top: ${middle}; ${place}: -${hit / 2}px; width: ${hit}px; height: ${length}px;`;
   }
 }
 
@@ -49,14 +67,20 @@ export const Layer = styled.div`
   pointer-events: none;
 `;
 
-export const Handle = styled.div<{ $place: HandlePlace; $scale: number }>`
+export const Handle = styled.div<{
+  $place: HandlePlace;
+  $scale: number;
+  /** An add button sits in the middle of this handle's edge. */
+  $besideAddButton?: boolean;
+}>`
   position: absolute;
   pointer-events: auto;
   touch-action: none;
   display: grid;
   place-items: center;
   cursor: ${({ $place }) => CURSORS[$place]};
-  ${({ $place, $scale }) => hitBox($place, $scale)}
+  ${({ $place, $scale, $besideAddButton = false }) =>
+    hitBox($place, $scale, $besideAddButton)}
 
   &::before {
     content: "";

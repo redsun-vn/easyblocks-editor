@@ -32,10 +32,16 @@ export function ResizeHandles({
   widthField,
   heightField,
   path,
+  addButtonsOn,
 }: {
   widthField?: CanvasResizeField;
   heightField?: CanvasResizeField;
   path: string;
+  /**
+   * The edges whose middles hold the add buttons: the sides in a row, the top
+   * and bottom in a stack. A handle on such an edge moves aside for them.
+   */
+  addButtonsOn?: "sides" | "ends";
 }) {
   const editorContext = useEditorContext();
   const configAfterAuto = useConfigAfterAuto();
@@ -112,6 +118,11 @@ export function ResizeHandles({
       <Handle
         key={place}
         $place={place}
+        $besideAddButton={
+          place === "bottom"
+            ? addButtonsOn === "ends"
+            : place !== "corner" && addButtonsOn === "sides"
+        }
         $scale={scale}
         onPointerDown={(event) => {
           setActivePlace(place);

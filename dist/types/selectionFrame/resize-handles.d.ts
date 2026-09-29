@@ -10,9 +10,14 @@ import { CanvasResizeField } from "./canvas-resize-fields";
  * under it — the canvas redraws a moment after each write, and a handle that
  * vanished mid-drag would take the pointer with it.
  */
-export declare function ResizeHandles({ widthField, heightField, path, }: {
+export declare function ResizeHandles({ widthField, heightField, path, addButtonsOn, }: {
     widthField?: CanvasResizeField;
     heightField?: CanvasResizeField;
     path: string;
+    /**
+     * The edges whose middles hold the add buttons: the sides in a row, the top
+     * and bottom in a stack. A handle on such an edge moves aside for them.
+     */
+    addButtonsOn?: "sides" | "ends";
 }): React.JSX.Element | null;
 //# sourceMappingURL=resize-handles.d.ts.map

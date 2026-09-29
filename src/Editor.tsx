@@ -105,7 +105,6 @@ import {
 import { useDataSaver } from "./useDataSaver";
 import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShortcuts";
 import { useEditorHistory } from "./useEditorHistory";
-import { useShowOutlinesPreference } from "./use-show-outlines-preference";
 
 declare global {
   interface Window {
@@ -737,7 +736,14 @@ const EditorContent = ({
 
   // Off in every mode: Layers is the only control active when the editor opens.
   const [showDeviceFrame, setShowDeviceFrame] = useState(false);
-  const { showOutlines, toggleShowOutlines } = useShowOutlinesPreference();
+  // On every time the editor opens: seeing where each block begins and ends
+  // is how people find their way around a page. It can be switched off for
+  // the session to look at the page as it will be published.
+  const [showOutlines, setShowOutlines] = useState(true);
+  const toggleShowOutlines = useCallback(
+    () => setShowOutlines((isShown) => !isShown),
+    [],
+  );
   const [zoom, setZoom] = useState<Zoom>("fit");
 
   const { breakpointIndex, iframeSize } = calculateViewportRelatedStuff(

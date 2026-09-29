@@ -9925,7 +9925,7 @@ React__default["default"].createElement(StyledThumbnail, {
  * theme should not inherit somebody else's folded panel.
  */
 
-const STORAGE_KEY$1 = "easyblocks.editor.sidebar.collapsedGroups";
+const STORAGE_KEY = "easyblocks.editor.sidebar.collapsedGroups";
 
 /**
  * The stored keys, or none.
@@ -9940,7 +9940,7 @@ const read = () => {
     return [];
   }
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY$1);
+    const raw = window.localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
     return Array.isArray(parsed) ? parsed.filter(key => typeof key === "string") : [];
   } catch {
@@ -9963,7 +9963,7 @@ const setGroupCollapsed = (key, collapsed) => {
     next.delete(key);
   }
   try {
-    window.localStorage.setItem(STORAGE_KEY$1, JSON.stringify([...next]));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
   } catch {
     // Storage is full or blocked. The panel still folds for this session; it
     // just will not remember, which is better than refusing the click.
@@ -12096,16 +12096,30 @@ const CURSORS = {
   bottom: "ns-resize",
   corner: "nwse-resize"
 };
-function hitBox(place, scale) {
+
+/** Screen pixels between a handle and an add button sharing its edge. */
+const ADD_BUTTON_GAP = 6;
+
+/**
+ * Where along its edge a handle's middle sits: the edge's middle, or past the
+ * add button when one sits there. The add button is drawn in canvas pixels,
+ * the handle in screen pixels, hence the two scales.
+ */
+function middleOf(length, scale, besideAddButton) {
+  const shift = besideAddButton ? ICON_BUTTON_SIZE / 2 + (ADD_BUTTON_GAP + HANDLE_LENGTH / 2) / scale : 0;
+  return `calc(50% - ${length / 2}px + ${shift}px)`;
+}
+function hitBox(place, scale, besideAddButton) {
   const length = HANDLE_LENGTH / scale;
   const hit = HIT_AREA / scale;
+  const middle = middleOf(length, scale, besideAddButton);
   switch (place) {
     case "bottom":
-      return `left: calc(50% - ${length / 2}px); bottom: -${hit / 2}px; width: ${length}px; height: ${hit}px;`;
+      return `left: ${middle}; bottom: -${hit / 2}px; width: ${length}px; height: ${hit}px;`;
     case "corner":
       return `right: -${hit / 2}px; bottom: -${hit / 2}px; width: ${hit}px; height: ${hit}px;`;
     default:
-      return `top: calc(50% - ${length / 2}px); ${place}: -${hit / 2}px; width: ${hit}px; height: ${length}px;`;
+      return `top: ${middle}; ${place}: -${hit / 2}px; width: ${hit}px; height: ${length}px;`;
   }
 }
 function mark(place, scale) {
@@ -12131,8 +12145,9 @@ const Handle = styled.styled.div.withConfig({
   $place
 }) => CURSORS[$place], ({
   $place,
-  $scale
-}) => hitBox($place, $scale), easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black900, ({
+  $scale,
+  $besideAddButton = false
+}) => hitBox($place, $scale, $besideAddButton), easyblocksDesignSystem.Colors.white, easyblocksDesignSystem.Colors.black900, ({
   $place,
   $scale
 }) => mark($place, $scale));
@@ -12329,7 +12344,8 @@ function useCanvasResizeDrag({
 function ResizeHandles({
   widthField,
   heightField,
-  path
+  path,
+  addButtonsOn
 }) {
   const editorContext = useEditorContext();
   const configAfterAuto = useConfigAfterAuto();
@@ -12403,6 +12419,7 @@ function ResizeHandles({
     return /*#__PURE__*/React__default["default"].createElement(Handle, {
       key: place,
       $place: place,
+      $besideAddButton: place === "bottom" ? addButtonsOn === "ends" : place !== "corner" && addButtonsOn === "sides",
       $scale: scale,
       onPointerDown: event => {
         setActivePlace(place);
@@ -12679,7 +12696,8 @@ function SelectionFrame({
     key: focussedField[0],
     widthField: widthResizeField,
     heightField: heightResizeField,
-    path: focussedField[0]
+    path: focussedField[0],
+    addButtonsOn: isAddingEnabled ? direction === "horizontal" ? "sides" : "ends" : undefined
   }) : null, isBarShown ? /*#__PURE__*/React__default["default"].createElement(SelectionFrameActions, {
     actions: actions,
     focussedField: focussedField,
@@ -13604,44 +13622,6 @@ function useEditorHistory({
   };
 }
 
-const STORAGE_KEY = "easyblocks-editor:show-outlines";
-
-/**
- * Remembered for the tab, not for good: outlines are a way to find your
- * bearings on a page, and a fresh tab should show the page as it will look.
- * Storage can be missing or throw (private windows, blocked site data), and
- * then the toggle simply starts off.
- */
-function readStored() {
-  try {
-    return window.sessionStorage.getItem(STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-function writeStored(value) {
-  try {
-    window.sessionStorage.setItem(STORAGE_KEY, String(value));
-  } catch {
-    // Not remembering is harmless; the toggle still works for this page.
-  }
-}
-
-/** Whether every block's boundary is drawn on the canvas, and the switch for it. */
-function useShowOutlinesPreference() {
-  const [showOutlines, setShowOutlines] = React.useState(readStored);
-  const toggleShowOutlines = React.useCallback(() => {
-    setShowOutlines(previous => {
-      writeStored(!previous);
-      return !previous;
-    });
-  }, []);
-  return {
-    showOutlines,
-    toggleShowOutlines
-  };
-}
-
 const debouncedUpdate = debounce__default["default"](fn => fn(), 100);
 
 /** Breathing room so the device frame chrome is not clipped by the container. */
@@ -13998,10 +13978,11 @@ const EditorContent = ({
 
   // Off in every mode: Layers is the only control active when the editor opens.
   const [showDeviceFrame, setShowDeviceFrame] = React.useState(false);
-  const {
-    showOutlines,
-    toggleShowOutlines
-  } = useShowOutlinesPreference();
+  // On every time the editor opens: seeing where each block begins and ends
+  // is how people find their way around a page. It can be switched off for
+  // the session to look at the page as it will be published.
+  const [showOutlines, setShowOutlines] = React.useState(true);
+  const toggleShowOutlines = React.useCallback(() => setShowOutlines(isShown => !isShown), []);
   const [zoom, setZoom] = React.useState("fit");
   const {
     breakpointIndex,
