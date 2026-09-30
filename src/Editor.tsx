@@ -71,6 +71,7 @@ import { planMoveAfterInsert } from "./EditableComponentBuilder/SelectionFrameAc
 import { EditorContext, EditorContextType } from "./EditorContext";
 import { EditorExternalDataProvider } from "./EditorExternalDataProvider";
 import { EditorIframe } from "./EditorIframe";
+import { CanvasRulers, RULER_SIZE } from "./canvas-rulers";
 import { EditorSidebar } from "./EditorSidebar";
 import { EditorTopBar, TOP_BAR_HEIGHT } from "./EditorTopBar";
 import { DEFAULT_UI_LOCALE } from "./useTranslation";
@@ -134,12 +135,15 @@ const CanvasColumn = styled.div`
   flex-direction: column;
 `;
 
-const ContentContainer = styled.div`
+// With rulers shown, the top and left strip is kept free for them, so they sit
+// beside the canvas instead of over the page.
+const ContentContainer = styled.div<{ $rulerInset: number }>`
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  margin: ${(props) => `${props.$rulerInset}px 0 0 ${props.$rulerInset}px`};
 `;
 
 const SidebarAndContentContainer = styled.div<{ height: "100vh" | "100%" }>`
@@ -1489,6 +1493,7 @@ const EditorContent = ({
               )}
               <CanvasColumn>
                 <ContentContainer
+                  $rulerInset={isEditMode && showOutlines ? RULER_SIZE : 0}
                   onClick={() => {
                     setFocussedField([]);
                   }}
@@ -1514,6 +1519,11 @@ const EditorContent = ({
                     />
                   )}
                 </ContentContainer>
+                {isEditMode && showOutlines && (
+                  <CanvasRulers
+                    layoutKey={`${iframeSize.width}x${iframeSize.height}/${iframeSize.transform}`}
+                  />
+                )}
                 {isEditMode && <SelectionBreadcrumb />}
               </CanvasColumn>
               {isEditMode && (

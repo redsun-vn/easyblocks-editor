@@ -6711,6 +6711,672 @@ const Iframe = styled$1.iframe.withConfig({
   componentId: "sc-1k2h6r-2"
 })(["background:white;border:none;transform-origin:center;"]);
 
+/**
+ * Dragging an item out of a sidebar panel and onto the canvas.
+ *
+ * The canvas already drags blocks around, but that gesture is `@dnd-kit` and it
+ * lives entirely inside the canvas iframe: its sensors read pointer events from
+ * the iframe's own document, so a drag begun in the sidebar — a different
+ * document — is invisible to it. Native HTML5 drag events are the one gesture
+ * that does cross a frame boundary, which is why the panel uses them instead of
+ * joining the existing context.
+ *
+ * What travels is only a marker. During `dragover` a browser will tell a page
+ * which *types* the drag carries but not their contents, so the canvas could
+ * never read a payload at the moment it has to decide whether to accept the
+ * drop. The item itself is left on the shared `editorWindowAPI` object the two
+ * frames already talk through, and this mime type is what says a drag belongs
+ * to us.
+ */
+
+/** Says a drag came from a sidebar panel. Lowercase: browsers normalise it. */
+const PANEL_DRAG_MIME = "application/x-easyblocks-panel-item";
+
+/** Posted to the parent window when an item is dropped on the canvas. */
+const PANEL_DROP_MESSAGE = "@easyblocks-editor/panel-drop";
+
+/** Whether a drag event is one of ours, asked at a moment when only types are readable. */
+function isPanelDrag(types) {
+  return Boolean(types?.includes(PANEL_DRAG_MIME));
+}
+
+/**
+ * Reading the collections a panel drop could land in off the canvas.
+ *
+ * Every editable frame already carries its own dot path, at every depth — the
+ * gesture was ignoring all but the root ones, not working from a canvas that
+ * lacked the information. So this measures what is drawn and groups the frames by
+ * the collection holding them.
+ *
+ * A collection only appears here if its schema prop asked to, with
+ * `panelDropTarget`. That gate is the whole reason nothing changes for a document
+ * built out of components that predate this: their slots do not set the flag, so
+ * the only collection ever offered is the root one, which is all the gesture
+ * could reach before.
+ */
+
+function toBounds(rect) {
+  return {
+    top: rect.top,
+    bottom: rect.bottom,
+    left: rect.left,
+    right: rect.right
+  };
+}
+function union(a, b) {
+  return {
+    top: Math.min(a.top, b.top),
+    bottom: Math.max(a.bottom, b.bottom),
+    left: Math.min(a.left, b.left),
+    right: Math.max(a.right, b.right)
+  };
+}
+const slotKey = (parentPath, prop) => `${parentPath}|${prop}`;
+
+/**
+ * Which way the box holding `frame` lays out its children, read off the nearest
+ * flex or grid container between the frame and the block that owns it.
+ *
+ * Needed for a collection of one: two children say which way they run by where
+ * they sit, one says nothing, and a single icon in a horizontal column used to
+ * be treated as a stack — the left of it read as "below it".
+ */
+function measureAxis(frame) {
+  const view = frame.ownerDocument.defaultView;
+  for (let box = frame.parentElement; box && view && !box.hasAttribute(CANVAS_FRAME_PATH_ATTRIBUTE); box = box.parentElement) {
+    const style = view.getComputedStyle(box);
+    if (style.display.endsWith("flex")) {
+      return style.flexDirection.startsWith("row") ? "horizontal" : "vertical";
+    }
+
+    // A one-track grid is a box around a single item — `BlockColumn` puts
+    // one around each — and says nothing about how the items run, so the walk
+    // goes on to the container that does.
+    if (style.display.endsWith("grid") && style.gridTemplateColumns.trim().split(/\s+/).length > 1) {
+      return "horizontal";
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Path of the frame painted on top at a point, or `null` over open canvas.
+ *
+ * Paint order, not geometry: a sticky header keeps its place while the page
+ * scrolls underneath, so two frames can contain the same point and the deeper
+ * one is the one nobody can see.
+ */
+function topmostFramePath(doc, pointer) {
+  const frame = doc.elementsFromPoint(pointer.x, pointer.y).map(element => element.closest(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`)).find(found => found !== null);
+  return frame?.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE) ?? null;
+}
+function collectPanelDropSlots(doc, editorContext) {
+  const slots = new Map();
+
+  /*
+   * The root collection is seeded rather than discovered, because a page with no
+   * sections draws no frames at all and still has to accept the first thing
+   * anybody drags onto it. Its bounds cover the canvas so that a drop over open
+   * space below the last section still finds it.
+   */
+  slots.set(slotKey("", "data"), {
+    parentPath: "",
+    prop: "data",
+    children: [],
+    bounds: {
+      top: 0,
+      left: 0,
+      right: Math.max(doc.documentElement.clientWidth, 0),
+      bottom: Math.max(doc.documentElement.scrollHeight, doc.documentElement.clientHeight)
+    }
+  });
+  const frames = Array.from(doc.querySelectorAll(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`));
+  const entryAt = path => path === "" ? editorContext.form.values : dotNotationGet(editorContext.form.values, path);
+
+  // Asked once per frame and again per collection; the answer only depends on
+  // the component at the path, and this runs on every pointer move of a drag.
+  const slotsByPath = new Map();
+  const slotsOf = path => {
+    const known = slotsByPath.get(path);
+    if (known) {
+      return known;
+    }
+    const found = readSlotsOf(path);
+    slotsByPath.set(path, found);
+    return found;
+  };
+  const readSlotsOf = path => {
+    const entry = entryAt(path);
+    if (!isEntry(entry)) {
+      return [];
+    }
+    const definition = findComponentDefinition(entry, editorContext);
+    return definition ? getCollectionSlots(definition) : [];
+  };
+  const isOptedIn = (parentPath, prop) => slotsOf(parentPath).some(slot => slot.prop === prop && slot.panelDropTarget);
+  const acceptsOf = (parentPath, prop) => slotsOf(parentPath).find(slot => slot.prop === prop)?.accepts;
+  slots.get(slotKey("", "data")).accepts = acceptsOf("", "data");
+
+  // Collections that already hold something: each child contributes its own
+  // rectangle, and the collection's area is everything its children cover.
+  for (const element of frames) {
+    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
+    if (!path) {
+      continue;
+    }
+    const parsed = parseSlotPath(path);
+    if (!parsed) {
+      continue;
+    }
+
+    // The root stays available without opting in, since that is where every panel
+    // drop went before this existed.
+    if (parsed.parentPath !== "" && !isOptedIn(parsed.parentPath, parsed.prop)) {
+      continue;
+    }
+    const bounds = toBounds(element.getBoundingClientRect());
+    const key = slotKey(parsed.parentPath, parsed.prop);
+    const existing = slots.get(key);
+    const child = entryAt(path);
+    const childRect = {
+      index: parsed.index,
+      component: isEntry(child) ? child._component : undefined,
+      ...bounds
+    };
+    if (existing) {
+      existing.children.push(childRect);
+      // The seeded root keeps its canvas-wide area; every other collection is only
+      // as big as what it holds.
+      if (parsed.parentPath !== "") {
+        existing.bounds = existing.children.length === 1 ? bounds : union(existing.bounds, bounds);
+      }
+      continue;
+    }
+    slots.set(key, {
+      parentPath: parsed.parentPath,
+      prop: parsed.prop,
+      children: [childRect],
+      bounds,
+      axis: measureAxis(element),
+      accepts: acceptsOf(parsed.parentPath, parsed.prop)
+    });
+  }
+
+  // Empty collections have no children to measure, so their own component's frame
+  // stands in. Without this an empty column could not be aimed at, and an empty
+  // column is exactly what somebody building a page drops the first thing into.
+  for (const element of frames) {
+    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
+    if (!path) {
+      continue;
+    }
+    for (const slot of slotsOf(path)) {
+      if (!slot.panelDropTarget) {
+        continue;
+      }
+      const key = slotKey(path, slot.prop);
+      if (slots.has(key)) {
+        continue;
+      }
+      slots.set(key, {
+        parentPath: path,
+        prop: slot.prop,
+        children: [],
+        bounds: toBounds(element.getBoundingClientRect()),
+        accepts: slot.accepts
+      });
+    }
+  }
+  return [...slots.values()];
+}
+
+/**
+ * Receiving an item dragged out of a sidebar panel.
+ *
+ * The panel lives in the parent window and the canvas in an iframe, so the
+ * `@dnd-kit` context that moves blocks around inside the canvas cannot see this
+ * gesture at all — its sensors read pointer events, and a pointer event belongs
+ * to one document. Native drag events are the exception that crosses the
+ * boundary, so this listens for those.
+ *
+ * It only ever answers with a position. Which item is being dragged stays in
+ * the panel: a browser withholds a drag's contents until the drop, so there is
+ * nothing here to read at the moment the canvas has to decide whether to accept
+ * one anyway.
+ *
+ * The position is now a collection and an index within it, not an index into the
+ * page. Aiming only at the root meant a pointer released inside a column was
+ * answered with a gap between two sections instead — the item did arrive, just
+ * not where it was aimed, and nothing said so. Which collections can be aimed at
+ * is decided by `collectPanelDropSlots`, and a collection has to opt in, so a
+ * document of older components still has exactly one answer available.
+ */
+
+const ACCENT = "#7B70F5";
+
+/**
+ * What the canvas looks like while it is willing to take the item.
+ *
+ * The insertion line alone says where, but it does not say *whether*: with only
+ * a line, a drag that the canvas never saw looks exactly like one it is about
+ * to accept, because both show nothing until the line appears. The frame is the
+ * answer to "will this work at all", and the line is the answer to "where".
+ * Anywhere without the frame — the sidebar, the top bar, the properties panel —
+ * is somewhere the item cannot go, and the pointer keeps the browser's own
+ * refusal cursor there because nothing cancels the drag over it.
+ */
+function AcceptFrame() {
+  return /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      border: `2px solid ${ACCENT}`,
+      backgroundColor: "rgba(123, 112, 245, 0.04)",
+      pointerEvents: "none",
+      zIndex: 2147482999
+    }
+  });
+}
+
+/**
+ * The line that says where the item would land.
+ *
+ * Drawn in the canvas rather than as a cursor decoration because the answer is
+ * about the page, not the pointer: the same pointer position means a different
+ * gap depending on which block it is over.
+ *
+ * It follows the collection rather than always lying flat. A row of columns is
+ * filled across, so a horizontal line in it would sit along a column instead of
+ * between two, pointing at the wrong gap — and it is only as long as the
+ * collection it belongs to, because a line spanning the window says "between two
+ * sections" no matter which column it was actually drawn for.
+ */
+function InsertionLine({
+  line
+}) {
+  const isAcross = line.axis === "horizontal";
+  return /*#__PURE__*/React__default.createElement("div", {
+    style: {
+      position: "fixed",
+      top: line.y,
+      left: line.x,
+      width: isAcross ? 0 : line.length,
+      height: isAcross ? line.length : 0,
+      [isAcross ? "borderLeft" : "borderTop"]: `2px solid ${ACCENT}`,
+      boxShadow: "0 0 0 1px rgba(123, 112, 245, 0.35)",
+      pointerEvents: "none",
+      zIndex: 2147483000
+    }
+  });
+}
+function usePanelDropTarget(editorContext) {
+  const [aim, setAim] = useState(null);
+  // Separate from `aim` because the frame and the line answer different
+  // questions, and the frame has to be up from the first `dragenter` — before
+  // anything has been measured.
+  const [isOver, setIsOver] = useState(false);
+  const clear = useCallback(() => {
+    setAim(null);
+    setIsOver(false);
+  }, []);
+
+  /**
+   * Which collection the pointer is in, and where in it the item would go.
+   *
+   * Measured fresh on every `dragover` rather than once at `dragenter`, because
+   * the page moves under the pointer: an accordion opens, an image finishes
+   * loading, the canvas scrolls. A stale rectangle would answer with a gap that
+   * is no longer there.
+   */
+  const aimAt = useCallback(event => {
+    const pointer = {
+      x: event.clientX,
+      y: event.clientY
+    };
+
+    /*
+     * Paint order, not geometry, decides which block the pointer is on. A
+     * sticky header keeps its place while the page scrolls underneath it, so
+     * more than one block can contain the same point and the deeper of the two
+     * is the one nobody can see. `elementsFromPoint` answers with what is
+     * actually on top, which is what the person is pointing at.
+     */
+    const slots = collectPanelDropSlots(document, editorContext);
+    const slot = pickSlotForPath(slots, topmostFramePath(document, pointer));
+
+    // A row's own space means the column nearest the pointer, never a new
+    // column — see `descendToNearestChildSlot`.
+    return slot ? resolveSlotAim(pointer, descendToNearestChildSlot(slots, slot, pointer)) : null;
+  }, [editorContext]);
+  useEffect(() => {
+    /**
+     * Both `dragenter` and `dragover` have to be cancelled for an element to
+     * count as a drop target; cancelling only the second leaves the first frame
+     * of every new element the pointer crosses deciding for itself, and a page
+     * of nested blocks crosses a great many.
+     */
+    const accept = event => {
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+      }
+    };
+    const onDragEnter = event => {
+      if (!isPanelDrag(event.dataTransfer?.types)) {
+        return;
+      }
+      accept(event);
+      setIsOver(true);
+    };
+    const onDragOver = event => {
+      if (!isPanelDrag(event.dataTransfer?.types)) {
+        return;
+      }
+
+      // Without this the browser refuses the drop and the gesture ends with the
+      // item snapping back to the panel, which reads as "this does not work".
+      accept(event);
+      setIsOver(true);
+      setAim(aimAt(event));
+    };
+    const onDrop = event => {
+      if (!isPanelDrag(event.dataTransfer?.types)) {
+        return;
+      }
+      event.preventDefault();
+      clear();
+      const dropped = aimAt(event);
+      if (!dropped) {
+        return;
+      }
+      const message = {
+        type: PANEL_DROP_MESSAGE,
+        index: dropped.index,
+        parentPath: dropped.parentPath,
+        prop: dropped.prop
+      };
+      window.parent.postMessage(message);
+    };
+
+    // Fires whenever the pointer crosses any element boundary, including ones
+    // inside the canvas, so the line is only dropped when the pointer has left
+    // the document itself.
+    const onDragLeave = event => {
+      if (!event.relatedTarget) {
+        clear();
+      }
+    };
+    document.addEventListener("dragenter", onDragEnter);
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("drop", onDrop);
+    document.addEventListener("dragleave", onDragLeave);
+    // The drag can end anywhere, including back over the panel; the line has to
+    // go either way.
+    document.addEventListener("dragend", clear);
+    return () => {
+      document.removeEventListener("dragenter", onDragEnter);
+      document.removeEventListener("dragover", onDragOver);
+      document.removeEventListener("drop", onDrop);
+      document.removeEventListener("dragleave", onDragLeave);
+      document.removeEventListener("dragend", clear);
+    };
+  }, [aimAt, clear]);
+  if (!isOver) {
+    return null;
+  }
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(AcceptFrame, null), aim ? /*#__PURE__*/React__default.createElement(InsertionLine, {
+    line: aim.line
+  }) : null);
+}
+
+/**
+ * Rulers along the top and left edges of the canvas, marked in page pixels:
+ * a short tick every 10, a longer one every 50 and a numbered one every 100.
+ *
+ * They sit in the editor, just outside the canvas iframe, in a strip the
+ * canvas column leaves free for them (`RULER_SIZE`). Drawn inside the iframe
+ * they covered the top and left of the page being edited.
+ *
+ * They read page coordinates — the canvas's own scroll, divided by the scale
+ * the editor draws the canvas at — so a number means the same place in the
+ * page however it is scrolled or zoomed. A mark on each ruler follows the
+ * pointer over the canvas, continuing the crosshair drawn inside it.
+ */
+
+/** Thickness of each ruler, in editor pixels. */
+const RULER_SIZE = 20;
+const BACKGROUND = "#f8f8fb";
+const BORDER = "#d9d7e4";
+const TICK = "#9b98ae";
+const LABEL = "#6b6880";
+
+/** Where the canvas is drawn and which part of the page it shows. */
+
+function drawRuler(canvas, orientation, start, length, scale) {
+  const isHorizontal = orientation === "horizontal";
+  const width = isHorizontal ? length : RULER_SIZE;
+  const height = isHorizontal ? RULER_SIZE : length;
+  const density = window.devicePixelRatio || 1;
+  const context = canvas.getContext("2d");
+  // Ticks closer than 4 pixels on screen blur into a bar; zoomed far out,
+  // only every fifth one is drawn.
+  const step = 10 * scale >= 4 ? 10 : 50;
+  canvas.width = Math.round(width * density);
+  canvas.height = Math.round(height * density);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  if (!context) {
+    return;
+  }
+  context.setTransform(density, 0, 0, density, 0, 0);
+  context.fillStyle = BACKGROUND;
+  context.fillRect(0, 0, width, height);
+  context.font = "9px system-ui, -apple-system, sans-serif";
+  context.fillStyle = LABEL;
+  context.strokeStyle = TICK;
+  context.lineWidth = 1;
+  context.beginPath();
+  const end = start + length / scale;
+  for (let value = Math.ceil(start / step) * step; value <= end; value += step) {
+    // Half a pixel in, so a 1px line covers one row of pixels, not two.
+    const at = Math.round((value - start) * scale) + 0.5;
+    const size = value % 100 === 0 ? RULER_SIZE : value % 50 === 0 ? 8 : 4;
+    if (isHorizontal) {
+      context.moveTo(at, RULER_SIZE);
+      context.lineTo(at, RULER_SIZE - size);
+    } else {
+      context.moveTo(RULER_SIZE, at);
+      context.lineTo(RULER_SIZE - size, at);
+    }
+    if (value % 100 !== 0) {
+      continue;
+    }
+    const label = String(value);
+    if (isHorizontal) {
+      context.fillText(label, at + 3, 9);
+    } else {
+      // Read bottom to top, just below its tick, as rulers usually do.
+      context.save();
+      context.translate(10, at + 3 + context.measureText(label).width);
+      context.rotate(-Math.PI / 2);
+      context.fillText(label, 0, 0);
+      context.restore();
+    }
+  }
+  context.stroke();
+
+  // The edge that faces the page.
+  context.strokeStyle = BORDER;
+  context.beginPath();
+  if (isHorizontal) {
+    context.moveTo(0, RULER_SIZE - 0.5);
+    context.lineTo(width, RULER_SIZE - 0.5);
+  } else {
+    context.moveTo(RULER_SIZE - 0.5, 0);
+    context.lineTo(RULER_SIZE - 0.5, height);
+  }
+  context.stroke();
+}
+function readView(iframe) {
+  const rect = iframe.getBoundingClientRect();
+  const view = iframe.contentWindow;
+  if (!view || rect.width === 0 || iframe.offsetWidth === 0) {
+    return null;
+  }
+  return {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+    scale: rect.width / iframe.offsetWidth,
+    scrollX: view.scrollX,
+    scrollY: view.scrollY
+  };
+}
+const fixed = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  display: "block",
+  pointerEvents: "none",
+  zIndex: 2
+};
+const markStyle = {
+  ...fixed,
+  display: "none",
+  background: ACCENT,
+  zIndex: 3
+};
+
+/**
+ * `layoutKey` changes whenever the editor moves or resizes the canvas (device,
+ * zoom), which is when the rulers have to be measured again.
+ */
+function CanvasRulers({
+  layoutKey
+}) {
+  const top = useRef(null);
+  const left = useRef(null);
+  const corner = useRef(null);
+  const markX = useRef(null);
+  const markY = useRef(null);
+  useEffect(() => {
+    const iframe = document.getElementById("editor-canvas");
+    if (!iframe) {
+      return;
+    }
+    let frame = 0;
+    let boundWindow = null;
+    const draw = () => {
+      frame = 0;
+      const view = readView(iframe);
+      const parts = [top.current, left.current, corner.current];
+      for (const part of parts) {
+        if (part) part.style.visibility = view ? "visible" : "hidden";
+      }
+      if (!view || !top.current || !left.current || !corner.current) {
+        return;
+      }
+      drawRuler(top.current, "horizontal", view.scrollX, view.width, view.scale);
+      drawRuler(left.current, "vertical", view.scrollY, view.height, view.scale);
+      top.current.style.transform = `translate(${view.left}px, ${view.top - RULER_SIZE}px)`;
+      left.current.style.transform = `translate(${view.left - RULER_SIZE}px, ${view.top}px)`;
+      corner.current.style.transform = `translate(${view.left - RULER_SIZE}px, ${view.top - RULER_SIZE}px)`;
+    };
+    const schedule = () => {
+      frame = frame || requestAnimationFrame(draw);
+    };
+    const showMarks = visible => {
+      for (const mark of [markX.current, markY.current]) {
+        if (mark) mark.style.display = visible ? "block" : "none";
+      }
+    };
+    const onPointer = event => {
+      const view = readView(iframe);
+      if (!view || event.pointerType === "touch") {
+        return;
+      }
+      const x = view.left + event.clientX * view.scale;
+      const y = view.top + event.clientY * view.scale;
+      if (markX.current) {
+        markX.current.style.transform = `translate(${x}px, ${view.top - RULER_SIZE}px)`;
+      }
+      if (markY.current) {
+        markY.current.style.transform = `translate(${view.left - RULER_SIZE}px, ${y}px)`;
+      }
+      showMarks(true);
+    };
+    const onOut = event => {
+      if (!event.relatedTarget) showMarks(false);
+    };
+
+    // The canvas document is replaced whenever the iframe loads, so its
+    // listeners are bound again each time.
+    const bind = () => {
+      unbind();
+      boundWindow = iframe.contentWindow;
+      boundWindow?.addEventListener("scroll", schedule, {
+        passive: true
+      });
+      boundWindow?.document.addEventListener("pointermove", onPointer, {
+        passive: true
+      });
+      boundWindow?.document.addEventListener("mouseout", onOut);
+      schedule();
+    };
+    const unbind = () => {
+      boundWindow?.removeEventListener("scroll", schedule);
+      boundWindow?.document.removeEventListener("pointermove", onPointer);
+      boundWindow?.document.removeEventListener("mouseout", onOut);
+      boundWindow = null;
+    };
+    const resizeObserver = new ResizeObserver(schedule);
+    resizeObserver.observe(iframe);
+    bind();
+    iframe.addEventListener("load", bind);
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      unbind();
+      resizeObserver.disconnect();
+      iframe.removeEventListener("load", bind);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [layoutKey]);
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement("canvas", {
+    ref: top,
+    style: fixed
+  }), /*#__PURE__*/React__default.createElement("canvas", {
+    ref: left,
+    style: fixed
+  }), /*#__PURE__*/React__default.createElement("div", {
+    ref: corner,
+    style: {
+      ...fixed,
+      width: RULER_SIZE,
+      height: RULER_SIZE,
+      background: BACKGROUND,
+      borderRight: `1px solid ${BORDER}`,
+      borderBottom: `1px solid ${BORDER}`,
+      boxSizing: "border-box"
+    }
+  }), /*#__PURE__*/React__default.createElement("div", {
+    ref: markX,
+    style: {
+      ...markStyle,
+      width: 1,
+      height: RULER_SIZE
+    }
+  }), /*#__PURE__*/React__default.createElement("div", {
+    ref: markY,
+    style: {
+      ...markStyle,
+      width: RULER_SIZE,
+      height: 1
+    }
+  }));
+}
+
 const theme = css([":root{--tina-color-primary-light:#2296fe;--tina-color-primary:#2296fe;--tina-color-primary-dark:#0574e4;--tina-color-error-light:#eb6337;--tina-color-error:#ec4815;--tina-color-error-dark:#dc4419;--tina-color-warning-light:#f5e06e;--tina-color-warning:#e9d050;--tina-color-warning-dark:#d3ba38;--tina-color-success-light:#57c355;--tina-color-success:#3cad3a;--tina-color-success-dark:#249a21;--tina-color-grey-0:#ffffff;--tina-color-grey-1:#f6f6f9;--tina-color-grey-2:#edecf3;--tina-color-grey-3:#e1ddec;--tina-color-grey-4:#b2adbe;--tina-color-grey-5:#918c9e;--tina-color-grey-6:#716c7f;--tina-color-grey-7:#565165;--tina-color-grey-8:#433e52;--tina-color-grey-9:#363145;--tina-color-grey-10:#282828;--tina-radius-small:5px;--tina-radius-big:24px;--tina-padding-small:12px;--tina-padding-big:20px;--tina-font-size-0:12px;--tina-font-size-1:13px;--tina-font-size-2:15px;--tina-font-size-3:16px;--tina-font-size-4:18px;--tina-font-size-5:20px;--tina-font-size-6:22px;--tina-font-size-7:26px;--tina-font-size-8:32px;--tina-font-family:\"Roboto\",sans-serif;--tina-font-weight-regular:400;--tina-font-weight-bold:600;--tina-shadow-big:0px 2px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.1);--tina-shadow-small:0px 2px 3px rgba(0,0,0,0.12);--tina-timing-short:85ms;--tina-timing-medium:150ms;--tina-timing-long:250ms;--tina-z-index-0:500;--tina-z-index-1:1000;--tina-z-index-2:1500;--tina-z-index-3:2000;--tina-z-index-4:2500;--tina-z-index-5:3000;--tina-sidebar-width:340px;--tina-sidebar-header-height:60px;--tina-toolbar-height:62px;}"]);
 const GlobalStyles = createGlobalStyle(["", ";"], theme);
 const tina_reset_styles = css(["*{font-family:\"Roboto\",sans-serif;&::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:transparent;border-left:1px solid var(--tina-color-grey-2);}&::-webkit-scrollbar-thumb{background-color:var(--tina-color-grey-3);border-radius:0;border:none;}}*,*:before,*:after{box-sizing:border-box;}hr{border-color:var(--tina-color-grey-2);color:var(--tina-color-grey-2);margin-bottom:var(--tina-padding-big);margin-left:calc(var(--tina-padding-big) * -1);margin-right:calc(var(--tina-padding-big) * -1);border-top:1px solid var(--tina-color-grey-2);border-bottom:none;height:0;box-sizing:content-box;}h1,h2,h3,h4,h5,h6,p{:not([class]){font-family:\"Roboto\",sans-serif;&:first-child{margin-top:0;}&:last-child{margin-bottom:0;}}}td,th{padding:0;width:auto;height:auto;border:inherit;margin:0;}h1,h2,h3,h4,h5,h6{:not([class]){font-weight:var(--tina-font-weight-bold);}}h1:not([class]){font-size:var(--tina-font-size-8);}h2:not([class]){font-size:var(--tina-font-size-7);}h3:not([class]){font-size:var(--tina-font-size-5);}h4:not([class]){font-size:var(--tina-font-size-4);}h5:not([class]){font-size:var(--tina-font-size-3);}h6:not([class]){font-size:var(--tina-font-size-2);}"]);
@@ -10226,35 +10892,6 @@ function matchesQuery(label, query) {
 }
 
 /**
- * Dragging an item out of a sidebar panel and onto the canvas.
- *
- * The canvas already drags blocks around, but that gesture is `@dnd-kit` and it
- * lives entirely inside the canvas iframe: its sensors read pointer events from
- * the iframe's own document, so a drag begun in the sidebar — a different
- * document — is invisible to it. Native HTML5 drag events are the one gesture
- * that does cross a frame boundary, which is why the panel uses them instead of
- * joining the existing context.
- *
- * What travels is only a marker. During `dragover` a browser will tell a page
- * which *types* the drag carries but not their contents, so the canvas could
- * never read a payload at the moment it has to decide whether to accept the
- * drop. The item itself is left on the shared `editorWindowAPI` object the two
- * frames already talk through, and this mime type is what says a drag belongs
- * to us.
- */
-
-/** Says a drag came from a sidebar panel. Lowercase: browsers normalise it. */
-const PANEL_DRAG_MIME = "application/x-easyblocks-panel-item";
-
-/** Posted to the parent window when an item is dropped on the canvas. */
-const PANEL_DROP_MESSAGE = "@easyblocks-editor/panel-drop";
-
-/** Whether a drag event is one of ours, asked at a moment when only types are readable. */
-function isPanelDrag(types) {
-  return Boolean(types?.includes(PANEL_DRAG_MIME));
-}
-
-/**
  * The name shown for one item in a picker.
  *
  * A template's `label` is written in the definition, in English, and there are
@@ -13708,10 +14345,13 @@ const CanvasColumn = styled$1.div.withConfig({
   displayName: "Editor__CanvasColumn",
   componentId: "sc-t95yuf-0"
 })(["flex:1 1 auto;display:flex;flex-direction:column;"]);
+
+// With rulers shown, the top and left strip is kept free for them, so they sit
+// beside the canvas instead of over the page.
 const ContentContainer = styled$1.div.withConfig({
   displayName: "Editor__ContentContainer",
   componentId: "sc-t95yuf-1"
-})(["position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;"]);
+})(["position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin:", ";"], props => `${props.$rulerInset}px 0 0 ${props.$rulerInset}px`);
 const SidebarAndContentContainer = styled$1.div.withConfig({
   displayName: "Editor__SidebarAndContentContainer",
   componentId: "sc-t95yuf-2"
@@ -14653,6 +15293,7 @@ const EditorContent = ({
     sidebarNodeRef: leftSidebarNodeRef,
     editorMode: mode
   }), /*#__PURE__*/React__default.createElement(CanvasColumn, null, /*#__PURE__*/React__default.createElement(ContentContainer, {
+    $rulerInset: isEditMode && showOutlines ? RULER_SIZE : 0,
     onClick: () => {
       setFocussedField([]);
     }
@@ -14672,7 +15313,9 @@ const EditorContent = ({
     height: iframeSize.height,
     transform: iframeSize.transform,
     editorMode: mode
-  })), isEditMode && /*#__PURE__*/React__default.createElement(SelectionBreadcrumb, null)), isEditMode && /*#__PURE__*/React__default.createElement(SidebarContainer, {
+  })), isEditMode && showOutlines && /*#__PURE__*/React__default.createElement(CanvasRulers, {
+    layoutKey: `${iframeSize.width}x${iframeSize.height}/${iframeSize.transform}`
+  }), isEditMode && /*#__PURE__*/React__default.createElement(SelectionBreadcrumb, null)), isEditMode && /*#__PURE__*/React__default.createElement(SidebarContainer, {
     ref: sidebarNodeRef
   }, /*#__PURE__*/React__default.createElement(EditorSidebar, {
     focussedField: focussedField,
@@ -15689,395 +16332,6 @@ const globalEditorRendererStyles = `
 `;
 
 /**
- * Reading the collections a panel drop could land in off the canvas.
- *
- * Every editable frame already carries its own dot path, at every depth — the
- * gesture was ignoring all but the root ones, not working from a canvas that
- * lacked the information. So this measures what is drawn and groups the frames by
- * the collection holding them.
- *
- * A collection only appears here if its schema prop asked to, with
- * `panelDropTarget`. That gate is the whole reason nothing changes for a document
- * built out of components that predate this: their slots do not set the flag, so
- * the only collection ever offered is the root one, which is all the gesture
- * could reach before.
- */
-
-function toBounds(rect) {
-  return {
-    top: rect.top,
-    bottom: rect.bottom,
-    left: rect.left,
-    right: rect.right
-  };
-}
-function union(a, b) {
-  return {
-    top: Math.min(a.top, b.top),
-    bottom: Math.max(a.bottom, b.bottom),
-    left: Math.min(a.left, b.left),
-    right: Math.max(a.right, b.right)
-  };
-}
-const slotKey = (parentPath, prop) => `${parentPath}|${prop}`;
-
-/**
- * Which way the box holding `frame` lays out its children, read off the nearest
- * flex or grid container between the frame and the block that owns it.
- *
- * Needed for a collection of one: two children say which way they run by where
- * they sit, one says nothing, and a single icon in a horizontal column used to
- * be treated as a stack — the left of it read as "below it".
- */
-function measureAxis(frame) {
-  const view = frame.ownerDocument.defaultView;
-  for (let box = frame.parentElement; box && view && !box.hasAttribute(CANVAS_FRAME_PATH_ATTRIBUTE); box = box.parentElement) {
-    const style = view.getComputedStyle(box);
-    if (style.display.endsWith("flex")) {
-      return style.flexDirection.startsWith("row") ? "horizontal" : "vertical";
-    }
-
-    // A one-track grid is a box around a single item — `BlockColumn` puts
-    // one around each — and says nothing about how the items run, so the walk
-    // goes on to the container that does.
-    if (style.display.endsWith("grid") && style.gridTemplateColumns.trim().split(/\s+/).length > 1) {
-      return "horizontal";
-    }
-  }
-  return undefined;
-}
-
-/**
- * Path of the frame painted on top at a point, or `null` over open canvas.
- *
- * Paint order, not geometry: a sticky header keeps its place while the page
- * scrolls underneath, so two frames can contain the same point and the deeper
- * one is the one nobody can see.
- */
-function topmostFramePath(doc, pointer) {
-  const frame = doc.elementsFromPoint(pointer.x, pointer.y).map(element => element.closest(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`)).find(found => found !== null);
-  return frame?.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE) ?? null;
-}
-function collectPanelDropSlots(doc, editorContext) {
-  const slots = new Map();
-
-  /*
-   * The root collection is seeded rather than discovered, because a page with no
-   * sections draws no frames at all and still has to accept the first thing
-   * anybody drags onto it. Its bounds cover the canvas so that a drop over open
-   * space below the last section still finds it.
-   */
-  slots.set(slotKey("", "data"), {
-    parentPath: "",
-    prop: "data",
-    children: [],
-    bounds: {
-      top: 0,
-      left: 0,
-      right: Math.max(doc.documentElement.clientWidth, 0),
-      bottom: Math.max(doc.documentElement.scrollHeight, doc.documentElement.clientHeight)
-    }
-  });
-  const frames = Array.from(doc.querySelectorAll(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`));
-  const entryAt = path => path === "" ? editorContext.form.values : dotNotationGet(editorContext.form.values, path);
-
-  // Asked once per frame and again per collection; the answer only depends on
-  // the component at the path, and this runs on every pointer move of a drag.
-  const slotsByPath = new Map();
-  const slotsOf = path => {
-    const known = slotsByPath.get(path);
-    if (known) {
-      return known;
-    }
-    const found = readSlotsOf(path);
-    slotsByPath.set(path, found);
-    return found;
-  };
-  const readSlotsOf = path => {
-    const entry = entryAt(path);
-    if (!isEntry(entry)) {
-      return [];
-    }
-    const definition = findComponentDefinition(entry, editorContext);
-    return definition ? getCollectionSlots(definition) : [];
-  };
-  const isOptedIn = (parentPath, prop) => slotsOf(parentPath).some(slot => slot.prop === prop && slot.panelDropTarget);
-  const acceptsOf = (parentPath, prop) => slotsOf(parentPath).find(slot => slot.prop === prop)?.accepts;
-  slots.get(slotKey("", "data")).accepts = acceptsOf("", "data");
-
-  // Collections that already hold something: each child contributes its own
-  // rectangle, and the collection's area is everything its children cover.
-  for (const element of frames) {
-    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
-    if (!path) {
-      continue;
-    }
-    const parsed = parseSlotPath(path);
-    if (!parsed) {
-      continue;
-    }
-
-    // The root stays available without opting in, since that is where every panel
-    // drop went before this existed.
-    if (parsed.parentPath !== "" && !isOptedIn(parsed.parentPath, parsed.prop)) {
-      continue;
-    }
-    const bounds = toBounds(element.getBoundingClientRect());
-    const key = slotKey(parsed.parentPath, parsed.prop);
-    const existing = slots.get(key);
-    const child = entryAt(path);
-    const childRect = {
-      index: parsed.index,
-      component: isEntry(child) ? child._component : undefined,
-      ...bounds
-    };
-    if (existing) {
-      existing.children.push(childRect);
-      // The seeded root keeps its canvas-wide area; every other collection is only
-      // as big as what it holds.
-      if (parsed.parentPath !== "") {
-        existing.bounds = existing.children.length === 1 ? bounds : union(existing.bounds, bounds);
-      }
-      continue;
-    }
-    slots.set(key, {
-      parentPath: parsed.parentPath,
-      prop: parsed.prop,
-      children: [childRect],
-      bounds,
-      axis: measureAxis(element),
-      accepts: acceptsOf(parsed.parentPath, parsed.prop)
-    });
-  }
-
-  // Empty collections have no children to measure, so their own component's frame
-  // stands in. Without this an empty column could not be aimed at, and an empty
-  // column is exactly what somebody building a page drops the first thing into.
-  for (const element of frames) {
-    const path = element.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE);
-    if (!path) {
-      continue;
-    }
-    for (const slot of slotsOf(path)) {
-      if (!slot.panelDropTarget) {
-        continue;
-      }
-      const key = slotKey(path, slot.prop);
-      if (slots.has(key)) {
-        continue;
-      }
-      slots.set(key, {
-        parentPath: path,
-        prop: slot.prop,
-        children: [],
-        bounds: toBounds(element.getBoundingClientRect()),
-        accepts: slot.accepts
-      });
-    }
-  }
-  return [...slots.values()];
-}
-
-/**
- * Receiving an item dragged out of a sidebar panel.
- *
- * The panel lives in the parent window and the canvas in an iframe, so the
- * `@dnd-kit` context that moves blocks around inside the canvas cannot see this
- * gesture at all — its sensors read pointer events, and a pointer event belongs
- * to one document. Native drag events are the exception that crosses the
- * boundary, so this listens for those.
- *
- * It only ever answers with a position. Which item is being dragged stays in
- * the panel: a browser withholds a drag's contents until the drop, so there is
- * nothing here to read at the moment the canvas has to decide whether to accept
- * one anyway.
- *
- * The position is now a collection and an index within it, not an index into the
- * page. Aiming only at the root meant a pointer released inside a column was
- * answered with a gap between two sections instead — the item did arrive, just
- * not where it was aimed, and nothing said so. Which collections can be aimed at
- * is decided by `collectPanelDropSlots`, and a collection has to opt in, so a
- * document of older components still has exactly one answer available.
- */
-
-const ACCENT = "#7B70F5";
-
-/**
- * What the canvas looks like while it is willing to take the item.
- *
- * The insertion line alone says where, but it does not say *whether*: with only
- * a line, a drag that the canvas never saw looks exactly like one it is about
- * to accept, because both show nothing until the line appears. The frame is the
- * answer to "will this work at all", and the line is the answer to "where".
- * Anywhere without the frame — the sidebar, the top bar, the properties panel —
- * is somewhere the item cannot go, and the pointer keeps the browser's own
- * refusal cursor there because nothing cancels the drag over it.
- */
-function AcceptFrame() {
-  return /*#__PURE__*/React__default.createElement("div", {
-    style: {
-      position: "fixed",
-      inset: 0,
-      border: `2px solid ${ACCENT}`,
-      backgroundColor: "rgba(123, 112, 245, 0.04)",
-      pointerEvents: "none",
-      zIndex: 2147482999
-    }
-  });
-}
-
-/**
- * The line that says where the item would land.
- *
- * Drawn in the canvas rather than as a cursor decoration because the answer is
- * about the page, not the pointer: the same pointer position means a different
- * gap depending on which block it is over.
- *
- * It follows the collection rather than always lying flat. A row of columns is
- * filled across, so a horizontal line in it would sit along a column instead of
- * between two, pointing at the wrong gap — and it is only as long as the
- * collection it belongs to, because a line spanning the window says "between two
- * sections" no matter which column it was actually drawn for.
- */
-function InsertionLine({
-  line
-}) {
-  const isAcross = line.axis === "horizontal";
-  return /*#__PURE__*/React__default.createElement("div", {
-    style: {
-      position: "fixed",
-      top: line.y,
-      left: line.x,
-      width: isAcross ? 0 : line.length,
-      height: isAcross ? line.length : 0,
-      [isAcross ? "borderLeft" : "borderTop"]: `2px solid ${ACCENT}`,
-      boxShadow: "0 0 0 1px rgba(123, 112, 245, 0.35)",
-      pointerEvents: "none",
-      zIndex: 2147483000
-    }
-  });
-}
-function usePanelDropTarget(editorContext) {
-  const [aim, setAim] = useState(null);
-  // Separate from `aim` because the frame and the line answer different
-  // questions, and the frame has to be up from the first `dragenter` — before
-  // anything has been measured.
-  const [isOver, setIsOver] = useState(false);
-  const clear = useCallback(() => {
-    setAim(null);
-    setIsOver(false);
-  }, []);
-
-  /**
-   * Which collection the pointer is in, and where in it the item would go.
-   *
-   * Measured fresh on every `dragover` rather than once at `dragenter`, because
-   * the page moves under the pointer: an accordion opens, an image finishes
-   * loading, the canvas scrolls. A stale rectangle would answer with a gap that
-   * is no longer there.
-   */
-  const aimAt = useCallback(event => {
-    const pointer = {
-      x: event.clientX,
-      y: event.clientY
-    };
-
-    /*
-     * Paint order, not geometry, decides which block the pointer is on. A
-     * sticky header keeps its place while the page scrolls underneath it, so
-     * more than one block can contain the same point and the deeper of the two
-     * is the one nobody can see. `elementsFromPoint` answers with what is
-     * actually on top, which is what the person is pointing at.
-     */
-    const slots = collectPanelDropSlots(document, editorContext);
-    const slot = pickSlotForPath(slots, topmostFramePath(document, pointer));
-
-    // A row's own space means the column nearest the pointer, never a new
-    // column — see `descendToNearestChildSlot`.
-    return slot ? resolveSlotAim(pointer, descendToNearestChildSlot(slots, slot, pointer)) : null;
-  }, [editorContext]);
-  useEffect(() => {
-    /**
-     * Both `dragenter` and `dragover` have to be cancelled for an element to
-     * count as a drop target; cancelling only the second leaves the first frame
-     * of every new element the pointer crosses deciding for itself, and a page
-     * of nested blocks crosses a great many.
-     */
-    const accept = event => {
-      event.preventDefault();
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = "copy";
-      }
-    };
-    const onDragEnter = event => {
-      if (!isPanelDrag(event.dataTransfer?.types)) {
-        return;
-      }
-      accept(event);
-      setIsOver(true);
-    };
-    const onDragOver = event => {
-      if (!isPanelDrag(event.dataTransfer?.types)) {
-        return;
-      }
-
-      // Without this the browser refuses the drop and the gesture ends with the
-      // item snapping back to the panel, which reads as "this does not work".
-      accept(event);
-      setIsOver(true);
-      setAim(aimAt(event));
-    };
-    const onDrop = event => {
-      if (!isPanelDrag(event.dataTransfer?.types)) {
-        return;
-      }
-      event.preventDefault();
-      clear();
-      const dropped = aimAt(event);
-      if (!dropped) {
-        return;
-      }
-      const message = {
-        type: PANEL_DROP_MESSAGE,
-        index: dropped.index,
-        parentPath: dropped.parentPath,
-        prop: dropped.prop
-      };
-      window.parent.postMessage(message);
-    };
-
-    // Fires whenever the pointer crosses any element boundary, including ones
-    // inside the canvas, so the line is only dropped when the pointer has left
-    // the document itself.
-    const onDragLeave = event => {
-      if (!event.relatedTarget) {
-        clear();
-      }
-    };
-    document.addEventListener("dragenter", onDragEnter);
-    document.addEventListener("dragover", onDragOver);
-    document.addEventListener("drop", onDrop);
-    document.addEventListener("dragleave", onDragLeave);
-    // The drag can end anywhere, including back over the panel; the line has to
-    // go either way.
-    document.addEventListener("dragend", clear);
-    return () => {
-      document.removeEventListener("dragenter", onDragEnter);
-      document.removeEventListener("dragover", onDragOver);
-      document.removeEventListener("drop", onDrop);
-      document.removeEventListener("dragleave", onDragLeave);
-      document.removeEventListener("dragend", clear);
-    };
-  }, [aimAt, clear]);
-  if (!isOver) {
-    return null;
-  }
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(AcceptFrame, null), aim ? /*#__PURE__*/React__default.createElement(InsertionLine, {
-    line: aim.line
-  }) : null);
-}
-
-/**
  * Whether the block at `path` sits in a collection that opted in with
  * `panelDropTarget`. Answered from the schema alone, before anything on the
  * canvas is measured, so a drag inside older components costs nothing extra
@@ -16189,148 +16443,13 @@ function useCanvasMoveAim(editorContext, fallback) {
 }
 
 /**
- * Rulers along the top and left edges of the canvas, marked in page pixels:
- * a short tick every 10, a longer one every 50 and a numbered one every 100.
+ * A fine dotted line through the pointer on each axis, across the whole
+ * canvas, for reading what lines up with what by eye. The editor's rulers
+ * (`canvas-rulers.tsx`) mark the same position on their edge.
  *
- * They read page coordinates, not window ones, so the left ruler scrolls with
- * the page and a number means the same place wherever the page is scrolled to.
- * Drawn on `<canvas>` at the screen's pixel density so the ticks stay sharp,
- * and redrawn only when the page scrolls or the window resizes.
- */
-
-/** Thickness of each ruler, in canvas pixels. */
-const RULER_SIZE = 20;
-const STEP = 10;
-const BACKGROUND = "rgba(248, 248, 251, 0.94)";
-const BORDER = "#d9d7e4";
-const TICK = "#9b98ae";
-const LABEL = "#6b6880";
-function drawRuler(canvas, orientation, start, length) {
-  const isHorizontal = orientation === "horizontal";
-  const width = isHorizontal ? length : RULER_SIZE;
-  const height = isHorizontal ? RULER_SIZE : length;
-  const density = window.devicePixelRatio || 1;
-  const context = canvas.getContext("2d");
-  canvas.width = Math.round(width * density);
-  canvas.height = Math.round(height * density);
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-  if (!context) {
-    return;
-  }
-  context.setTransform(density, 0, 0, density, 0, 0);
-  context.fillStyle = BACKGROUND;
-  context.fillRect(0, 0, width, height);
-  context.font = "9px system-ui, -apple-system, sans-serif";
-  context.fillStyle = LABEL;
-  context.strokeStyle = TICK;
-  context.lineWidth = 1;
-  context.beginPath();
-  for (let value = Math.ceil(start / STEP) * STEP; value <= start + length; value += STEP) {
-    // Half a pixel in, so a 1px line covers one row of pixels, not two.
-    const at = Math.round(value - start) + 0.5;
-    const size = value % 100 === 0 ? RULER_SIZE : value % 50 === 0 ? 8 : 4;
-    if (isHorizontal) {
-      context.moveTo(at, RULER_SIZE);
-      context.lineTo(at, RULER_SIZE - size);
-    } else {
-      context.moveTo(RULER_SIZE, at);
-      context.lineTo(RULER_SIZE - size, at);
-    }
-    if (value % 100 !== 0) {
-      continue;
-    }
-    const label = String(value);
-    if (isHorizontal) {
-      context.fillText(label, at + 3, 9);
-    } else {
-      // Read bottom to top, just below its tick, as rulers usually do.
-      context.save();
-      context.translate(10, at + 3 + context.measureText(label).width);
-      context.rotate(-Math.PI / 2);
-      context.fillText(label, 0, 0);
-      context.restore();
-    }
-  }
-  context.stroke();
-
-  // The edge that faces the page.
-  context.strokeStyle = BORDER;
-  context.beginPath();
-  if (isHorizontal) {
-    context.moveTo(0, RULER_SIZE - 0.5);
-    context.lineTo(width, RULER_SIZE - 0.5);
-  } else {
-    context.moveTo(RULER_SIZE - 0.5, 0);
-    context.lineTo(RULER_SIZE - 0.5, height);
-  }
-  context.stroke();
-}
-const rulerStyle = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  display: "block",
-  pointerEvents: "none",
-  zIndex: 2147481999
-};
-function CanvasRulers() {
-  const top = useRef(null);
-  const left = useRef(null);
-  useEffect(() => {
-    let frame = 0;
-    const draw = () => {
-      frame = 0;
-      const root = document.documentElement;
-      if (top.current) {
-        drawRuler(top.current, "horizontal", window.scrollX, root.clientWidth);
-      }
-      if (left.current) {
-        drawRuler(left.current, "vertical", window.scrollY, root.clientHeight);
-      }
-    };
-    const schedule = () => {
-      frame = frame || requestAnimationFrame(draw);
-    };
-    draw();
-    window.addEventListener("scroll", schedule, {
-      passive: true
-    });
-    window.addEventListener("resize", schedule);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-    };
-  }, []);
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement("canvas", {
-    ref: top,
-    style: rulerStyle
-  }), /*#__PURE__*/React__default.createElement("canvas", {
-    ref: left,
-    style: rulerStyle
-  }), /*#__PURE__*/React__default.createElement("div", {
-    style: {
-      ...rulerStyle,
-      width: RULER_SIZE,
-      height: RULER_SIZE,
-      background: BACKGROUND,
-      borderRight: `1px solid ${BORDER}`,
-      borderBottom: `1px solid ${BORDER}`,
-      boxSizing: "border-box",
-      zIndex: 2147482001
-    }
-  }));
-}
-
-/**
- * Rulers on the top and left edges, and a fine dotted line through the
- * pointer on each axis that crosses them, for reading positions and what lines
- * up with what by eye.
- *
- * Shown with the block outlines (the canvas root decides). The lines hide
- * while a block is dragged — the drag draws its own guides, and one line per
- * axis is the rule there — while the rulers stay.
+ * Shown with the block outlines (the canvas root decides), and hidden while a
+ * block is dragged: the drag draws its own guides, and one line per axis is
+ * the rule there.
  *
  * The lines are moved by writing their style directly, not through state, so
  * following the pointer never re-renders anything.
@@ -16388,7 +16507,10 @@ function CanvasCursorCrosshair() {
       document.removeEventListener("mouseout", onOut);
     };
   }, [isDragging]);
-  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement(CanvasRulers, null), isDragging ? null : /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement("div", {
+  if (isDragging) {
+    return null;
+  }
+  return /*#__PURE__*/React__default.createElement(React__default.Fragment, null, /*#__PURE__*/React__default.createElement("div", {
     ref: vertical,
     style: {
       ...lineStyle,
@@ -16402,7 +16524,7 @@ function CanvasCursorCrosshair() {
       width: "100vw",
       borderTop: `1px dotted ${ACCENT}`
     }
-  })));
+  }));
 }
 
 /**

@@ -1,16 +1,15 @@
 import { useDndMonitor } from "@dnd-kit/core";
 import React, { useEffect, useRef, useState } from "react";
-import { CanvasRulers } from "./canvas-rulers";
 import { ACCENT } from "./usePanelDropTarget";
 
 /**
- * Rulers on the top and left edges, and a fine dotted line through the
- * pointer on each axis that crosses them, for reading positions and what lines
- * up with what by eye.
+ * A fine dotted line through the pointer on each axis, across the whole
+ * canvas, for reading what lines up with what by eye. The editor's rulers
+ * (`canvas-rulers.tsx`) mark the same position on their edge.
  *
- * Shown with the block outlines (the canvas root decides). The lines hide
- * while a block is dragged — the drag draws its own guides, and one line per
- * axis is the rule there — while the rulers stay.
+ * Shown with the block outlines (the canvas root decides), and hidden while a
+ * block is dragged: the drag draws its own guides, and one line per axis is
+ * the rule there.
  *
  * The lines are moved by writing their style directly, not through state, so
  * following the pointer never re-renders anything.
@@ -76,21 +75,20 @@ export function CanvasCursorCrosshair() {
     };
   }, [isDragging]);
 
+  if (isDragging) {
+    return null;
+  }
+
   return (
     <>
-      <CanvasRulers />
-      {isDragging ? null : (
-        <>
-          <div
-            ref={vertical}
-            style={{ ...lineStyle, height: "100vh", borderLeft: `1px dotted ${ACCENT}` }}
-          />
-          <div
-            ref={horizontal}
-            style={{ ...lineStyle, width: "100vw", borderTop: `1px dotted ${ACCENT}` }}
-          />
-        </>
-      )}
+      <div
+        ref={vertical}
+        style={{ ...lineStyle, height: "100vh", borderLeft: `1px dotted ${ACCENT}` }}
+      />
+      <div
+        ref={horizontal}
+        style={{ ...lineStyle, width: "100vw", borderTop: `1px dotted ${ACCENT}` }}
+      />
     </>
   );
 }
