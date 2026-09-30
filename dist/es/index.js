@@ -1,5 +1,5 @@
 "use client";
-import { isTrulyResponsiveValue, isNoCodeComponentOfType, getExternalReferenceLocationKey, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, globalSectionGroups, getBrightnessColor, validateColor, buildRichTextNoCodeEntry, getDefaultLocale, createCompilationContext, normalize as normalize$2, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, responsiveValueGet, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
+import { isTrulyResponsiveValue, isNoCodeComponentOfType, getExternalReferenceLocationKey, responsiveValueFindDeviceWithDefinedValue, responsiveValueForceGet, isEmptyExternalReference, isIdReferenceToDocumentExternalValue, getFontFamilies, defaultFontFamily, getFontSizes, defaultFontSize, getFontWeights, defaultFontWeight, getLineHeights, defaultLineHeight, responsiveValueGetDefinedValue, getDevicesWidths, responsiveValueFill, resolveExternalValue, resolveLocalisedValue, isResolvedCompoundExternalDataValue, getFallbackLocaleForLocale, globalSectionGroups, getBrightnessColor, validateColor, buildRichTextNoCodeEntry, getDefaultLocale, responsiveValueGet, createCompilationContext, normalize as normalize$2, CompilationCache, buildEntry, findExternals, validate as validate$1, normalizeInput, compileInternal, mergeCompilationMeta, Easyblocks, loadGoogleFonts } from '@redsun-vn/easyblocks-core';
 import * as React from 'react';
 import React__default, { useState, useRef, useContext, createContext, forwardRef, useMemo, useEffect, Fragment, useLayoutEffect, useCallback, useDeferredValue, memo } from 'react';
 import isPropValid from '@emotion/is-prop-valid';
@@ -8,7 +8,7 @@ import { useToaster, Toaster } from '@redsun-vn/easyblocks-design-system/Toaster
 import { Tooltip as Tooltip$1, TooltipTrigger, TooltipContent, TooltipProvider } from '@redsun-vn/easyblocks-design-system/Tooltip';
 import styled, { styled as styled$1, css, keyframes, createGlobalStyle, StyleSheetManager } from 'styled-components';
 import _extends from '@babel/runtime/helpers/extends';
-import { findComponentDefinition, parsePath, findComponentDefinitionById, duplicateConfig, normalize as normalize$1, isSchemaPropTextModifier, isSchemaPropActionTextModifier, isExternalSchemaProp, useTextValue, stripRichTextPartSelection, richTextChangedEvent, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, isSchemaPropCollection, componentPickerClosed, selectionFramePositionChanged, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
+import { findComponentDefinition, parsePath, findComponentDefinitionById, duplicateConfig, normalize as normalize$1, isSchemaPropTextModifier, isSchemaPropActionTextModifier, isExternalSchemaProp, useTextValue, stripRichTextPartSelection, richTextChangedEvent, getSchemaDefinition, findPathOfFirstAncestorOfType, traverseComponents, selectionFramePositionChanged, isSchemaPropCollection, componentPickerClosed, useEasyblocksMetadata, ComponentBuilder, EasyblocksMetadataProvider, itemMoved, RichTextEditor, TextEditor, configTraverse } from '@redsun-vn/easyblocks-core/_internals';
 import { Colors, Fonts } from '@redsun-vn/easyblocks-design-system';
 import throttle from 'lodash.throttle';
 import debounce$1 from 'lodash/debounce';
@@ -12713,6 +12713,42 @@ function turnSwitchOn({
   return true;
 }
 
+/**
+ * Writes one value of a drag the way picking it in the panel would, turning
+ * the parent switch on first when the drag needs it. The first write of a
+ * gesture makes an undo step and every later one folds into it.
+ */
+function writeResizeStep({
+  drag,
+  value,
+  resizeField,
+  editorContext,
+  configAfterAuto,
+  gestureHasWritten
+}) {
+  // The switch goes on only once the value really changes, so a press that
+  // moves nothing leaves the row as it was.
+  if (drag.pending) {
+    turnSwitchOn({
+      pending: drag.pending,
+      editorContext,
+      configAfterAuto,
+      history: gestureHasWritten.current ? "replace" : "push"
+    });
+    gestureHasWritten.current = true;
+    drag.pending = null;
+  }
+  writeCanvasResizeValue({
+    field: resizeField.field,
+    value: drag.choices.get(value)?.value ?? value,
+    editorContext,
+    configAfterAuto,
+    history: gestureHasWritten.current ? "replace" : "push"
+  });
+  drag.hasWritten = true;
+  gestureHasWritten.current = true;
+}
+
 /** The selected block's box, in canvas pixels, as the position messages give it. */
 
 function isPositionChanged(data) {
@@ -12842,6 +12878,288 @@ function useCanvasFrameRedraws(path, refreshKey) {
   return redraws;
 }
 
+/** How long a committed drag's drawing may wait for the canvas to catch up. */
+const HAND_OVER_TIMEOUT_MS = 2000;
+
+/**
+ * Keeps a released drag's drawing on the canvas until the canvas has rendered
+ * the written value itself, then takes it away.
+ *
+ * Taking it away at once would show the old widths for as long as the editor
+ * takes to render the write. The canvas sends a position message after every
+ * render, and each one is a chance to look at the page without the drawing:
+ * - it matches the drawing — the write has landed, and the drawing goes;
+ * - it still matches the page from before the write — not rendered yet, so
+ *   the drawing goes back until the next message;
+ * - it matches neither — something else changed the page since (an undo, a
+ *   panel edit), and the drawing must not cover that up.
+ *
+ * Returns what stops the hand-over at once and takes the drawing away.
+ */
+function handOverToCanvas({
+  view,
+  draw,
+  undraw,
+  widths,
+  isConnected,
+  onGiveUp
+}) {
+  const expected = widths();
+  undraw();
+  const before = widths();
+  draw();
+  const matches = (now, other) => now.every((width, index) => Math.abs(width - other[index]) < 1);
+  const stop = () => {
+    window.removeEventListener("message", onMessage);
+    window.clearTimeout(timer);
+  };
+  function onMessage(event) {
+    if (event.source !== view || !isPositionChanged(event.data)) {
+      return;
+    }
+    if (!isConnected()) {
+      stop();
+      return;
+    }
+    undraw();
+    const now = widths();
+    if (matches(now, expected) || !matches(now, before)) {
+      stop();
+    } else {
+      draw();
+    }
+  }
+  const timer = window.setTimeout(() => {
+    stop();
+    undraw();
+    onGiveUp();
+  }, HAND_OVER_TIMEOUT_MS);
+  window.addEventListener("message", onMessage);
+  return () => {
+    stop();
+    undraw();
+  };
+}
+
+/**
+ * What a block's `previewSpans` is asked with, read from the page's values
+ * after auto: the parent's values and every sibling's value of the dragged
+ * field, each at the breakpoint being edited.
+ *
+ * The field is an item field, stored on each item under the same suffix —
+ * `_itemProps.<parent>.<collection>.<prop>` — so a sibling's value is found by
+ * swapping the item's index and keeping the suffix.
+ */
+function readSpanPreviewInput({
+  fieldName,
+  path,
+  configAfterAuto,
+  breakpointIndex
+}) {
+  const slot = parseSlotPath(path);
+  if (!slot || !fieldName.startsWith(`${path}.`)) {
+    return null;
+  }
+  const suffix = fieldName.slice(path.length);
+  const collectionPath = slot.parentPath ? `${slot.parentPath}.${slot.prop}` : slot.prop;
+  const parent = dotNotationGet(configAfterAuto, slot.parentPath);
+  const items = dotNotationGet(configAfterAuto, collectionPath);
+
+  // A localised collection keeps its items per locale, and is not a grid a
+  // span is drawn on.
+  if (!parent || typeof parent !== "object" || !Array.isArray(items) || slot.index >= items.length) {
+    return null;
+  }
+  return {
+    parent: Object.fromEntries(Object.entries(parent).map(([prop, value]) => [prop, responsiveValueGet(value, breakpointIndex)])),
+    values: items.map((_, index) => responsiveValueGet(dotNotationGet(configAfterAuto, `${collectionPath}.${index}${suffix}`), breakpointIndex)),
+    index: slot.index,
+    collectionPath
+  };
+}
+
+/**
+ * The hand-over still waiting on each grid. A drag that starts before the
+ * last one handed over would otherwise take that drawing for the grid's own
+ * styles, and put it back when it ends.
+ */
+const handOversInProgress = new WeakMap();
+/**
+ * A span drag drawn straight onto the canvas's grid, without writing.
+ *
+ * Every write runs the whole editor — compile, panel, canvas — which takes a
+ * few hundred milliseconds, far longer than a pointer waits between moves.
+ * The grid's own inline styles take a frame. What they say comes from the
+ * block's `previewSpans`, its own layout rule, so siblings that share what is
+ * left of a row move the way the written value will move them.
+ *
+ * Returns `null` when the field has no such rule or the grid cannot be found;
+ * the drag then writes every step as before.
+ */
+function startSpanPreview({
+  resizeField,
+  path,
+  configAfterAuto,
+  breakpointIndex,
+  switchOn
+}) {
+  const previewSpans = resizeField.option.previewSpans;
+  const fieldName = resizeField.field.name;
+  if (!previewSpans || typeof fieldName !== "string") {
+    return null;
+  }
+  const input = readSpanPreviewInput({
+    fieldName,
+    path,
+    configAfterAuto,
+    breakpointIndex
+  });
+  const selected = findCanvasFrame(path);
+  if (!input || !selected) {
+    return null;
+  }
+
+  // Every item's box on the grid, in collection order: the item a span sits
+  // on is the grid's child, which may wrap the item's frame.
+  const grid = findGridItem(selected.frame, selected.view)?.grid;
+  const items = input.values.map((_, index) => {
+    const found = findCanvasFrame(`${input.collectionPath}.${index}`);
+    const gridItem = found && findGridItem(found.frame, found.view);
+    return gridItem && gridItem.grid === grid ? gridItem.item : null;
+  });
+  if (!grid || items.some(item => item === null)) {
+    return null;
+  }
+  const gridBox = grid;
+  const boxes = items;
+  handOversInProgress.get(gridBox)?.();
+  handOversInProgress.delete(gridBox);
+  const original = {
+    tracks: gridBox.style.gridTemplateColumns,
+    spans: boxes.map(box => box.style.gridColumn)
+  };
+  let drawn = null;
+  let stopHandOver = null;
+  const draw = layout => {
+    gridBox.style.gridTemplateColumns = `repeat(${layout.tracks}, minmax(0, 1fr))`;
+    boxes.forEach((box, index) => {
+      box.style.gridColumn = `span ${layout.spans[index]}`;
+    });
+  };
+  const undraw = () => {
+    gridBox.style.gridTemplateColumns = original.tracks;
+    boxes.forEach((box, index) => {
+      box.style.gridColumn = original.spans[index];
+    });
+  };
+
+  // The frame, the action bar and the handles hang from the canvas's position
+  // messages, and the canvas sends none for a change it did not render. The
+  // editor says it on the canvas's behalf, in the canvas's own coordinates.
+  const announcePosition = () => {
+    const container = selected.frame.closest("[data-easyblocks-scrollable-root]")?.getBoundingClientRect();
+    window.postMessage(selectionFramePositionChanged(selected.frame.getBoundingClientRect(), container), "*");
+  };
+  return {
+    show(value) {
+      const values = [...input.values];
+      values[input.index] = value;
+      const layout = previewSpans({
+        parent: input.parent,
+        values,
+        index: input.index,
+        switchOn
+      });
+      if (!layout || layout.spans.length !== boxes.length) {
+        return false;
+      }
+      drawn = layout;
+      draw(layout);
+      announcePosition();
+      return true;
+    },
+    clear() {
+      stopHandOver?.();
+      undraw();
+      announcePosition();
+    },
+    handOver() {
+      if (!drawn) {
+        undraw();
+        return;
+      }
+      const layout = drawn;
+      const finish = handOverToCanvas({
+        view: selected.view,
+        draw: () => draw(layout),
+        undraw,
+        widths: () => boxes.map(box => box.getBoundingClientRect().width),
+        isConnected: () => gridBox.isConnected,
+        onGiveUp: announcePosition
+      });
+      stopHandOver = finish;
+      handOversInProgress.set(gridBox, finish);
+    }
+  };
+}
+
+/**
+ * A press on a resize handle, turned into a drag: the page measured as drawn
+ * now, the value it starts from, what Esc would put back, and — for a span
+ * the block can draw — the preview that stands in for writing.
+ *
+ * `null` when the press is not a drag: not the main button, or nothing on the
+ * page a drag could change. The pointer is captured only for a real drag.
+ */
+function beginResizeDrag({
+  edge,
+  event,
+  resizeField,
+  path,
+  editorContext,
+  configAfterAuto
+}) {
+  const choices = canvasResizeChoices(resizeField, editorContext.types);
+  const pending = pendingSwitch(resizeField, path, editorContext.form.values);
+  const geometry = readResizeGeometry({
+    path,
+    axis: resizeField.option.axis,
+    choices,
+    switchedTracks: pending?.tracks
+  });
+  const restorePath = pending ? pending.parentPath : toArray(resizeField.field.name)[0];
+  const start = geometry && nearestResizeStep(geometry.steps, geometry.size);
+  if (!geometry || !start || event.button !== 0) {
+    return null;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  const handle = event.currentTarget;
+  const layer = handle.offsetParent;
+  handle.setPointerCapture(event.pointerId);
+  return {
+    edge,
+    pointerId: event.pointerId,
+    startPointer: edge === "bottom" ? event.clientY : event.clientX,
+    scale: layer && layer.offsetWidth > 0 ? layer.getBoundingClientRect().width / layer.offsetWidth : 1,
+    geometry,
+    choices: new Map(choices.map(choice => [choice.key, choice])),
+    startValue: start.value,
+    lastValue: start.value,
+    hasWritten: false,
+    pending,
+    restorePath,
+    originalRawValue: dotNotationGet(editorContext.form.values, restorePath),
+    preview: startSpanPreview({
+      resizeField,
+      path,
+      configAfterAuto,
+      breakpointIndex: editorContext.breakpointIndex,
+      switchOn: pending !== null
+    })
+  };
+}
+
 function canvasWindow() {
   const iframe = document.getElementById("editor-canvas");
   return iframe?.contentWindow ?? null;
@@ -12873,10 +13191,14 @@ function useEscapeWhileDragging(isDragging, cancel) {
 /**
  * One drag of a resize handle, from press to release.
  *
- * Each time the edge reaches another value the field is written, so the page
- * reflows under the pointer. The first write makes an undo step and the rest
- * fold into it, which is what makes a whole drag one Ctrl+Z. Esc puts the
- * stored value back, byte for byte, rather than writing the value it showed.
+ * A span whose block says how its grid lays out (`previewSpans`) is drawn
+ * straight onto the canvas while the pointer moves, and written once, on
+ * release: a write runs the whole editor, far too slow to follow a pointer.
+ * Any other size is written each time the edge reaches another value, so the
+ * page reflows under the pointer. Either way the first write makes an undo
+ * step and the rest fold into it, which is what makes a whole drag one Ctrl+Z.
+ * Esc puts the stored value back, byte for byte, rather than writing the value
+ * it showed.
  */
 function useCanvasResizeDrag({
   resizeField,
@@ -12887,13 +13209,36 @@ function useCanvasResizeDrag({
 }) {
   const drag = useRef(null);
   const [reading, setReading] = useState(null);
-  const fieldName = resizeField ? toArray(resizeField.field.name)[0] : "";
+  const write = (current, value) => resizeField && writeResizeStep({
+    drag: current,
+    value,
+    resizeField,
+    editorContext,
+    configAfterAuto,
+    gestureHasWritten
+  });
   const end = useCallback(() => {
     drag.current = null;
     setReading(null);
   }, []);
+
+  // Release: a drawn drag writes where it stopped, then leaves the drawing in
+  // place until the canvas has drawn the same thing.
+  const finish = () => {
+    const current = drag.current;
+    if (current?.preview) {
+      if (current.lastValue !== current.startValue) {
+        write(current, current.lastValue);
+        current.preview.handOver();
+      } else {
+        current.preview.clear();
+      }
+    }
+    end();
+  };
   const cancel = useCallback(() => {
     const current = drag.current;
+    current?.preview?.clear();
     if (current?.hasWritten) {
       editorContext.actions.runChange(() => {
         editorContext.form.change(current.restorePath, current.originalRawValue);
@@ -12904,45 +13249,28 @@ function useCanvasResizeDrag({
     end();
   }, [editorContext, end]);
   useEscapeWhileDragging(reading !== null, cancel);
+
+  // A handle that goes away mid-drag — another block selected, the edge no
+  // longer offered — never hears the release. What it drew is only a drawing,
+  // nothing was written for it, so it goes with the handle.
+  useEffect(() => () => drag.current?.preview?.clear(), []);
   const onPointerDown = edge => event => {
-    if (!resizeField) {
-      return;
-    }
-    const choices = canvasResizeChoices(resizeField, editorContext.types);
-    const pending = pendingSwitch(resizeField, path, editorContext.form.values);
-    const geometry = readResizeGeometry({
-      path,
-      axis: resizeField.option.axis,
-      choices,
-      switchedTracks: pending?.tracks
-    });
-    const restorePath = pending ? pending.parentPath : fieldName;
-    const start = geometry && nearestResizeStep(geometry.steps, geometry.size);
-    if (!geometry || !start || event.button !== 0) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    const handle = event.currentTarget;
-    const layer = handle.offsetParent;
-    handle.setPointerCapture(event.pointerId);
-    gestureHasWritten.current = false;
-    drag.current = {
+    const started = resizeField && beginResizeDrag({
       edge,
-      pointerId: event.pointerId,
-      startPointer: edge === "bottom" ? event.clientY : event.clientX,
-      scale: layer && layer.offsetWidth > 0 ? layer.getBoundingClientRect().width / layer.offsetWidth : 1,
-      geometry,
-      choices: new Map(choices.map(choice => [choice.key, choice])),
-      lastValue: start.value,
-      hasWritten: false,
-      pending,
-      restorePath,
-      originalRawValue: dotNotationGet(editorContext.form.values, restorePath)
-    };
+      event,
+      resizeField,
+      path,
+      editorContext,
+      configAfterAuto
+    });
+    if (!started) {
+      return;
+    }
+    gestureHasWritten.current = false;
+    drag.current = started;
     setReading({
       edge,
-      label: geometry.describe(start.value)
+      label: started.geometry.describe(started.startValue)
     });
   };
   const onPointerMove = event => {
@@ -12962,27 +13290,15 @@ function useCanvasResizeDrag({
       return;
     }
 
-    // The switch goes on only once the value really changes, so a press that
-    // moves nothing leaves the row as it was.
-    if (current.pending) {
-      turnSwitchOn({
-        pending: current.pending,
-        editorContext,
-        configAfterAuto,
-        history: gestureHasWritten.current ? "replace" : "push"
-      });
-      gestureHasWritten.current = true;
-      current.pending = null;
+    // A block that cannot say how this value lays out is written instead,
+    // for the rest of the drag.
+    if (current.preview && !current.preview.show(step.value)) {
+      current.preview.clear();
+      current.preview = null;
     }
-    writeCanvasResizeValue({
-      field: resizeField.field,
-      value: current.choices.get(step.value)?.value ?? step.value,
-      editorContext,
-      configAfterAuto,
-      history: gestureHasWritten.current ? "replace" : "push"
-    });
-    current.hasWritten = true;
-    gestureHasWritten.current = true;
+    if (!current.preview) {
+      write(current, step.value);
+    }
     current.lastValue = step.value;
     setReading({
       edge: current.edge,
@@ -12994,10 +13310,10 @@ function useCanvasResizeDrag({
     handlers: {
       onPointerDown,
       onPointerMove,
-      onPointerUp: end,
+      onPointerUp: finish,
       // Losing the pointer — the handle re-rendered away, the window lost
       // focus — ends the drag where it stands rather than leaving it armed.
-      onLostPointerCapture: end,
+      onLostPointerCapture: finish,
       onPointerCancel: cancel
     }
   };
@@ -13131,14 +13447,16 @@ function ResizeHandles({
 
   // Only a grid span grows from either side. Any other width grows from the
   // edge the block's alignment leaves free, so a left handle would move away
-  // from the pointer or at half its pace.
+  // from the pointer or at half its pace. A left handle being dragged stays
+  // even when a step draws the grid as one the page reads as stacked: losing
+  // it would lose the pointer and the release with it.
   const isSpan = widthGeometry !== null && !widthGeometry.content;
   // A height given as a ratio follows the width: the corner scales the block.
   const corner = heightGeometry?.followsWidth ? [[width], ["right"]] : [[width, height], ["right", "bottom"]];
   return /*#__PURE__*/React__default.createElement(Layer, {
     ref: layerRef,
     style: layerBox
-  }, showWidth && isSpan && handle("left", [width], ["left"]), showWidth && handle("right", [width], ["right"]), showHeight && handle("bottom", [height], ["bottom"]), showWidth && showHeight && handle("corner", ...corner));
+  }, showWidth && (isSpan || width.reading?.edge === "left") && handle("left", [width], ["left"]), showWidth && handle("right", [width], ["right"]), showHeight && handle("bottom", [height], ["bottom"]), showWidth && showHeight && handle("corner", ...corner));
 }
 
 /**

@@ -169,7 +169,9 @@ export function ResizeHandles({
 
   // Only a grid span grows from either side. Any other width grows from the
   // edge the block's alignment leaves free, so a left handle would move away
-  // from the pointer or at half its pace.
+  // from the pointer or at half its pace. A left handle being dragged stays
+  // even when a step draws the grid as one the page reads as stacked: losing
+  // it would lose the pointer and the release with it.
   const isSpan = widthGeometry !== null && !widthGeometry.content;
   // A height given as a ratio follows the width: the corner scales the block.
   const corner: [Array<typeof width>, Array<"right" | "bottom">] =
@@ -182,7 +184,9 @@ export function ResizeHandles({
 
   return (
     <Layer ref={layerRef} style={layerBox}>
-      {showWidth && isSpan && handle("left", [width], ["left"])}
+      {showWidth &&
+        (isSpan || width.reading?.edge === "left") &&
+        handle("left", [width], ["left"])}
       {showWidth && handle("right", [width], ["right"])}
       {showHeight && handle("bottom", [height], ["bottom"])}
       {showWidth && showHeight && handle("corner", ...corner)}

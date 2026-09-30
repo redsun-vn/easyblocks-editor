@@ -1,17 +1,10 @@
-import { toArray } from "@/utils/array/toArray";
-import { dotNotationGet } from "@/utils/object/dotNotationGet";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { EditorContextType } from "../EditorContext";
-import {
-  CanvasResizeField,
-  canvasResizeChoices,
-  ResizeChoice,
-  writeCanvasResizeValue,
-} from "./canvas-resize-fields";
-import { readResizeGeometry, ResizeGeometry } from "./canvas-resize-geometry";
+import { beginResizeDrag } from "./canvas-resize-drag-start";
+import type { CanvasResizeField } from "./canvas-resize-fields";
 import { nearestResizeStep, targetSizeFromDrag } from "./resize-step-resolver";
 import { useEscapeWhileDragging } from "./use-escape-while-dragging";
-import { pendingSwitch, turnSwitchOn } from "./canvas-resize-parent-switch";
+import { writeResizeStep } from "./canvas-resize-parent-switch";
 import type {
   Drag,
   ResizeEdge,
@@ -23,10 +16,14 @@ export type { ResizeEdge, ResizeReading };
 /**
  * One drag of a resize handle, from press to release.
  *
- * Each time the edge reaches another value the field is written, so the page
- * reflows under the pointer. The first write makes an undo step and the rest
- * fold into it, which is what makes a whole drag one Ctrl+Z. Esc puts the
- * stored value back, byte for byte, rather than writing the value it showed.
+ * A span whose block says how its grid lays out (`previewSpans`) is drawn
+ * straight onto the canvas while the pointer moves, and written once, on
+ * release: a write runs the whole editor, far too slow to follow a pointer.
+ * Any other size is written each time the edge reaches another value, so the
+ * page reflows under the pointer. Either way the first write makes an undo
+ * step and the rest fold into it, which is what makes a whole drag one Ctrl+Z.
+ * Esc puts the stored value back, byte for byte, rather than writing the value
+ * it showed.
  */
 export function useCanvasResizeDrag({
   resizeField,
@@ -49,15 +46,44 @@ export function useCanvasResizeDrag({
 }) {
   const drag = useRef<Drag | null>(null);
   const [reading, setReading] = useState<ResizeReading | null>(null);
-  const fieldName = resizeField ? toArray(resizeField.field.name)[0] : "";
+
+  const write = (current: Drag, value: string) =>
+    resizeField &&
+    writeResizeStep({
+      drag: current,
+      value,
+      resizeField,
+      editorContext,
+      configAfterAuto,
+      gestureHasWritten,
+    });
 
   const end = useCallback(() => {
     drag.current = null;
     setReading(null);
   }, []);
 
+  // Release: a drawn drag writes where it stopped, then leaves the drawing in
+  // place until the canvas has drawn the same thing.
+  const finish = () => {
+    const current = drag.current;
+
+    if (current?.preview) {
+      if (current.lastValue !== current.startValue) {
+        write(current, current.lastValue);
+        current.preview.handOver();
+      } else {
+        current.preview.clear();
+      }
+    }
+
+    end();
+  };
+
   const cancel = useCallback(() => {
     const current = drag.current;
+
+    current?.preview?.clear();
 
     if (current?.hasWritten) {
       editorContext.actions.runChange(
@@ -76,52 +102,30 @@ export function useCanvasResizeDrag({
 
   useEscapeWhileDragging(reading !== null, cancel);
 
+  // A handle that goes away mid-drag — another block selected, the edge no
+  // longer offered — never hears the release. What it drew is only a drawing,
+  // nothing was written for it, so it goes with the handle.
+  useEffect(() => () => drag.current?.preview?.clear(), []);
+
   const onPointerDown = (edge: ResizeEdge) => (event: React.PointerEvent) => {
-    if (!resizeField) {
+    const started =
+      resizeField &&
+      beginResizeDrag({
+        edge,
+        event,
+        resizeField,
+        path,
+        editorContext,
+        configAfterAuto,
+      });
+
+    if (!started) {
       return;
     }
 
-    const choices = canvasResizeChoices(resizeField, editorContext.types);
-    const pending = pendingSwitch(resizeField, path, editorContext.form.values);
-    const geometry = readResizeGeometry({
-      path,
-      axis: resizeField.option.axis,
-      choices,
-      switchedTracks: pending?.tracks,
-    });
-    const restorePath = pending ? pending.parentPath : fieldName;
-    const start = geometry && nearestResizeStep(geometry.steps, geometry.size);
-
-    if (!geometry || !start || event.button !== 0) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const handle = event.currentTarget as HTMLElement;
-    const layer = handle.offsetParent as HTMLElement | null;
-    handle.setPointerCapture(event.pointerId);
     gestureHasWritten.current = false;
-
-    drag.current = {
-      edge,
-      pointerId: event.pointerId,
-      startPointer: edge === "bottom" ? event.clientY : event.clientX,
-      scale:
-        layer && layer.offsetWidth > 0
-          ? layer.getBoundingClientRect().width / layer.offsetWidth
-          : 1,
-      geometry,
-      choices: new Map(choices.map((choice) => [choice.key, choice])),
-      lastValue: start.value,
-      hasWritten: false,
-      pending,
-      restorePath,
-      originalRawValue: dotNotationGet(editorContext.form.values, restorePath),
-    };
-
-    setReading({ edge, label: geometry.describe(start.value) });
+    drag.current = started;
+    setReading({ edge, label: started.geometry.describe(started.startValue) });
   };
 
   const onPointerMove = (event: React.PointerEvent) => {
@@ -151,28 +155,17 @@ export function useCanvasResizeDrag({
       return;
     }
 
-    // The switch goes on only once the value really changes, so a press that
-    // moves nothing leaves the row as it was.
-    if (current.pending) {
-      turnSwitchOn({
-        pending: current.pending,
-        editorContext,
-        configAfterAuto,
-        history: gestureHasWritten.current ? "replace" : "push",
-      });
-      gestureHasWritten.current = true;
-      current.pending = null;
+    // A block that cannot say how this value lays out is written instead,
+    // for the rest of the drag.
+    if (current.preview && !current.preview.show(step.value)) {
+      current.preview.clear();
+      current.preview = null;
     }
 
-    writeCanvasResizeValue({
-      field: resizeField.field,
-      value: current.choices.get(step.value)?.value ?? step.value,
-      editorContext,
-      configAfterAuto,
-      history: gestureHasWritten.current ? "replace" : "push",
-    });
-    current.hasWritten = true;
-    gestureHasWritten.current = true;
+    if (!current.preview) {
+      write(current, step.value);
+    }
+
     current.lastValue = step.value;
     setReading({
       edge: current.edge,
@@ -185,10 +178,10 @@ export function useCanvasResizeDrag({
     handlers: {
       onPointerDown,
       onPointerMove,
-      onPointerUp: end,
+      onPointerUp: finish,
       // Losing the pointer — the handle re-rendered away, the window lost
       // focus — ends the drag where it stands rather than leaving it armed.
-      onLostPointerCapture: end,
+      onLostPointerCapture: finish,
       onPointerCancel: cancel,
     },
   };

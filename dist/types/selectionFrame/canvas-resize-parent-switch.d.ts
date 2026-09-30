@@ -1,6 +1,7 @@
 import { EditorContextType } from "../EditorContext";
 import { RunChangeOptions } from "../types";
 import { CanvasResizeField } from "./canvas-resize-fields";
+import type { Drag } from "./canvas-resize-drag-types";
 /**
  * The parent switch a drag has to turn on before it can step in its unit,
  * when the field names one and the parent has it off. A row stores its
@@ -23,4 +24,20 @@ export declare function turnSwitchOn({ pending, editorContext, configAfterAuto, 
     configAfterAuto: Record<string, any>;
     history: RunChangeOptions["history"];
 }): boolean;
+/**
+ * Writes one value of a drag the way picking it in the panel would, turning
+ * the parent switch on first when the drag needs it. The first write of a
+ * gesture makes an undo step and every later one folds into it.
+ */
+export declare function writeResizeStep({ drag, value, resizeField, editorContext, configAfterAuto, gestureHasWritten, }: {
+    drag: Drag;
+    /** The step's key: what a choice is found by. */
+    value: string;
+    resizeField: CanvasResizeField;
+    editorContext: EditorContextType;
+    configAfterAuto: Record<string, any>;
+    gestureHasWritten: {
+        current: boolean;
+    };
+}): void;
 //# sourceMappingURL=canvas-resize-parent-switch.d.ts.map

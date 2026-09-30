@@ -33,7 +33,7 @@ function isGrid(element: Element, view: Window) {
  * block lives in, and a grid above it — a section's, a page's — has nothing
  * to do with this block's span.
  */
-function findGridItem(frame: HTMLElement, view: Window) {
+export function findGridItem(frame: HTMLElement, view: Window) {
   let item: HTMLElement = frame;
 
   while (item.parentElement) {

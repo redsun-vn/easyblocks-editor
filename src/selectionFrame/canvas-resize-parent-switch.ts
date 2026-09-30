@@ -7,6 +7,7 @@ import {
   CanvasResizeField,
   writeCanvasResizeValue,
 } from "./canvas-resize-fields";
+import type { Drag } from "./canvas-resize-drag-types";
 
 /**
  * The parent switch a drag has to turn on before it can step in its unit,
@@ -65,4 +66,49 @@ export function turnSwitchOn({
   });
 
   return true;
+}
+
+/**
+ * Writes one value of a drag the way picking it in the panel would, turning
+ * the parent switch on first when the drag needs it. The first write of a
+ * gesture makes an undo step and every later one folds into it.
+ */
+export function writeResizeStep({
+  drag,
+  value,
+  resizeField,
+  editorContext,
+  configAfterAuto,
+  gestureHasWritten,
+}: {
+  drag: Drag;
+  /** The step's key: what a choice is found by. */
+  value: string;
+  resizeField: CanvasResizeField;
+  editorContext: EditorContextType;
+  configAfterAuto: Record<string, any>;
+  gestureHasWritten: { current: boolean };
+}) {
+  // The switch goes on only once the value really changes, so a press that
+  // moves nothing leaves the row as it was.
+  if (drag.pending) {
+    turnSwitchOn({
+      pending: drag.pending,
+      editorContext,
+      configAfterAuto,
+      history: gestureHasWritten.current ? "replace" : "push",
+    });
+    gestureHasWritten.current = true;
+    drag.pending = null;
+  }
+
+  writeCanvasResizeValue({
+    field: resizeField.field,
+    value: drag.choices.get(value)?.value ?? value,
+    editorContext,
+    configAfterAuto,
+    history: gestureHasWritten.current ? "replace" : "push",
+  });
+  drag.hasWritten = true;
+  gestureHasWritten.current = true;
 }
