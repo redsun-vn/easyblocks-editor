@@ -1,15 +1,15 @@
 import React from "react";
-import type { AlignmentGuide } from "./alignment-guide-resolver";
+import type { SnapGuide } from "./drag-snap-resolver";
 // The insertion line's purple: one drag, one colour for everything it draws.
 import { ACCENT } from "./usePanelDropTarget";
 
 /**
- * The alignment guide on the canvas: dashed and thinner than the insertion
+ * An alignment guide on the canvas: dashed and thinner than the insertion
  * line, so the solid line still reads as "it lands here" and this one as "and
  * lines up with this".
  */
-export function AlignmentGuideLine({ guide }: { guide: AlignmentGuide }) {
-  const isUpright = guide.axis === "horizontal";
+export function AlignmentGuideLine({ guide }: { guide: SnapGuide }) {
+  const isUpright = guide.orientation === "vertical";
 
   return (
     <div

@@ -16113,178 +16113,6 @@ function usePanelDropTarget(editorContext) {
 }
 
 /**
- * The alignment guide on the canvas: dashed and thinner than the insertion
- * line, so the solid line still reads as "it lands here" and this one as "and
- * lines up with this".
- */
-function AlignmentGuideLine({
-  guide
-}) {
-  const isUpright = guide.axis === "horizontal";
-  return /*#__PURE__*/React__default["default"].createElement("div", {
-    style: {
-      position: "fixed",
-      top: guide.y,
-      left: guide.x,
-      width: isUpright ? 0 : guide.length,
-      height: isUpright ? guide.length : 0,
-      [isUpright ? "borderLeft" : "borderTop"]: `1px dashed ${ACCENT}`,
-      boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.6)",
-      pointerEvents: "none",
-      zIndex: 2147483000
-    }
-  });
-}
-
-/**
- * The second line a drag draws: across the insertion line, where the dropped
- * block will line up with its neighbours.
- *
- * The insertion line already says where along a collection the block lands.
- * What it does not say is where across: a column that centres its blocks puts
- * the new one on the centre line, one that starts them at the left puts it at
- * the left. That is read from the neighbours the block lands between, which
- * the collection has already laid out the same way it will lay out this one.
- *
- * "The collection" here is the box its blocks take up together — the slot's
- * bounds are the union of its children, not the column's own frame. So a
- * collection of one block, or of blocks all the same width, gives no guide:
- * nothing in it tells a start from a centre.
- *
- * Geometry only, so it is tested without a browser.
- */
-
-/** Same shape as the insertion line, so both draw with one component. */
-
-/** How close two coordinates must be to count as the same line, in pixels. */
-const SAME_LINE = 1.5;
-const isSame = (a, b) => Math.abs(a - b) < SAME_LINE;
-
-/** A child's extent across the collection, and the collection's own. */
-function across(rect, axis) {
-  return axis === "horizontal" ? {
-    start: rect.top,
-    end: rect.bottom
-  } : {
-    start: rect.left,
-    end: rect.right
-  };
-}
-
-/**
- * Which line of the collection a child sits on: its start, its centre or its
- * end. A child filling the collection sits on all three, which tells the
- * person nothing, so it counts as none.
- */
-function alignedEdge(child, container) {
-  const fillsStart = isSame(child.start, container.start);
-  const fillsEnd = isSame(child.end, container.end);
-  if (fillsStart && fillsEnd) {
-    return null;
-  }
-  if (fillsStart) {
-    return "start";
-  }
-  if (fillsEnd) {
-    return "end";
-  }
-  const childCentre = (child.start + child.end) / 2;
-  const containerCentre = (container.start + container.end) / 2;
-  return isSame(childCentre, containerCentre) ? "center" : null;
-}
-
-/** Whether every child of a row overlaps one band of height: one line, not wrapped. */
-function sharesOneLine(children) {
-  if (children.length === 0) {
-    return true;
-  }
-  const lowestTop = Math.max(...children.map(child => child.top));
-  const highestBottom = Math.min(...children.map(child => child.bottom));
-  return lowestTop < highestBottom;
-}
-
-/**
- * The guide for a drop at `aim` into `slot`, or `null` when the neighbours
- * give no line worth drawing.
- *
- * `fromIndex` is the dragged block's own place when it is moving within this
- * collection: it is about to leave that place, so it is no neighbour.
- */
-function resolveAlignmentGuide({
-  slot,
-  aim,
-  fromIndex
-}) {
-  const axis = aim.line.axis;
-  const neighbours = slot.children.filter(child => child.index !== fromIndex && (child.index === aim.index - 1 || child.index === aim.index));
-
-  // The one before the gap first: it is the one the eye reads down from.
-  neighbours.sort((a, b) => a.index - b.index);
-
-  // A row that wraps onto several lines has no one line its blocks share, and
-  // a guide read across all of them could point where the block will not go.
-  if (axis === "horizontal" && !sharesOneLine(slot.children)) {
-    return null;
-  }
-  const container = across(slot.bounds, axis);
-  for (const neighbour of neighbours) {
-    const extent = across(neighbour, axis);
-    const edge = alignedEdge(extent, container);
-    if (!edge) {
-      continue;
-    }
-    const position = edge === "start" ? extent.start : edge === "end" ? extent.end : (extent.start + extent.end) / 2;
-
-    // Along the collection, from the first neighbour to the last, taking in
-    // the gap the insertion line marks.
-    const along = neighbours.flatMap(child => axis === "horizontal" ? [child.left, child.right] : [child.top, child.bottom]);
-    const lineAt = axis === "horizontal" ? aim.line.x : aim.line.y;
-    const from = Math.min(lineAt, ...along);
-    const to = Math.max(lineAt, ...along);
-    return axis === "horizontal" ? {
-      axis: "vertical",
-      x: from,
-      y: position,
-      length: to - from
-    } : {
-      axis: "horizontal",
-      x: position,
-      y: from,
-      length: to - from
-    };
-  }
-  return null;
-}
-
-/**
- * The alignment guide for an aim, from the collection it lands in. The dragged
- * block's own place counts only when it is moving within that collection.
- */
-function guideFor(slots, aim, fromPath) {
-  const slot = slots.find(candidate => candidate.parentPath === aim.parentPath && candidate.prop === aim.prop);
-  const from = parseSlotPath(fromPath);
-
-  // A drop right beside the block's own place moves nothing; a guide there
-  // would suggest a change that will not happen.
-  if (toItemMove(aim, fromPath) === null) {
-    return null;
-  }
-  return slot ? resolveAlignmentGuide({
-    slot,
-    aim,
-    fromIndex: from && from.parentPath === aim.parentPath && from.prop === aim.prop ? from.index : undefined
-  }) : null;
-}
-
-/**
- * Keeps the current line when the next one is the same, so a line that has
- * not moved does not re-render the page at pointer rate.
- */
-function keepIfSame(next) {
-  return current => current === next || current !== null && next !== null && current.x === next.x && current.y === next.y && current.length === next.length && current.axis === next.axis ? current : next;
-}
-
-/**
  * Whether the block at `path` sits in a collection that opted in with
  * `panelDropTarget`. Answered from the schema alone, before anything on the
  * canvas is measured, so a drag inside older components costs nothing extra
@@ -16313,6 +16141,14 @@ function collectionOfCollision(collisions) {
 }
 
 /**
+ * Keeps the current line when the next one is the same, so a line that has
+ * not moved does not re-render the page at pointer rate.
+ */
+function keepIfSame(next) {
+  return current => current === next || current !== null && next !== null && current.x === next.x && current.y === next.y && current.length === next.length && current.axis === next.axis ? current : next;
+}
+
+/**
  * Column-aware aiming for a block dragged on the canvas. See `canvasMoveAim`.
  *
  * Wraps the block-by-block collision detection: when the aim applies it reports
@@ -16321,15 +16157,12 @@ function collectionOfCollision(collisions) {
  */
 function useCanvasMoveAim(editorContext, fallback) {
   const aimRef = React.useRef(null);
-  const guideRef = React.useRef(null);
   const [line, setLine] = React.useState(null);
-  const [guide, setGuide] = React.useState(null);
   const collisionDetection = React.useCallback(args => {
     const legacy = fallback(args);
     const fromPath = args.active.data.current?.path;
     const pointer = args.pointerCoordinates;
     aimRef.current = null;
-    guideRef.current = null;
     if (typeof fromPath !== "string" || !pointer || !isInOptedInCollection(fromPath, editorContext)) {
       return legacy;
     }
@@ -16349,7 +16182,6 @@ function useCanvasMoveAim(editorContext, fallback) {
       legacyOverPath: collectionOfCollision(legacy),
       canHold
     });
-    guideRef.current = aimRef.current ? guideFor(slots, aimRef.current, fromPath) : null;
     return aimRef.current ? [] : legacy;
   }, [editorContext, fallback]);
 
@@ -16360,7 +16192,6 @@ function useCanvasMoveAim(editorContext, fallback) {
    */
   const onDragMove = React.useCallback(() => {
     setLine(keepIfSame(aimRef.current?.line ?? null));
-    setGuide(keepIfSame(guideRef.current));
   }, []);
 
   /**
@@ -16370,9 +16201,7 @@ function useCanvasMoveAim(editorContext, fallback) {
   const takeMove = React.useCallback(fromPath => {
     const aim = aimRef.current;
     aimRef.current = null;
-    guideRef.current = null;
     setLine(null);
-    setGuide(null);
     if (!aim) {
       return null;
     }
@@ -16380,15 +16209,11 @@ function useCanvasMoveAim(editorContext, fallback) {
   }, []);
   const clear = React.useCallback(() => {
     aimRef.current = null;
-    guideRef.current = null;
     setLine(null);
-    setGuide(null);
   }, []);
-  const indicator = line ? /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(InsertionLine, {
+  const indicator = line ? /*#__PURE__*/React__default["default"].createElement(InsertionLine, {
     line: line
-  }), guide ? /*#__PURE__*/React__default["default"].createElement(AlignmentGuideLine, {
-    guide: guide
-  }) : null) : null;
+  }) : null;
   return {
     collisionDetection,
     onDragMove,
@@ -16396,6 +16221,536 @@ function useCanvasMoveAim(editorContext, fallback) {
     clear,
     indicator
   };
+}
+
+/**
+ * Rulers along the top and left edges of the canvas, marked in page pixels:
+ * a short tick every 10, a longer one every 50 and a numbered one every 100.
+ *
+ * They read page coordinates, not window ones, so the left ruler scrolls with
+ * the page and a number means the same place wherever the page is scrolled to.
+ * Drawn on `<canvas>` at the screen's pixel density so the ticks stay sharp,
+ * and redrawn only when the page scrolls or the window resizes.
+ */
+
+/** Thickness of each ruler, in canvas pixels. */
+const RULER_SIZE = 20;
+const STEP = 10;
+const BACKGROUND = "rgba(248, 248, 251, 0.94)";
+const BORDER = "#d9d7e4";
+const TICK = "#9b98ae";
+const LABEL = "#6b6880";
+function drawRuler(canvas, orientation, start, length) {
+  const isHorizontal = orientation === "horizontal";
+  const width = isHorizontal ? length : RULER_SIZE;
+  const height = isHorizontal ? RULER_SIZE : length;
+  const density = window.devicePixelRatio || 1;
+  const context = canvas.getContext("2d");
+  canvas.width = Math.round(width * density);
+  canvas.height = Math.round(height * density);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  if (!context) {
+    return;
+  }
+  context.setTransform(density, 0, 0, density, 0, 0);
+  context.fillStyle = BACKGROUND;
+  context.fillRect(0, 0, width, height);
+  context.font = "9px system-ui, -apple-system, sans-serif";
+  context.fillStyle = LABEL;
+  context.strokeStyle = TICK;
+  context.lineWidth = 1;
+  context.beginPath();
+  for (let value = Math.ceil(start / STEP) * STEP; value <= start + length; value += STEP) {
+    // Half a pixel in, so a 1px line covers one row of pixels, not two.
+    const at = Math.round(value - start) + 0.5;
+    const size = value % 100 === 0 ? RULER_SIZE : value % 50 === 0 ? 8 : 4;
+    if (isHorizontal) {
+      context.moveTo(at, RULER_SIZE);
+      context.lineTo(at, RULER_SIZE - size);
+    } else {
+      context.moveTo(RULER_SIZE, at);
+      context.lineTo(RULER_SIZE - size, at);
+    }
+    if (value % 100 !== 0) {
+      continue;
+    }
+    const label = String(value);
+    if (isHorizontal) {
+      context.fillText(label, at + 3, 9);
+    } else {
+      // Read bottom to top, just below its tick, as rulers usually do.
+      context.save();
+      context.translate(10, at + 3 + context.measureText(label).width);
+      context.rotate(-Math.PI / 2);
+      context.fillText(label, 0, 0);
+      context.restore();
+    }
+  }
+  context.stroke();
+
+  // The edge that faces the page.
+  context.strokeStyle = BORDER;
+  context.beginPath();
+  if (isHorizontal) {
+    context.moveTo(0, RULER_SIZE - 0.5);
+    context.lineTo(width, RULER_SIZE - 0.5);
+  } else {
+    context.moveTo(RULER_SIZE - 0.5, 0);
+    context.lineTo(RULER_SIZE - 0.5, height);
+  }
+  context.stroke();
+}
+const rulerStyle = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  display: "block",
+  pointerEvents: "none",
+  zIndex: 2147481999
+};
+function CanvasRulers() {
+  const top = React.useRef(null);
+  const left = React.useRef(null);
+  React.useEffect(() => {
+    let frame = 0;
+    const draw = () => {
+      frame = 0;
+      const root = document.documentElement;
+      if (top.current) {
+        drawRuler(top.current, "horizontal", window.scrollX, root.clientWidth);
+      }
+      if (left.current) {
+        drawRuler(left.current, "vertical", window.scrollY, root.clientHeight);
+      }
+    };
+    const schedule = () => {
+      frame = frame || requestAnimationFrame(draw);
+    };
+    draw();
+    window.addEventListener("scroll", schedule, {
+      passive: true
+    });
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, []);
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement("canvas", {
+    ref: top,
+    style: rulerStyle
+  }), /*#__PURE__*/React__default["default"].createElement("canvas", {
+    ref: left,
+    style: rulerStyle
+  }), /*#__PURE__*/React__default["default"].createElement("div", {
+    style: {
+      ...rulerStyle,
+      width: RULER_SIZE,
+      height: RULER_SIZE,
+      background: BACKGROUND,
+      borderRight: `1px solid ${BORDER}`,
+      borderBottom: `1px solid ${BORDER}`,
+      boxSizing: "border-box",
+      zIndex: 2147482001
+    }
+  }));
+}
+
+/**
+ * Rulers on the top and left edges, and a fine dotted line through the
+ * pointer on each axis that crosses them, for reading positions and what lines
+ * up with what by eye.
+ *
+ * Shown with the block outlines (the canvas root decides). The lines hide
+ * while a block is dragged — the drag draws its own guides, and one line per
+ * axis is the rule there — while the rulers stay.
+ *
+ * The lines are moved by writing their style directly, not through state, so
+ * following the pointer never re-renders anything.
+ */
+const lineStyle = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  display: "none",
+  opacity: 0.8,
+  pointerEvents: "none",
+  zIndex: 2147482000
+};
+function CanvasCursorCrosshair() {
+  const vertical = React.useRef(null);
+  const horizontal = React.useRef(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  core.useDndMonitor({
+    onDragStart: () => setIsDragging(true),
+    onDragEnd: () => setIsDragging(false),
+    onDragCancel: () => setIsDragging(false)
+  });
+  React.useEffect(() => {
+    if (isDragging) {
+      return;
+    }
+    const show = visible => {
+      for (const line of [vertical.current, horizontal.current]) {
+        if (line) line.style.display = visible ? "block" : "none";
+      }
+    };
+    const onMove = event => {
+      // A tap has no hover to follow; the lines would stay where it landed.
+      if (event.pointerType === "touch") {
+        return;
+      }
+      if (vertical.current) {
+        vertical.current.style.transform = `translateX(${event.clientX}px)`;
+      }
+      if (horizontal.current) {
+        horizontal.current.style.transform = `translateY(${event.clientY}px)`;
+      }
+      show(true);
+    };
+    // Leaving the iframe is a mouseout with nowhere to go.
+    const onOut = event => {
+      if (!event.relatedTarget) show(false);
+    };
+    document.addEventListener("pointermove", onMove, {
+      passive: true
+    });
+    document.addEventListener("mouseout", onOut);
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("mouseout", onOut);
+    };
+  }, [isDragging]);
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(CanvasRulers, null), isDragging ? null : /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement("div", {
+    ref: vertical,
+    style: {
+      ...lineStyle,
+      height: "100vh",
+      borderLeft: `1px dotted ${ACCENT}`
+    }
+  }), /*#__PURE__*/React__default["default"].createElement("div", {
+    ref: horizontal,
+    style: {
+      ...lineStyle,
+      width: "100vw",
+      borderTop: `1px dotted ${ACCENT}`
+    }
+  })));
+}
+
+/**
+ * An alignment guide on the canvas: dashed and thinner than the insertion
+ * line, so the solid line still reads as "it lands here" and this one as "and
+ * lines up with this".
+ */
+function AlignmentGuideLine({
+  guide
+}) {
+  const isUpright = guide.orientation === "vertical";
+  return /*#__PURE__*/React__default["default"].createElement("div", {
+    style: {
+      position: "fixed",
+      top: guide.y,
+      left: guide.x,
+      width: isUpright ? 0 : guide.length,
+      height: isUpright ? guide.length : 0,
+      [isUpright ? "borderLeft" : "borderTop"]: `1px dashed ${ACCENT}`,
+      boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.6)",
+      pointerEvents: "none",
+      zIndex: 2147483000
+    }
+  });
+}
+
+/**
+ * Where a dragged block's outline snaps to, and the guides that say why.
+ *
+ * The outline is the block's own box carried by the pointer. On each axis it is
+ * compared with the blocks around it by start edge, centre and end edge; the
+ * nearest line within `threshold` wins and the outline moves onto it. Only that
+ * one line per axis is returned — a page full of lines that happen to agree
+ * tells the person nothing about which one the block is sitting on.
+ *
+ * Geometry only, so it is tested without a browser. Everything is in the
+ * canvas's own pixels.
+ */
+
+/** A guide drawn across the canvas: `x`/`y` is where it starts. */
+
+const linesOf = ({
+  start,
+  end
+}) => [start, (start + end) / 2, end];
+const spanX = rect => ({
+  start: rect.left,
+  end: rect.right
+});
+const spanY = rect => ({
+  start: rect.top,
+  end: rect.bottom
+});
+
+/** Empty space between two spans, 0 when they overlap. */
+const gapBetween = (a, b) => Math.max(0, b.start - a.end, a.start - b.end);
+
+/**
+ * The nearest line on one axis. Ties go to the block nearest along the other
+ * axis, so the guide reaches the neighbour the eye is on rather than one far
+ * down the page; after that, to the earlier candidate, so the pick is stable.
+ */
+function nearestOnAxis(moving, candidates, threshold, along, across) {
+  let best = null;
+  const movingLines = linesOf(along(moving));
+  for (const candidate of candidates) {
+    const gap = gapBetween(across(moving), across(candidate));
+    for (const line of linesOf(along(candidate))) {
+      for (const own of movingLines) {
+        const offset = line - own;
+        const distance = Math.abs(offset);
+        if (distance > threshold) {
+          continue;
+        }
+        if (!best || distance < best.distance || distance === best.distance && gap < best.gap) {
+          best = {
+            offset,
+            at: line,
+            candidate,
+            distance,
+            gap
+          };
+        }
+      }
+    }
+  }
+  return best;
+}
+function resolveDragSnap(moving, candidates, threshold) {
+  const onX = nearestOnAxis(moving, candidates, threshold, spanX, spanY);
+  const onY = nearestOnAxis(moving, candidates, threshold, spanY, spanX);
+  const dx = onX?.offset ?? 0;
+  const dy = onY?.offset ?? 0;
+  const snapped = {
+    left: moving.left + dx,
+    right: moving.right + dx,
+    top: moving.top + dy,
+    bottom: moving.bottom + dy
+  };
+  const guides = [];
+
+  // Each guide runs from the snapped outline to the block it lines up with.
+  if (onX) {
+    const from = Math.min(snapped.top, onX.candidate.top);
+    const to = Math.max(snapped.bottom, onX.candidate.bottom);
+    guides.push({
+      orientation: "vertical",
+      x: onX.at,
+      y: from,
+      length: to - from
+    });
+  }
+  if (onY) {
+    const from = Math.min(snapped.left, onY.candidate.left);
+    const to = Math.max(snapped.right, onY.candidate.right);
+    guides.push({
+      orientation: "horizontal",
+      x: from,
+      y: onY.at,
+      length: to - from
+    });
+  }
+  return {
+    dx,
+    dy,
+    guides
+  };
+}
+
+/**
+ * The dragged block's outline, carried by the pointer, and the guides it snaps
+ * to.
+ *
+ * The pointer carries a chip (`DragPreview`), not the block, so nothing on
+ * screen had the block's size to line up with anything. This draws that size
+ * as a faint dashed box and lets it snap onto the nearest edge or centre of the
+ * blocks around it. It is a measuring aid only: where the block lands is still
+ * the insertion line's answer, because the page is laid out in flow and has no
+ * free x/y to keep.
+ *
+ * State lives here rather than in the canvas root, so following the pointer
+ * re-renders this layer and not the whole page.
+ */
+
+/** How close a line must come before the outline jumps onto it, in screen pixels. */
+const SNAP_DISTANCE = 6;
+const shift = (rect, dx, dy) => ({
+  left: rect.left + dx,
+  right: rect.right + dx,
+  top: rect.top + dy,
+  bottom: rect.bottom + dy
+});
+function pointOf(event) {
+  if (event && "touches" in event) {
+    const touch = event.touches[0];
+    return touch ? {
+      x: touch.clientX,
+      y: touch.clientY
+    } : null;
+  }
+  return event && "clientX" in event ? {
+    x: event.clientX,
+    y: event.clientY
+  } : null;
+}
+
+/**
+ * Screen pixels per canvas pixel. The canvas is an iframe the editor may scale
+ * down to fit, and a snap distance is felt on screen, not in page pixels.
+ */
+function canvasScale() {
+  try {
+    const frame = window.frameElement;
+    const drawn = frame?.getBoundingClientRect().width ?? 0;
+    return frame && drawn > 0 && frame.offsetWidth > 0 ? drawn / frame.offsetWidth : 1;
+  } catch {
+    return 1;
+  }
+}
+
+/**
+ * Every block frame in view, other than the dragged block and what it holds.
+ * Told apart by path rather than by node, so a frame React remounts mid-drag
+ * still counts as the dragged block.
+ */
+function measureNeighbours(path) {
+  const rects = [];
+  document.querySelectorAll(`[${CANVAS_FRAME_PATH_ATTRIBUTE}]`).forEach(frame => {
+    const framePath = frame.getAttribute(CANVAS_FRAME_PATH_ATTRIBUTE) ?? "";
+    if (framePath === path || framePath.startsWith(`${path}.`)) {
+      return;
+    }
+    const rect = frame.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.right > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth) {
+      rects.push(rect);
+    }
+  });
+  return rects;
+}
+function DragSnapOverlay() {
+  const [session, setSession] = React.useState(null);
+  const [view, setView] = React.useState(null);
+  const pointer = React.useRef(null);
+  const end = () => {
+    setSession(null);
+    setView(null);
+  };
+  core.useDndMonitor({
+    onDragStart(event) {
+      const path = event.active.data.current?.path;
+      const start = pointOf(event.activatorEvent);
+      const dragged = typeof path === "string" ? document.querySelector(`[${CANVAS_FRAME_PATH_ATTRIBUTE}="${CSS.escape(path)}"]`) : null;
+      if (!dragged || !start) {
+        return;
+      }
+      const {
+        left,
+        right,
+        top,
+        bottom
+      } = dragged.getBoundingClientRect();
+      pointer.current = start;
+      setSession({
+        origin: {
+          left,
+          right,
+          top,
+          bottom
+        },
+        start,
+        path,
+        // The editor does not rescale the canvas mid-drag.
+        scale: canvasScale()
+      });
+    },
+    onDragEnd: end,
+    onDragCancel: end
+  });
+  React.useEffect(() => {
+    if (!session) {
+      return;
+    }
+    let frame = 0;
+
+    // One measure per frame: every block is measured again because the drag
+    // itself shifts them (sorting, auto-scroll).
+    const update = () => {
+      frame = 0;
+      const at = pointer.current ?? session.start;
+      const moving = shift(session.origin, at.x - session.start.x, at.y - session.start.y);
+      const snap = resolveDragSnap(moving, measureNeighbours(session.path), SNAP_DISTANCE / session.scale);
+      const next = {
+        outline: shift(moving, snap.dx, snap.dy),
+        guides: snap.guides
+      };
+
+      // Unchanged geometry keeps the current view: no render for a frame
+      // that would draw the same thing.
+      setView(current => current && JSON.stringify(current) === JSON.stringify(next) ? current : next);
+    };
+    const schedule = () => {
+      frame = frame || requestAnimationFrame(update);
+    };
+    const onPointer = event => {
+      pointer.current = pointOf(event) ?? pointer.current;
+      schedule();
+    };
+    schedule();
+    window.addEventListener("mousemove", onPointer, {
+      passive: true
+    });
+    window.addEventListener("touchmove", onPointer, {
+      passive: true
+    });
+    window.addEventListener("scroll", schedule, {
+      capture: true,
+      passive: true
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("mousemove", onPointer);
+      window.removeEventListener("touchmove", onPointer);
+      window.removeEventListener("scroll", schedule, {
+        capture: true
+      });
+    };
+  }, [session]);
+
+  // Both, so a frame measured just before the drag ended draws nothing.
+  if (!session || !view) {
+    return null;
+  }
+  const {
+    outline,
+    guides
+  } = view;
+  return /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement("div", {
+    style: {
+      position: "fixed",
+      top: outline.top,
+      left: outline.left,
+      width: outline.right - outline.left,
+      height: outline.bottom - outline.top,
+      boxSizing: "border-box",
+      border: `1px dashed ${ACCENT}`,
+      background: "rgba(123, 112, 245, 0.06)",
+      pointerEvents: "none",
+      zIndex: 2147482999
+    }
+  }), guides.map(guide => /*#__PURE__*/React__default["default"].createElement(AlignmentGuideLine, {
+    key: guide.orientation,
+    guide: guide
+  })));
 }
 
 /**
@@ -17721,7 +18076,7 @@ function EasyblocksCanvas({
     }
   }, draggedLabel !== null ? /*#__PURE__*/React__default["default"].createElement(DragPreview, {
     label: draggedLabel
-  }) : null)), panelDropIndicator, canvasMoveAim.indicator)));
+  }) : null), /*#__PURE__*/React__default["default"].createElement(DragSnapOverlay, null), editorContext.isEditing && editorContext.showOutlines ? /*#__PURE__*/React__default["default"].createElement(CanvasCursorCrosshair, null) : null), panelDropIndicator, canvasMoveAim.indicator)));
 }
 
 /**

@@ -18,9 +18,6 @@ import {
   topmostFramePath,
 } from "./collectPanelDropSlots";
 import { InsertionLine } from "./usePanelDropTarget";
-import { AlignmentGuideLine } from "./alignment-guide-line";
-import type { AlignmentGuide } from "./alignment-guide-resolver";
-import { guideFor, keepIfSame } from "./canvas-move-guide";
 
 /**
  * Whether the block at `path` sits in a collection that opted in with
@@ -66,6 +63,23 @@ function collectionOfCollision(
 }
 
 /**
+ * Keeps the current line when the next one is the same, so a line that has
+ * not moved does not re-render the page at pointer rate.
+ */
+function keepIfSame<Line extends CanvasMoveAim["line"]>(next: Line | null) {
+  return (current: Line | null) =>
+    current === next ||
+    (current !== null &&
+      next !== null &&
+      current.x === next.x &&
+      current.y === next.y &&
+      current.length === next.length &&
+      current.axis === next.axis)
+      ? current
+      : next;
+}
+
+/**
  * Column-aware aiming for a block dragged on the canvas. See `canvasMoveAim`.
  *
  * Wraps the block-by-block collision detection: when the aim applies it reports
@@ -77,9 +91,7 @@ export function useCanvasMoveAim(
   fallback: CollisionDetection,
 ) {
   const aimRef = useRef<CanvasMoveAim | null>(null);
-  const guideRef = useRef<AlignmentGuide | null>(null);
   const [line, setLine] = useState<CanvasMoveAim["line"] | null>(null);
-  const [guide, setGuide] = useState<AlignmentGuide | null>(null);
 
   const collisionDetection = useCallback<CollisionDetection>(
     (args) => {
@@ -88,7 +100,6 @@ export function useCanvasMoveAim(
       const pointer = args.pointerCoordinates;
 
       aimRef.current = null;
-      guideRef.current = null;
 
       if (
         typeof fromPath !== "string" ||
@@ -121,9 +132,6 @@ export function useCanvasMoveAim(
         legacyOverPath: collectionOfCollision(legacy),
         canHold,
       });
-      guideRef.current = aimRef.current
-        ? guideFor(slots, aimRef.current, fromPath)
-        : null;
 
       return aimRef.current ? [] : legacy;
     },
@@ -137,7 +145,6 @@ export function useCanvasMoveAim(
    */
   const onDragMove = useCallback(() => {
     setLine(keepIfSame(aimRef.current?.line ?? null));
-    setGuide(keepIfSame(guideRef.current));
   }, []);
 
   /**
@@ -148,9 +155,7 @@ export function useCanvasMoveAim(
     const aim = aimRef.current;
 
     aimRef.current = null;
-    guideRef.current = null;
     setLine(null);
-    setGuide(null);
 
     if (!aim) {
       return null;
@@ -161,17 +166,10 @@ export function useCanvasMoveAim(
 
   const clear = useCallback(() => {
     aimRef.current = null;
-    guideRef.current = null;
     setLine(null);
-    setGuide(null);
   }, []);
 
-  const indicator = line ? (
-    <>
-      <InsertionLine line={line} />
-      {guide ? <AlignmentGuideLine guide={guide} /> : null}
-    </>
-  ) : null;
+  const indicator = line ? <InsertionLine line={line} /> : null;
 
   return { collisionDetection, onDragMove, takeMove, clear, indicator };
 }

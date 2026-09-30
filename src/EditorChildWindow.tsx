@@ -24,6 +24,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { CanvasRoot } from "./CanvasRoot/CanvasRoot";
 import { useCanvasMoveAim } from "./CanvasRoot/useCanvasMoveAim";
+import { CanvasCursorCrosshair } from "./CanvasRoot/canvas-cursor-crosshair";
+import { DragSnapOverlay } from "./CanvasRoot/drag-snap-overlay";
 import { usePanelDropTarget } from "./CanvasRoot/usePanelDropTarget";
 import EditableComponentBuilder from "./EditableComponentBuilder/EditableComponentBuilder.editor";
 import TypePlaceholder from "./Placeholder";
@@ -376,6 +378,10 @@ export function EasyblocksCanvas({
                 <DragPreview label={draggedLabel} />
               ) : null}
             </DragOverlay>
+            <DragSnapOverlay />
+            {editorContext.isEditing && editorContext.showOutlines ? (
+              <CanvasCursorCrosshair />
+            ) : null}
           </DndContext>
           {panelDropIndicator}
           {canvasMoveAim.indicator}
