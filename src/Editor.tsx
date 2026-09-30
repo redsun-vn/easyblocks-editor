@@ -105,6 +105,7 @@ import {
 import { useDataSaver } from "./useDataSaver";
 import { useEditorGlobalKeyboardShortcuts } from "./useEditorGlobalKeyboardShortcuts";
 import { useEditorHistory } from "./useEditorHistory";
+import { globalSectionPageChanges } from "./global-section-page-changes";
 
 declare global {
   interface Window {
@@ -1237,53 +1238,19 @@ const EditorContent = ({
   };
 
   const onUpdateGlobalSections = () => {
-    const { globalSections } = editorContext ?? {};
+    const pageEntries = configAfterAutoRef?.current?.data;
 
-    if (!Object.keys(globalSections ?? {}).length) {
+    // Without the page's entries there is no telling which sections it shows,
+    // and guessing "none" would unlist the page from every section.
+    if (!Array.isArray(pageEntries)) {
       return;
     }
 
-    // 2 groups
-    for (const groupName in globalSections) {
-      // Each section in group
-      for (const globalSectionEntryId in globalSections[groupName].entities) {
-        const sectionValue =
-          globalSections[groupName].entities[globalSectionEntryId];
-        const entry = configAfterAutoRef?.current?.data.find(
-          (entryData: NoCodeComponentEntry) =>
-            entryData._id === globalSectionEntryId,
-        );
-
-        let payload: TGlobalSectionChange = {
-          label: sectionValue.label,
-          mode: "update",
-          pages: sectionValue.pages,
-          groupName,
-          entry: sectionValue.entry ?? {
-            _id: globalSectionEntryId,
-            _component: "",
-          },
-        };
-
-        if (entry) {
-          payload = {
-            ...payload,
-            pages: sectionValue.pages.includes(currentDocument)
-              ? sectionValue.pages
-              : [...sectionValue.pages, currentDocument],
-          };
-        } else {
-          payload = {
-            ...payload,
-            pages: sectionValue.pages.filter(
-              (page) => page !== currentDocument,
-            ),
-          };
-        }
-
-        editorContext.onGlobalSectionChange?.(payload);
-      }
-    }
+    globalSectionPageChanges({
+      globalSections: editorContext?.globalSections,
+      pageEntries,
+      currentDocument,
+    }).forEach((payload) => editorContext.onGlobalSectionChange?.(payload));
   };
 
   useEffect(() => {

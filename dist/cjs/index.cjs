@@ -13692,6 +13692,46 @@ function useEditorHistory({
   };
 }
 
+/**
+ * The global sections whose list of pages the current page changes.
+ *
+ * A section records which pages show it. The page shows it exactly when one
+ * of its top-level entries carries the section's id, so the only news worth
+ * telling the host is a section this page has just gained or just lost. Every
+ * other edit leaves the list as it was, and telling the host anyway made it
+ * rebuild the whole editor config and clear the server's page cache once per
+ * keystroke — once per step of a canvas drag.
+ */
+function globalSectionPageChanges({
+  globalSections,
+  pageEntries,
+  currentDocument
+}) {
+  const changes = [];
+  for (const groupName in globalSections ?? {}) {
+    const entities = globalSections[groupName].entities;
+    for (const globalSectionEntryId in entities) {
+      const sectionValue = entities[globalSectionEntryId];
+      const isOnPage = pageEntries.some(entryData => entryData._id === globalSectionEntryId);
+      const isListed = sectionValue.pages.includes(currentDocument);
+      if (isOnPage === isListed) {
+        continue;
+      }
+      changes.push({
+        label: sectionValue.label,
+        mode: "update",
+        groupName,
+        entry: sectionValue.entry ?? {
+          _id: globalSectionEntryId,
+          _component: ""
+        },
+        pages: isOnPage ? [...sectionValue.pages, currentDocument] : sectionValue.pages.filter(page => page !== currentDocument)
+      });
+    }
+  }
+  return changes;
+}
+
 const debouncedUpdate = debounce__default["default"](fn => fn(), 100);
 
 /** Breathing room so the device frame chrome is not clipped by the container. */
@@ -14473,43 +14513,18 @@ const EditorContent = ({
     setShowLeftSidebar(prevSidebarName => prevSidebarName === sidebarName ? null : sidebarName);
   };
   const onUpdateGlobalSections = () => {
-    const {
-      globalSections
-    } = editorContext ?? {};
-    if (!Object.keys(globalSections ?? {}).length) {
+    const pageEntries = configAfterAutoRef?.current?.data;
+
+    // Without the page's entries there is no telling which sections it shows,
+    // and guessing "none" would unlist the page from every section.
+    if (!Array.isArray(pageEntries)) {
       return;
     }
-
-    // 2 groups
-    for (const groupName in globalSections) {
-      // Each section in group
-      for (const globalSectionEntryId in globalSections[groupName].entities) {
-        const sectionValue = globalSections[groupName].entities[globalSectionEntryId];
-        const entry = configAfterAutoRef?.current?.data.find(entryData => entryData._id === globalSectionEntryId);
-        let payload = {
-          label: sectionValue.label,
-          mode: "update",
-          pages: sectionValue.pages,
-          groupName,
-          entry: sectionValue.entry ?? {
-            _id: globalSectionEntryId,
-            _component: ""
-          }
-        };
-        if (entry) {
-          payload = {
-            ...payload,
-            pages: sectionValue.pages.includes(currentDocument) ? sectionValue.pages : [...sectionValue.pages, currentDocument]
-          };
-        } else {
-          payload = {
-            ...payload,
-            pages: sectionValue.pages.filter(page => page !== currentDocument)
-          };
-        }
-        editorContext.onGlobalSectionChange?.(payload);
-      }
-    }
+    globalSectionPageChanges({
+      globalSections: editorContext?.globalSections,
+      pageEntries,
+      currentDocument
+    }).forEach(payload => editorContext.onGlobalSectionChange?.(payload));
   };
   React.useEffect(() => {
     push({
