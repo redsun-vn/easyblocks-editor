@@ -33,6 +33,7 @@ import { PanelContext } from "../fields/plugins/BlockFieldPlugin";
 import { LocalFieldPlugin } from "../fields/plugins/LocalFIeld";
 import { PositionFieldPlugin } from "../fields/plugins/PositionFieldPlugin";
 import { FieldPlugin } from "./field-plugin";
+import { resolvePanelTabs } from "./panel-tabs";
 import { createFieldController } from "./utils/createFieldController";
 
 export interface FieldBuilderProps {
@@ -241,11 +242,15 @@ const SearchClearButton = styled.button`
   }
 `;
 
-const tabs: Array<{ id: TTabSchemaProp; label: string }> = [
-  { id: "styles", label: "Styles" },
-  { id: "data", label: "Data" },
-  { id: "animation", label: "Animation" },
-];
+// The first three labels stay as they have always read; `advanced` is newer and
+// goes through the translation files.
+const tabLabels: Record<TTabSchemaProp, (t: (key: string) => string) => string> =
+  {
+    styles: () => "Styles",
+    data: () => "Data",
+    animation: () => "Animation",
+    advanced: (t) => t("editor.properties.tab.advanced"),
+  };
 
 // Underline-style tab bar (flat text buttons sitting on a baseline track).
 const TabsBar = styled.div`
@@ -256,8 +261,10 @@ const TabsBar = styled.div`
 
 // Active tab: faint Colors.black5 underline + bold/dark text so it stays
 // distinguishable even though the underline color is subtle.
-const TabButton = styled.button<{ $active: boolean }>`
-  padding: 8px 16px;
+// `$compact` when the bar holds four tabs: at 16px a side they need ~294px and
+// the panel is ~238px, so the last tab was cut off. Three tabs keep 16px.
+const TabButton = styled.button<{ $active: boolean; $compact: boolean }>`
+  padding: 8px ${(p) => (p.$compact ? "8px" : "16px")};
   margin-bottom: -1px;
   border: none;
   border-bottom: 2px solid
@@ -302,7 +309,7 @@ export function FieldsBuilder({
   const { t } = useTranslation();
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
-  const [activeTab, setActiveTab] = useState<TTabSchemaProp>("styles");
+  const [selectedTab, setActiveTab] = useState<TTabSchemaProp>("styles");
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -311,6 +318,10 @@ export function FieldsBuilder({
   );
 
   const isSearching = showSearch && normalize(query).length > 0;
+
+  // Derived on every render: selecting a component without the open tab shows
+  // `styles`, and the remembered choice comes back if that tab returns.
+  const { tabIds, activeTab } = resolvePanelTabs(fields, selectedTab);
 
   const matchesQuery = (field: InternalField) => {
     const needle = normalize(query);
@@ -405,13 +416,14 @@ export function FieldsBuilder({
 
       {hasTabs && !isEmptyField && !isSearching && (
         <TabsBar>
-          {tabs.map((tab) => (
+          {tabIds.map((tabId) => (
             <TabButton
-              key={tab.id}
-              $active={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              key={tabId}
+              $active={activeTab === tabId}
+              $compact={tabIds.length > 3}
+              onClick={() => setActiveTab(tabId)}
             >
-              {tab.label}
+              {tabLabels[tabId](t)}
             </TabButton>
           ))}
         </TabsBar>

@@ -4648,6 +4648,26 @@ const PositionFieldPlugin = {
   Component: wrapFieldsWithMeta(PositionField)
 };
 
+// The three tabs every component's panel has always shown, in their order.
+const ALWAYS_SHOWN_TABS = ["styles", "data", "animation"];
+
+/**
+ * Which tabs the properties panel shows for these fields, and which one is open.
+ *
+ * `advanced` appears only when one of the fields lives on it, so a component
+ * without such a field keeps the bar it always had. When the open tab is not in
+ * the bar (the user was on `advanced`, then selected a component without it)
+ * the panel falls back to `styles` instead of showing an empty tab.
+ */
+function resolvePanelTabs(fields, activeTab) {
+  const hasAdvanced = fields.some(field => field.schemaProp?.tab === "advanced");
+  const tabIds = hasAdvanced ? [...ALWAYS_SHOWN_TABS, "advanced"] : ALWAYS_SHOWN_TABS;
+  return {
+    tabIds,
+    activeTab: tabIds.includes(activeTab) ? activeTab : "styles"
+  };
+}
+
 // "any" here is on purpose (although doesn't make sense from TS perspective).
 // It suggests that in onChange you can pass event OR any value. It's a bit confusing and should be cleaned up in the future.
 
@@ -5036,16 +5056,15 @@ const SearchClearButton = styled$1.button.withConfig({
   displayName: "fields-builder__SearchClearButton",
   componentId: "sc-ignixa-1"
 })(["all:unset;box-sizing:border-box;position:absolute;top:8px;bottom:8px;right:14px;display:flex;align-items:center;justify-content:center;width:20px;border-radius:4px;cursor:pointer;color:", ";&:hover{color:", ";}&:focus-visible{box-shadow:0 0 0 2px ", ";}"], Colors.black40, Colors.black700, Colors.blue60);
-const tabs = [{
-  id: "styles",
-  label: "Styles"
-}, {
-  id: "data",
-  label: "Data"
-}, {
-  id: "animation",
-  label: "Animation"
-}];
+
+// The first three labels stay as they have always read; `advanced` is newer and
+// goes through the translation files.
+const tabLabels = {
+  styles: () => "Styles",
+  data: () => "Data",
+  animation: () => "Animation",
+  advanced: t => t("editor.properties.tab.advanced")
+};
 
 // Underline-style tab bar (flat text buttons sitting on a baseline track).
 const TabsBar = styled$1.div.withConfig({
@@ -5055,10 +5074,12 @@ const TabsBar = styled$1.div.withConfig({
 
 // Active tab: faint Colors.black5 underline + bold/dark text so it stays
 // distinguishable even though the underline color is subtle.
+// `$compact` when the bar holds four tabs: at 16px a side they need ~294px and
+// the panel is ~238px, so the last tab was cut off. Three tabs keep 16px.
 const TabButton = styled$1.button.withConfig({
   displayName: "fields-builder__TabButton",
   componentId: "sc-ignixa-3"
-})(["padding:8px 16px;margin-bottom:-1px;border:none;border-bottom:2px solid ", ";background:transparent;cursor:pointer;font-size:12px;font-weight:", ";color:", ";transition:all 0.15s ease;white-space:nowrap;&:hover{color:black;}"], p => p.$active ? Colors.black500 : "transparent", p => p.$active ? "600" : "400", p => p.$active ? "black" : Colors.black40);
+})(["padding:8px ", ";margin-bottom:-1px;border:none;border-bottom:2px solid ", ";background:transparent;cursor:pointer;font-size:12px;font-weight:", ";color:", ";transition:all 0.15s ease;white-space:nowrap;&:hover{color:black;}"], p => p.$compact ? "8px" : "16px", p => p.$active ? Colors.black500 : "transparent", p => p.$active ? "600" : "400", p => p.$active ? "black" : Colors.black40);
 const NoData = styled$1(Typography).withConfig({
   displayName: "fields-builder__NoData",
   componentId: "sc-ignixa-4"
@@ -5078,11 +5099,18 @@ function FieldsBuilder({
   } = useTranslation();
   const editorContext = useEditorContext();
   const panelContext = useContext(PanelContext);
-  const [activeTab, setActiveTab] = useState("styles");
+  const [selectedTab, setActiveTab] = useState("styles");
   const [query, setQuery] = useState("");
   const searchInputRef = useRef(null);
   const hasTabs = fields.some(f => f.component !== "identity" && f.component !== null);
   const isSearching = showSearch && normalize(query).length > 0;
+
+  // Derived on every render: selecting a component without the open tab shows
+  // `styles`, and the remembered choice comes back if that tab returns.
+  const {
+    tabIds,
+    activeTab
+  } = resolvePanelTabs(fields, selectedTab);
   const matchesQuery = field => {
     const needle = normalize(query);
     const label = typeof field.label === "string" ? normalize(translatePanelLabel(field.label, t)) : "";
@@ -5139,11 +5167,12 @@ function FieldsBuilder({
     }
   }, /*#__PURE__*/React__default.createElement(Icons.Close, {
     size: 14
-  }))), hasTabs && !isEmptyField && !isSearching && /*#__PURE__*/React__default.createElement(TabsBar, null, tabs.map(tab => /*#__PURE__*/React__default.createElement(TabButton, {
-    key: tab.id,
-    $active: activeTab === tab.id,
-    onClick: () => setActiveTab(tab.id)
-  }, tab.label))), isEmptyField ? /*#__PURE__*/React__default.createElement(EmptyField, null) : null, isSearching && visibleFields.length === 0 && /*#__PURE__*/React__default.createElement(NoData, null, t("editor.properties.noResults")), Object.keys(grouped).map(groupName => /*#__PURE__*/React__default.createElement("div", {
+  }))), hasTabs && !isEmptyField && !isSearching && /*#__PURE__*/React__default.createElement(TabsBar, null, tabIds.map(tabId => /*#__PURE__*/React__default.createElement(TabButton, {
+    key: tabId,
+    $active: activeTab === tabId,
+    $compact: tabIds.length > 3,
+    onClick: () => setActiveTab(tabId)
+  }, tabLabels[tabId](t)))), isEmptyField ? /*#__PURE__*/React__default.createElement(EmptyField, null) : null, isSearching && visibleFields.length === 0 && /*#__PURE__*/React__default.createElement(NoData, null, t("editor.properties.noResults")), Object.keys(grouped).map(groupName => /*#__PURE__*/React__default.createElement("div", {
     key: groupName
   }, /*#__PURE__*/React__default.createElement(FieldsGroupLabel, null, translatePanelGroup(groupName, t)), grouped[groupName].map((field, index, fields) => /*#__PURE__*/React__default.createElement(FieldWrapper, {
     key: generateFieldKey(field, breakpointIndex),
