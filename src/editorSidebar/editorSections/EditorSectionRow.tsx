@@ -1,6 +1,8 @@
+import type { InternalTemplate, Template } from "@redsun-vn/easyblocks-core";
 import { Colors } from "@redsun-vn/easyblocks-design-system";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
+import { useTemplateHoverPreview } from "../../template-hover-preview-context";
 
 const StyledRow = styled.button`
   display: flex;
@@ -125,31 +127,77 @@ function initialsOf(label: string): string {
 export const EditorSectionRow = ({
   label,
   thumbnail,
+  template,
   onPick,
   onDragStart,
 }: {
   label: string;
   thumbnail?: string;
+  template?: Template | InternalTemplate;
   onPick: () => void;
   onDragStart?: (event: React.DragEvent) => void;
-}) => (
-  <StyledRow
-    type="button"
-    title={label}
-    onClick={onPick}
-    draggable={Boolean(onDragStart)}
-    onDragStart={onDragStart}
-  >
-    <StyledPreview>
-      {thumbnail ? (
-        // Without this the browser drags the picture on its own and the row
-        // never gets a `dragstart`, so the gesture carries an image file
-        // instead of the section.
-        <StyledThumbnail src={thumbnail} alt="" loading="lazy" draggable={false} />
-      ) : (
-        <StyledInitials>{initialsOf(label)}</StyledInitials>
-      )}
-    </StyledPreview>
-    <StyledLabel>{label}</StyledLabel>
-  </StyledRow>
-);
+}) => {
+  const preview = useTemplateHoverPreview();
+  const isHovered = useRef(false);
+
+  // A row can disappear under the pointer (panel switched, search typed) and
+  // then never gets its `mouseleave`; the preview must not outlive it.
+  useEffect(
+    () => () => {
+      if (isHovered.current) preview?.hide();
+    },
+    [preview],
+  );
+
+  return (
+    <StyledRow
+      type="button"
+      // The rendered preview says more than the name, and a native tooltip
+      // would sit on top of it.
+      title={preview && template ? undefined : label}
+      onMouseEnter={(event) => {
+        if (preview && template) {
+          isHovered.current = true;
+          preview.show(
+            template,
+            event.currentTarget.getBoundingClientRect(),
+            label,
+          );
+        }
+      }}
+      onMouseLeave={() => {
+        isHovered.current = false;
+        preview?.hide();
+      }}
+      onClick={() => {
+        preview?.hide();
+        onPick();
+      }}
+      draggable={Boolean(onDragStart)}
+      onDragStart={
+        onDragStart &&
+        ((event) => {
+          preview?.hide();
+          onDragStart(event);
+        })
+      }
+    >
+      <StyledPreview>
+        {thumbnail ? (
+          // Without this the browser drags the picture on its own and the row
+          // never gets a `dragstart`, so the gesture carries an image file
+          // instead of the section.
+          <StyledThumbnail
+            src={thumbnail}
+            alt=""
+            loading="lazy"
+            draggable={false}
+          />
+        ) : (
+          <StyledInitials>{initialsOf(label)}</StyledInitials>
+        )}
+      </StyledPreview>
+      <StyledLabel>{label}</StyledLabel>
+    </StyledRow>
+  );
+};

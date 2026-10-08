@@ -10525,6 +10525,21 @@ const getCategoryLabel = (t, group) => {
   return translated === key ? group : translated;
 };
 
+/**
+ * Shows what a library item looks like once it is on the page, while the
+ * pointer rests on it.
+ *
+ * The editor only says *when*: a row in the components or templates panel,
+ * or a card in the host's picker dialog, calls `show` on hover and `hide` when
+ * the pointer leaves or the item is clicked or dragged. Drawing the preview is
+ * the host's job, because only the host can render its own components with its
+ * own theme and data. Without a provider nothing happens and the lists behave
+ * as they always have.
+ */
+
+const TemplateHoverPreviewContext = /*#__PURE__*/React.createContext(null);
+const useTemplateHoverPreview = () => React.useContext(TemplateHoverPreviewContext);
+
 const StyledRow = styled__default["default"].button.withConfig({
   displayName: "EditorSectionRow__StyledRow",
   componentId: "sc-1wckczo-0"
@@ -10587,25 +10602,55 @@ function initialsOf(label) {
 const EditorSectionRow = ({
   label,
   thumbnail,
+  template,
   onPick,
   onDragStart
-}) => /*#__PURE__*/React__default["default"].createElement(StyledRow, {
-  type: "button",
-  title: label,
-  onClick: onPick,
-  draggable: Boolean(onDragStart),
-  onDragStart: onDragStart
-}, /*#__PURE__*/React__default["default"].createElement(StyledPreview, null, thumbnail ?
-/*#__PURE__*/
-// Without this the browser drags the picture on its own and the row
-// never gets a `dragstart`, so the gesture carries an image file
-// instead of the section.
-React__default["default"].createElement(StyledThumbnail, {
-  src: thumbnail,
-  alt: "",
-  loading: "lazy",
-  draggable: false
-}) : /*#__PURE__*/React__default["default"].createElement(StyledInitials, null, initialsOf(label))), /*#__PURE__*/React__default["default"].createElement(StyledLabel, null, label));
+}) => {
+  const preview = useTemplateHoverPreview();
+  const isHovered = React.useRef(false);
+
+  // A row can disappear under the pointer (panel switched, search typed) and
+  // then never gets its `mouseleave`; the preview must not outlive it.
+  React.useEffect(() => () => {
+    if (isHovered.current) preview?.hide();
+  }, [preview]);
+  return /*#__PURE__*/React__default["default"].createElement(StyledRow, {
+    type: "button"
+    // The rendered preview says more than the name, and a native tooltip
+    // would sit on top of it.
+    ,
+    title: preview && template ? undefined : label,
+    onMouseEnter: event => {
+      if (preview && template) {
+        isHovered.current = true;
+        preview.show(template, event.currentTarget.getBoundingClientRect(), label);
+      }
+    },
+    onMouseLeave: () => {
+      isHovered.current = false;
+      preview?.hide();
+    },
+    onClick: () => {
+      preview?.hide();
+      onPick();
+    },
+    draggable: Boolean(onDragStart),
+    onDragStart: onDragStart && (event => {
+      preview?.hide();
+      onDragStart(event);
+    })
+  }, /*#__PURE__*/React__default["default"].createElement(StyledPreview, null, thumbnail ?
+  /*#__PURE__*/
+  // Without this the browser drags the picture on its own and the row
+  // never gets a `dragstart`, so the gesture carries an image file
+  // instead of the section.
+  React__default["default"].createElement(StyledThumbnail, {
+    src: thumbnail,
+    alt: "",
+    loading: "lazy",
+    draggable: false
+  }) : /*#__PURE__*/React__default["default"].createElement(StyledInitials, null, initialsOf(label))), /*#__PURE__*/React__default["default"].createElement(StyledLabel, null, label));
+};
 
 /**
  * Which sidebar groups this viewer has folded away.
@@ -10834,6 +10879,7 @@ const EditorSectionGroup = ({
     key: row.key,
     label: row.label,
     thumbnail: row.thumbnail,
+    template: row.template,
     onPick: row.onPick,
     onDragStart: row.onDragStart
   })), isLoading ? /*#__PURE__*/React__default["default"].createElement(React__default["default"].Fragment, null, /*#__PURE__*/React__default["default"].createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default["default"].createElement(StyledPlaceholderRow, null), /*#__PURE__*/React__default["default"].createElement(StyledPlaceholderRow, null)) : null), !isLoading && rows.length === 0 && emptyLabel ? /*#__PURE__*/React__default["default"].createElement(StyledEmpty, null, emptyLabel) : null, hasMore && !isLoading ? /*#__PURE__*/React__default["default"].createElement(StyledMore, {
@@ -11663,6 +11709,7 @@ const EditorSections = ({
         key,
         label: labelOf(template),
         thumbnail: template.template?.thumbnail,
+        template: template.template,
         onPick: () => onAddTemplate(template),
         onDragStart: event => {
           draggedTemplate.current = template;
@@ -19007,5 +19054,7 @@ function EasyblocksEditor(props) {
 
 exports.EasyblocksEditor = EasyblocksEditor;
 exports.EditorContext = EditorContext;
+exports.TemplateHoverPreviewContext = TemplateHoverPreviewContext;
 exports.TemplateIcon = TemplateIcon;
 exports.useEditorContext = useEditorContext;
+exports.useTemplateHoverPreview = useTemplateHoverPreview;

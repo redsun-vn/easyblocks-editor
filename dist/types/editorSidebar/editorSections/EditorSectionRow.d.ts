@@ -1,3 +1,4 @@
+import type { InternalTemplate, Template } from "@redsun-vn/easyblocks-core";
 import React from "react";
 /**
  * One insertable item in a sidebar panel.
@@ -13,9 +14,10 @@ import React from "react";
  * Both gestures stay: a click is the shorter path when the position does not
  * matter, and it is the only path for anyone who cannot drag.
  */
-export declare const EditorSectionRow: ({ label, thumbnail, onPick, onDragStart, }: {
+export declare const EditorSectionRow: ({ label, thumbnail, template, onPick, onDragStart, }: {
     label: string;
     thumbnail?: string;
+    template?: Template | InternalTemplate;
     onPick: () => void;
     onDragStart?: (event: React.DragEvent) => void;
 }) => React.JSX.Element;

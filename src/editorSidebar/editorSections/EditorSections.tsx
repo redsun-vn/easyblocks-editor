@@ -941,6 +941,7 @@ export const EditorSections: React.FC<{ panel: TSectionPanel }> = ({
         key,
         label: labelOf(template),
         thumbnail: template.template?.thumbnail,
+        template: template.template,
         onPick: () => onAddTemplate(template),
         onDragStart: (event) => {
           draggedTemplate.current = template;

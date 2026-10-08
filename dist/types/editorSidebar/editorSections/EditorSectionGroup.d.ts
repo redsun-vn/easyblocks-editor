@@ -1,9 +1,12 @@
+import type { InternalTemplate, Template } from "@redsun-vn/easyblocks-core";
 import React from "react";
 /** One insertable item, already reduced to what a row needs to draw itself. */
 export type TSectionRow = {
     key: string;
     label: string;
     thumbnail?: string;
+    /** What the row inserts; shown rendered while the pointer rests on the row. */
+    template?: Template | InternalTemplate;
     onPick: () => void;
     /** Absent on a row that cannot be dragged; the row then only clicks. */
     onDragStart?: (event: React.DragEvent) => void;
